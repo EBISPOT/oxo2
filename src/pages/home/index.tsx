@@ -67,7 +67,7 @@ export default function Home() {
             <div className="grid grid-cols-3 gap-8 mb-8">
               <div className="px-2">
                 <div className="text-2xl mb-3 text-neutral-default">
-                  <i className="icon icon-common icon-browse icon-spacer text-orange-default" />
+                  <i className="icon icon-common icon-browse icon-spacer text-yellow-default" />
                   <Link to={"/about"} className="link-default">
                     About OxO
                   </Link>
@@ -100,7 +100,7 @@ export default function Home() {
               </div>
               <div className="px-2">
                 <div className="text-2xl mb-3 text-neutral-default">
-                  <i className="icon icon-common icon-tool icon-spacer text-orange-default" />
+                  <i className="icon icon-common icon-tool icon-spacer text-yellow-default" />
                   <a
                     href="https://www.ebi.ac.uk/spot/ontology/"
                     className="link-default"
@@ -130,7 +130,7 @@ export default function Home() {
               </div>
               <div className="px-2">
                 <div className="text-2xl mb-3 text-neutral-default">
-                  <i className="icon icon-common icon-exclamation-triangle icon-spacer text-orange-default" />
+                  <i className="icon icon-common icon-exclamation-triangle icon-spacer text-yellow-default" />
                   <a
                     href="https://github.com/EBISPOT/oxo2/issues"
                     className="link-default"
@@ -166,7 +166,6 @@ export default function Home() {
                 <i className="icon icon-common icon-analyse-graph icon-spacer" />
                 <span>Data Content</span>
               </div>
-
               <div className="text-neutral-black">
                 <div className="mb-2 text-sm italic">Updated</div>
                 <ul className="list-disc list-inside pl-2">

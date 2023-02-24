@@ -1,4 +1,4 @@
-import { KeyboardArrowDown } from "@mui/icons-material";
+import { Close, KeyboardArrowDown } from "@mui/icons-material";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import Header from "../../common/Header";
@@ -11,6 +11,7 @@ export default function Search() {
       : "";
 
   const [query, setQuery] = useState<string>(passedQuery);
+  const [openJustif, setOpenJustif] = useState<boolean>(false);
 
   return (
     <div>
@@ -92,7 +93,7 @@ export default function Search() {
             </div>
           </div>
           <div className="col-span-3">
-            <div className="flex flex-row justify-between">
+            <div className="flex flex-row justify-between mb-4">
               <div className="flex flex-col justify-center">
                 <label>Confidence</label>
                 <input
@@ -137,9 +138,118 @@ export default function Search() {
                 </div>
               </div>
             </div>
+            <div>
+              <div className="flex flex-row text-neutral-default font-bold gap-4 mb-4">
+                <div className="basis-4/12">Subject</div>
+                <div className="basis-3/12">Predicate</div>
+                <div className="basis-5/12">Object</div>
+              </div>
+              <div className="flex flex-row items-start gap-4 mb-4">
+                <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
+                  EFO:0000400
+                  <br />
+                  "diabetes mellitus"
+                  <br />
+                  disease
+                </div>
+                <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2">
+                  skos:exactMatch
+                  <br />
+                  Modifier: None
+                </div>
+                <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
+                  MONDO:0005015
+                  <br />
+                  "diabetes mellitus"
+                  <br />
+                  disease
+                </div>
+                <div className="basis-1/12 self-center grid grid-cols-2 justify-items-center text-xl">
+                  <div
+                    className="w-fit cursor-pointer"
+                    onClick={() => setOpenJustif(true)}
+                  >
+                    <i title="Info" className="icon icon-common icon-info" />
+                  </div>
+                  <div className="w-fit cursor-pointer">
+                    <i title="View" className="icon icon-common icon-eye" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-row items-start gap-4 mb-4">
+                <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
+                  EFO:0000400
+                  <br />
+                  "diabetes mellitus"
+                  <br />
+                  disease
+                </div>
+                <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2">
+                  skos:broadMatch
+                  <br />
+                  Modifier: None
+                </div>
+                <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
+                  HP:0000819
+                  <br />
+                  "diabetes mellitus"
+                  <br />
+                  disease
+                </div>
+                <div className="basis-1/12 self-center grid grid-cols-2 justify-items-center text-xl">
+                  <div
+                    className="w-fit cursor-pointer"
+                    onClick={() => setOpenJustif(true)}
+                  >
+                    <i title="Info" className="icon icon-common icon-info" />
+                  </div>
+                  <div className="w-fit cursor-pointer">
+                    <i title="View" className="icon icon-common icon-eye" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </main>
+      <div
+        className={`fixed top-0 right-0 z-30 w-96 h-full transition-transform bg-neutral-light shadow-card p-6 ${
+          openJustif ? "translate-x-0" : "translate-x-96"
+        }`}
+      >
+        <div className="flex flex-row items-center gap-4 mb-4">
+          <button type="button" onClick={() => setOpenJustif(false)}>
+            <Close />
+          </button>
+          <div className="text-neutral-default font-bold">Justification</div>
+        </div>
+        <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 mb-4">
+          <div className="text-xl font-bold mb-2">Lexical Match</div>
+          <ul className="list-disc list-inside pl-2">
+            <li>confidence</li>
+            <li>provider</li>
+            <li>subject match field</li>
+            <li>object match field</li>
+            <li>oio</li>
+            <li>match string</li>
+          </ul>
+        </div>
+        <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4">
+          <div className="text-xl text-neutral-black font-bold mb-2">
+            Human Curated Match
+          </div>
+          <ul className="list-disc list-inside pl-2">
+            <li>provider</li>
+            <li>author</li>
+          </ul>
+        </div>
+      </div>
+      <div
+        className={`fixed top-0 right-0 backdrop-blur h-full w-full ${
+          openJustif ? "z-20" : "z-[-1]"
+        }`}
+        onClick={() => setOpenJustif(false)}
+      />
     </div>
   );
 }
