@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../../common/Header";
 
 export default function Home() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState<string>("");
 
   return (
@@ -16,9 +17,9 @@ export default function Home() {
                 Welcome to the EMBL-EBI Mapping Lookup Service
               </div>
               <div className="flex flex-row gap-4">
-                <div className="w-full self-center">
+                <div className="w-full">
                   <div className="flex flex-row justify-between text-neutral-black mb-2">
-                    <div>Enter list of identifiers:</div>
+                    <div>Enter identifiers separated by comma or newline:</div>
                     <div
                       className="link-default"
                       onClick={() => {
@@ -47,7 +48,18 @@ export default function Home() {
                     }}
                   />
                 </div>
-                <button className="button-primary text-lg font-bold self-center">
+                <button
+                  className="button-primary text-lg font-bold self-center"
+                  onClick={() => {
+                    if (query) {
+                      navigate("/search", {
+                        state: {
+                          search: query.split(/[\n,]+/).map((id) => id.trim()),
+                        },
+                      });
+                    }
+                  }}
+                >
                   Search
                 </button>
               </div>
@@ -55,7 +67,7 @@ export default function Home() {
             <div className="grid grid-cols-3 gap-8 mb-8">
               <div className="px-2">
                 <div className="text-2xl mb-3 text-neutral-default">
-                  <i className="icon icon-common icon-browse icon-spacer text-orange-default" />
+                  <i className="icon icon-common icon-browse icon-spacer text-yellow-default" />
                   <Link to={"/about"} className="link-default">
                     About OxO
                   </Link>
@@ -64,14 +76,14 @@ export default function Home() {
                   OxO is a service for finding mappings (or cross-references)
                   between terms from ontologies, vocabularies and coding
                   standards. OxO imports mappings from a variety of sources
-                  including the&nbsp;
+                  including the&thinsp;
                   <a
                     href="https://www.ebi.ac.uk/ols4/"
                     className="link-default"
                   >
                     Ontology Lookup Service (OLS)
                   </a>
-                  &nbsp; and a subset of mappings provided by the&nbsp;
+                  &thinsp;and a subset of mappings provided by the&thinsp;
                   <a
                     href="https://www.nlm.nih.gov/research/umls/"
                     className="link-default"
@@ -79,7 +91,7 @@ export default function Home() {
                     UMLS
                   </a>
                   . OxO is developed and maintained by the Samples, Phenotypes
-                  and Ontologies Team (SPOT) at&nbsp;
+                  and Ontologies Team (SPOT) at&thinsp;
                   <a href="https://www.ebi.ac.uk" className="link-default">
                     EMBL-EBI
                   </a>
@@ -88,7 +100,7 @@ export default function Home() {
               </div>
               <div className="px-2">
                 <div className="text-2xl mb-3 text-neutral-default">
-                  <i className="icon icon-common icon-tool icon-spacer text-orange-default" />
+                  <i className="icon icon-common icon-tool icon-spacer text-yellow-default" />
                   <a
                     href="https://www.ebi.ac.uk/spot/ontology/"
                     className="link-default"
@@ -97,28 +109,28 @@ export default function Home() {
                   </a>
                 </div>
                 <p>
-                  In addition to OxO, SPOT also provides&nbsp;
+                  In addition to OxO, SPOT also provides&thinsp;
                   <a
                     className="link-default"
                     href="https://www.ebi.ac.uk/ols4/"
                   >
                     OLS
                   </a>
-                  &nbsp;and&nbsp;
+                  &thinsp;and&thinsp;
                   <a
                     className="link-default"
                     href="https://www.ebi.ac.uk/spot/zooma"
                   >
                     ZOOMA
                   </a>
-                  &nbsp; services. OLS provides access to the latest ontology
+                  &thinsp;services. OLS provides access to the latest ontology
                   versions. ZOOMA is a service to assist in mapping data to
                   ontologies in OLS.
                 </p>
               </div>
               <div className="px-2">
                 <div className="text-2xl mb-3 text-neutral-default">
-                  <i className="icon icon-common icon-exclamation-triangle icon-spacer text-orange-default" />
+                  <i className="icon icon-common icon-exclamation-triangle icon-spacer text-yellow-default" />
                   <a
                     href="https://github.com/EBISPOT/oxo2/issues"
                     className="link-default"
@@ -128,7 +140,7 @@ export default function Home() {
                 </div>
                 <p>
                   For feedback, suggestion or requests about OxO please use
-                  our&nbsp;
+                  our&thinsp;
                   <a
                     href="https://github.com/EBISPOT/oxo2/issues"
                     className="link-default"
@@ -136,7 +148,7 @@ export default function Home() {
                     GitHub issue tracker
                   </a>
                   . For announcements relating to OLS, such as new releases and
-                  new features sign up to the&nbsp;
+                  new features sign up to the&thinsp;
                   <a
                     href="https://listserver.ebi.ac.uk/mailman/listinfo/ols-announce"
                     className="link-default"
@@ -154,7 +166,6 @@ export default function Home() {
                 <i className="icon icon-common icon-analyse-graph icon-spacer" />
                 <span>Data Content</span>
               </div>
-
               <div className="text-neutral-black">
                 <div className="mb-2 text-sm italic">Updated</div>
                 <ul className="list-disc list-inside pl-2">
