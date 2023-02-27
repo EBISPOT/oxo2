@@ -16,7 +16,7 @@ export default function Header() {
         <div className="py-6">
           <a href={process.env.PUBLIC_URL}>
             <img
-              alt="OLS logo"
+              alt="OxO logo"
               className="h-24 inline-block"
               src={process.env.PUBLIC_URL + "/logo.png"}
             />

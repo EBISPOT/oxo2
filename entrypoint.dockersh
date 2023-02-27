@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cd /opt/oxo2
+
+echo Building frontend. PUBLIC_URL: $PUBLIC_URL
+
+yarn react-scripts build
+
+caddy run --config ./Caddyfile

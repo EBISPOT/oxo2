@@ -147,7 +147,7 @@ export default function Home() {
                   >
                     GitHub issue tracker
                   </a>
-                  . For announcements relating to OLS, such as new releases and
+                  . For announcements relating to OxO, such as new releases and
                   new features sign up to the&thinsp;
                   <a
                     href="https://listserver.ebi.ac.uk/mailman/listinfo/ols-announce"
