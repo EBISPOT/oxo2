@@ -1,14 +1,28 @@
-## OXO
+## OXO2
+
 UI for OxO v2
 
-## Available Scripts
+## Development: Running OXO2 using Docker
 
-In the project directory, you can run:
+This will require Docker. In the project directory, you can run:
 
-### `npm start`
+### `docker compose up --force-recreate --build oxo2`
+
+This will build and run `oxo2` service on port `8081`.\
+Open [http://localhost:8081/spot/oxo2](http://localhost:8081/spot/oxo2) to view it in the browser.
+
+## Development: Running OXO2 locally
+
+This will require either NPM or Yarn. In the project directory, you can run:
+
+### `npm install` or `yarn install`
+
+Downloads dependencies defined in the project and generates a `node_modules` folder with the installed dependencies.
+
+### `npm start` or `yarn start`
 
 Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Open [http://localhost:3000/spot/oxo2](http://localhost:3000/spot/oxo2) to view it in the browser.
 
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
@@ -17,22 +31,3 @@ You will also see any lint errors in the console.
 
 Builds the app for production to the `build` folder.\
 It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-To learn React, check out the [React documentation](https://reactjs.org/).

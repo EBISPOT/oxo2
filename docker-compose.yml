@@ -1,0 +1,9 @@
+version: '3'
+services:
+  oxo2:
+    build:
+      context: .
+    environment:
+      - PUBLIC_URL=/spot/oxo2
+    ports:
+      - 8081:8080
