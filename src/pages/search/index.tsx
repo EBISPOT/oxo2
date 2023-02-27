@@ -1,9 +1,10 @@
 import { Close, KeyboardArrowDown } from "@mui/icons-material";
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../../common/Header";
 
 export default function Search() {
+  const navigate = useNavigate();
   const location = useLocation();
   const passedQuery =
     location.state?.search && Array.isArray(location.state.search)
@@ -171,7 +172,14 @@ export default function Search() {
                   >
                     <i title="Info" className="icon icon-common icon-info" />
                   </div>
-                  <div className="w-fit cursor-pointer">
+                  <div
+                    className="w-fit cursor-pointer"
+                    onClick={() => {
+                      if (query) {
+                        navigate("/mapping");
+                      }
+                    }}
+                  >
                     <i title="View" className="icon icon-common icon-eye" />
                   </div>
                 </div>
@@ -203,7 +211,14 @@ export default function Search() {
                   >
                     <i title="Info" className="icon icon-common icon-info" />
                   </div>
-                  <div className="w-fit cursor-pointer">
+                  <div
+                    className="w-fit cursor-pointer"
+                    onClick={() => {
+                      if (query) {
+                        navigate("/mapping");
+                      }
+                    }}
+                  >
                     <i title="View" className="icon icon-common icon-eye" />
                   </div>
                 </div>
