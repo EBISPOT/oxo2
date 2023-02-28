@@ -1,14 +1,20 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../common/Header";
 
 export default function Mapping() {
   const navigate = useNavigate();
+  const params = useParams();
+  const mappingId: string = params.mappingId as string;
+
   return (
     <div>
       <Header />
       <main className="container mx-auto">
         <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg my-8 p-8 text-neutral-black">
-          <div className="text-2xl font-bold mb-4">Mapping Information</div>
+          <div className="text-2xl font-bold mb-4">
+            Mapping Information&nbsp;
+            <span className="text-sm text-neutral-default italic">({mappingId})</span>
+          </div>
           <p>
             <div>
               <strong>From term </strong> EFO:0000400 <strong>to</strong>{" "}
