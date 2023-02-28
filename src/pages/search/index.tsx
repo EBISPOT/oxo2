@@ -576,7 +576,7 @@ export default function Search() {
                 </div>
               </div>
             </div>
-            <div>
+            <div className="mb-4">
               <Pagination
                 page={page}
                 onPageChange={setPage}
