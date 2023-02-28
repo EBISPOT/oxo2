@@ -13,6 +13,11 @@ export default function Search() {
 
   const [query, setQuery] = useState<string>(passedQuery);
   const [openJustif, setOpenJustif] = useState<boolean>(false);
+  // sample data
+  const providerFacet = ["Monarch initiative", "EBI"];
+  const justificationFacet = ["Lexical", "Manual curation"];
+  const prefixFacet = ["MONDO", "HP"];
+  const setFacet = ["Mapping Set 1", "Mapping Set 2"];
 
   return (
     <div>
@@ -39,57 +44,65 @@ export default function Search() {
             <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg p-8 text-neutral-black">
               <div className="font-semibold text-lg mb-2">Mapping Provider</div>
               <fieldset className="mb-4">
-                <label className="block p-1 w-fit">
-                  <input type="checkbox" className="invisible hidden peer" />
-                  <span className="input-checkbox mr-4" />
-                  <span className="capitalize mr-4">Monarch Initiative</span>
-                </label>
-                <label className="block p-1 w-fit">
-                  <input type="checkbox" className="invisible hidden peer" />
-                  <span className="input-checkbox mr-4" />
-                  <span className="capitalize mr-4">EBI</span>
-                </label>
+                {providerFacet.map((provider) => {
+                  return (
+                    <label className="block p-1 w-fit">
+                      <input
+                        type="checkbox"
+                        className="invisible hidden peer"
+                      />
+                      <span className="input-checkbox mr-4" />
+                      <span className="capitalize mr-4">{provider}</span>
+                    </label>
+                  );
+                })}
               </fieldset>
               <div className="font-semibold text-lg mb-2">
                 Mapping Justification
               </div>
               <fieldset className="mb-4">
-                <label className="block p-1 w-fit">
-                  <input type="checkbox" className="invisible hidden peer" />
-                  <span className="input-checkbox mr-4" />
-                  <span className="capitalize mr-4">Lexical</span>
-                </label>
-                <label className="block p-1 w-fit">
-                  <input type="checkbox" className="invisible hidden peer" />
-                  <span className="input-checkbox mr-4" />
-                  <span className="capitalize mr-4">Manual curation</span>
-                </label>
+                {justificationFacet.map((justification) => {
+                  return (
+                    <label className="block p-1 w-fit">
+                      <input
+                        type="checkbox"
+                        className="invisible hidden peer"
+                      />
+                      <span className="input-checkbox mr-4" />
+                      <span className="capitalize mr-4">{justification}</span>
+                    </label>
+                  );
+                })}
               </fieldset>
               <div className="font-semibold text-lg mb-2">Object Prefix</div>
               <fieldset className="mb-4">
-                <label className="block p-1 w-fit">
-                  <input type="checkbox" className="invisible hidden peer" />
-                  <span className="input-checkbox mr-4" />
-                  <span className="capitalize mr-4">MONDO</span>
-                </label>
-                <label className="block p-1 w-fit">
-                  <input type="checkbox" className="invisible hidden peer" />
-                  <span className="input-checkbox mr-4" />
-                  <span className="capitalize mr-4">HP</span>
-                </label>
+                {prefixFacet.map((prefix) => {
+                  return (
+                    <label className="block p-1 w-fit">
+                      <input
+                        type="checkbox"
+                        className="invisible hidden peer"
+                      />
+                      <span className="input-checkbox mr-4" />
+                      <span className="capitalize mr-4">{prefix}</span>
+                    </label>
+                  );
+                })}
               </fieldset>
               <div className="font-semibold text-lg mb-2">Mapping Set</div>
               <fieldset className="mb-4">
-                <label className="block p-1 w-fit">
-                  <input type="checkbox" className="invisible hidden peer" />
-                  <span className="input-checkbox mr-4" />
-                  <span className="capitalize mr-4">Mapping Set 1</span>
-                </label>
-                <label className="block p-1 w-fit">
-                  <input type="checkbox" className="invisible hidden peer" />
-                  <span className="input-checkbox mr-4" />
-                  <span className="capitalize mr-4">Mapping Set 2</span>
-                </label>
+                {setFacet.map((set) => {
+                  return (
+                    <label className="block p-1 w-fit">
+                      <input
+                        type="checkbox"
+                        className="invisible hidden peer"
+                      />
+                      <span className="input-checkbox mr-4" />
+                      <span className="capitalize mr-4">{set}</span>
+                    </label>
+                  );
+                })}
               </fieldset>
             </div>
           </div>
