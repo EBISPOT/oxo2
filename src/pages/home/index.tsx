@@ -74,19 +74,25 @@ export default function Home() {
                 between terms from ontologies, vocabularies and coding
                 standards. OxO imports mappings from a variety of sources
                 including the&thinsp;
-                <a href="https://www.ebi.ac.uk/ols4/" className="link-default">
+                <a
+                  href={process.env.REACT_APP_SPOT_OLS4}
+                  className="link-default"
+                >
                   Ontology Lookup Service (OLS)
                 </a>
                 &thinsp;and a subset of mappings provided by the&thinsp;
                 <a
-                  href="https://www.nlm.nih.gov/research/umls/"
+                  href={process.env.REACT_APP_NLM_UMLS}
                   className="link-default"
                 >
                   UMLS
                 </a>
                 . OxO is developed and maintained by the Samples, Phenotypes and
                 Ontologies Team (SPOT) at&thinsp;
-                <a href="https://www.ebi.ac.uk" className="link-default">
+                <a
+                  href={process.env.REACT_APP_EBI_HOME}
+                  className="link-default"
+                >
                   EMBL-EBI
                 </a>
                 .
@@ -96,7 +102,7 @@ export default function Home() {
               <div className="text-2xl mb-3 text-neutral-default">
                 <i className="icon icon-common icon-tool icon-spacer text-yellow-default" />
                 <a
-                  href="https://www.ebi.ac.uk/spot/ontology/"
+                  href={process.env.REACT_APP_SPOT_ONTOTOOLS}
                   className="link-default"
                 >
                   Related Tools
@@ -104,13 +110,16 @@ export default function Home() {
               </div>
               <p>
                 In addition to OxO, SPOT also provides&thinsp;
-                <a className="link-default" href="https://www.ebi.ac.uk/ols4/">
+                <a
+                  href={process.env.REACT_APP_SPOT_OLS4}
+                  className="link-default"
+                >
                   OLS
                 </a>
                 &thinsp;and&thinsp;
                 <a
                   className="link-default"
-                  href="https://www.ebi.ac.uk/spot/zooma"
+                  href={process.env.REACT_APP_SPOT_ZOOMA}
                 >
                   ZOOMA
                 </a>
@@ -123,7 +132,7 @@ export default function Home() {
               <div className="text-2xl mb-3 text-neutral-default">
                 <i className="icon icon-common icon-exclamation-triangle icon-spacer text-yellow-default" />
                 <a
-                  href="https://github.com/EBISPOT/oxo2/issues"
+                  href={`${process.env.REACT_APP_SPOT_OXO2_REPO}/issues`}
                   className="link-default"
                 >
                   Report an Issue
@@ -133,7 +142,7 @@ export default function Home() {
                 For feedback, suggestion or requests about OxO please use
                 our&thinsp;
                 <a
-                  href="https://github.com/EBISPOT/oxo2/issues"
+                  href={`${process.env.REACT_APP_SPOT_OXO2_REPO}/issues`}
                   className="link-default"
                 >
                   GitHub issue tracker
@@ -141,7 +150,7 @@ export default function Home() {
                 . For announcements relating to OxO, such as new releases and
                 new features sign up to the&thinsp;
                 <a
-                  href="https://listserver.ebi.ac.uk/mailman/listinfo/ols-announce"
+                  href={process.env.REACT_APP_SPOT_OLS_ANNOUNCE}
                   className="link-default"
                 >
                   OLS announce mailing list
