@@ -1,9 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { getStats } from "./slice";
 
 export default function Home() {
+  const dispatch = useAppDispatch();
+  const stats = useAppSelector((state) => state.home.stats);
+  const loadingStats = useAppSelector((state) => state.home.loadingStats);
+
   const navigate = useNavigate();
   const [query, setQuery] = useState<string>("");
+
+  useEffect(() => {
+    dispatch(getStats());
+  }, [dispatch]);
 
   return (
     <main className="container mx-auto">
@@ -162,18 +172,23 @@ export default function Home() {
         </div>
         <div className="col-span-1">
           <div className="shadow-card border-b-8 border-link-default rounded-md my-8 p-4">
-            <div className="text-2xl text-neutral-black font-bold mb-3">
+            <div className="text-2xl text-neutral-black font-bold mb-4">
               <i className="icon icon-common icon-analyse-graph icon-spacer" />
               <span>Data Content</span>
             </div>
             <div className="text-neutral-black">
-              <div className="mb-2 text-sm italic">Updated</div>
-              <ul className="list-disc list-inside pl-2">
-                <li>mapping sets</li>
-                <li>mappings</li>
-                <li>mapping providers</li>
-                <li>mapped entities</li>
-              </ul>
+              {loadingStats ? (
+                <div className="text-center">
+                  <div className="spinner-default animate-spin w-10 h-10" />
+                </div>
+              ) : (
+                <ul className="list-disc list-inside pl-2">
+                  <li>{stats.nb_mapping_set} mapping sets</li>
+                  <li>{stats.nb_mapping} mappings</li>
+                  <li>{stats.nb_mapping_provider} mapping providers</li>
+                  <li>{stats.nb_entity} mapped entities</li>
+                </ul>
+              )}
             </div>
           </div>
         </div>
