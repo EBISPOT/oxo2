@@ -1,7 +1,6 @@
 import { Close, KeyboardArrowDown } from "@mui/icons-material";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Header from "../../common/Header";
 import { Pagination } from "../../common/Pagination";
 
 export default function Search() {
@@ -429,7 +428,6 @@ export default function Search() {
 
   return (
     <div>
-      <Header />
       <main className="container mx-auto">
         <div className="flex flex-row gap-4 mt-8 mb-4">
           <div className="w-full">

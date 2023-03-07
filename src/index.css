@@ -11,6 +11,11 @@ body {
 code {
   font-family: source-code-pro, "Courier New", monospace;
 }
+#root {
+  padding-bottom: 4rem;
+  position: relative;
+  min-height: 100vh;
+}
 
 @layer components {
   .button-primary {
@@ -95,6 +100,12 @@ code {
     hover:text-link-hover
     hover:underline
     visited:text-link-visited;
+  }
+  .link-footer {
+    @apply text-white cursor-pointer
+    hover:text-embl-grey-lightest
+    hover:underline
+    visited:text-embl-grey-lightest;
   }
 }
 
