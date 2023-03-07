@@ -1,6 +1,8 @@
 import ReactDOM from "react-dom/client";
+import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
+import { store } from "./app/store";
 import "./index.css";
 import reportWebVitals from "./reportWebVitals";
 
@@ -9,7 +11,9 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <BrowserRouter basename={process.env.PUBLIC_URL}>
-    <App />
+    <Provider store={store}>
+      <App />
+    </Provider>
   </BrowserRouter>
 );
 
