@@ -1,4 +1,3 @@
-
 export default function About() {
   return (
     <main className="container mx-auto">
@@ -8,16 +7,13 @@ export default function About() {
           OxO is an database of ontology cross-references (xrefs) extracted from
           public ontologies and databases. Most of these cross-references have
           been extracted from ontologies in the&thinsp;
-          <a href="https://www.ebi.ac.uk/ols" className="link-default">
+          <a href={process.env.REACT_APP_SPOT_OLS4} className="link-default">
             Ontology Lookup Service
           </a>
           &thinsp;by searching for database cross-reference annotations on
           terms. We have supplemented these cross-references with mappings from
           a subset of vocabularies in the&thinsp;
-          <a
-            href="https://www.nlm.nih.gov/research/umls/"
-            className="link-default"
-          >
+          <a href={process.env.REACT_APP_NIH_NLM_UMLS} className="link-default">
             UMLS
           </a>
           .
@@ -46,7 +42,7 @@ export default function About() {
           OxO is developed by the Samples, Phenotypes and Ontologies team. If
           you have any questions about OxO please&thinsp;
           <a
-            href="https://www.ebi.ac.uk/spot/oxo/contact"
+            href={process.env.REACT_APP_SPOT_OXO_CONTACT}
             className="link-default"
           >
             contact us
