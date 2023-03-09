@@ -1,6 +1,6 @@
 import { Close, KeyboardArrowDown } from "@mui/icons-material";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { randomString } from "../../app/util";
 import LoadingOverlay from "../../common/LoadingOverlay";
@@ -13,6 +13,7 @@ export default function Search() {
   const paging = useAppSelector((state) => state.search.pagination);
   const loadingSearch = useAppSelector((state) => state.search.loadingSearch);
 
+  const navigate = useNavigate();
   const location = useLocation();
   const passedQuery =
     location.state?.search && Array.isArray(location.state.search)
@@ -282,7 +283,24 @@ export default function Search() {
                           className="icon icon-common icon-info"
                         />
                       </div>
-                      <div className="w-fit cursor-pointer">
+                      <div
+                        className="w-fit cursor-pointer"
+                        onClick={() => {
+                          navigate(
+                            `/mapping/${encodeURIComponent(
+                              (searchResult.getSubjectId().split("/").pop() ||
+                                "") +
+                                (searchResult.getPredicateId().split("#")[1] ||
+                                  searchResult
+                                    .getPredicateId()
+                                    .split("/")
+                                    .pop()) +
+                                (searchResult.getObjectId().split("/").pop() ||
+                                  "")
+                            )}`
+                          );
+                        }}
+                      >
                         <i title="View" className="icon icon-common icon-eye" />
                       </div>
                     </div>
