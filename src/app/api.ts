@@ -2,9 +2,12 @@ export async function http<T>(
   path: string,
   request?: RequestInit | undefined
 ): Promise<T> {
-  const response: Response = await fetch(path, {
-    ...(request ? request : {}),
-  });
+  const response: Response = await fetch(
+    process.env.REACT_APP_SSSOM_API + path,
+    {
+      ...(request ? request : {}),
+    }
+  );
 
   if (!response.ok) {
     const message = `Failure loading ${response.url} with status ${response.status} (${response.statusText})`;
