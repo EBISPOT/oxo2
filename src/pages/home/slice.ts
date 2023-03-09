@@ -5,12 +5,6 @@ export interface HomeState {
   stats: Stats;
   loadingStats: boolean;
 }
-export interface Stats {
-  nb_mapping: number;
-  nb_mapping_set: number;
-  nb_mapping_provider: number;
-  nb_entity: number;
-}
 const initialState: HomeState = {
   stats: {
     nb_mapping: 0,
@@ -25,7 +19,7 @@ export const getStats = createAsyncThunk(
   "home_stats",
   async (param, { rejectWithValue }) => {
     try {
-      return await get<Stats>(`/stats`);
+      return await get<Stats>("/stats");
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -54,5 +48,12 @@ const homeSlice = createSlice({
     });
   },
 });
+
+export interface Stats {
+  nb_mapping: number;
+  nb_mapping_set: number;
+  nb_mapping_provider: number;
+  nb_entity: number;
+}
 
 export default homeSlice.reducer;
