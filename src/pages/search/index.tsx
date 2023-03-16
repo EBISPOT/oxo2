@@ -1,11 +1,11 @@
 import { Close, KeyboardArrowDown } from "@mui/icons-material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { randomString } from "../../app/util";
 import LoadingOverlay from "../../common/LoadingOverlay";
 import { Pagination } from "../../common/Pagination";
-import { getMappingsAll } from "./slice";
+import { getMappingsByEntityIds } from "./slice";
 
 export default function Search() {
   const dispatch = useAppDispatch();
@@ -15,15 +15,19 @@ export default function Search() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const passedQuery =
-    location.state?.search && Array.isArray(location.state.search)
-      ? location.state.search.join("\n")
-      : "";
+  const passedQuery = useMemo(
+    () =>
+      location.state?.search && Array.isArray(location.state.search)
+        ? location.state.search
+        : [],
+    [location]
+  );
 
-  const [query, setQuery] = useState<string>(passedQuery);
+  const [query, setQuery] = useState<string>(
+    passedQuery.length === 0 ? "" : passedQuery.join("\n")
+  );
   const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(25);
-  const [currentCount, setCurrentCount] = useState<number>(0);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
   const [openJustif, setOpenJustif] = useState<boolean>(false);
   const [justif, setJustif] = useState<{
@@ -54,20 +58,13 @@ export default function Search() {
 
   useEffect(() => {
     dispatch(
-      getMappingsAll({
+      getMappingsByEntityIds({
+        entityIds: passedQuery,
         limit: rowsPerPage,
         page: page + 1,
       })
     );
-  }, [dispatch, page, rowsPerPage]);
-
-  const [maxPage, setMaxPage] = useState<number>(0);
-
-  console.log(maxPage);
-  if (maxPage === page && paging.next !== "") {
-    setCurrentCount(currentCount + results.length);
-    setMaxPage(maxPage + 1);
-  }
+  }, [dispatch, passedQuery, page, rowsPerPage]);
 
   //
   // sample data
@@ -94,17 +91,30 @@ export default function Search() {
               }}
             />
           </div>
-          <button className="button-primary text-lg font-bold">Search</button>
+          <button
+            className="button-primary text-lg font-bold"
+            onClick={() => {
+              if (query) {
+                navigate("/search", {
+                  state: {
+                    search: query.split(/[\n,]+/).map((id) => id.trim()),
+                  },
+                });
+              }
+            }}
+          >
+            Search
+          </button>
         </div>
         <div className="grid grid-cols-4 gap-8">
           <div className="col-span-1 mb-4">
             <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg p-8 text-neutral-black">
               <div className="font-bold text-neutral-dark text-sm mb-4">
                 {`Showing ${
-                  currentCount > rowsPerPage ? rowsPerPage : currentCount
-                } from a total of ${
-                  paging.next === "" ? currentCount : currentCount + "+"
-                }`}
+                  paging.total_items > rowsPerPage
+                    ? rowsPerPage
+                    : paging.total_items
+                } from a total of ${paging.total_items}`}
               </div>
               <div className="font-semibold text-lg mb-2">Mapping Provider</div>
               <fieldset className="mb-4">
@@ -196,7 +206,6 @@ export default function Search() {
                 <div className="flex group relative text-md">
                   <label className="self-center px-3">Show</label>
                   <select
-                    disabled
                     value={rowsPerPage}
                     className="input-default appearance-none pr-7 z-20 bg-transparent"
                     onChange={(e) => {
@@ -204,7 +213,6 @@ export default function Search() {
                       setRowsPerPage((prev) => {
                         if (rows !== prev) {
                           setPage(0);
-                          setMaxPage(0);
                         }
                         return rows;
                       });
@@ -220,100 +228,110 @@ export default function Search() {
                 </div>
               </div>
             </div>
-            <div className="mb-4">
-              <Pagination
-                page={page}
-                onPageChange={setPage}
-                dataCount={paging.next !== "" ? currentCount + 1 : currentCount}
-                rowsPerPage={rowsPerPage}
-              />
-              <div className="flex flex-row text-neutral-default font-bold gap-4 my-4">
-                <div className="basis-4/12">Subject</div>
-                <div className="basis-3/12">Predicate</div>
-                <div className="basis-5/12">Object</div>
-              </div>
-              {results.map((searchResult) => {
-                return (
-                  <div
-                    key={randomString()}
-                    className="flex flex-row items-start gap-4 mb-4 break-all"
-                  >
-                    <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
-                      <i>{searchResult.getSubjectId()}</i>
-                      <br />"{searchResult.getSubjectLabel()}"
-                      <br />
-                      {searchResult.getSubjectCategory()}
-                    </div>
-                    <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2">
-                      <i>{searchResult.getPredicateId()}</i>
-                      <br />
-                      {searchResult.getPredicateModifier()
-                        ? "Modifier: " + searchResult.getPredicateModifier()
-                        : ""}
-                    </div>
-                    <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
-                      <i>{searchResult.getObjectId()}</i>
-                      <br />"{searchResult.getObjectLabel()}"
-                      <br />
-                      {searchResult.getObjectCategory()}
-                    </div>
-                    <div className="basis-1/12 self-center grid grid-cols-2 justify-items-center text-xl">
-                      <div
-                        className="w-fit cursor-pointer"
-                        onClick={() => {
-                          setJustif({
-                            lexicalMatch: {
-                              confidence: searchResult.getConfidence(),
-                              provider: searchResult.getProvider(),
-                              subjectField:
-                                searchResult.getSubjectMatchFields(),
-                              objectField: searchResult.getObjectMatchFields(),
-                              string: searchResult.getMatchStrings(),
-                            },
-                            curatedMatch: {
-                              provider: searchResult.getProvider(),
-                              author: searchResult.getAuthorLabels(),
-                            },
-                          });
-                          setOpenJustif(true);
-                        }}
-                      >
-                        <i
-                          title="Info"
-                          className="icon icon-common icon-info"
-                        />
+            {paging.total_items > 0 && results.length > 0 ? (
+              <div className="mb-4">
+                <Pagination
+                  page={page}
+                  onPageChange={setPage}
+                  dataCount={paging.total_items}
+                  rowsPerPage={rowsPerPage}
+                />
+                <div className="flex flex-row text-neutral-default font-bold gap-4 my-4">
+                  <div className="basis-4/12">Subject</div>
+                  <div className="basis-3/12">Predicate</div>
+                  <div className="basis-5/12">Object</div>
+                </div>
+                {results.map((searchResult) => {
+                  return (
+                    <div
+                      key={randomString()}
+                      className="flex flex-row items-start gap-4 mb-4 break-all"
+                    >
+                      <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
+                        <i>{searchResult.getSubjectId()}</i>
+                        <br />"{searchResult.getSubjectLabel()}"
+                        <br />
+                        {searchResult.getSubjectCategory()}
                       </div>
-                      <div
-                        className="w-fit cursor-pointer"
-                        onClick={() => {
-                          navigate(
-                            `/mapping/${encodeURIComponent(
-                              (searchResult.getSubjectId().split("/").pop() ||
-                                "") +
-                                (searchResult.getPredicateId().split("#")[1] ||
-                                  searchResult
+                      <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2">
+                        <i>{searchResult.getPredicateId()}</i>
+                        <br />
+                        {searchResult.getPredicateModifier()
+                          ? "Modifier: " + searchResult.getPredicateModifier()
+                          : ""}
+                      </div>
+                      <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
+                        <i>{searchResult.getObjectId()}</i>
+                        <br />"{searchResult.getObjectLabel()}"
+                        <br />
+                        {searchResult.getObjectCategory()}
+                      </div>
+                      <div className="basis-1/12 self-center grid grid-cols-2 justify-items-center text-xl">
+                        <div
+                          className="w-fit cursor-pointer"
+                          onClick={() => {
+                            setJustif({
+                              lexicalMatch: {
+                                confidence: searchResult.getConfidence(),
+                                provider: searchResult.getProvider(),
+                                subjectField:
+                                  searchResult.getSubjectMatchFields(),
+                                objectField:
+                                  searchResult.getObjectMatchFields(),
+                                string: searchResult.getMatchStrings(),
+                              },
+                              curatedMatch: {
+                                provider: searchResult.getProvider(),
+                                author: searchResult.getAuthorLabels(),
+                              },
+                            });
+                            setOpenJustif(true);
+                          }}
+                        >
+                          <i
+                            title="Info"
+                            className="icon icon-common icon-info"
+                          />
+                        </div>
+                        <div
+                          className="w-fit cursor-pointer"
+                          onClick={() => {
+                            navigate(
+                              `/mapping/${encodeURIComponent(
+                                (searchResult.getSubjectId().split("/").pop() ||
+                                  "") +
+                                  (searchResult
                                     .getPredicateId()
+                                    .split("#")[1] ||
+                                    searchResult
+                                      .getPredicateId()
+                                      .split("/")
+                                      .pop()) +
+                                  (searchResult
+                                    .getObjectId()
                                     .split("/")
-                                    .pop()) +
-                                (searchResult.getObjectId().split("/").pop() ||
-                                  "")
-                            )}`
-                          );
-                        }}
-                      >
-                        <i title="View" className="icon icon-common icon-eye" />
+                                    .pop() || "")
+                              )}`
+                            );
+                          }}
+                        >
+                          <i
+                            title="View"
+                            className="icon icon-common icon-eye"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-              <Pagination
-                page={page}
-                onPageChange={setPage}
-                dataCount={paging.next !== "" ? currentCount + 1 : currentCount}
-                rowsPerPage={rowsPerPage}
-              />
-            </div>
+                  );
+                })}
+                <Pagination
+                  page={page}
+                  onPageChange={setPage}
+                  dataCount={paging.total_items}
+                  rowsPerPage={rowsPerPage}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       </main>

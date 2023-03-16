@@ -1,14 +1,10 @@
-import {
-  createAsyncThunk,
-  createSlice,
-  PayloadAction
-} from "@reduxjs/toolkit";
-import { get } from "../../app/api";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { get, post } from "../../app/api";
 import Mapping from "../../model/Mapping";
 
 export interface SearchState {
   mappings: Mapping[];
-  pagination: { previous: string; next: string };
+  pagination: Pagination;
   loadingSearch: boolean;
 }
 const initialState: SearchState = {
@@ -16,6 +12,9 @@ const initialState: SearchState = {
   pagination: {
     previous: "",
     next: "",
+    page_number: 0,
+    total_items: 0,
+    total_pages: 0,
   },
   loadingSearch: false,
 };
@@ -36,15 +35,16 @@ export const getMappingsAll = createAsyncThunk(
     }
   }
 );
-export const getMappingsByEntityId = createAsyncThunk(
-  "search_entity",
-  async ({ entityId, limit, page }: any, { rejectWithValue }) => {
+export const getMappingsByEntityIds = createAsyncThunk(
+  "search_entities",
+  async ({ entityIds, limit, page }: any, { rejectWithValue }) => {
     try {
-      const searchResponse = await get<Page<Mapping>>(
-        `/entities/${encodeURIComponent(entityId)}?${new URLSearchParams({
+      const searchResponse = await post<{ curies: string[] }, Page<Mapping>>(
+        `/entities/?${new URLSearchParams({
           limit,
           page,
-        })}`
+        })}`,
+        { curies: entityIds }
       );
       return searchResponse;
     } catch (error: any) {
@@ -79,7 +79,7 @@ const searchSlice = createSlice({
       state.loadingSearch = false;
     });
     builder.addCase(
-      getMappingsByEntityId.fulfilled,
+      getMappingsByEntityIds.fulfilled,
       (state: SearchState, action: PayloadAction<Page<Mapping>>) => {
         state.mappings = action.payload.data.map(
           (element) => new Mapping(element)
@@ -88,12 +88,12 @@ const searchSlice = createSlice({
         state.loadingSearch = false;
       }
     );
-    builder.addCase(getMappingsByEntityId.pending, (state: SearchState) => {
+    builder.addCase(getMappingsByEntityIds.pending, (state: SearchState) => {
       state.mappings = initialState.mappings;
       state.pagination = initialState.pagination;
       state.loadingSearch = true;
     });
-    builder.addCase(getMappingsByEntityId.rejected, (state: SearchState) => {
+    builder.addCase(getMappingsByEntityIds.rejected, (state: SearchState) => {
       state.mappings = initialState.mappings;
       state.pagination = initialState.pagination;
       state.loadingSearch = false;
@@ -103,10 +103,15 @@ const searchSlice = createSlice({
 
 export interface Page<T> {
   data: T[];
-  pagination: {
-    next: string;
-    previous: string;
-  };
+  pagination: Pagination;
+}
+
+export interface Pagination {
+  next: string;
+  previous: string;
+  page_number: number;
+  total_items: number;
+  total_pages: number;
 }
 
 export default searchSlice.reducer;

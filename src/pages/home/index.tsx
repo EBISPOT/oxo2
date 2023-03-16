@@ -26,17 +26,15 @@ export default function Home() {
             <div className="flex flex-row gap-4">
               <div className="w-full">
                 <div className="flex flex-row justify-between text-neutral-black mb-2">
-                  <div>Enter identifiers separated by comma or newline:</div>
+                  <div>Enter identifiers (CURIE format) separated by comma or newline:</div>
                   <div
                     className="link-default"
                     onClick={() => {
                       setQuery(
                         "EFO:0001360" +
-                          "\nDOID:162" +
-                          "\nOMIM:180200" +
-                          "\nMESH:D009202" +
-                          "\nUBERON_0002107" +
-                          "\nHP_0005978"
+                          "\nUBERON:0002107" +
+                          "\nHP:0000518" +
+                          "\nMP:0001289"
                       );
                     }}
                   >
