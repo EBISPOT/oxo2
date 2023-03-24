@@ -248,8 +248,18 @@ export default function Search() {
                       className="flex flex-row items-start gap-4 mb-4 break-all"
                     >
                       <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
-                        <i>{searchResult.getSubjectId()}</i>
-                        <br />"{searchResult.getSubjectLabel()}"
+                        <i>
+                          {searchResult
+                            .getSubjectId()
+                            .substring(
+                              searchResult.getSubjectId().lastIndexOf("/") + 1
+                            )
+                            .replace("_", ":")}
+                        </i>
+                        <br />
+                        {searchResult.getSubjectLabel()
+                          ? `"${searchResult.getSubjectLabel()}"`
+                          : ""}
                         <br />
                         {searchResult.getSubjectCategory()}
                       </div>
@@ -261,8 +271,18 @@ export default function Search() {
                           : ""}
                       </div>
                       <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
-                        <i>{searchResult.getObjectId()}</i>
-                        <br />"{searchResult.getObjectLabel()}"
+                        <i>
+                          {searchResult
+                            .getObjectId()
+                            .substring(
+                              searchResult.getObjectId().lastIndexOf("/") + 1
+                            )
+                            .replace("_", ":")}
+                        </i>
+                        <br />
+                        {searchResult.getObjectLabel()
+                          ? `"${searchResult.getObjectLabel()}"`
+                          : ""}
                         <br />
                         {searchResult.getObjectCategory()}
                       </div>
