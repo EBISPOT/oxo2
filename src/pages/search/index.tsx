@@ -248,14 +248,7 @@ export default function Search() {
                       className="flex flex-row items-start gap-4 mb-4 break-all"
                     >
                       <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
-                        <i>
-                          {searchResult
-                            .getSubjectId()
-                            .substring(
-                              searchResult.getSubjectId().lastIndexOf("/") + 1
-                            )
-                            .replace("_", ":")}
-                        </i>
+                        <i>{searchResult.getSubjectCurie()}</i>
                         <br />
                         {searchResult.getSubjectLabel()
                           ? `"${searchResult.getSubjectLabel()}"`
@@ -271,14 +264,7 @@ export default function Search() {
                           : ""}
                       </div>
                       <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
-                        <i>
-                          {searchResult
-                            .getObjectId()
-                            .substring(
-                              searchResult.getObjectId().lastIndexOf("/") + 1
-                            )
-                            .replace("_", ":")}
-                        </i>
+                        <i>{searchResult.getObjectCurie()}</i>
                         <br />
                         {searchResult.getObjectLabel()
                           ? `"${searchResult.getObjectLabel()}"`
@@ -351,7 +337,11 @@ export default function Search() {
                   rowsPerPage={rowsPerPage}
                 />
               </div>
-            ) : null}
+            ) : (
+              <div className="text-xl text-neutral-black font-bold">
+                No results!
+              </div>
+            )}
           </div>
         </div>
       </main>
