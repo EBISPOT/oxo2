@@ -20,7 +20,7 @@ const initialState: SearchState = {
 };
 
 export const getMappingsAll = createAsyncThunk(
-  "search_all",
+  "search_mappings_all",
   async ({ limit, page }: any, { rejectWithValue }) => {
     try {
       const searchResponse = await get<Page<Mapping>>(
@@ -36,11 +36,11 @@ export const getMappingsAll = createAsyncThunk(
   }
 );
 export const getMappingsByEntityIds = createAsyncThunk(
-  "search_entities",
+  "search_mappings_by_entities",
   async ({ entityIds, limit, page }: any, { rejectWithValue }) => {
     try {
       const searchResponse = await post<{ curies: string[] }, Page<Mapping>>(
-        `/entities/?${new URLSearchParams({
+        `/ui/entities/?${new URLSearchParams({
           limit,
           page,
         })}`,

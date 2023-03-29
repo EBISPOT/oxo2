@@ -8,11 +8,17 @@ export default class Mapping {
   getSubjectId(): string {
     return this.properties["subject_id"];
   }
+  getSubjectCurie(): string {
+    return this.properties["subject_id_curie"];
+  }
   getPredicateId(): string {
     return this.properties["predicate_id"];
   }
   getObjectId(): string {
     return this.properties["object_id"];
+  }
+  getObjectCurie(): string {
+    return this.properties["object_id_curie"];
   }
   getJustification(): string {
     return this.properties["mapping_justification"];
