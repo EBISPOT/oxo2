@@ -1,6 +1,6 @@
 import { Close, KeyboardArrowDown } from "@mui/icons-material";
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { randomString } from "../../app/util";
 import LoadingOverlay from "../../common/LoadingOverlay";
@@ -9,24 +9,17 @@ import { getMappingsByEntityIds } from "./slice";
 
 export default function Search() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+
   const results = useAppSelector((state) => state.search.mappings);
   const paging = useAppSelector((state) => state.search.pagination);
   const facets = useAppSelector((state) => state.search.facets);
   const facetKeys = Object.keys(facets);
   const loadingSearch = useAppSelector((state) => state.search.loadingSearch);
 
-  const navigate = useNavigate();
-  const location = useLocation();
-  const passedQuery = useMemo(
-    () =>
-      location.state?.search && Array.isArray(location.state.search)
-        ? location.state.search
-        : [],
-    [location]
-  );
-
+  const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState<string>(
-    passedQuery.length === 0 ? "" : passedQuery.join("\n")
+    searchParams.get("ids")?.replaceAll(",", "\n") || ""
   );
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
@@ -61,12 +54,12 @@ export default function Search() {
   useEffect(() => {
     dispatch(
       getMappingsByEntityIds({
-        entityIds: passedQuery,
+        entityIds: searchParams.get("ids")?.split(",") || [],
         limit: rowsPerPage,
         page: page + 1,
       })
     );
-  }, [dispatch, passedQuery, page, rowsPerPage]);
+  }, [dispatch, searchParams, page, rowsPerPage]);
 
   return (
     <div>
@@ -89,10 +82,12 @@ export default function Search() {
             className="button-primary text-lg font-bold"
             onClick={() => {
               if (query) {
-                navigate("/search", {
-                  state: {
-                    search: query.split(/[\n,]+/).map((id) => id.trim()),
-                  },
+                setSearchParams({
+                  ids: query
+                    .split(/[\n,]+/)
+                    .filter((id) => id !== "")
+                    .map((id) => id.trim())
+                    .join(","),
                 });
               }
             }}
@@ -116,7 +111,7 @@ export default function Search() {
                   {facetKeys.map((facetKey) => {
                     const facetValue = facets[facetKey];
                     return (
-                      <div>
+                      <div key={facetKey}>
                         <div className="font-semibold text-lg mb-2 capitalize">
                           {facetKey.replaceAll("_", " ")}
                         </div>
