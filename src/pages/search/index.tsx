@@ -11,6 +11,8 @@ export default function Search() {
   const dispatch = useAppDispatch();
   const results = useAppSelector((state) => state.search.mappings);
   const paging = useAppSelector((state) => state.search.pagination);
+  const facets = useAppSelector((state) => state.search.facets);
+  const facetKeys = Object.keys(facets);
   const loadingSearch = useAppSelector((state) => state.search.loadingSearch);
 
   const navigate = useNavigate();
@@ -66,14 +68,6 @@ export default function Search() {
     );
   }, [dispatch, passedQuery, page, rowsPerPage]);
 
-  //
-  // sample data
-  //
-  const providerFacet = ["Monarch initiative", "EBI"];
-  const justificationFacet = ["Lexical", "Manual curation"];
-  const prefixFacet = ["MONDO", "HP"];
-  const setFacet = ["Mapping Set 1", "Mapping Set 2"];
-
   return (
     <div>
       <main className="container mx-auto">
@@ -108,76 +102,59 @@ export default function Search() {
         </div>
         <div className="grid grid-cols-4 gap-8">
           <div className="col-span-1 mb-4">
-            <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg p-8 text-neutral-black">
+            <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg p-8 text-neutral-black overflow-x-auto">
               <div className="font-bold text-neutral-dark text-sm mb-4">
                 {`Showing ${
                   paging.total_items > rowsPerPage
                     ? rowsPerPage
                     : paging.total_items
-                } from a total of ${paging.total_items}`}
+                } `}
+                from a total&nbsp;of&nbsp;{paging.total_items}
               </div>
-              <div className="font-semibold text-lg mb-2">Mapping Provider</div>
-              <fieldset className="mb-4">
-                {providerFacet.map((provider) => {
-                  return (
-                    <label key={randomString()} className="block p-1 w-fit">
-                      <input
-                        type="checkbox"
-                        className="invisible hidden peer"
-                      />
-                      <span className="input-checkbox mr-4" />
-                      <span className="capitalize mr-4">{provider}</span>
-                    </label>
-                  );
-                })}
-              </fieldset>
-              <div className="font-semibold text-lg mb-2">
-                Mapping Justification
-              </div>
-              <fieldset className="mb-4">
-                {justificationFacet.map((justification) => {
-                  return (
-                    <label key={randomString()} className="block p-1 w-fit">
-                      <input
-                        type="checkbox"
-                        className="invisible hidden peer"
-                      />
-                      <span className="input-checkbox mr-4" />
-                      <span className="capitalize mr-4">{justification}</span>
-                    </label>
-                  );
-                })}
-              </fieldset>
-              <div className="font-semibold text-lg mb-2">Object Prefix</div>
-              <fieldset className="mb-4">
-                {prefixFacet.map((prefix) => {
-                  return (
-                    <label key={randomString()} className="block p-1 w-fit">
-                      <input
-                        type="checkbox"
-                        className="invisible hidden peer"
-                      />
-                      <span className="input-checkbox mr-4" />
-                      <span className="capitalize mr-4">{prefix}</span>
-                    </label>
-                  );
-                })}
-              </fieldset>
-              <div className="font-semibold text-lg mb-2">Mapping Set</div>
-              <fieldset className="mb-4">
-                {setFacet.map((set) => {
-                  return (
-                    <label key={randomString()} className="block p-1 w-fit">
-                      <input
-                        type="checkbox"
-                        className="invisible hidden peer"
-                      />
-                      <span className="input-checkbox mr-4" />
-                      <span className="capitalize mr-4">{set}</span>
-                    </label>
-                  );
-                })}
-              </fieldset>
+              {facetKeys.length > 0 ? (
+                <div className="text-neutral-black">
+                  {facetKeys.map((facetKey) => {
+                    const facetValue = facets[facetKey];
+                    return (
+                      <div>
+                        <div className="font-semibold text-lg mb-2 capitalize">
+                          {facetKey.replaceAll("_", " ")}
+                        </div>
+                        <fieldset className="mb-4">
+                          {facetKey && Object.keys(facetValue).length > 0
+                            ? Object.keys(facetValue).map((facetSubKey) => {
+                                return (
+                                  <label
+                                    key={facetSubKey}
+                                    htmlFor={facetSubKey}
+                                    className="block p-1 w-fit whitespace-nowrap"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      id={facetSubKey}
+                                      className="invisible hidden peer"
+                                      onChange={(e) => {
+                                        console.log(facetSubKey + " clicked!");
+                                      }}
+                                    />
+                                    <span className="input-checkbox mr-4" />
+                                    <span className="mr-4">
+                                      {facetSubKey.substring(
+                                        facetSubKey.lastIndexOf("/") + 1
+                                      )}
+                                      &nbsp;&#40;
+                                      {facetValue[facetSubKey]}&#41;
+                                    </span>
+                                  </label>
+                                );
+                              })
+                            : null}
+                        </fieldset>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
           </div>
           <div className="col-span-3">

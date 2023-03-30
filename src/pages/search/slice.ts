@@ -6,6 +6,7 @@ export interface SearchState {
   mappings: Mapping[];
   pagination: Pagination;
   loadingSearch: boolean;
+  facets: any;
 }
 const initialState: SearchState = {
   mappings: [],
@@ -16,6 +17,7 @@ const initialState: SearchState = {
     total_items: 0,
     total_pages: 0,
   },
+  facets: {},
   loadingSearch: false,
 };
 
@@ -65,17 +67,20 @@ const searchSlice = createSlice({
           (element) => new Mapping(element)
         );
         state.pagination = action.payload.pagination;
+        state.facets = action.payload.facets;
         state.loadingSearch = false;
       }
     );
     builder.addCase(getMappingsAll.pending, (state: SearchState) => {
       state.mappings = initialState.mappings;
       state.pagination = initialState.pagination;
+      state.facets = initialState.facets;
       state.loadingSearch = true;
     });
     builder.addCase(getMappingsAll.rejected, (state: SearchState) => {
       state.mappings = initialState.mappings;
       state.pagination = initialState.pagination;
+      state.facets = initialState.facets;
       state.loadingSearch = false;
     });
     builder.addCase(
@@ -85,17 +90,20 @@ const searchSlice = createSlice({
           (element) => new Mapping(element)
         );
         state.pagination = action.payload.pagination;
+        state.facets = action.payload.facets;
         state.loadingSearch = false;
       }
     );
     builder.addCase(getMappingsByEntityIds.pending, (state: SearchState) => {
       state.mappings = initialState.mappings;
       state.pagination = initialState.pagination;
+      state.facets = initialState.facets;
       state.loadingSearch = true;
     });
     builder.addCase(getMappingsByEntityIds.rejected, (state: SearchState) => {
       state.mappings = initialState.mappings;
       state.pagination = initialState.pagination;
+      state.facets = initialState.facets;
       state.loadingSearch = false;
     });
   },
@@ -104,6 +112,7 @@ const searchSlice = createSlice({
 export interface Page<T> {
   data: T[];
   pagination: Pagination;
+  facets: any;
 }
 
 export interface Pagination {
