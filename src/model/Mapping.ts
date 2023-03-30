@@ -5,6 +5,9 @@ export default class Mapping {
     this.properties = properties;
   }
 
+  getMappingId(): string {
+    return this.properties["uuid"]
+  }
   getSubjectId(): string {
     return this.properties["subject_id"];
   }

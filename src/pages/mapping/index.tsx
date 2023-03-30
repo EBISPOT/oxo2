@@ -1,41 +1,45 @@
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { getMapping } from "./slice";
 
 export default function Mapping() {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const params = useParams();
   const mappingId: string = params.mappingId as string;
+  const mapping = useAppSelector((state) => state.mapping.mapping);
+
+  useEffect(() => {
+    dispatch(getMapping(mappingId));
+  }, [dispatch, mappingId]);
 
   return (
     <main className="container mx-auto">
       <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg my-8 p-8 text-neutral-black">
-        <div className="text-2xl font-bold mb-4">
-          Mapping Information&nbsp;
-          <span className="text-sm text-neutral-default italic">
-            ({mappingId})
-          </span>
-        </div>
-        <p>
-          <div>
-            <strong>From term </strong> EFO:0000400 <strong>to</strong>{" "}
-            MONDO:0005015
+        <div className="text-2xl font-bold mb-4">Mapping Information</div>
+        {mapping ? (
+          <div className="flex flex-col gap-2">
+            <div>
+              <strong>Subject: </strong> {mapping.getSubjectLabel()} (
+              <i>{mapping?.getSubjectId()}</i>)
+            </div>
+            <div>
+              <strong>Predicate: </strong> {mapping.getPredicateId()}
+            </div>
+            <div>
+              <strong>Object: </strong> {mapping.getObjectLabel()} (
+              <i>{mapping.getObjectId()}</i>)
+            </div>
+            <div>
+              <strong>Justification: </strong> {mapping.getJustification()}
+            </div>
           </div>
-          <div>
-            <strong>Scope: </strong> RELATED
-          </div>
-          <div>
-            <strong>Created date: </strong> Fri Nov 18 00:00:00 GMT 2022
-          </div>
-          <div>
-            <strong>Mapping source: </strong> Experimental Factor Ontology EFO
-          </div>
-          <div>
-            <strong>Source type: </strong> ONTOLOGY
-          </div>
-        </p>
+        ) : null}
       </div>
       <div>
         <button
-          className="button-secondary text-lg font-bold"
+          className="button-secondary text-lg font-bold mb-6"
           onClick={() => navigate(-1)}
         >
           Back

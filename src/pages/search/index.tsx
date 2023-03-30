@@ -276,19 +276,7 @@ export default function Search() {
                           onClick={() => {
                             navigate(
                               `/mapping/${encodeURIComponent(
-                                (searchResult.getSubjectId().split("/").pop() ||
-                                  "") +
-                                  (searchResult
-                                    .getPredicateId()
-                                    .split("#")[1] ||
-                                    searchResult
-                                      .getPredicateId()
-                                      .split("/")
-                                      .pop()) +
-                                  (searchResult
-                                    .getObjectId()
-                                    .split("/")
-                                    .pop() || "")
+                                searchResult.getMappingId()
                               )}`
                             );
                           }}
