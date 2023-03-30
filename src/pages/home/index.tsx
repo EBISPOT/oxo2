@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { createSearchParams, Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { getStats } from "./slice";
 
@@ -26,7 +26,10 @@ export default function Home() {
             <div className="flex flex-row gap-4">
               <div className="w-full">
                 <div className="flex flex-row justify-between text-neutral-black mb-2">
-                  <div>Enter identifiers (CURIE format) separated by comma or newline:</div>
+                  <div>
+                    Enter identifiers (CURIE format) separated by comma or
+                    newline:
+                  </div>
                   <div
                     className="link-default"
                     onClick={() => {
@@ -57,10 +60,15 @@ export default function Home() {
                 className="button-primary text-lg font-bold self-center"
                 onClick={() => {
                   if (query) {
-                    navigate("/search", {
-                      state: {
-                        search: query.split(/[\n,]+/).map((id) => id.trim()),
-                      },
+                    navigate({
+                      pathname: "/search",
+                      search: `?${createSearchParams({
+                        ids: query
+                          .split(/[\n,]+/)
+                          .filter((id) => id !== "")
+                          .map((id) => id.trim())
+                          .join(","),
+                      })}`,
                     });
                   }
                 }}
