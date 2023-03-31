@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import LoadingOverlay from "../../common/LoadingOverlay";
 import { getMapping } from "./slice";
 
 export default function Mapping() {
@@ -9,6 +10,7 @@ export default function Mapping() {
   const params = useParams();
   const mappingId: string = params.mappingId as string;
   const mapping = useAppSelector((state) => state.mapping.mapping);
+  const loading = useAppSelector((state) => state.mapping.loadingMapping);
 
   useEffect(() => {
     dispatch(getMapping(mappingId));
@@ -45,6 +47,7 @@ export default function Mapping() {
           Back
         </button>
       </div>
+      {loading ? <LoadingOverlay message="Loading mapping..." /> : null}
     </main>
   );
 }
