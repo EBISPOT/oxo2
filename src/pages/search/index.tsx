@@ -322,12 +322,12 @@ export default function Search() {
             <li>Confidence: {justif.lexicalMatch.confidence}</li>
             <li>Provider: {justif.lexicalMatch.provider}</li>
             <li>
-              Subject match field: {justif.lexicalMatch.subjectField.join(", ")}
+              Subject match field: {justif.lexicalMatch.subjectField?.join(", ")}
             </li>
             <li>
-              Object match field: {justif.lexicalMatch.objectField.join(", ")}
+              Object match field: {justif.lexicalMatch.objectField?.join(", ")}
             </li>
-            <li>Match string: {justif.lexicalMatch.string.join(", ")}</li>
+            <li>Match string: {justif.lexicalMatch.string?.join(", ")}</li>
           </ul>
         </div>
         <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4">
@@ -336,7 +336,7 @@ export default function Search() {
           </div>
           <ul className="list-disc list-inside pl-2">
             <li>Provider: {justif.curatedMatch.provider}</li>
-            <li>Author: {justif.curatedMatch.author.join(", ")}</li>
+            <li>Author: {justif.curatedMatch.author?.join(", ")}</li>
           </ul>
         </div>
       </div>
