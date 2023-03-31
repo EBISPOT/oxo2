@@ -19,22 +19,28 @@ export default function Mapping() {
   return (
     <main className="container mx-auto">
       <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg my-8 p-8 text-neutral-black">
-        <div className="text-2xl font-bold mb-4">Mapping Information</div>
+        <div className="text-2xl font-bold mb-4">Mapping</div>
         {mapping ? (
           <div className="flex flex-col gap-2">
             <div>
-              <strong>Subject: </strong> {mapping.getSubjectLabel()} (
-              <i>{mapping?.getSubjectId()}</i>)
+              <strong>Subject</strong>
+              <br />
+              {mapping.getSubjectLabel()} (<i>{mapping?.getSubjectId()}</i>)
             </div>
             <div>
-              <strong>Predicate: </strong> {mapping.getPredicateId()}
+              <strong>Predicate</strong>
+              <br />
+              {mapping.getPredicateId()}
             </div>
             <div>
-              <strong>Object: </strong> {mapping.getObjectLabel()} (
-              <i>{mapping.getObjectId()}</i>)
+              <strong>Object</strong>
+              <br />
+              {mapping.getObjectLabel()} (<i>{mapping.getObjectId()}</i>)
             </div>
             <div>
-              <strong>Justification: </strong> {mapping.getJustification()}
+              <strong>Justification</strong>
+              <br />
+              {mapping.getJustification()}
             </div>
           </div>
         ) : null}

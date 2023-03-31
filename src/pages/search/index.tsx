@@ -217,10 +217,10 @@ export default function Search() {
                   return (
                     <div
                       key={randomString()}
-                      className="flex flex-row items-start gap-4 mb-4 break-all"
+                      className="flex flex-row items-start gap-4 mb-4"
                     >
                       <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
-                        <i>{searchResult.getSubjectCurie()}</i>
+                        <strong>{searchResult.getSubjectCurie()}</strong>
                         <br />
                         {searchResult.getSubjectLabel()
                           ? `"${searchResult.getSubjectLabel()}"`
@@ -228,7 +228,7 @@ export default function Search() {
                         <br />
                         {searchResult.getSubjectCategory()}
                       </div>
-                      <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2">
+                      <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2 break-all">
                         <i>{searchResult.getPredicateId()}</i>
                         <br />
                         {searchResult.getPredicateModifier()
@@ -236,7 +236,7 @@ export default function Search() {
                           : ""}
                       </div>
                       <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
-                        <i>{searchResult.getObjectCurie()}</i>
+                        <strong>{searchResult.getObjectCurie()}</strong>
                         <br />
                         {searchResult.getObjectLabel()
                           ? `"${searchResult.getObjectLabel()}"`
@@ -268,7 +268,7 @@ export default function Search() {
                         >
                           <i
                             title="Info"
-                            className="icon icon-common icon-info"
+                            className="icon icon-common icon-info text-link-hover"
                           />
                         </div>
                         <div
@@ -283,7 +283,7 @@ export default function Search() {
                         >
                           <i
                             title="View"
-                            className="icon icon-common icon-eye"
+                            className="icon icon-common icon-eye text-link-default"
                           />
                         </div>
                       </div>
@@ -322,7 +322,8 @@ export default function Search() {
             <li>Confidence: {justif.lexicalMatch.confidence}</li>
             <li>Provider: {justif.lexicalMatch.provider}</li>
             <li>
-              Subject match field: {justif.lexicalMatch.subjectField?.join(", ")}
+              Subject match field:{" "}
+              {justif.lexicalMatch.subjectField?.join(", ")}
             </li>
             <li>
               Object match field: {justif.lexicalMatch.objectField?.join(", ")}
