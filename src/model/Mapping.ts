@@ -68,14 +68,23 @@ export default class Mapping {
   getSubjectSource(): string {
     return this.properties["subject_source"];
   }
+  getSubjectSourceVersion(): string {
+    return this.properties["subject_source_version"];
+  }
   getObjectType(): string {
     return this.properties["object_type"];
   }
   getObjectSource(): string {
     return this.properties["object_source"];
   }
+  getObjectSourceVersion(): string {
+    return this.properties["object_source_version"];
+  }
   getProvider(): string {
     return this.properties["mapping_provider"];
+  }
+  getCardinality(): string {
+    return this.properties["mapping_cardinality"];
   }
   getMappingDate(): string {
     return this.properties["mapping_date"];
