@@ -6,7 +6,7 @@ export default class Mapping {
   }
 
   getMappingId(): string {
-    return this.properties["uuid"]
+    return this.properties["uuid"];
   }
   getSubjectId(): string {
     return this.properties["subject_id"];
@@ -95,10 +95,40 @@ export default class Mapping {
   getSubjectMatchFields(): string[] {
     return this.properties["subject_match_field"];
   }
+  getSubjectPre(): string[] {
+    return this.properties["subject_preprocessing"];
+  }
   getObjectMatchFields(): string[] {
     return this.properties["object_match_field"];
   }
+  getObjectPre(): string[] {
+    return this.properties["object_preprocessing"];
+  }
   getMatchStrings(): string[] {
     return this.properties["match_string"];
+  }
+  getOtherRefs(): string[] {
+    return this.properties["see_also"];
+  }
+  getOther(): string {
+    return this.properties["other"];
+  }
+  getComment(): string {
+    return this.properties["comment"];
+  }
+  getLicense(): string {
+    return this.properties["license"];
+  }
+  getTool(): string {
+    return this.properties["mapping_tool"];
+  }
+  getToolVersion(): string {
+    return this.properties["mapping_tool_version"];
+  }
+  getSimilarityScore(): string {
+    return this.properties["semantic_similarity_score"];
+  }
+  getSimilarityMeasure(): string {
+    return this.properties["semantic_similarity_measure"];
   }
 }
