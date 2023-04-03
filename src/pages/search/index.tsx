@@ -26,28 +26,34 @@ export default function Search() {
 
   const [openJustif, setOpenJustif] = useState<boolean>(false);
   const [justif, setJustif] = useState<{
+    mapping: {
+      subject: string;
+      predicate: string;
+      object: string;
+    };
     lexicalMatch: {
       confidence: number;
       provider: string;
       subjectField: string[];
       objectField: string[];
       string: string[];
-    };
-    curatedMatch: {
-      provider: string;
-      author: string[];
+      tool: string;
+      toolVersion: string;
     };
   }>({
+    mapping: {
+      subject: "",
+      predicate: "",
+      object: "",
+    },
     lexicalMatch: {
       confidence: 0,
       provider: "",
       subjectField: [],
       objectField: [],
       string: [],
-    },
-    curatedMatch: {
-      provider: "",
-      author: [],
+      tool: "",
+      toolVersion: "",
     },
   });
 
@@ -249,6 +255,17 @@ export default function Search() {
                           className="w-fit cursor-pointer"
                           onClick={() => {
                             setJustif({
+                              mapping: {
+                                subject: searchResult.getSubjectCurie()
+                                  ? searchResult.getSubjectCurie()
+                                  : searchResult.getSubjectId(),
+                                predicate: searchResult.getPredicateLabel()
+                                  ? searchResult.getPredicateLabel()
+                                  : searchResult.getPredicateId(),
+                                object: searchResult.getObjectCurie()
+                                  ? searchResult.getObjectCurie()
+                                  : searchResult.getObjectId(),
+                              },
                               lexicalMatch: {
                                 confidence: searchResult.getConfidence(),
                                 provider: searchResult.getProvider(),
@@ -257,10 +274,8 @@ export default function Search() {
                                 objectField:
                                   searchResult.getObjectMatchFields(),
                                 string: searchResult.getMatchStrings(),
-                              },
-                              curatedMatch: {
-                                provider: searchResult.getProvider(),
-                                author: searchResult.getAuthorLabels(),
+                                tool: searchResult.getTool(),
+                                toolVersion: searchResult.getToolVersion(),
                               },
                             });
                             setOpenJustif(true);
@@ -316,28 +331,59 @@ export default function Search() {
           </button>
           <div className="text-neutral-default font-bold">Justification</div>
         </div>
-        <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 mb-4">
+        <div
+          title={justif.mapping.subject}
+          className="bg-yellow-default px-3 py-2 m-1 rounded-lg"
+        >
+          {justif.mapping.subject}
+        </div>
+        <div
+          title={justif.mapping.predicate}
+          className="border-2 border-neutral-black px-3 py-2 m-1 rounded-lg truncate"
+        >
+          {justif.mapping.predicate}
+        </div>
+        <div
+          title={justif.mapping.object}
+          className="bg-yellow-default px-3 py-2 m-1 rounded-lg"
+        >
+          {justif.mapping.object}
+        </div>
+        <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 my-4">
           <div className="text-xl font-bold mb-2">Lexical Match</div>
           <ul className="list-disc list-inside pl-2">
-            <li>Confidence: {justif.lexicalMatch.confidence}</li>
-            <li>Provider: {justif.lexicalMatch.provider}</li>
-            <li>
-              Subject match field:{" "}
-              {justif.lexicalMatch.subjectField?.join(", ")}
-            </li>
-            <li>
-              Object match field: {justif.lexicalMatch.objectField?.join(", ")}
-            </li>
-            <li>Match string: {justif.lexicalMatch.string?.join(", ")}</li>
-          </ul>
-        </div>
-        <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4">
-          <div className="text-xl text-neutral-black font-bold mb-2">
-            Human Curated Match
-          </div>
-          <ul className="list-disc list-inside pl-2">
-            <li>Provider: {justif.curatedMatch.provider}</li>
-            <li>Author: {justif.curatedMatch.author?.join(", ")}</li>
+            {justif.lexicalMatch.confidence ? (
+              <li>Confidence:&nbsp;{justif.lexicalMatch.confidence}</li>
+            ) : null}
+            {justif.lexicalMatch.provider ? (
+              <li>Provider:&nbsp;{justif.lexicalMatch.provider}</li>
+            ) : null}
+            {justif.lexicalMatch.subjectField &&
+            justif.lexicalMatch.subjectField.length > 0 ? (
+              <li>
+                Subject&nbsp;match&nbsp;field:&nbsp;
+                {justif.lexicalMatch.subjectField?.join(", ")}
+              </li>
+            ) : null}
+            {justif.lexicalMatch.objectField &&
+            justif.lexicalMatch.objectField.length > 0 ? (
+              <li>
+                Object&nbsp;match&nbsp;field:&nbsp;
+                {justif.lexicalMatch.objectField?.join(", ")}
+              </li>
+            ) : null}
+            {justif.lexicalMatch.string &&
+            justif.lexicalMatch.string.length > 0 ? (
+              <li>
+                Match&nbsp;string:&nbsp;{justif.lexicalMatch.string?.join(", ")}
+              </li>
+            ) : null}
+            {justif.lexicalMatch.tool ? (
+              <div>
+                Tool:&nbsp;{justif.lexicalMatch.tool}&nbsp;
+                {justif.lexicalMatch.toolVersion}
+              </div>
+            ) : null}
           </ul>
         </div>
       </div>
