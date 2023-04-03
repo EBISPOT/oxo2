@@ -16,6 +16,9 @@ code {
   position: relative;
   min-height: 100vh;
 }
+.container {
+  padding-inline: 1rem;
+}
 
 @layer components {
   .button-primary {

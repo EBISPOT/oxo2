@@ -25,13 +25,14 @@ export default function Search() {
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
   const [openJustif, setOpenJustif] = useState<boolean>(false);
-  const [justif, setJustif] = useState<{
+  const [justifs, setJustifs] = useState<{
     mapping: {
       subject: string;
       predicate: string;
       object: string;
     };
-    lexicalMatch: {
+    default: {
+      uri: string;
       confidence: number;
       provider: string;
       subjectField: string[];
@@ -46,7 +47,8 @@ export default function Search() {
       predicate: "",
       object: "",
     },
-    lexicalMatch: {
+    default: {
+      uri: "",
       confidence: 0,
       provider: "",
       subjectField: [],
@@ -229,7 +231,7 @@ export default function Search() {
                         <strong>{searchResult.getSubjectCurie()}</strong>
                         <br />
                         {searchResult.getSubjectLabel()
-                          ? `"${searchResult.getSubjectLabel()}"`
+                          ? `(${searchResult.getSubjectLabel()})`
                           : ""}
                         <br />
                         {searchResult.getSubjectCategory()}
@@ -245,7 +247,7 @@ export default function Search() {
                         <strong>{searchResult.getObjectCurie()}</strong>
                         <br />
                         {searchResult.getObjectLabel()
-                          ? `"${searchResult.getObjectLabel()}"`
+                          ? `(${searchResult.getObjectLabel()})`
                           : ""}
                         <br />
                         {searchResult.getObjectCategory()}
@@ -254,7 +256,7 @@ export default function Search() {
                         <div
                           className="w-fit cursor-pointer"
                           onClick={() => {
-                            setJustif({
+                            setJustifs({
                               mapping: {
                                 subject: searchResult.getSubjectCurie()
                                   ? searchResult.getSubjectCurie()
@@ -266,7 +268,8 @@ export default function Search() {
                                   ? searchResult.getObjectCurie()
                                   : searchResult.getObjectId(),
                               },
-                              lexicalMatch: {
+                              default: {
+                                uri: searchResult.getJustification(),
                                 confidence: searchResult.getConfidence(),
                                 provider: searchResult.getProvider(),
                                 subjectField:
@@ -329,59 +332,63 @@ export default function Search() {
           <button type="button" onClick={() => setOpenJustif(false)}>
             <Close />
           </button>
-          <div className="text-neutral-default font-bold">Justification</div>
+          <div className="text-neutral-default font-bold">Justifications</div>
         </div>
         <div
-          title={justif.mapping.subject}
+          title={justifs.mapping.subject}
           className="bg-yellow-default px-3 py-2 m-1 rounded-lg"
         >
-          {justif.mapping.subject}
+          {justifs.mapping.subject}
         </div>
         <div
-          title={justif.mapping.predicate}
+          title={justifs.mapping.predicate}
           className="border-2 border-neutral-black px-3 py-2 m-1 rounded-lg truncate"
         >
-          {justif.mapping.predicate}
+          {justifs.mapping.predicate}
         </div>
         <div
-          title={justif.mapping.object}
+          title={justifs.mapping.object}
           className="bg-yellow-default px-3 py-2 m-1 rounded-lg"
         >
-          {justif.mapping.object}
+          {justifs.mapping.object}
         </div>
         <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 my-4">
-          <div className="text-xl font-bold mb-2">Lexical Match</div>
+          <div className="text-xl font-bold mb-2 truncate">
+            {justifs.default.uri.substring(
+              justifs.default.uri.lastIndexOf("/") + 1
+            )}
+          </div>
           <ul className="list-disc list-inside pl-2">
-            {justif.lexicalMatch.confidence ? (
-              <li>Confidence:&nbsp;{justif.lexicalMatch.confidence}</li>
+            {justifs.default.confidence ? (
+              <li>Confidence:&nbsp;{justifs.default.confidence}</li>
             ) : null}
-            {justif.lexicalMatch.provider ? (
-              <li>Provider:&nbsp;{justif.lexicalMatch.provider}</li>
+            {justifs.default.provider ? (
+              <li>Provider:&nbsp;{justifs.default.provider}</li>
             ) : null}
-            {justif.lexicalMatch.subjectField &&
-            justif.lexicalMatch.subjectField.length > 0 ? (
+            {justifs.default.subjectField &&
+            justifs.default.subjectField.length > 0 ? (
               <li>
                 Subject&nbsp;match&nbsp;field:&nbsp;
-                {justif.lexicalMatch.subjectField?.join(", ")}
+                {justifs.default.subjectField?.join(", ")}
               </li>
             ) : null}
-            {justif.lexicalMatch.objectField &&
-            justif.lexicalMatch.objectField.length > 0 ? (
+            {justifs.default.objectField &&
+            justifs.default.objectField.length > 0 ? (
               <li>
                 Object&nbsp;match&nbsp;field:&nbsp;
-                {justif.lexicalMatch.objectField?.join(", ")}
+                {justifs.default.objectField?.join(", ")}
               </li>
             ) : null}
-            {justif.lexicalMatch.string &&
-            justif.lexicalMatch.string.length > 0 ? (
+            {justifs.default.string && justifs.default.string.length > 0 ? (
               <li>
-                Match&nbsp;string:&nbsp;{justif.lexicalMatch.string?.join(", ")}
+                Match&nbsp;string:&nbsp;
+                {justifs.default.string?.join(", ")}
               </li>
             ) : null}
-            {justif.lexicalMatch.tool ? (
+            {justifs.default.tool ? (
               <div>
-                Tool:&nbsp;{justif.lexicalMatch.tool}&nbsp;
-                {justif.lexicalMatch.toolVersion}
+                Tool:&nbsp;{justifs.default.tool}&nbsp;
+                {justifs.default.toolVersion}
               </div>
             ) : null}
           </ul>

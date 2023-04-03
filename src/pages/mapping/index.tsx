@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { copyToClipboard } from "../../app/util";
 import LoadingOverlay from "../../common/LoadingOverlay";
 import { getMapping } from "./slice";
 
@@ -12,6 +13,10 @@ export default function Mapping() {
   const mapping = useAppSelector((state) => state.mapping.mapping);
   const loading = useAppSelector((state) => state.mapping.loadingMapping);
 
+  const [isSubjectCopied, setIsSubjectCopied] = useState(false);
+  const [isPredicateCopied, setIsPredicateCopied] = useState(false);
+  const [isObjectCopied, setIsObjectCopied] = useState(false);
+
   useEffect(() => {
     dispatch(getMapping(mappingId));
   }, [dispatch, mappingId]);
@@ -19,87 +24,153 @@ export default function Mapping() {
   return (
     <main className="container mx-auto">
       <div className="text-2xl font-bold mt-6 mb-4">Mapping</div>
-      <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg mb-4 p-8 text-neutral-black grid grid-cols-2 gap-4">
+      <div className="mb-4 text-neutral-black grid grid-cols-1 lg:grid-cols-3">
         <div>
-          <div className="text-lg font-bold">Subject</div>
           {mapping?.getSubjectId() ? (
             <div>
-              <div className="bg-yellow-default px-3 py-2 my-1 rounded-lg w-fit">
-                {mapping.getSubjectCurie()}
+              <div className="bg-yellow-default px-4 py-2 my-1 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none">
+                <div title={mapping.getSubjectId()} className="italic truncate">
+                  <i
+                    title="Copy"
+                    className={`icon icon-common icon-copy icon-spacer ${
+                      isSubjectCopied ? "cursor-wait" : "cursor-pointer"
+                    }`}
+                    onClick={() => {
+                      copyText(mapping.getSubjectId(), setIsSubjectCopied);
+                    }}
+                  />
+                  {mapping.getSubjectId()}
+                </div>
+                <div className="font-bold text-center">
+                  {mapping.getSubjectCurie()}
+                </div>
               </div>
-              {mapping?.getSubjectLabel() ? (
-                <div>({mapping.getSubjectLabel()})</div>
+              {mapping.getSubjectLabel() ? (
+                <div className="text-center">({mapping.getSubjectLabel()})</div>
               ) : null}
-              <div className="italic">{mapping.getSubjectId()}</div>
-              {mapping?.getSubjectCategory() ? (
-                <div>Category:&nbsp;{mapping.getSubjectCategory()}</div>
-              ) : null}
-              {mapping?.getSubjectType() ? (
-                <div>Type:&nbsp;{mapping.getSubjectType()}</div>
-              ) : null}
-              {mapping?.getSubjectSource() ? (
-                <div>
-                  Source:&nbsp;{mapping.getSubjectSource()}&nbsp;
-                  {mapping.getSubjectSourceVersion()}
+            </div>
+          ) : null}
+        </div>
+        <div>
+          {mapping?.getPredicateId() ? (
+            <div>
+              <div className="bg-link-dark px-4 py-2 my-1 text-white rounded-2xl lg:rounded-none">
+                <div
+                  title={mapping.getPredicateId()}
+                  className="italic truncate"
+                >
+                  <i
+                    title="Copy"
+                    className={`icon icon-common icon-copy icon-spacer ${
+                      isPredicateCopied ? "cursor-wait" : "cursor-pointer"
+                    }`}
+                    onClick={() => {
+                      copyText(mapping.getPredicateId(), setIsPredicateCopied);
+                    }}
+                  />
+                  {mapping.getPredicateId()}
+                </div>
+                <div>&nbsp;</div>
+              </div>
+              {mapping.getPredicateLabel() ? (
+                <div className="text-center">
+                  ({mapping.getPredicateLabel()})
                 </div>
               ) : null}
             </div>
           ) : null}
         </div>
         <div>
-          <div className="text-lg font-bold">Object</div>
           {mapping?.getObjectId() ? (
             <div>
-              <div className="bg-yellow-default px-3 py-2 my-1 rounded-lg w-fit">
-                {mapping.getObjectCurie()}
-              </div>
-              {mapping?.getObjectLabel() ? (
-                <div>({mapping.getObjectLabel()})</div>
-              ) : null}
-              <div className="italic">{mapping.getObjectId()}</div>
-              {mapping?.getObjectCategory() ? (
-                <div>Category:&nbsp;{mapping.getObjectCategory()}</div>
-              ) : null}
-              {mapping?.getObjectType() ? (
-                <div>Type:&nbsp;{mapping.getObjectType()}</div>
-              ) : null}
-              {mapping?.getObjectSource() ? (
-                <div>
-                  Source:&nbsp;{mapping.getObjectSource()}&nbsp;
-                  {mapping.getObjectSourceVersion()}
+              <div className="bg-yellow-default px-4 py-2 my-1 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none">
+                <div title={mapping.getObjectId()} className="italic truncate">
+                  <i
+                    title="Copy"
+                    className={`icon icon-common icon-copy icon-spacer ${
+                      isObjectCopied ? "cursor-wait" : "cursor-pointer"
+                    }`}
+                    onClick={() => {
+                      copyText(mapping.getObjectId(), setIsObjectCopied);
+                    }}
+                  />
+                  {mapping.getObjectId()}
                 </div>
+                <div className="font-bold text-center">
+                  {mapping.getObjectCurie()}
+                </div>
+              </div>
+              {mapping.getObjectLabel() ? (
+                <div className="text-center">({mapping.getObjectLabel()})</div>
               ) : null}
             </div>
           ) : null}
         </div>
-        <div>
-          <div className="text-lg font-bold">Predicate</div>
-          {mapping?.getPredicateId() ? (
-            <div className="mb-4">
-              <div>{mapping.getPredicateLabel()}</div>
-              <div className="italic">{mapping.getPredicateId()}</div>
-              <div>{mapping.getPredicateModifier()}</div>
-            </div>
-          ) : null}
-          {mapping?.getCardinality() ? (
-            <div>Cardinality:&nbsp;{mapping?.getCardinality()}</div>
-          ) : null}
-          {mapping?.getProvider() ? (
-            <div>Provider:&nbsp;{mapping?.getProvider()}</div>
-          ) : null}
-          {mapping &&
-          (mapping.getCreatorLabels() || mapping.getCreatorIds()) ? (
-            <div>
-              Creators:&nbsp;
-              {[
-                ...(mapping.getCreatorLabels()
-                  ? mapping.getCreatorLabels()
-                  : []),
-                ...(mapping.getCreatorIds() ? mapping.getCreatorIds() : []),
-              ].join(", ")}
-            </div>
-          ) : null}
-        </div>
+        {mapping?.getSubjectCategory() ? (
+          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+            <strong>Subject&nbsp;Category:&nbsp;</strong>
+            {mapping.getSubjectCategory()}
+          </div>
+        ) : null}
+        {mapping?.getSubjectType() ? (
+          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+            <strong>Subject&nbsp;Type:&nbsp;</strong>
+            {mapping.getSubjectType()}
+          </div>
+        ) : null}
+        {mapping?.getSubjectSource() ? (
+          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+            <strong>Subject&nbsp;Source:&nbsp;</strong>
+            {mapping.getSubjectSource()}&nbsp;
+            {mapping.getSubjectSourceVersion()}
+          </div>
+        ) : null}
+        {mapping?.getObjectCategory() ? (
+          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+            <strong>Object&nbsp;Category:&nbsp;</strong>
+            {mapping.getObjectCategory()}
+          </div>
+        ) : null}
+        {mapping?.getObjectType() ? (
+          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+            <strong>Object&nbsp;Type:&nbsp;</strong>
+            {mapping.getObjectType()}
+          </div>
+        ) : null}
+        {mapping?.getObjectSource() ? (
+          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+            <strong>Object&nbsp;Source:&nbsp;</strong>
+            {mapping.getObjectSource()}&nbsp;
+            {mapping.getObjectSourceVersion()}
+          </div>
+        ) : null}
+        {mapping?.getPredicateModifier() ? (
+          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+            <strong>Predicate&nbsp;Modifier:&nbsp;</strong>
+            {mapping.getPredicateModifier()}
+          </div>
+        ) : null}
+        {mapping?.getCardinality() ? (
+          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+            <strong>Cardinality:&nbsp;</strong>
+            {mapping?.getCardinality()}
+          </div>
+        ) : null}
+        {mapping?.getProvider() ? (
+          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+            <strong>Provider:&nbsp;</strong>
+            {mapping?.getProvider()}
+          </div>
+        ) : null}
+        {mapping && (mapping.getCreatorLabels() || mapping.getCreatorIds()) ? (
+          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+            <strong>Creators:&nbsp;</strong>
+            {[
+              ...(mapping.getCreatorLabels() ? mapping.getCreatorLabels() : []),
+              ...(mapping.getCreatorIds() ? mapping.getCreatorIds() : []),
+            ].join(", ")}
+          </div>
+        ) : null}
       </div>
       <div className="text-2xl font-bold mb-4">Justification</div>
       <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg mb-4 p-8 text-neutral-black grid grid-cols-1 gap-1">
@@ -199,4 +270,18 @@ export default function Mapping() {
       {loading ? <LoadingOverlay message="Loading mapping..." /> : null}
     </main>
   );
+}
+
+function copyText(text: string, setToggle: (toggle: boolean) => void) {
+  copyToClipboard(text)
+    .then(() => {
+      setToggle(true);
+      // revert after a few seconds
+      setTimeout(() => {
+        setToggle(false);
+      }, 500);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 }

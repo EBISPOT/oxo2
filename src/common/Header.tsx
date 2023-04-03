@@ -12,8 +12,8 @@ export default function Header() {
           "url('" + process.env.PUBLIC_URL + "/embl-ebi-background.jpg')",
       }}
     >
-      <div className="container mx-auto flex flex-row gap-10">
-        <div className="py-6">
+      <div className="container mx-auto flex flex-col md:flex-row md:gap-10">
+        <div className="py-6 self-center">
           <a href={process.env.PUBLIC_URL}>
             <img
               alt="OxO logo"

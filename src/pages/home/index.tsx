@@ -17,21 +17,21 @@ export default function Home() {
 
   return (
     <main className="container mx-auto">
-      <div className="grid grid-cols-4 gap-8">
-        <div className="col-span-3">
+      <div className="grid gird-cols-1 lg:grid-cols-4 lg:gap-8">
+        <div className="lg:col-span-3">
           <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg my-8 p-8">
             <div className="text-3xl mb-4 text-neutral-black font-bold">
               Welcome to the EMBL-EBI Mapping Lookup Service
             </div>
-            <div className="flex flex-row gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <div className="w-full">
-                <div className="flex flex-row justify-between text-neutral-black mb-2">
+                <div className="flex flex-col md:flex-row justify-between text-neutral-black mb-2">
                   <div>
                     Enter identifiers (CURIE format) separated by comma or
                     newline:
                   </div>
                   <div
-                    className="link-default"
+                    className="link-default md:mx-0.5"
                     onClick={() => {
                       setQuery(
                         "EFO:0001360" +
@@ -57,7 +57,7 @@ export default function Home() {
                 />
               </div>
               <button
-                className="button-primary text-lg font-bold self-center"
+                className="button-primary text-lg font-bold self-end md:self-center"
                 onClick={() => {
                   if (query) {
                     navigate({
@@ -77,7 +77,7 @@ export default function Home() {
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             <div className="px-2">
               <div className="text-2xl mb-3 text-neutral-default">
                 <i className="icon icon-common icon-browse icon-spacer text-yellow-default" />
@@ -176,8 +176,8 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="col-span-1">
-          <div className="shadow-card border-b-8 border-link-default rounded-md my-8 p-4">
+        <div className="order-first lg:order-none">
+          <div className="shadow-card border-b-8 border-link-default rounded-md mt-8 p-4">
             <div className="text-2xl text-neutral-black font-bold mb-4">
               <i className="icon icon-common icon-analyse-graph icon-spacer" />
               <span>Data Content</span>
