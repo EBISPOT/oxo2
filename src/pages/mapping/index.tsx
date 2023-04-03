@@ -27,14 +27,22 @@ export default function Mapping() {
               <div className="bg-yellow-default px-3 py-2 my-1 rounded-lg w-fit">
                 {mapping.getSubjectCurie()}
               </div>
-              <div>"{mapping.getSubjectLabel()}"</div>
+              {mapping?.getSubjectLabel() ? (
+                <div>({mapping.getSubjectLabel()})</div>
+              ) : null}
               <div className="italic">{mapping.getSubjectId()}</div>
-              <div>{mapping.getSubjectCategory()}</div>
-              <div>{mapping.getSubjectType()}</div>
-              <div>
-                Source:&nbsp;{mapping.getSubjectSource()}&nbsp;
-                {mapping.getSubjectSourceVersion()}
-              </div>
+              {mapping?.getSubjectCategory() ? (
+                <div>Category:&nbsp;{mapping.getSubjectCategory()}</div>
+              ) : null}
+              {mapping?.getSubjectType() ? (
+                <div>Type:&nbsp;{mapping.getSubjectType()}</div>
+              ) : null}
+              {mapping?.getSubjectSource() ? (
+                <div>
+                  Source:&nbsp;{mapping.getSubjectSource()}&nbsp;
+                  {mapping.getSubjectSourceVersion()}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -45,14 +53,22 @@ export default function Mapping() {
               <div className="bg-yellow-default px-3 py-2 my-1 rounded-lg w-fit">
                 {mapping.getObjectCurie()}
               </div>
-              <div>"{mapping.getObjectLabel()}"</div>
+              {mapping?.getObjectLabel() ? (
+                <div>({mapping.getObjectLabel()})</div>
+              ) : null}
               <div className="italic">{mapping.getObjectId()}</div>
-              <div>{mapping.getObjectCategory()}</div>
-              <div>{mapping.getObjectType()}</div>
-              <div>
-                Source:&nbsp;{mapping.getObjectSource()}&nbsp;
-                {mapping.getObjectSourceVersion()}
-              </div>
+              {mapping?.getObjectCategory() ? (
+                <div>Category:&nbsp;{mapping.getObjectCategory()}</div>
+              ) : null}
+              {mapping?.getObjectType() ? (
+                <div>Type:&nbsp;{mapping.getObjectType()}</div>
+              ) : null}
+              {mapping?.getObjectSource() ? (
+                <div>
+                  Source:&nbsp;{mapping.getObjectSource()}&nbsp;
+                  {mapping.getObjectSourceVersion()}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -65,17 +81,24 @@ export default function Mapping() {
               <div>{mapping.getPredicateModifier()}</div>
             </div>
           ) : null}
-          <div>Cardinality:&nbsp;{mapping?.getCardinality()}</div>
-          <div>Provider:&nbsp;{mapping?.getProvider()}</div>
-          <div>
-            Creators:&nbsp;
-            {[
-              ...(mapping?.getCreatorLabels()
-                ? mapping.getCreatorLabels()
-                : []),
-              ...(mapping?.getCreatorIds() ? mapping.getCreatorIds() : []),
-            ].join(", ")}
-          </div>
+          {mapping?.getCardinality() ? (
+            <div>Cardinality:&nbsp;{mapping?.getCardinality()}</div>
+          ) : null}
+          {mapping?.getProvider() ? (
+            <div>Provider:&nbsp;{mapping?.getProvider()}</div>
+          ) : null}
+          {mapping &&
+          (mapping.getCreatorLabels() || mapping.getCreatorIds()) ? (
+            <div>
+              Creators:&nbsp;
+              {[
+                ...(mapping.getCreatorLabels()
+                  ? mapping.getCreatorLabels()
+                  : []),
+                ...(mapping.getCreatorIds() ? mapping.getCreatorIds() : []),
+              ].join(", ")}
+            </div>
+          ) : null}
         </div>
       </div>
       <div className="text-2xl font-bold mb-4">Justification</div>
@@ -133,22 +156,27 @@ export default function Mapping() {
             {mapping.getSimilarityMeasure()}
           </div>
         ) : null}
-        <div>
-          Authors:&nbsp;
-          {[
-            ...(mapping?.getAuthorLabels() ? mapping.getAuthorLabels() : []),
-            ...(mapping?.getAuthorIds() ? mapping.getAuthorIds() : []),
-          ].join(", ")}
-        </div>
-        <div>
-          Reviewers:&nbsp;
-          {[
-            ...(mapping?.getReviewerLabels()
-              ? mapping.getReviewerLabels()
-              : []),
-            ...(mapping?.getReviewerIds() ? mapping.getReviewerIds() : []),
-          ].join(", ")}
-        </div>
+        {mapping && (mapping.getAuthorLabels() || mapping.getAuthorIds()) ? (
+          <div>
+            Authors:&nbsp;
+            {[
+              ...(mapping.getAuthorLabels() ? mapping.getAuthorLabels() : []),
+              ...(mapping.getAuthorIds() ? mapping.getAuthorIds() : []),
+            ].join(", ")}
+          </div>
+        ) : null}
+        {mapping &&
+        (mapping.getReviewerLabels() || mapping.getReviewerIds()) ? (
+          <div>
+            Reviewers:&nbsp;
+            {[
+              ...(mapping?.getReviewerLabels()
+                ? mapping.getReviewerLabels()
+                : []),
+              ...(mapping?.getReviewerIds() ? mapping.getReviewerIds() : []),
+            ].join(", ")}
+          </div>
+        ) : null}
         {mapping?.getLicense() ? (
           <div>License:&nbsp;{mapping.getLicense()}</div>
         ) : null}
