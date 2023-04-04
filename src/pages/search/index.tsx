@@ -342,7 +342,7 @@ export default function Search() {
         </div>
         <div
           title={justifs.mapping.predicate}
-          className="border-2 border-neutral-black px-3 py-2 m-1 rounded-lg truncate"
+          className="bg-link-dark text-white px-3 py-2 m-1 rounded-lg truncate"
         >
           {justifs.mapping.predicate}
         </div>
@@ -353,7 +353,10 @@ export default function Search() {
           {justifs.mapping.object}
         </div>
         <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 my-4">
-          <div className="text-xl font-bold mb-2 truncate">
+          <div
+            title={justifs.default.uri}
+            className="text-xl font-bold mb-2 truncate"
+          >
             {justifs.default.uri.substring(
               justifs.default.uri.lastIndexOf("/") + 1
             )}

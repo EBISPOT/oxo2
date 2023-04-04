@@ -164,101 +164,161 @@ export default function Mapping() {
         ) : null}
         {mapping && (mapping.getCreatorLabels() || mapping.getCreatorIds()) ? (
           <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
-            <strong>Creators:&nbsp;</strong>
-            {[
-              ...(mapping.getCreatorLabels() ? mapping.getCreatorLabels() : []),
-              ...(mapping.getCreatorIds() ? mapping.getCreatorIds() : []),
-            ].join(", ")}
+            <strong>Creators</strong>
+            <ul>
+              {(mapping.getCreatorLabels()
+                ? mapping
+                    .getCreatorLabels()
+                    .map((label) => <li key={label}>{label}</li>)
+                : []
+              ).concat(
+                mapping.getCreatorIds()
+                  ? mapping.getCreatorIds().map((id) => (
+                      <li key={id} className="link-default">
+                        <a href={id}>{id}</a>
+                      </li>
+                    ))
+                  : []
+              )}
+            </ul>
           </div>
         ) : null}
       </div>
       <div className="text-2xl font-bold mb-4">Justification</div>
       <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg mb-4 p-8 text-neutral-black grid grid-cols-1 gap-1">
-        <div className="font-bold mb-4">{mapping?.getJustification()}</div>
+        <div
+          title={mapping?.getJustification()}
+          className="font-bold text-lg mb-4 truncate"
+        >
+          {mapping?.getJustification()}
+        </div>
         {mapping?.getConfidence() ? (
-          <div>Confidence:&nbsp;{mapping.getConfidence()}</div>
+          <div>
+            <strong>Confidence:&nbsp;</strong>
+            {mapping.getConfidence()}
+          </div>
         ) : null}
         {mapping?.getSubjectMatchFields() ? (
           <div>
-            Subject&nbsp;Match&nbsp;Field:&nbsp;
+            <strong>Subject&nbsp;Match&nbsp;Field:&nbsp;</strong>
             {mapping.getSubjectMatchFields().join(", ")}
           </div>
         ) : null}
         {mapping?.getSubjectPre() ? (
           <div>
-            Subject&nbsp;Preprocessing:&nbsp;
+            <strong>Subject&nbsp;Preprocessing:&nbsp;</strong>
             {mapping.getSubjectPre().join(", ")}
           </div>
         ) : null}
         {mapping?.getObjectMatchFields() ? (
           <div>
-            Object&nbsp;Match&nbsp;Field:&nbsp;
+            <strong>Object&nbsp;Match&nbsp;Field:&nbsp;</strong>
             {mapping.getObjectMatchFields().join(", ")}
           </div>
         ) : null}
         {mapping?.getObjectPre() ? (
           <div>
-            Object&nbsp;Preprocessing:&nbsp;{mapping.getObjectPre().join(", ")}
+            <strong>Object&nbsp;Preprocessing:&nbsp;</strong>
+            {mapping.getObjectPre().join(", ")}
           </div>
         ) : null}
         {mapping?.getMatchStrings() ? (
           <div>
-            Match&nbsp;String:&nbsp;{mapping.getMatchStrings().join(", ")}
+            <strong>Match&nbsp;String:&nbsp;</strong>
+            {mapping.getMatchStrings().join(", ")}
           </div>
         ) : null}
         {mapping?.getMappingDate() ? (
-          <div>Created:&nbsp;{mapping.getMappingDate()}</div>
+          <div>
+            <strong>Created:&nbsp;</strong>
+            {mapping.getMappingDate()}
+          </div>
         ) : null}
         {mapping?.getTool() ? (
           <div>
-            Tool:&nbsp;{mapping.getTool()}&nbsp;
+            <strong>Tool:&nbsp;</strong>
+            {mapping.getTool()}&nbsp;
             {mapping.getToolVersion()}
           </div>
         ) : null}
         {mapping?.getSimilarityScore() ? (
           <div>
-            Semantic&nbsp;Similarity&nbsp;Score:&nbsp;
+            <strong>Semantic&nbsp;Similarity&nbsp;Score:&nbsp;</strong>
             {mapping.getSimilarityScore()}
           </div>
         ) : null}
         {mapping?.getSimilarityMeasure() ? (
           <div>
-            Semantic&nbsp;Similarity&nbsp;Measure:&nbsp;
+            <strong>Semantic&nbsp;Similarity&nbsp;Measure:&nbsp;</strong>
             {mapping.getSimilarityMeasure()}
           </div>
         ) : null}
         {mapping && (mapping.getAuthorLabels() || mapping.getAuthorIds()) ? (
           <div>
-            Authors:&nbsp;
-            {[
-              ...(mapping.getAuthorLabels() ? mapping.getAuthorLabels() : []),
-              ...(mapping.getAuthorIds() ? mapping.getAuthorIds() : []),
-            ].join(", ")}
+            <strong>Authors</strong>
+            <ul>
+              {(mapping.getAuthorLabels()
+                ? mapping
+                    .getAuthorLabels()
+                    .map((label) => <li key={label}>{label}</li>)
+                : []
+              ).concat(
+                mapping.getAuthorIds()
+                  ? mapping.getAuthorIds().map((id) => (
+                      <li key={id} className="link-default">
+                        <a href={id}>{id}</a>
+                      </li>
+                    ))
+                  : []
+              )}
+            </ul>
           </div>
         ) : null}
         {mapping &&
         (mapping.getReviewerLabels() || mapping.getReviewerIds()) ? (
           <div>
-            Reviewers:&nbsp;
-            {[
-              ...(mapping?.getReviewerLabels()
-                ? mapping.getReviewerLabels()
-                : []),
-              ...(mapping?.getReviewerIds() ? mapping.getReviewerIds() : []),
-            ].join(", ")}
+            Reviewers:
+            <ul>
+              {(mapping.getReviewerLabels()
+                ? mapping
+                    .getReviewerLabels()
+                    .map((label) => <li key={label}>{label}</li>)
+                : []
+              ).concat(
+                mapping.getReviewerIds()
+                  ? mapping.getReviewerIds().map((id) => (
+                      <li key={id} className="link-default">
+                        <a href={id}>{id}</a>
+                      </li>
+                    ))
+                  : []
+              )}
+            </ul>
           </div>
         ) : null}
         {mapping?.getLicense() ? (
-          <div>License:&nbsp;{mapping.getLicense()}</div>
+          <div>
+            <strong>License:&nbsp;</strong>
+            {mapping.getLicense()}
+          </div>
         ) : null}
         {mapping?.getOtherRefs() ? (
-          <div>See&nbsp;also:&nbsp;{mapping.getOtherRefs().join(", ")}</div>
+          <div>
+            <strong>See&nbsp;also:&nbsp;</strong>
+            {mapping.getOtherRefs().join(", ")}
+          </div>
         ) : null}
         {mapping?.getOther() ? (
-          <div>Other:&nbsp;{mapping.getOther()}</div>
+          <div>
+            <strong>Other:&nbsp;</strong>
+            {mapping.getOther()}
+          </div>
         ) : null}
         {mapping?.getComment() ? (
-          <div>Comment:&nbsp;{mapping.getComment()}</div>
+          <div>
+            <strong>Comment:&nbsp;</strong>
+            {mapping.getComment()}
+          </div>
         ) : null}
       </div>
       <button
