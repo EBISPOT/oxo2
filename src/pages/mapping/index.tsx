@@ -28,8 +28,11 @@ export default function Mapping() {
         <div>
           {mapping?.getSubjectId() ? (
             <div>
-              <div className="bg-yellow-default px-4 py-2 my-1 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none">
+              <div className="bg-yellow-300 px-8 py-4 my-1 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none">
                 <div title={mapping.getSubjectId()} className="italic truncate">
+                  <a href={mapping.getSubjectId()} target="_blank">
+                    <i className="icon icon-common icon-external-link-alt icon-spacer" />
+                  </a>
                   <i
                     title="Copy"
                     className={`icon icon-common icon-copy icon-spacer ${
@@ -54,7 +57,7 @@ export default function Mapping() {
         <div>
           {mapping?.getPredicateId() ? (
             <div>
-              <div className="bg-link-dark px-4 py-2 my-1 text-white rounded-2xl lg:rounded-none">
+              <div className="bg-orange-600 px-8 py-4 my-1 text-white rounded-2xl lg:rounded-none">
                 <div
                   title={mapping.getPredicateId()}
                   className="italic truncate"
@@ -83,8 +86,11 @@ export default function Mapping() {
         <div>
           {mapping?.getObjectId() ? (
             <div>
-              <div className="bg-yellow-default px-4 py-2 my-1 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none">
+              <div className="bg-yellow-300 px-8 py-4 my-1 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none">
                 <div title={mapping.getObjectId()} className="italic truncate">
+                  <a href={mapping.getObjectId()} target="_blank">
+                    <i className="icon icon-common icon-external-link-alt icon-spacer" />
+                  </a>
                   <i
                     title="Copy"
                     className={`icon icon-common icon-copy icon-spacer ${
@@ -175,7 +181,9 @@ export default function Mapping() {
                 mapping.getCreatorIds()
                   ? mapping.getCreatorIds().map((id) => (
                       <li key={id} className="link-default">
-                        <a href={id}>{id}</a>
+                        <a href={id} target="_blank">
+                          {id}
+                        </a>
                       </li>
                     ))
                   : []
@@ -266,7 +274,9 @@ export default function Mapping() {
                 mapping.getAuthorIds()
                   ? mapping.getAuthorIds().map((id) => (
                       <li key={id} className="link-default">
-                        <a href={id}>{id}</a>
+                        <a href={id} target="_blank">
+                          {id}
+                        </a>
                       </li>
                     ))
                   : []
@@ -288,7 +298,9 @@ export default function Mapping() {
                 mapping.getReviewerIds()
                   ? mapping.getReviewerIds().map((id) => (
                       <li key={id} className="link-default">
-                        <a href={id}>{id}</a>
+                        <a href={id} target="_blank">
+                          {id}
+                        </a>
                       </li>
                     ))
                   : []

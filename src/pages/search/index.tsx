@@ -216,7 +216,7 @@ export default function Search() {
                   dataCount={paging.total_items}
                   rowsPerPage={rowsPerPage}
                 />
-                <div className="flex flex-row text-neutral-default font-bold gap-4 my-4">
+                <div className="flex flex-row text-neutral-default font-bold gap-3 my-4">
                   <div className="basis-4/12">Subject</div>
                   <div className="basis-3/12">Predicate</div>
                   <div className="basis-5/12">Object</div>
@@ -225,9 +225,9 @@ export default function Search() {
                   return (
                     <div
                       key={randomString()}
-                      className="flex flex-row items-start gap-4 mb-4"
+                      className="flex flex-row items-start gap-3 mb-4"
                     >
-                      <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
+                      <div className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2">
                         <strong>{searchResult.getSubjectCurie()}</strong>
                         <br />
                         {searchResult.getSubjectLabel()
@@ -243,7 +243,7 @@ export default function Search() {
                           ? "Modifier: " + searchResult.getPredicateModifier()
                           : ""}
                       </div>
-                      <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
+                      <div className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2">
                         <strong>{searchResult.getObjectCurie()}</strong>
                         <br />
                         {searchResult.getObjectLabel()
@@ -252,7 +252,7 @@ export default function Search() {
                         <br />
                         {searchResult.getObjectCategory()}
                       </div>
-                      <div className="basis-1/12 self-center grid grid-cols-2 justify-items-center text-xl">
+                      <div className="basis-1/12 mt-4 grid grid-cols-2 justify-items-center text-xl">
                         <div
                           className="w-fit cursor-pointer"
                           onClick={() => {
@@ -285,7 +285,7 @@ export default function Search() {
                           }}
                         >
                           <i
-                            title="Info"
+                            title="Justifications"
                             className="icon icon-common icon-info text-link-hover"
                           />
                         </div>
@@ -336,19 +336,19 @@ export default function Search() {
         </div>
         <div
           title={justifs.mapping.subject}
-          className="bg-yellow-default px-3 py-2 m-1 rounded-lg"
+          className="bg-yellow-300 px-3 py-2 m-1 rounded-lg"
         >
           {justifs.mapping.subject}
         </div>
         <div
           title={justifs.mapping.predicate}
-          className="bg-link-dark text-white px-3 py-2 m-1 rounded-lg truncate"
+          className="bg-orange-600 text-white px-3 py-2 m-1 rounded-lg truncate"
         >
           {justifs.mapping.predicate}
         </div>
         <div
           title={justifs.mapping.object}
-          className="bg-yellow-default px-3 py-2 m-1 rounded-lg"
+          className="bg-yellow-300 px-3 py-2 m-1 rounded-lg"
         >
           {justifs.mapping.object}
         </div>
