@@ -28,9 +28,13 @@ export default function Mapping() {
         <div>
           {mapping?.getSubjectId() ? (
             <div>
-              <div className="bg-yellow-300 px-8 py-4 my-1 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none">
+              <div className="bg-yellow-300 px-6 py-3 my-1 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none">
                 <div title={mapping.getSubjectId()} className="italic truncate">
-                  <a href={mapping.getSubjectId()} target="_blank">
+                  <a
+                    href={mapping.getSubjectId()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <i className="icon icon-common icon-external-link-alt icon-spacer" />
                   </a>
                   <i
@@ -57,7 +61,7 @@ export default function Mapping() {
         <div>
           {mapping?.getPredicateId() ? (
             <div>
-              <div className="bg-orange-600 px-8 py-4 my-1 text-white rounded-2xl lg:rounded-none">
+              <div className="bg-orange-600 px-6 py-3 my-1 text-white rounded-2xl lg:rounded-none">
                 <div
                   title={mapping.getPredicateId()}
                   className="italic truncate"
@@ -86,9 +90,13 @@ export default function Mapping() {
         <div>
           {mapping?.getObjectId() ? (
             <div>
-              <div className="bg-yellow-300 px-8 py-4 my-1 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none">
+              <div className="bg-yellow-300 px-6 py-3 my-1 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none">
                 <div title={mapping.getObjectId()} className="italic truncate">
-                  <a href={mapping.getObjectId()} target="_blank">
+                  <a
+                    href={mapping.getObjectId()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <i className="icon icon-common icon-external-link-alt icon-spacer" />
                   </a>
                   <i
@@ -181,7 +189,7 @@ export default function Mapping() {
                 mapping.getCreatorIds()
                   ? mapping.getCreatorIds().map((id) => (
                       <li key={id} className="link-default">
-                        <a href={id} target="_blank">
+                        <a href={id} target="_blank" rel="noopener noreferrer">
                           {id}
                         </a>
                       </li>
@@ -274,7 +282,7 @@ export default function Mapping() {
                 mapping.getAuthorIds()
                   ? mapping.getAuthorIds().map((id) => (
                       <li key={id} className="link-default">
-                        <a href={id} target="_blank">
+                        <a href={id} target="_blank" rel="noopener noreferrer">
                           {id}
                         </a>
                       </li>
@@ -298,7 +306,7 @@ export default function Mapping() {
                 mapping.getReviewerIds()
                   ? mapping.getReviewerIds().map((id) => (
                       <li key={id} className="link-default">
-                        <a href={id} target="_blank">
+                        <a href={id} target="_blank" rel="noopener noreferrer">
                           {id}
                         </a>
                       </li>
