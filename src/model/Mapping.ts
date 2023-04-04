@@ -5,6 +5,9 @@ export default class Mapping {
     this.properties = properties;
   }
 
+  getMappingId(): string {
+    return this.properties["uuid"];
+  }
   getSubjectId(): string {
     return this.properties["subject_id"];
   }
@@ -65,14 +68,23 @@ export default class Mapping {
   getSubjectSource(): string {
     return this.properties["subject_source"];
   }
+  getSubjectSourceVersion(): string {
+    return this.properties["subject_source_version"];
+  }
   getObjectType(): string {
     return this.properties["object_type"];
   }
   getObjectSource(): string {
     return this.properties["object_source"];
   }
+  getObjectSourceVersion(): string {
+    return this.properties["object_source_version"];
+  }
   getProvider(): string {
     return this.properties["mapping_provider"];
+  }
+  getCardinality(): string {
+    return this.properties["mapping_cardinality"];
   }
   getMappingDate(): string {
     return this.properties["mapping_date"];
@@ -83,10 +95,40 @@ export default class Mapping {
   getSubjectMatchFields(): string[] {
     return this.properties["subject_match_field"];
   }
+  getSubjectPre(): string[] {
+    return this.properties["subject_preprocessing"];
+  }
   getObjectMatchFields(): string[] {
     return this.properties["object_match_field"];
   }
+  getObjectPre(): string[] {
+    return this.properties["object_preprocessing"];
+  }
   getMatchStrings(): string[] {
     return this.properties["match_string"];
+  }
+  getOtherRefs(): string[] {
+    return this.properties["see_also"];
+  }
+  getOther(): string {
+    return this.properties["other"];
+  }
+  getComment(): string {
+    return this.properties["comment"];
+  }
+  getLicense(): string {
+    return this.properties["license"];
+  }
+  getTool(): string {
+    return this.properties["mapping_tool"];
+  }
+  getToolVersion(): string {
+    return this.properties["mapping_tool_version"];
+  }
+  getSimilarityScore(): string {
+    return this.properties["semantic_similarity_score"];
+  }
+  getSimilarityMeasure(): string {
+    return this.properties["semantic_similarity_measure"];
   }
 }

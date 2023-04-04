@@ -25,29 +25,37 @@ export default function Search() {
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
   const [openJustif, setOpenJustif] = useState<boolean>(false);
-  const [justif, setJustif] = useState<{
-    lexicalMatch: {
+  const [justifs, setJustifs] = useState<{
+    mapping: {
+      subject: string;
+      predicate: string;
+      object: string;
+    };
+    default: {
+      uri: string;
       confidence: number;
       provider: string;
       subjectField: string[];
       objectField: string[];
       string: string[];
-    };
-    curatedMatch: {
-      provider: string;
-      author: string[];
+      tool: string;
+      toolVersion: string;
     };
   }>({
-    lexicalMatch: {
+    mapping: {
+      subject: "",
+      predicate: "",
+      object: "",
+    },
+    default: {
+      uri: "",
       confidence: 0,
       provider: "",
       subjectField: [],
       objectField: [],
       string: [],
-    },
-    curatedMatch: {
-      provider: "",
-      author: [],
+      tool: "",
+      toolVersion: "",
     },
   });
 
@@ -208,7 +216,7 @@ export default function Search() {
                   dataCount={paging.total_items}
                   rowsPerPage={rowsPerPage}
                 />
-                <div className="flex flex-row text-neutral-default font-bold gap-4 my-4">
+                <div className="flex flex-row text-neutral-default font-bold gap-3 my-4">
                   <div className="basis-4/12">Subject</div>
                   <div className="basis-3/12">Predicate</div>
                   <div className="basis-5/12">Object</div>
@@ -217,39 +225,51 @@ export default function Search() {
                   return (
                     <div
                       key={randomString()}
-                      className="flex flex-row items-start gap-4 mb-4 break-all"
+                      className="flex flex-row items-start gap-3 mb-4"
                     >
-                      <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
-                        <i>{searchResult.getSubjectCurie()}</i>
+                      <div className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2">
+                        <strong>{searchResult.getSubjectCurie()}</strong>
                         <br />
                         {searchResult.getSubjectLabel()
-                          ? `"${searchResult.getSubjectLabel()}"`
+                          ? `(${searchResult.getSubjectLabel()})`
                           : ""}
                         <br />
                         {searchResult.getSubjectCategory()}
                       </div>
-                      <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2">
+                      <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2 break-all">
                         <i>{searchResult.getPredicateId()}</i>
                         <br />
                         {searchResult.getPredicateModifier()
                           ? "Modifier: " + searchResult.getPredicateModifier()
                           : ""}
                       </div>
-                      <div className="basis-4/12 bg-yellow-default rounded-lg px-4 py-2">
-                        <i>{searchResult.getObjectCurie()}</i>
+                      <div className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2">
+                        <strong>{searchResult.getObjectCurie()}</strong>
                         <br />
                         {searchResult.getObjectLabel()
-                          ? `"${searchResult.getObjectLabel()}"`
+                          ? `(${searchResult.getObjectLabel()})`
                           : ""}
                         <br />
                         {searchResult.getObjectCategory()}
                       </div>
-                      <div className="basis-1/12 self-center grid grid-cols-2 justify-items-center text-xl">
+                      <div className="basis-1/12 mt-4 grid grid-cols-2 justify-items-center text-xl">
                         <div
                           className="w-fit cursor-pointer"
                           onClick={() => {
-                            setJustif({
-                              lexicalMatch: {
+                            setJustifs({
+                              mapping: {
+                                subject: searchResult.getSubjectCurie()
+                                  ? searchResult.getSubjectCurie()
+                                  : searchResult.getSubjectId(),
+                                predicate: searchResult.getPredicateLabel()
+                                  ? searchResult.getPredicateLabel()
+                                  : searchResult.getPredicateId(),
+                                object: searchResult.getObjectCurie()
+                                  ? searchResult.getObjectCurie()
+                                  : searchResult.getObjectId(),
+                              },
+                              default: {
+                                uri: searchResult.getJustification(),
                                 confidence: searchResult.getConfidence(),
                                 provider: searchResult.getProvider(),
                                 subjectField:
@@ -257,18 +277,16 @@ export default function Search() {
                                 objectField:
                                   searchResult.getObjectMatchFields(),
                                 string: searchResult.getMatchStrings(),
-                              },
-                              curatedMatch: {
-                                provider: searchResult.getProvider(),
-                                author: searchResult.getAuthorLabels(),
+                                tool: searchResult.getTool(),
+                                toolVersion: searchResult.getToolVersion(),
                               },
                             });
                             setOpenJustif(true);
                           }}
                         >
                           <i
-                            title="Info"
-                            className="icon icon-common icon-info"
+                            title="Justifications"
+                            className="icon icon-common icon-info text-link-hover"
                           />
                         </div>
                         <div
@@ -276,26 +294,14 @@ export default function Search() {
                           onClick={() => {
                             navigate(
                               `/mapping/${encodeURIComponent(
-                                (searchResult.getSubjectId().split("/").pop() ||
-                                  "") +
-                                  (searchResult
-                                    .getPredicateId()
-                                    .split("#")[1] ||
-                                    searchResult
-                                      .getPredicateId()
-                                      .split("/")
-                                      .pop()) +
-                                  (searchResult
-                                    .getObjectId()
-                                    .split("/")
-                                    .pop() || "")
+                                searchResult.getMappingId()
                               )}`
                             );
                           }}
                         >
                           <i
                             title="View"
-                            className="icon icon-common icon-eye"
+                            className="icon icon-common icon-eye text-link-default"
                           />
                         </div>
                       </div>
@@ -326,29 +332,68 @@ export default function Search() {
           <button type="button" onClick={() => setOpenJustif(false)}>
             <Close />
           </button>
-          <div className="text-neutral-default font-bold">Justification</div>
+          <div className="text-neutral-default font-bold">Justifications</div>
         </div>
-        <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 mb-4">
-          <div className="text-xl font-bold mb-2">Lexical Match</div>
-          <ul className="list-disc list-inside pl-2">
-            <li>Confidence: {justif.lexicalMatch.confidence}</li>
-            <li>Provider: {justif.lexicalMatch.provider}</li>
-            <li>
-              Subject match field: {justif.lexicalMatch.subjectField.join(", ")}
-            </li>
-            <li>
-              Object match field: {justif.lexicalMatch.objectField.join(", ")}
-            </li>
-            <li>Match string: {justif.lexicalMatch.string.join(", ")}</li>
-          </ul>
+        <div
+          title={justifs.mapping.subject}
+          className="bg-yellow-300 px-3 py-2 m-1 rounded-lg"
+        >
+          {justifs.mapping.subject}
         </div>
-        <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4">
-          <div className="text-xl text-neutral-black font-bold mb-2">
-            Human Curated Match
+        <div
+          title={justifs.mapping.predicate}
+          className="bg-orange-600 text-white px-3 py-2 m-1 rounded-lg truncate"
+        >
+          {justifs.mapping.predicate}
+        </div>
+        <div
+          title={justifs.mapping.object}
+          className="bg-yellow-300 px-3 py-2 m-1 rounded-lg"
+        >
+          {justifs.mapping.object}
+        </div>
+        <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 my-4">
+          <div
+            title={justifs.default.uri}
+            className="text-xl font-bold mb-2 truncate"
+          >
+            {justifs.default.uri.substring(
+              justifs.default.uri.lastIndexOf("/") + 1
+            )}
           </div>
           <ul className="list-disc list-inside pl-2">
-            <li>Provider: {justif.curatedMatch.provider}</li>
-            <li>Author: {justif.curatedMatch.author.join(", ")}</li>
+            {justifs.default.confidence ? (
+              <li>Confidence:&nbsp;{justifs.default.confidence}</li>
+            ) : null}
+            {justifs.default.provider ? (
+              <li>Provider:&nbsp;{justifs.default.provider}</li>
+            ) : null}
+            {justifs.default.subjectField &&
+            justifs.default.subjectField.length > 0 ? (
+              <li>
+                Subject&nbsp;match&nbsp;field:&nbsp;
+                {justifs.default.subjectField?.join(", ")}
+              </li>
+            ) : null}
+            {justifs.default.objectField &&
+            justifs.default.objectField.length > 0 ? (
+              <li>
+                Object&nbsp;match&nbsp;field:&nbsp;
+                {justifs.default.objectField?.join(", ")}
+              </li>
+            ) : null}
+            {justifs.default.string && justifs.default.string.length > 0 ? (
+              <li>
+                Match&nbsp;string:&nbsp;
+                {justifs.default.string?.join(", ")}
+              </li>
+            ) : null}
+            {justifs.default.tool ? (
+              <div>
+                Tool:&nbsp;{justifs.default.tool}&nbsp;
+                {justifs.default.toolVersion}
+              </div>
+            ) : null}
           </ul>
         </div>
       </div>
