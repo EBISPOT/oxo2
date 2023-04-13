@@ -386,9 +386,9 @@ export default function Search() {
         </div>
         <div
           title={justifs.mapping.predicate}
-          className="bg-orange-600 text-white px-3 py-2 m-1 rounded-lg truncate"
+          className="bg-white px-3 py-2 m-1 rounded-lg truncate"
         >
-          {justifs.mapping.predicate}
+          {justifs.mapping.predicate.substring(justifs.mapping.predicate.lastIndexOf("#") + 1)}
         </div>
         <div
           title={justifs.mapping.object}
