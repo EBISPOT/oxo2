@@ -21,6 +21,8 @@ export default function Search() {
   const [query, setQuery] = useState<string>(
     searchParams.get("ids")?.replaceAll(",", "\n") || ""
   );
+  const [facetFields, setFacetFields] = useState<any>({});
+  var facetFieldsCopy: any = {};
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
@@ -63,11 +65,12 @@ export default function Search() {
     dispatch(
       getMappingsByEntityIds({
         entityIds: searchParams.get("ids")?.split(",") || [],
+        facetIds: facetFields,
         limit: rowsPerPage,
         page: page + 1,
       })
     );
-  }, [dispatch, searchParams, page, rowsPerPage]);
+  }, [dispatch, searchParams, facetFields, page, rowsPerPage]);
 
   return (
     <div>
@@ -126,6 +129,7 @@ export default function Search() {
                         <fieldset className="mb-4">
                           {facetKey && Object.keys(facetValue).length > 0
                             ? Object.keys(facetValue).map((facetSubKey) => {
+                                facetFieldsCopy = { ...facetFields };
                                 return (
                                   <label
                                     key={facetSubKey}
@@ -136,8 +140,48 @@ export default function Search() {
                                       type="checkbox"
                                       id={facetSubKey}
                                       className="invisible hidden peer"
+                                      checked={
+                                        !!facetFields[facetKey] &&
+                                        !!Array.isArray(
+                                          facetFields[facetKey]
+                                        ) &&
+                                        !!facetFields[facetKey].find(
+                                          (key: string) => key === facetSubKey
+                                        )
+                                      }
                                       onChange={(e) => {
-                                        console.log(facetSubKey + " clicked!");
+                                        if (
+                                          facetFieldsCopy[facetKey] &&
+                                          Array.isArray(
+                                            facetFieldsCopy[facetKey]
+                                          )
+                                        ) {
+                                          if (
+                                            facetFieldsCopy[facetKey].find(
+                                              (key: string) =>
+                                                key === facetSubKey
+                                            )
+                                          ) {
+                                            const facetCopy = facetFieldsCopy[
+                                              facetKey
+                                            ].filter(
+                                              (key: string) =>
+                                                key !== facetSubKey
+                                            );
+                                            if (facetCopy.length === 0) {
+                                              facetFieldsCopy[facetKey] =
+                                                undefined;
+                                            } else {
+                                              facetFieldsCopy[facetKey] =
+                                                facetCopy;
+                                            }
+                                          }
+                                        } else {
+                                          facetFieldsCopy[facetKey] = [
+                                            facetSubKey,
+                                          ];
+                                        }
+                                        setFacetFields(facetFieldsCopy);
                                       }}
                                     />
                                     <span className="input-checkbox mr-4" />
@@ -342,9 +386,9 @@ export default function Search() {
         </div>
         <div
           title={justifs.mapping.predicate}
-          className="bg-orange-600 text-white px-3 py-2 m-1 rounded-lg truncate"
+          className="bg-white px-3 py-2 m-1 rounded-lg truncate"
         >
-          {justifs.mapping.predicate}
+          {justifs.mapping.predicate.substring(justifs.mapping.predicate.lastIndexOf("#") + 1)}
         </div>
         <div
           title={justifs.mapping.object}

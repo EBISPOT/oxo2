@@ -29,6 +29,9 @@ export default function Mapping() {
           {mapping?.getSubjectId() ? (
             <div>
               <div className="bg-yellow-300 px-6 py-3 my-1 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none">
+                <div className="font-bold text-center">
+                  {mapping.getSubjectCurie()}
+                </div>
                 <div title={mapping.getSubjectId()} className="italic truncate">
                   <a
                     href={mapping.getSubjectId()}
@@ -48,9 +51,6 @@ export default function Mapping() {
                   />
                   {mapping.getSubjectId()}
                 </div>
-                <div className="font-bold text-center">
-                  {mapping.getSubjectCurie()}
-                </div>
               </div>
               {mapping.getSubjectLabel() ? (
                 <div className="text-center">({mapping.getSubjectLabel()})</div>
@@ -61,7 +61,12 @@ export default function Mapping() {
         <div>
           {mapping?.getPredicateId() ? (
             <div>
-              <div className="bg-orange-600 px-6 py-3 my-1 text-white rounded-2xl lg:rounded-none">
+              <div className="bg-neutral-light px-6 py-3 my-1 rounded-2xl lg:rounded-none">
+                <div className="font-bold text-center">
+                  {mapping
+                    .getPredicateId()
+                    .substring(mapping.getPredicateId().lastIndexOf("#") + 1)}
+                </div>
                 <div
                   title={mapping.getPredicateId()}
                   className="italic truncate"
@@ -77,7 +82,6 @@ export default function Mapping() {
                   />
                   {mapping.getPredicateId()}
                 </div>
-                <div>&nbsp;</div>
               </div>
               {mapping.getPredicateLabel() ? (
                 <div className="text-center">
@@ -91,6 +95,9 @@ export default function Mapping() {
           {mapping?.getObjectId() ? (
             <div>
               <div className="bg-yellow-300 px-6 py-3 my-1 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none">
+                <div className="font-bold text-center">
+                  {mapping.getObjectCurie()}
+                </div>
                 <div title={mapping.getObjectId()} className="italic truncate">
                   <a
                     href={mapping.getObjectId()}
@@ -109,9 +116,6 @@ export default function Mapping() {
                     }}
                   />
                   {mapping.getObjectId()}
-                </div>
-                <div className="font-bold text-center">
-                  {mapping.getObjectCurie()}
                 </div>
               </div>
               {mapping.getObjectLabel() ? (
@@ -295,7 +299,7 @@ export default function Mapping() {
         {mapping &&
         (mapping.getReviewerLabels() || mapping.getReviewerIds()) ? (
           <div>
-            Reviewers:
+            <strong>Reviewers</strong>
             <ul>
               {(mapping.getReviewerLabels()
                 ? mapping

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createSearchParams, Link, useNavigate } from "react-router-dom";
+import { Link, createSearchParams, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { getStats } from "./slice";
 
@@ -33,12 +33,7 @@ export default function Home() {
                   <div
                     className="link-default md:mx-0.5"
                     onClick={() => {
-                      setQuery(
-                        "EFO:0001360" +
-                          "\nUBERON:0002107" +
-                          "\nHP:0000518" +
-                          "\nMP:0001289"
-                      );
+                      setQuery("UBERON:0002107\nHP:0000518\nMP:0001289");
                     }}
                   >
                     Examples...

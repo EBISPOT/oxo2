@@ -39,14 +39,16 @@ export const getMappingsAll = createAsyncThunk(
 );
 export const getMappingsByEntityIds = createAsyncThunk(
   "search_mappings_by_entities",
-  async ({ entityIds, limit, page }: any, { rejectWithValue }) => {
+  async ({ entityIds, facetIds, limit, page }: any, { rejectWithValue }) => {
+    var searchBody = facetIds;
+    searchBody["curies"] = entityIds;
     try {
       const searchResponse = await post<{ curies: string[] }, Page<Mapping>>(
         `/ui/entities/?${new URLSearchParams({
           limit,
           page,
         })}`,
-        { curies: entityIds }
+        searchBody
       );
       return searchResponse;
     } catch (error: any) {
