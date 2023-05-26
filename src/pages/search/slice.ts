@@ -21,22 +21,6 @@ const initialState: SearchState = {
   loadingSearch: false,
 };
 
-export const getMappingsAll = createAsyncThunk(
-  "search_mappings_all",
-  async ({ limit, page }: any, { rejectWithValue }) => {
-    try {
-      const searchResponse = await get<Page<Mapping>>(
-        `/mappings/?${new URLSearchParams({
-          limit,
-          page,
-        })}`
-      );
-      return searchResponse;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
 export const getMappingsByEntityIds = createAsyncThunk(
   "search_mappings_by_entities",
   async ({ entityIds, facetIds, limit, page }: any, { rejectWithValue }) => {
@@ -62,29 +46,6 @@ const searchSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(
-      getMappingsAll.fulfilled,
-      (state: SearchState, action: PayloadAction<Page<Mapping>>) => {
-        state.mappings = action.payload.data.map(
-          (element) => new Mapping(element)
-        );
-        state.pagination = action.payload.pagination;
-        state.facets = action.payload.facets;
-        state.loadingSearch = false;
-      }
-    );
-    builder.addCase(getMappingsAll.pending, (state: SearchState) => {
-      state.mappings = initialState.mappings;
-      state.pagination = initialState.pagination;
-      state.facets = initialState.facets;
-      state.loadingSearch = true;
-    });
-    builder.addCase(getMappingsAll.rejected, (state: SearchState) => {
-      state.mappings = initialState.mappings;
-      state.pagination = initialState.pagination;
-      state.facets = initialState.facets;
-      state.loadingSearch = false;
-    });
     builder.addCase(
       getMappingsByEntityIds.fulfilled,
       (state: SearchState, action: PayloadAction<Page<Mapping>>) => {

@@ -5,6 +5,8 @@ import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { randomString } from "../../app/util";
 import LoadingOverlay from "../../common/LoadingOverlay";
 import { Pagination } from "../../common/Pagination";
+import Mapping from "../../model/Mapping";
+import { getMappings } from "../mapping/slice";
 import { getMappingsByEntityIds } from "./slice";
 
 export default function Search() {
@@ -12,10 +14,14 @@ export default function Search() {
   const navigate = useNavigate();
 
   const results = useAppSelector((state) => state.search.mappings);
+  const otherMappings = useAppSelector((state) => state.mapping.otherMappings);
   const paging = useAppSelector((state) => state.search.pagination);
   const facets = useAppSelector((state) => state.search.facets);
   const facetKeys = Object.keys(facets);
   const loadingSearch = useAppSelector((state) => state.search.loadingSearch);
+  const loadingWidget = useAppSelector(
+    (state) => state.mapping.loadingMappings
+  );
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState<string>(
@@ -26,40 +32,73 @@ export default function Search() {
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
-  const [openJustif, setOpenJustif] = useState<boolean>(false);
-  const [justifs, setJustifs] = useState<{
+  const [widgetParams, setWidgetParams] = useState<URLSearchParams>(
+    new URLSearchParams()
+  );
+  const [allJustifs, setAllJustifs] = useState<{
     mapping: {
       subject: string;
       predicate: string;
       object: string;
     };
-    default: {
+    justifs: {
       uri: string;
       confidence: number;
       provider: string;
-      subjectField: string[];
-      objectField: string[];
-      string: string[];
-      tool: string;
-      toolVersion: string;
-    };
+      subjectMatches: string;
+      objectMatches: string;
+      matchStrings: string;
+    }[];
   }>({
     mapping: {
       subject: "",
       predicate: "",
       object: "",
     },
-    default: {
-      uri: "",
-      confidence: 0,
-      provider: "",
-      subjectField: [],
-      objectField: [],
-      string: [],
-      tool: "",
-      toolVersion: "",
-    },
+    justifs: [],
   });
+
+  useEffect(() => {
+    if (!widgetParams.entries().next().done) {
+      dispatch(
+        getMappings({
+          subjectId: widgetParams.get("subject_id"),
+          predicateId: widgetParams.get("predicate_id"),
+          objectId: widgetParams.get("object_id"),
+          limit: rowsPerPage,
+          page: page + 1,
+        })
+      );
+    }
+  }, [widgetParams, dispatch, page, rowsPerPage]);
+
+  useEffect(() => {
+    const justifs: any[] = [];
+    otherMappings.forEach((mapping: Mapping) => {
+      justifs.push({
+        uri: mapping.getJustification(),
+        confidence: mapping.getConfidence(),
+        provider: mapping.getProvider(),
+        subjectMatches: mapping.getSubjectMatchFields()
+          ? mapping.getSubjectMatchFields().join(", ")
+          : "",
+        objectMatches: mapping.getObjectMatchFields()
+          ? mapping.getObjectMatchFields().join(", ")
+          : "",
+        matchStrings: mapping.getMatchStrings()
+          ? mapping.getMatchStrings().join(", ")
+          : "",
+      });
+    });
+    setAllJustifs({
+      mapping: {
+        subject: widgetParams.get("subject_id") || "",
+        predicate: widgetParams.get("predicate_id") || "",
+        object: widgetParams.get("object_id") || "",
+      },
+      justifs,
+    });
+  }, [otherMappings, widgetParams]);
 
   useEffect(() => {
     dispatch(
@@ -265,7 +304,7 @@ export default function Search() {
                   <div className="basis-3/12">Predicate</div>
                   <div className="basis-5/12">Object</div>
                 </div>
-                {results.map((searchResult) => {
+                {results.map((searchResult: Mapping) => {
                   return (
                     <div
                       key={randomString()}
@@ -300,32 +339,18 @@ export default function Search() {
                         <div
                           className="w-fit cursor-pointer"
                           onClick={() => {
-                            setJustifs({
-                              mapping: {
-                                subject: searchResult.getSubjectCurie()
-                                  ? searchResult.getSubjectCurie()
-                                  : searchResult.getSubjectId(),
-                                predicate: searchResult.getPredicateLabel()
-                                  ? searchResult.getPredicateLabel()
-                                  : searchResult.getPredicateId(),
-                                object: searchResult.getObjectCurie()
-                                  ? searchResult.getObjectCurie()
-                                  : searchResult.getObjectId(),
-                              },
-                              default: {
-                                uri: searchResult.getJustification(),
-                                confidence: searchResult.getConfidence(),
-                                provider: searchResult.getProvider(),
-                                subjectField:
-                                  searchResult.getSubjectMatchFields(),
-                                objectField:
-                                  searchResult.getObjectMatchFields(),
-                                string: searchResult.getMatchStrings(),
-                                tool: searchResult.getTool(),
-                                toolVersion: searchResult.getToolVersion(),
-                              },
+                            const queryObject = new URLSearchParams({
+                              subject_id: searchResult.getSubjectCurie()
+                                ? searchResult.getSubjectCurie()
+                                : searchResult.getSubjectId(),
+                              predicate_id: searchResult.getPredicateLabel()
+                                ? searchResult.getPredicateLabel()
+                                : searchResult.getPredicateId(),
+                              object_id: searchResult.getObjectCurie()
+                                ? searchResult.getObjectCurie()
+                                : searchResult.getObjectId(),
                             });
-                            setOpenJustif(true);
+                            setWidgetParams(queryObject);
                           }}
                         >
                           <i
@@ -369,83 +394,86 @@ export default function Search() {
       </main>
       <div
         className={`fixed top-0 right-0 z-30 w-96 h-full transition-transform bg-neutral-light shadow-card p-6 ${
-          openJustif ? "translate-x-0" : "translate-x-96"
+          !widgetParams.entries().next().done
+            ? "translate-x-0"
+            : "translate-x-96"
         }`}
       >
         <div className="flex flex-row items-center gap-4 mb-4">
-          <button type="button" onClick={() => setOpenJustif(false)}>
+          <button
+            type="button"
+            onClick={() => setWidgetParams(new URLSearchParams())}
+          >
             <Close />
           </button>
           <div className="text-neutral-default font-bold">Justifications</div>
         </div>
-        <div
-          title={justifs.mapping.subject}
-          className="bg-yellow-300 px-3 py-2 m-1 rounded-lg"
-        >
-          {justifs.mapping.subject}
-        </div>
-        <div
-          title={justifs.mapping.predicate}
-          className="bg-white px-3 py-2 m-1 rounded-lg truncate"
-        >
-          {justifs.mapping.predicate.substring(justifs.mapping.predicate.lastIndexOf("#") + 1)}
-        </div>
-        <div
-          title={justifs.mapping.object}
-          className="bg-yellow-300 px-3 py-2 m-1 rounded-lg"
-        >
-          {justifs.mapping.object}
-        </div>
-        <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 my-4">
+        {allJustifs.mapping.subject ? (
           <div
-            title={justifs.default.uri}
-            className="text-xl font-bold mb-2 truncate"
+            title={allJustifs.mapping.subject}
+            className="bg-yellow-300 px-3 py-2 m-1 rounded-lg"
           >
-            {justifs.default.uri.substring(
-              justifs.default.uri.lastIndexOf("/") + 1
+            {allJustifs.mapping.subject}
+          </div>
+        ) : null}
+        {allJustifs.mapping.predicate ? (
+          <div
+            title={allJustifs.mapping.predicate}
+            className="bg-white px-3 py-2 m-1 rounded-lg truncate"
+          >
+            {allJustifs.mapping.predicate.substring(
+              allJustifs.mapping.predicate.lastIndexOf("#") + 1
             )}
           </div>
-          <ul className="list-disc list-inside pl-2">
-            {justifs.default.confidence ? (
-              <li>Confidence:&nbsp;{justifs.default.confidence}</li>
-            ) : null}
-            {justifs.default.provider ? (
-              <li>Provider:&nbsp;{justifs.default.provider}</li>
-            ) : null}
-            {justifs.default.subjectField &&
-            justifs.default.subjectField.length > 0 ? (
-              <li>
-                Subject&nbsp;match&nbsp;field:&nbsp;
-                {justifs.default.subjectField?.join(", ")}
-              </li>
-            ) : null}
-            {justifs.default.objectField &&
-            justifs.default.objectField.length > 0 ? (
-              <li>
-                Object&nbsp;match&nbsp;field:&nbsp;
-                {justifs.default.objectField?.join(", ")}
-              </li>
-            ) : null}
-            {justifs.default.string && justifs.default.string.length > 0 ? (
-              <li>
-                Match&nbsp;string:&nbsp;
-                {justifs.default.string?.join(", ")}
-              </li>
-            ) : null}
-            {justifs.default.tool ? (
-              <div>
-                Tool:&nbsp;{justifs.default.tool}&nbsp;
-                {justifs.default.toolVersion}
+        ) : null}
+        {allJustifs.mapping.object ? (
+          <div
+            title={allJustifs.mapping.object}
+            className="bg-yellow-300 px-3 py-2 m-1 rounded-lg"
+          >
+            {allJustifs.mapping.object}
+          </div>
+        ) : null}
+        {allJustifs.justifs.map((justif) => {
+          return (
+            <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 my-4">
+              <div
+                title={justif.uri}
+                className="text-xl font-bold mb-2 truncate"
+              >
+                {justif.uri.substring(justif.uri.lastIndexOf("/") + 1)}
               </div>
-            ) : null}
-          </ul>
-        </div>
+              <ul className="list-disc list-inside pl-2">
+                {justif.confidence ? (
+                  <li>Confidence:&nbsp;{justif.confidence}</li>
+                ) : null}
+                {justif.provider ? (
+                  <li>Provider:&nbsp;{justif.provider}</li>
+                ) : null}
+                {justif.subjectMatches ? (
+                  <li>Subject Match Field:&nbsp;{justif.subjectMatches}</li>
+                ) : null}
+                {justif.objectMatches ? (
+                  <li>Object Match Field:&nbsp;{justif.objectMatches}</li>
+                ) : null}
+                {justif.matchStrings ? (
+                  <li>Match String:&nbsp;{justif.matchStrings}</li>
+                ) : null}
+              </ul>
+            </div>
+          );
+        })}
+        {loadingWidget ? (
+          <div className="text-center my-3">
+            <div className="spinner-default animate-spin w-10 h-10" />
+          </div>
+        ) : null}
       </div>
       <div
         className={`fixed top-0 right-0 backdrop-blur h-full w-full ${
-          openJustif ? "z-20" : "z-[-1]"
+          !widgetParams.entries().next().done ? "z-20" : "z-[-1]"
         }`}
-        onClick={() => setOpenJustif(false)}
+        onClick={() => setWidgetParams(new URLSearchParams())}
       />
       {loadingSearch ? (
         <LoadingOverlay message="Loading search results..." />
