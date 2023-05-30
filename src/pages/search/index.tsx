@@ -2,7 +2,6 @@ import { Close, KeyboardArrowDown } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { randomString } from "../../app/util";
 import LoadingOverlay from "../../common/LoadingOverlay";
 import { Pagination } from "../../common/Pagination";
 import Mapping from "../../model/Mapping";
@@ -41,7 +40,15 @@ export default function Search() {
       predicate: string;
       object: string;
     };
-    justifs: {
+    justif: {
+      uri: string;
+      confidence: number;
+      provider: string;
+      subjectMatches: string;
+      objectMatches: string;
+      matchStrings: string;
+    };
+    otherJustifs: {
       uri: string;
       confidence: number;
       provider: string;
@@ -55,7 +62,15 @@ export default function Search() {
       predicate: "",
       object: "",
     },
-    justifs: [],
+    justif: {
+      uri: "",
+      confidence: -1,
+      provider: "",
+      subjectMatches: "",
+      objectMatches: "",
+      matchStrings: "",
+    },
+    otherJustifs: [],
   });
 
   useEffect(() => {
@@ -96,7 +111,15 @@ export default function Search() {
         predicate: widgetParams.get("predicate_id") || "",
         object: widgetParams.get("object_id") || "",
       },
-      justifs,
+      justif: {
+        uri: widgetParams.get("justif_uri") || "",
+        confidence: parseFloat(widgetParams.get("justif_confidence") || "0"),
+        provider: widgetParams.get("justif_provider") || "",
+        subjectMatches: widgetParams.get("justif_subject_matches") || "",
+        objectMatches: widgetParams.get("justif_object_matches") || "",
+        matchStrings: widgetParams.get("justif_match_strings") || "",
+      },
+      otherJustifs: justifs,
     });
   }, [otherMappings, widgetParams]);
 
@@ -307,7 +330,7 @@ export default function Search() {
                 {results.map((searchResult: Mapping) => {
                   return (
                     <div
-                      key={randomString()}
+                      key={searchResult.getMappingId()}
                       className="flex flex-row items-start gap-3 mb-4"
                     >
                       <div className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2">
@@ -320,7 +343,7 @@ export default function Search() {
                         {searchResult.getSubjectCategory()}
                       </div>
                       <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2 break-all">
-                        <i>{searchResult.getPredicateId()}</i>
+                        <i>{searchResult.getPredicateCurie()}</i>
                         <br />
                         {searchResult.getPredicateModifier()
                           ? "Modifier: " + searchResult.getPredicateModifier()
@@ -343,12 +366,37 @@ export default function Search() {
                               subject_id: searchResult.getSubjectCurie()
                                 ? searchResult.getSubjectCurie()
                                 : searchResult.getSubjectId(),
-                              predicate_id: searchResult.getPredicateLabel()
-                                ? searchResult.getPredicateLabel()
+                              predicate_id: searchResult.getPredicateCurie()
+                                ? searchResult.getPredicateCurie()
                                 : searchResult.getPredicateId(),
                               object_id: searchResult.getObjectCurie()
                                 ? searchResult.getObjectCurie()
                                 : searchResult.getObjectId(),
+                              justif_uri: searchResult.getJustification()
+                                ? searchResult.getJustification()
+                                : "",
+                              justif_confidence: searchResult.getConfidence()
+                                ? searchResult.getConfidence().toString()
+                                : "",
+                              justif_provider: searchResult.getProvider()
+                                ? searchResult.getProvider()
+                                : "",
+                              justif_subject_matches:
+                                searchResult.getSubjectMatchFields()
+                                  ? searchResult
+                                      .getSubjectMatchFields()
+                                      .join(", ")
+                                  : "",
+                              justif_object_matches:
+                                searchResult.getObjectMatchFields()
+                                  ? searchResult
+                                      .getObjectMatchFields()
+                                      .join(", ")
+                                  : "",
+                              justif_match_strings:
+                                searchResult.getMatchStrings()
+                                  ? searchResult.getMatchStrings().join(", ")
+                                  : "",
                             });
                             setWidgetParams(queryObject);
                           }}
@@ -434,34 +482,73 @@ export default function Search() {
             {allJustifs.mapping.object}
           </div>
         ) : null}
-        {allJustifs.justifs.map((justif) => {
-          return (
-            <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 my-4">
-              <div
-                title={justif.uri}
-                className="text-xl font-bold mb-2 truncate"
-              >
-                {justif.uri.substring(justif.uri.lastIndexOf("/") + 1)}
-              </div>
-              <ul className="list-disc list-inside pl-2">
-                {justif.confidence ? (
-                  <li>Confidence:&nbsp;{justif.confidence}</li>
-                ) : null}
-                {justif.provider ? (
-                  <li>Provider:&nbsp;{justif.provider}</li>
-                ) : null}
-                {justif.subjectMatches ? (
-                  <li>Subject Match Field:&nbsp;{justif.subjectMatches}</li>
-                ) : null}
-                {justif.objectMatches ? (
-                  <li>Object Match Field:&nbsp;{justif.objectMatches}</li>
-                ) : null}
-                {justif.matchStrings ? (
-                  <li>Match String:&nbsp;{justif.matchStrings}</li>
-                ) : null}
-              </ul>
+        {allJustifs.justif.uri ? (
+          <div className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 my-4">
+            <div
+              title={allJustifs.justif.uri}
+              className="text-xl font-bold mb-2 truncate"
+            >
+              {allJustifs.justif.uri.substring(
+                allJustifs.justif.uri.lastIndexOf("/") + 1
+              )}
             </div>
-          );
+            <ul className="list-disc list-inside pl-2">
+              {allJustifs.justif.confidence ? (
+                <li>Confidence:&nbsp;{allJustifs.justif.confidence}</li>
+              ) : null}
+              {allJustifs.justif.provider ? (
+                <li>Provider:&nbsp;{allJustifs.justif.provider}</li>
+              ) : null}
+              {allJustifs.justif.subjectMatches ? (
+                <li>
+                  Subject Match Field:&nbsp;{allJustifs.justif.subjectMatches}
+                </li>
+              ) : null}
+              {allJustifs.justif.objectMatches ? (
+                <li>
+                  Object Match Field:&nbsp;{allJustifs.justif.objectMatches}
+                </li>
+              ) : null}
+              {allJustifs.justif.matchStrings ? (
+                <li>Match String:&nbsp;{allJustifs.justif.matchStrings}</li>
+              ) : null}
+            </ul>
+          </div>
+        ) : null}
+        {allJustifs.otherJustifs.map((justif) => {
+          if (allJustifs.justif.uri !== justif.uri) {
+            return (
+              <div
+                key={justif.uri}
+                className="shadow-card border-b-8 border-link-default rounded-md bg-white text-neutral-black p-4 my-4"
+              >
+                <div
+                  title={justif.uri}
+                  className="text-xl font-bold mb-2 truncate"
+                >
+                  {justif.uri.substring(justif.uri.lastIndexOf("/") + 1)}
+                </div>
+                <ul className="list-disc list-inside pl-2">
+                  {justif.confidence ? (
+                    <li>Confidence:&nbsp;{justif.confidence}</li>
+                  ) : null}
+                  {justif.provider ? (
+                    <li>Provider:&nbsp;{justif.provider}</li>
+                  ) : null}
+                  {justif.subjectMatches ? (
+                    <li>Subject Match Field:&nbsp;{justif.subjectMatches}</li>
+                  ) : null}
+                  {justif.objectMatches ? (
+                    <li>Object Match Field:&nbsp;{justif.objectMatches}</li>
+                  ) : null}
+                  {justif.matchStrings ? (
+                    <li>Match String:&nbsp;{justif.matchStrings}</li>
+                  ) : null}
+                </ul>
+              </div>
+            );
+          }
+          return null;
         })}
         {loadingWidget ? (
           <div className="text-center my-3">

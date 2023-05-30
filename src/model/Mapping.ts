@@ -17,6 +17,9 @@ export default class Mapping {
   getPredicateId(): string {
     return this.properties["predicate_id"];
   }
+  getPredicateCurie(): string {
+    return this.properties["predicate_id_curie"];
+  }
   getObjectId(): string {
     return this.properties["object_id"];
   }
