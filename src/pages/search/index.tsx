@@ -331,7 +331,7 @@ export default function Search() {
                   return (
                     <div
                       key={searchResult.getMappingId()}
-                      className="flex flex-row items-start gap-3 mb-4"
+                      className="flex flex-row items-center gap-3 mb-4"
                     >
                       <div className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2">
                         <strong>{searchResult.getSubjectCurie()}</strong>
@@ -342,12 +342,13 @@ export default function Search() {
                         <br />
                         {searchResult.getSubjectCategory()}
                       </div>
-                      <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2 break-all">
-                        <i>{searchResult.getPredicateCurie()}</i>
+                      <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2">
+                        <span>{searchResult.getPredicateCurie()}</span>
                         <br />
                         {searchResult.getPredicateModifier()
                           ? "Modifier: " + searchResult.getPredicateModifier()
                           : ""}
+                        <br />
                       </div>
                       <div className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2">
                         <strong>{searchResult.getObjectCurie()}</strong>
@@ -454,7 +455,7 @@ export default function Search() {
           >
             <Close />
           </button>
-          <div className="text-neutral-default font-bold">Justifications</div>
+          <div className="text-neutral-default font-bold">Justification</div>
         </div>
         {allJustifs.mapping.subject ? (
           <div
@@ -513,6 +514,11 @@ export default function Search() {
                 <li>Match String:&nbsp;{allJustifs.justif.matchStrings}</li>
               ) : null}
             </ul>
+          </div>
+        ) : null}
+        {allJustifs.otherJustifs.length > 1 ? (
+          <div className="text-neutral-default font-bold m-2">
+            Other Justifications
           </div>
         ) : null}
         {allJustifs.otherJustifs.map((justif) => {
