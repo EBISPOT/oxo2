@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { copyToClipboard } from "../../app/util";
 import LoadingOverlay from "../../common/LoadingOverlay";
-import { getMapping } from "./slice";
+import { getMapping, getMappings } from "./slice";
 
 export default function Mapping() {
   const dispatch = useAppDispatch();
@@ -12,6 +12,10 @@ export default function Mapping() {
   const mappingId: string = params.mappingId as string;
   const mapping = useAppSelector((state) => state.mapping.mapping);
   const loading = useAppSelector((state) => state.mapping.loadingMapping);
+  const otherMappings = useAppSelector((state) => state.mapping.otherMappings);
+  const loadingMappings = useAppSelector(
+    (state) => state.mapping.loadingMappings
+  );
 
   const [isSubjectCopied, setIsSubjectCopied] = useState(false);
   const [isPredicateCopied, setIsPredicateCopied] = useState(false);
@@ -20,6 +24,20 @@ export default function Mapping() {
   useEffect(() => {
     dispatch(getMapping(mappingId));
   }, [dispatch, mappingId]);
+
+  useEffect(() => {
+    if (mapping) {
+      dispatch(
+        getMappings({
+          subjectId: mapping.getSubjectCurie(),
+          predicateId: mapping.getPredicateCurie(),
+          objectId: mapping.getObjectCurie(),
+          limit: 100,
+          page: 1,
+        })
+      );
+    }
+  }, [dispatch, mapping]);
 
   return (
     <main className="container mx-auto">
@@ -63,9 +81,7 @@ export default function Mapping() {
             <div>
               <div className="bg-neutral-light px-6 py-3 my-1 rounded-2xl lg:rounded-none">
                 <div className="font-bold text-center">
-                  {mapping
-                    .getPredicateId()
-                    .substring(mapping.getPredicateId().lastIndexOf("#") + 1)}
+                  {mapping.getPredicateCurie()}
                 </div>
                 <div
                   title={mapping.getPredicateId()}
@@ -205,7 +221,7 @@ export default function Mapping() {
         ) : null}
       </div>
       <div className="text-2xl font-bold mb-4">Justification</div>
-      <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg mb-4 p-8 text-neutral-black grid grid-cols-1 gap-1">
+      <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg mb-4 p-8 text-neutral-black">
         <div
           title={mapping?.getJustification()}
           className="font-bold text-lg mb-4 truncate"
@@ -345,6 +361,64 @@ export default function Mapping() {
           </div>
         ) : null}
       </div>
+      {otherMappings.length > 1 ? (
+        <div className="text-2xl font-bold mb-4">Other Justifications</div>
+      ) : null}
+      {otherMappings.map((otherMapping) => {
+        if (
+          mapping &&
+          mapping.getJustification() !== otherMapping.getJustification()
+        ) {
+          return (
+            <div
+              key={otherMapping.getJustification()}
+              className="bg-gradient-to-r from-neutral-light to-white rounded-lg mb-4 p-8 text-neutral-black"
+            >
+              <div
+                title={otherMapping.getJustification()}
+                className="text-xl font-bold mb-2 truncate"
+              >
+                {otherMapping.getJustification()}
+              </div>
+              <ul className="list-disc list-inside pl-2">
+                {otherMapping.getConfidence() ? (
+                  <li>Confidence:&nbsp;{otherMapping.getConfidence()}</li>
+                ) : null}
+                {otherMapping.getProvider() ? (
+                  <li>Provider:&nbsp;{otherMapping.getProvider()}</li>
+                ) : null}
+                {otherMapping.getSubjectMatchFields() &&
+                otherMapping.getSubjectMatchFields().length > 0 ? (
+                  <li>
+                    Subject Match Field:&nbsp;
+                    {otherMapping.getSubjectMatchFields().join(", ")}
+                  </li>
+                ) : null}
+                {otherMapping.getObjectMatchFields() &&
+                otherMapping.getObjectMatchFields().length > 0 ? (
+                  <li>
+                    Object Match Field:&nbsp;
+                    {otherMapping.getObjectMatchFields().join(", ")}
+                  </li>
+                ) : null}
+                {otherMapping.getMatchStrings() &&
+                otherMapping.getMatchStrings().length > 0 ? (
+                  <li>
+                    Match String:&nbsp;
+                    {otherMapping.getMatchStrings().join(", ")}
+                  </li>
+                ) : null}
+              </ul>
+            </div>
+          );
+        }
+        return null;
+      })}
+      {loadingMappings ? (
+        <div className="text-center my-3">
+          <div className="spinner-default animate-spin w-10 h-10" />
+        </div>
+      ) : null}
       <button
         className="button-secondary text-lg font-bold mb-6"
         onClick={() => navigate(-1)}
