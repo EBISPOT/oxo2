@@ -1,7 +1,9 @@
 import { Close, KeyboardArrowDown } from "@mui/icons-material";
+import { Slider, ThemeProvider } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { theme } from "../../app/mui";
 import LoadingOverlay from "../../common/LoadingOverlay";
 import { Pagination } from "../../common/Pagination";
 import Mapping from "../../model/Mapping";
@@ -30,6 +32,14 @@ export default function Search() {
   var facetFieldsCopy: any = {};
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+
+  const [minValue, setMinValue] = useState<number>(0);
+  const [maxValue, setMaxValue] = useState<number>(1);
+  const handleChange = (event: Event, newValue: number | number[]) => {
+    const newVal = newValue as number[];
+    setMinValue(newVal[0]);
+    setMaxValue(newVal[1]);
+  };
 
   const [widgetParams, setWidgetParams] = useState<URLSearchParams>(
     new URLSearchParams()
@@ -268,15 +278,27 @@ export default function Search() {
           </div>
           <div className="col-span-3">
             <div className="flex flex-row justify-between mb-4">
-              <div className="flex flex-col justify-center">
+              <div className="basis-1/4 flex flex-col">
                 <label>Confidence</label>
-                <input
-                  type="range"
-                  min="1"
-                  max="3"
-                  className="apperance-none bg-transparent accent-petrol-default cursor-pointer"
-                  defaultValue={2}
-                />
+                <div className="flex flex-row items-center">
+                  <div className="text-sm font-bold text-neutral-default pr-5">
+                    {minValue.toFixed(1)}
+                  </div>
+                  <ThemeProvider theme={theme}>
+                    <Slider
+                      value={[minValue, maxValue]}
+                      onChange={handleChange}
+                      valueLabelDisplay="off"
+                      disableSwap
+                      min={0}
+                      step={0.1}
+                      max={1}
+                    />
+                  </ThemeProvider>
+                  <div className="text-sm font-bold text-neutral-default pl-5">
+                    {maxValue.toFixed(1)}
+                  </div>
+                </div>
               </div>
               <div className="justify-end flex flex-row gap-4">
                 <div className="flex group relative text-md">
