@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { get, post } from "../../app/api";
+import { post } from "../../app/api";
 import Mapping from "../../model/Mapping";
 
 export interface SearchState {
@@ -21,10 +21,10 @@ const initialState: SearchState = {
   loadingSearch: false,
 };
 
-export const getMappingsByEntityIds = createAsyncThunk(
+export const getMappingsByEntities = createAsyncThunk(
   "search_mappings_by_entities",
   async ({ entityIds, facetIds, limit, page }: any, { rejectWithValue }) => {
-    var searchBody = facetIds;
+    let searchBody = facetIds;
     searchBody["curies"] = entityIds;
     try {
       const searchResponse = await post<{ curies: string[] }, Page<Mapping>>(
@@ -47,7 +47,7 @@ const searchSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder.addCase(
-      getMappingsByEntityIds.fulfilled,
+      getMappingsByEntities.fulfilled,
       (state: SearchState, action: PayloadAction<Page<Mapping>>) => {
         state.mappings = action.payload.data.map(
           (element) => new Mapping(element)
@@ -57,13 +57,13 @@ const searchSlice = createSlice({
         state.loadingSearch = false;
       }
     );
-    builder.addCase(getMappingsByEntityIds.pending, (state: SearchState) => {
+    builder.addCase(getMappingsByEntities.pending, (state: SearchState) => {
       state.mappings = initialState.mappings;
       state.pagination = initialState.pagination;
       state.facets = initialState.facets;
       state.loadingSearch = true;
     });
-    builder.addCase(getMappingsByEntityIds.rejected, (state: SearchState) => {
+    builder.addCase(getMappingsByEntities.rejected, (state: SearchState) => {
       state.mappings = initialState.mappings;
       state.pagination = initialState.pagination;
       state.facets = initialState.facets;

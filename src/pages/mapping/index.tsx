@@ -5,7 +5,7 @@ import { copyToClipboard } from "../../app/util";
 import LoadingOverlay from "../../common/LoadingOverlay";
 import { getMapping, getMappings } from "./slice";
 
-export default function Mapping() {
+export default function MappingView() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const params = useParams();
@@ -414,11 +414,6 @@ export default function Mapping() {
         }
         return null;
       })}
-      {loadingMappings ? (
-        <div className="text-center my-3">
-          <div className="spinner-default animate-spin w-10 h-10" />
-        </div>
-      ) : null}
       <button
         className="button-secondary text-lg font-bold mb-6"
         onClick={() => navigate(-1)}
@@ -426,6 +421,11 @@ export default function Mapping() {
         Back
       </button>
       {loading ? <LoadingOverlay message="Loading mapping..." /> : null}
+      {loadingMappings ? (
+        <div className="text-center my-3">
+          <div className="spinner-default animate-spin w-10 h-10" />
+        </div>
+      ) : null}
     </main>
   );
 }

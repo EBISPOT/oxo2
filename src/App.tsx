@@ -4,8 +4,9 @@ import Header from "./common/Header";
 import About from "./pages/about";
 import Documentation from "./pages/documentation";
 import Home from "./pages/home";
-import Mapping from "./pages/mapping";
+import MappingView from "./pages/mapping";
 import Search from "./pages/search";
+import EntityView from "./pages/entity";
 
 function App() {
   return (
@@ -15,7 +16,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/search" element={<Search />} />
-        <Route path="/mapping/:mappingId" element={<Mapping />} />
+        <Route path="/mapping/:mappingId" element={<MappingView />} />
+        <Route path="/entity/:entityId" element={<EntityView />} />
         <Route path="/docs" element={<Documentation />} />
         <Route path="/about" element={<About />} />
       </Routes>
