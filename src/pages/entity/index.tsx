@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { copyToClipboard } from "../../app/util";
 import LoadingOverlay from "../../common/LoadingOverlay";
+import Mapping from "../../model/Mapping";
 import { getEntities } from "./slice";
 
 export default function EntityView() {
@@ -14,6 +15,7 @@ export default function EntityView() {
   const entityMappings = useAppSelector((state) => state.entity.entityMappings);
   const loading = useAppSelector((state) => state.entity.loadingEntity);
 
+  const [mappings, setMappings] = useState<Mapping[]>([]);
   const [isSubjectCopied, setIsSubjectCopied] = useState(false);
   const [isPredicateCopied, setIsPredicateCopied] = useState(false);
   const [isObjectCopied, setIsObjectCopied] = useState(false);
@@ -21,130 +23,163 @@ export default function EntityView() {
   useEffect(() => {
     dispatch(getEntities(entityId));
   }, [dispatch, entityId]);
+  useEffect(() => {
+    let entityMappingsCopy = [...entityMappings];
+    entityMappingsCopy.sort((a, b) => {
+      console.log(a.getSubjectCurie());
+      if (a.getSubjectCurie() && a.getSubjectCurie() === entityId) return 1;
+      else if (b.getSubjectCurie() && b.getSubjectCurie() === entityId)
+        return 1;
+      else return -1;
+    });
+    setMappings(entityMappingsCopy);
+  }, [entityMappings, setMappings, entityId]);
   return (
     <main className="container mx-auto">
       <div className="text-2xl font-bold mt-6 mb-4">{entityId}</div>
-      {entityMappings && entityMappings.length > 0
-        ? entityMappings.map((mapping) => {
+      {mappings && mappings.length > 0
+        ? mappings.map((mapping) => {
             return (
-              <div className="mb-4 text-neutral-black grid grid-cols-1 lg:grid-cols-3">
-                <div>
-                  {mapping?.getSubjectId() ? (
-                    <div>
-                      <div className="bg-yellow-300 px-6 py-3 my-1 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none">
-                        <div className="font-bold text-center">
-                          {mapping.getSubjectCurie()}
-                        </div>
-                        <div
-                          title={mapping.getSubjectId()}
-                          className="italic truncate"
-                        >
-                          <a
-                            href={mapping.getSubjectId()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <i className="icon icon-common icon-external-link-alt icon-spacer" />
-                          </a>
-                          <i
-                            title="Copy"
-                            className={`icon icon-common icon-copy icon-spacer ${
-                              isSubjectCopied ? "cursor-wait" : "cursor-pointer"
-                            }`}
-                            onClick={() => {
-                              copyText(
-                                mapping.getSubjectId(),
-                                setIsSubjectCopied
-                              );
-                            }}
-                          />
-                          {mapping.getSubjectId()}
-                        </div>
-                      </div>
-                      {mapping.getSubjectLabel() ? (
-                        <div className="text-center">
-                          ({mapping.getSubjectLabel()})
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
+              <div className="mb-6 text-neutral-black flex flex-col items-stretch items-center lg:flex-row">
+                <div
+                  className={`flex-1 lg:min-w-0 h-[6rem] px-6 py-3 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none ${
+                    mapping.getSubjectCurie() === entityId
+                      ? "bg-yellow-300"
+                      : "bg-grey-300"
+                  }`}
+                >
+                  <div className="text-center font-bold">
+                    {mapping.getSubjectCurie()}
+                  </div>
+                  <div
+                    title={mapping.getSubjectId()}
+                    className="text-center truncate italic text-sm"
+                  >
+                    <a
+                      href={mapping.getSubjectId()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <i className="icon icon-common icon-external-link-alt icon-spacer" />
+                    </a>
+                    <i
+                      title="Copy"
+                      className={`icon icon-common icon-copy icon-spacer ${
+                        isSubjectCopied ? "cursor-wait" : "cursor-pointer"
+                      }`}
+                      onClick={() => {
+                        copyText(mapping.getSubjectId(), setIsSubjectCopied);
+                      }}
+                    />
+                    {mapping.getSubjectId()}
+                  </div>
+                  <div
+                    title={mapping.getSubjectLabel()}
+                    className="text-center truncate"
+                  >
+                    {mapping.getSubjectLabel() || <span>&nbsp;</span>}
+                  </div>
                 </div>
-                <div>
-                  {mapping?.getPredicateId() ? (
-                    <div>
-                      <div className="bg-neutral-light px-6 py-3 my-1 rounded-2xl lg:rounded-none">
-                        <div className="font-bold text-center">
-                          {mapping.getPredicateCurie()}
-                        </div>
-                        <div
-                          title={mapping.getPredicateId()}
-                          className="italic truncate"
-                        >
-                          <i
-                            title="Copy"
-                            className={`icon icon-common icon-copy icon-spacer ${
-                              isPredicateCopied
-                                ? "cursor-wait"
-                                : "cursor-pointer"
-                            }`}
-                            onClick={() => {
-                              copyText(
-                                mapping.getPredicateId(),
-                                setIsPredicateCopied
-                              );
-                            }}
-                          />
-                          {mapping.getPredicateId()}
-                        </div>
-                      </div>
-                      {mapping.getPredicateLabel() ? (
-                        <div className="text-center">
-                          ({mapping.getPredicateLabel()})
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
+                <div
+                  className={`w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[3rem] lg:border-l-[1.5rem] lg:border-y-neutral-light ${
+                    mapping.getSubjectCurie() === entityId
+                      ? "lg:border-l-yellow-300"
+                      : "lg:border-l-grey-300"
+                  }`}
+                ></div>
+                <div className="flex-1 lg:min-w-0 h-[6rem] bg-neutral-light px-6 py-3 rounded-2xl lg:rounded-none">
+                  <div className="text-center font-bold">
+                    {mapping.getPredicateCurie()}
+                  </div>
+                  <div
+                    title={mapping.getPredicateId()}
+                    className="text-center truncate italic text-sm"
+                  >
+                    <a
+                      href={mapping.getPredicateId()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <i className="icon icon-common icon-external-link-alt icon-spacer" />
+                    </a>
+                    <i
+                      title="Copy"
+                      className={`icon icon-common icon-copy icon-spacer ${
+                        isPredicateCopied ? "cursor-wait" : "cursor-pointer"
+                      }`}
+                      onClick={() => {
+                        copyText(
+                          mapping.getPredicateId(),
+                          setIsPredicateCopied
+                        );
+                      }}
+                    />
+                    {mapping.getPredicateId()}
+                  </div>
+                  <div
+                    title={mapping.getPredicateLabel()}
+                    className="text-center truncate"
+                  >
+                    {mapping.getPredicateLabel() || <span>&nbsp;</span>}
+                  </div>
                 </div>
-                <div>
-                  {mapping?.getObjectId() ? (
-                    <div>
-                      <div className="bg-yellow-300 px-6 py-3 my-1 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none">
-                        <div className="font-bold text-center">
-                          {mapping.getObjectCurie()}
-                        </div>
-                        <div
-                          title={mapping.getObjectId()}
-                          className="italic truncate"
-                        >
-                          <a
-                            href={mapping.getObjectId()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <i className="icon icon-common icon-external-link-alt icon-spacer" />
-                          </a>
-                          <i
-                            title="Copy"
-                            className={`icon icon-common icon-copy icon-spacer ${
-                              isObjectCopied ? "cursor-wait" : "cursor-pointer"
-                            }`}
-                            onClick={() => {
-                              copyText(
-                                mapping.getObjectId(),
-                                setIsObjectCopied
-                              );
-                            }}
-                          />
-                          {mapping.getObjectId()}
-                        </div>
-                      </div>
-                      {mapping.getObjectLabel() ? (
-                        <div className="text-center">
-                          ({mapping.getObjectLabel()})
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
+                <div
+                  className={`w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[3rem] lg:border-l-[1.5rem] lg:border-l-neutral-light ${
+                    mapping.getObjectCurie() === entityId
+                      ? "lg:border-y-yellow-300"
+                      : "lg:border-y-grey-300"
+                  }`}
+                ></div>
+                <div
+                  className={`flex-1 lg:min-w-0 h-[6rem] px-6 py-3 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none ${
+                    mapping.getObjectCurie() === entityId
+                      ? "bg-yellow-300"
+                      : "bg-grey-300"
+                  }`}
+                >
+                  <div className="text-center font-bold">
+                    {mapping.getObjectCurie()}
+                  </div>
+                  <div
+                    title={mapping.getObjectId()}
+                    className="text-center truncate italic text-sm"
+                  >
+                    <a
+                      href={mapping.getObjectId()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <i className="icon icon-common icon-external-link-alt icon-spacer" />
+                    </a>
+                    <i
+                      title="Copy"
+                      className={`icon icon-common icon-copy icon-spacer ${
+                        isObjectCopied ? "cursor-wait" : "cursor-pointer"
+                      }`}
+                      onClick={() => {
+                        copyText(mapping.getObjectId(), setIsObjectCopied);
+                      }}
+                    />
+                    {mapping.getObjectId()}
+                  </div>
+                  <div
+                    title={mapping.getObjectLabel()}
+                    className="text-center truncate"
+                  >
+                    {mapping.getObjectLabel() || <span>&nbsp;</span>}
+                  </div>
+                </div>
+                <div
+                  className="link-default text-sm font-bold text-center cursor-pointer self-center m-2"
+                  onClick={() => {
+                    navigate(
+                      `/mapping/${encodeURIComponent(mapping.getMappingId())}`
+                    );
+                  }}
+                >
+                  View
+                  <br />
+                  mapping
                 </div>
               </div>
             );
