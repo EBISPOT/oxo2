@@ -5,7 +5,7 @@ import { copyToClipboard } from "../../app/util";
 import LoadingOverlay from "../../common/LoadingOverlay";
 import { getMapping, getMappings } from "./slice";
 
-export default function MappingView() {
+export default function MappingView({ appRef }: { appRef: any }) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const params = useParams();
@@ -22,8 +22,11 @@ export default function MappingView() {
   const [isObjectCopied, setIsObjectCopied] = useState(false);
 
   useEffect(() => {
-    dispatch(getMapping(mappingId));
-  }, [dispatch, mappingId]);
+    if (mappingId && mappingId !== appRef.current.mapping) {
+      dispatch(getMapping(mappingId));
+      appRef.current.mapping = mappingId;
+    }
+  }, [dispatch, appRef, mappingId]);
 
   useEffect(() => {
     if (mapping) {
@@ -418,7 +421,7 @@ export default function MappingView() {
         <div className="text-center my-3">
           <div className="spinner-default animate-spin w-10 h-10" />
         </div>
-      ) : null} 
+      ) : null}
       <button
         className="button-secondary text-lg font-bold mb-6"
         onClick={() => navigate(-1)}

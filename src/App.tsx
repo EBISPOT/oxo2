@@ -10,7 +10,7 @@ import MappingView from "./pages/mapping";
 import Search from "./pages/search";
 
 function App() {
-  const appRef = useRef({ searchQuery: "" });
+  const appRef = useRef({ searchQuery: "", mapping: "", entity: "" });
   return (
     <div>
       <Header />
@@ -18,8 +18,14 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/search" element={<Search appRef={appRef} />} />
-        <Route path="/mapping/:mappingId" element={<MappingView />} />
-        <Route path="/entity/:entityId" element={<EntityView />} />
+        <Route
+          path="/mapping/:mappingId"
+          element={<MappingView appRef={appRef} />}
+        />
+        <Route
+          path="/entity/:entityId"
+          element={<EntityView appRef={appRef} />}
+        />
         <Route path="/docs" element={<Documentation />} />
         <Route path="/about" element={<About />} />
       </Routes>

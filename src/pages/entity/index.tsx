@@ -6,7 +6,7 @@ import LoadingOverlay from "../../common/LoadingOverlay";
 import Mapping from "../../model/Mapping";
 import { getEntities } from "./slice";
 
-export default function EntityView() {
+export default function EntityView({ appRef }: { appRef: any }) {
   const params = useParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -21,8 +21,11 @@ export default function EntityView() {
   const [isObjectCopied, setIsObjectCopied] = useState(false);
 
   useEffect(() => {
-    dispatch(getEntities(entityId));
-  }, [dispatch, entityId]);
+    if (entityId && entityId !== appRef.current.entity) {
+      dispatch(getEntities(entityId));
+      appRef.current.entity = entityId;
+    }
+  }, [dispatch, appRef, entityId]);
   useEffect(() => {
     let entityMappingsCopy = [...entityMappings];
     entityMappingsCopy.sort((a, b) => {
