@@ -17,7 +17,6 @@ export default function EntityView({ appRef }: { appRef: any }) {
 
   const [mappings, setMappings] = useState<Mapping[]>([]);
   const [isSubjectCopied, setIsSubjectCopied] = useState(false);
-  const [isPredicateCopied, setIsPredicateCopied] = useState(false);
   const [isObjectCopied, setIsObjectCopied] = useState(false);
 
   useEffect(() => {
@@ -92,40 +91,18 @@ export default function EntityView({ appRef }: { appRef: any }) {
                       : "lg:border-l-grey-300"
                   }`}
                 ></div>
-                <div className="flex-1 lg:min-w-0 h-[6rem] bg-neutral-light px-6 py-3 rounded-2xl lg:rounded-none">
-                  <div className="text-center font-bold">
-                    {mapping.getPredicateCurie()}
-                  </div>
+                <div className="flex-none flex flex-col justify-center lg:min-w-0 lg:h-[6rem] bg-neutral-light px-6 py-3 rounded-2xl lg:rounded-none">
                   <div
                     title={mapping.getPredicateId()}
-                    className="text-center truncate italic text-sm"
+                    className="text-center font-bold"
                   >
-                    <a
-                      href={mapping.getPredicateId()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <i className="icon icon-common icon-external-link-alt icon-spacer" />
-                    </a>
-                    <i
-                      title="Copy"
-                      className={`icon icon-common icon-copy icon-spacer ${
-                        isPredicateCopied ? "cursor-wait" : "cursor-pointer"
-                      }`}
-                      onClick={() => {
-                        copyText(
-                          mapping.getPredicateId(),
-                          setIsPredicateCopied
-                        );
-                      }}
-                    />
-                    {mapping.getPredicateId()}
+                    {mapping.getPredicateCurie()}
                   </div>
                   <div
                     title={mapping.getPredicateLabel()}
                     className="text-center truncate"
                   >
-                    {mapping.getPredicateLabel() || <span>&nbsp;</span>}
+                    {mapping.getPredicateLabel() || ""}
                   </div>
                 </div>
                 <div
