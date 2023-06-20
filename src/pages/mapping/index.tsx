@@ -18,7 +18,6 @@ export default function MappingView({ appRef }: { appRef: any }) {
   );
 
   const [isSubjectCopied, setIsSubjectCopied] = useState(false);
-  const [isPredicateCopied, setIsPredicateCopied] = useState(false);
   const [isObjectCopied, setIsObjectCopied] = useState(false);
 
   useEffect(() => {
@@ -45,184 +44,169 @@ export default function MappingView({ appRef }: { appRef: any }) {
   return (
     <main className="container mx-auto">
       <div className="text-2xl font-bold mt-6 mb-4">Mapping</div>
-      <div className="mb-4 text-neutral-black grid grid-cols-1 lg:grid-cols-3">
-        <div>
-          {mapping?.getSubjectId() ? (
-            <div>
-              <div className="bg-yellow-300 px-6 py-3 my-1 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none">
-                <div className="font-bold text-center">
-                  {mapping.getSubjectCurie()}
-                </div>
-                <div title={mapping.getSubjectId()} className="italic truncate">
-                  <a
-                    href={mapping.getSubjectId()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <i className="icon icon-common icon-external-link-alt icon-spacer" />
-                  </a>
-                  <i
-                    title="Copy"
-                    className={`icon icon-common icon-copy icon-spacer ${
-                      isSubjectCopied ? "cursor-wait" : "cursor-pointer"
-                    }`}
-                    onClick={() => {
-                      copyText(mapping.getSubjectId(), setIsSubjectCopied);
-                    }}
-                  />
-                  {mapping.getSubjectId()}
-                </div>
-              </div>
-              {mapping.getSubjectLabel() ? (
-                <div className="text-center">({mapping.getSubjectLabel()})</div>
-              ) : null}
-            </div>
-          ) : null}
+      <div className="mb-6 text-neutral-black flex flex-col items-stretch items-center lg:flex-row">
+        <div className="flex-1 lg:min-w-0 h-[6rem] px-6 py-3 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none bg-yellow-300">
+          <div className="text-center font-bold">
+            {mapping?.getSubjectCurie()}
+          </div>
+          <div
+            title={mapping?.getSubjectId()}
+            className="text-center truncate italic text-sm"
+          >
+            <a
+              href={mapping?.getSubjectId()}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <i className="icon icon-common icon-external-link-alt icon-spacer" />
+            </a>
+            <i
+              title="Copy"
+              className={`icon icon-common icon-copy icon-spacer ${
+                isSubjectCopied ? "cursor-wait" : "cursor-pointer"
+              }`}
+              onClick={() => {
+                copyText(mapping?.getSubjectId() || "", setIsSubjectCopied);
+              }}
+            />
+            {mapping?.getSubjectId()}
+          </div>
+          <div
+            title={mapping?.getSubjectLabel()}
+            className="text-center truncate"
+          >
+            {mapping?.getSubjectLabel() || <span>&nbsp;</span>}
+          </div>
         </div>
-        <div>
-          {mapping?.getPredicateId() ? (
-            <div>
-              <div className="bg-neutral-light px-6 py-3 my-1 rounded-2xl lg:rounded-none">
-                <div className="font-bold text-center">
-                  {mapping.getPredicateCurie()}
-                </div>
-                <div
-                  title={mapping.getPredicateId()}
-                  className="italic truncate"
-                >
-                  <i
-                    title="Copy"
-                    className={`icon icon-common icon-copy icon-spacer ${
-                      isPredicateCopied ? "cursor-wait" : "cursor-pointer"
-                    }`}
-                    onClick={() => {
-                      copyText(mapping.getPredicateId(), setIsPredicateCopied);
-                    }}
-                  />
-                  {mapping.getPredicateId()}
-                </div>
-              </div>
-              {mapping.getPredicateLabel() ? (
-                <div className="text-center">
-                  ({mapping.getPredicateLabel()})
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+        <div className="w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[3rem] lg:border-l-[1.5rem] lg:border-y-neutral-light lg:border-l-yellow-300" />
+        <div className="flex-none flex flex-col justify-center lg:min-w-0 lg:h-[6rem] bg-neutral-light px-6 py-3 rounded-2xl lg:rounded-none">
+          <div
+            title={mapping?.getPredicateId()}
+            className="text-center font-bold"
+          >
+            {mapping?.getPredicateCurie()}
+          </div>
+          <div
+            title={mapping?.getPredicateLabel()}
+            className="text-center truncate"
+          >
+            {mapping?.getPredicateLabel() || ""}
+          </div>
         </div>
-        <div>
-          {mapping?.getObjectId() ? (
-            <div>
-              <div className="bg-yellow-300 px-6 py-3 my-1 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none">
-                <div className="font-bold text-center">
-                  {mapping.getObjectCurie()}
-                </div>
-                <div title={mapping.getObjectId()} className="italic truncate">
-                  <a
-                    href={mapping.getObjectId()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <i className="icon icon-common icon-external-link-alt icon-spacer" />
-                  </a>
-                  <i
-                    title="Copy"
-                    className={`icon icon-common icon-copy icon-spacer ${
-                      isObjectCopied ? "cursor-wait" : "cursor-pointer"
-                    }`}
-                    onClick={() => {
-                      copyText(mapping.getObjectId(), setIsObjectCopied);
-                    }}
-                  />
-                  {mapping.getObjectId()}
-                </div>
-              </div>
-              {mapping.getObjectLabel() ? (
-                <div className="text-center">({mapping.getObjectLabel()})</div>
-              ) : null}
-            </div>
-          ) : null}
+        <div className="w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[3rem] lg:border-l-[1.5rem] lg:border-l-neutral-light lg:border-y-yellow-300" />
+        <div className="flex-1 lg:min-w-0 h-[6rem] px-6 py-3 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none bg-yellow-300">
+          <div className="text-center font-bold">
+            {mapping?.getObjectCurie()}
+          </div>
+          <div
+            title={mapping?.getObjectId()}
+            className="text-center truncate italic text-sm"
+          >
+            <a
+              href={mapping?.getObjectId()}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <i className="icon icon-common icon-external-link-alt icon-spacer" />
+            </a>
+            <i
+              title="Copy"
+              className={`icon icon-common icon-copy icon-spacer ${
+                isObjectCopied ? "cursor-wait" : "cursor-pointer"
+              }`}
+              onClick={() => {
+                copyText(mapping?.getObjectId() || "", setIsObjectCopied);
+              }}
+            />
+            {mapping?.getObjectId()}
+          </div>
+          <div
+            title={mapping?.getObjectLabel()}
+            className="text-center truncate"
+          >
+            {mapping?.getObjectLabel() || <span>&nbsp;</span>}
+          </div>
         </div>
-        {mapping?.getSubjectCategory() ? (
-          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
-            <strong>Subject&nbsp;Category:&nbsp;</strong>
-            {mapping.getSubjectCategory()}
-          </div>
-        ) : null}
-        {mapping?.getSubjectType() ? (
-          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
-            <strong>Subject&nbsp;Type:&nbsp;</strong>
-            {mapping.getSubjectType()}
-          </div>
-        ) : null}
-        {mapping?.getSubjectSource() ? (
-          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
-            <strong>Subject&nbsp;Source:&nbsp;</strong>
-            {mapping.getSubjectSource()}&nbsp;
-            {mapping.getSubjectSourceVersion()}
-          </div>
-        ) : null}
-        {mapping?.getObjectCategory() ? (
-          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
-            <strong>Object&nbsp;Category:&nbsp;</strong>
-            {mapping.getObjectCategory()}
-          </div>
-        ) : null}
-        {mapping?.getObjectType() ? (
-          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
-            <strong>Object&nbsp;Type:&nbsp;</strong>
-            {mapping.getObjectType()}
-          </div>
-        ) : null}
-        {mapping?.getObjectSource() ? (
-          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
-            <strong>Object&nbsp;Source:&nbsp;</strong>
-            {mapping.getObjectSource()}&nbsp;
-            {mapping.getObjectSourceVersion()}
-          </div>
-        ) : null}
-        {mapping?.getPredicateModifier() ? (
-          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
-            <strong>Predicate&nbsp;Modifier:&nbsp;</strong>
-            {mapping.getPredicateModifier()}
-          </div>
-        ) : null}
-        {mapping?.getCardinality() ? (
-          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
-            <strong>Cardinality:&nbsp;</strong>
-            {mapping?.getCardinality()}
-          </div>
-        ) : null}
-        {mapping?.getProvider() ? (
-          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
-            <strong>Provider:&nbsp;</strong>
-            {mapping?.getProvider()}
-          </div>
-        ) : null}
-        {mapping && (mapping.getCreatorLabels() || mapping.getCreatorIds()) ? (
-          <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
-            <strong>Creators</strong>
-            <ul>
-              {(mapping.getCreatorLabels()
-                ? mapping
-                    .getCreatorLabels()
-                    .map((label) => <li key={label}>{label}</li>)
-                : []
-              ).concat(
-                mapping.getCreatorIds()
-                  ? mapping.getCreatorIds().map((id) => (
-                      <li key={id} className="link-default">
-                        <a href={id} target="_blank" rel="noopener noreferrer">
-                          {id}
-                        </a>
-                      </li>
-                    ))
-                  : []
-              )}
-            </ul>
-          </div>
-        ) : null}
       </div>
+      {mapping?.getSubjectCategory() ? (
+        <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+          <strong>Subject&nbsp;Category:&nbsp;</strong>
+          {mapping.getSubjectCategory()}
+        </div>
+      ) : null}
+      {mapping?.getSubjectType() ? (
+        <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+          <strong>Subject&nbsp;Type:&nbsp;</strong>
+          {mapping.getSubjectType()}
+        </div>
+      ) : null}
+      {mapping?.getSubjectSource() ? (
+        <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+          <strong>Subject&nbsp;Source:&nbsp;</strong>
+          {mapping.getSubjectSource()}&nbsp;
+          {mapping.getSubjectSourceVersion()}
+        </div>
+      ) : null}
+      {mapping?.getObjectCategory() ? (
+        <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+          <strong>Object&nbsp;Category:&nbsp;</strong>
+          {mapping.getObjectCategory()}
+        </div>
+      ) : null}
+      {mapping?.getObjectType() ? (
+        <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+          <strong>Object&nbsp;Type:&nbsp;</strong>
+          {mapping.getObjectType()}
+        </div>
+      ) : null}
+      {mapping?.getObjectSource() ? (
+        <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+          <strong>Object&nbsp;Source:&nbsp;</strong>
+          {mapping.getObjectSource()}&nbsp;
+          {mapping.getObjectSourceVersion()}
+        </div>
+      ) : null}
+      {mapping?.getPredicateModifier() ? (
+        <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+          <strong>Predicate&nbsp;Modifier:&nbsp;</strong>
+          {mapping.getPredicateModifier()}
+        </div>
+      ) : null}
+      {mapping?.getCardinality() ? (
+        <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+          <strong>Cardinality:&nbsp;</strong>
+          {mapping?.getCardinality()}
+        </div>
+      ) : null}
+      {mapping?.getProvider() ? (
+        <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+          <strong>Provider:&nbsp;</strong>
+          {mapping?.getProvider()}
+        </div>
+      ) : null}
+      {mapping && (mapping.getCreatorLabels() || mapping.getCreatorIds()) ? (
+        <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
+          <strong>Creators</strong>
+          <ul>
+            {(mapping.getCreatorLabels()
+              ? mapping
+                  .getCreatorLabels()
+                  .map((label) => <li key={label}>{label}</li>)
+              : []
+            ).concat(
+              mapping.getCreatorIds()
+                ? mapping.getCreatorIds().map((id) => (
+                    <li key={id} className="link-default">
+                      <a href={id} target="_blank" rel="noopener noreferrer">
+                        {id}
+                      </a>
+                    </li>
+                  ))
+                : []
+            )}
+          </ul>
+        </div>
+      ) : null}
       <div className="text-2xl font-bold mb-4">Justification</div>
       <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg mb-4 p-8 text-neutral-black">
         <div
