@@ -34,7 +34,9 @@ export default function Search({ appRef }: { appRef: any }) {
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
   const [minValue, setMinValue] = useState<number>(0);
-  const [maxValue, setMaxValue] = useState<number>(1);
+  const [maxValue, setMaxValue] = useState<number>(0);
+  const [minLimit, setMinLimit] = useState<number>(0);
+  const [maxLimit, setMaxLimit] = useState<number>(0);
   const handleChange = (event: Event, newValue: number | number[]) => {
     const newVal = newValue as number[];
     setMinValue(newVal[0]);
@@ -150,6 +152,13 @@ export default function Search({ appRef }: { appRef: any }) {
     }
   }, [dispatch, appRef, searchParams, facetFields, page, rowsPerPage]);
 
+  useEffect(() => {
+    setMinValue(facets["confidence"]?.min || 0);
+    setMaxValue(facets["confidence"]?.max || 0);
+    setMinLimit(facets["confidence"]?.min || 0);
+    setMaxLimit(facets["confidence"]?.max || 0);
+  }, [facets]);
+
   return (
     <div>
       <main className="container mx-auto">
@@ -199,84 +208,86 @@ export default function Search({ appRef }: { appRef: any }) {
                 <div className="text-neutral-black">
                   {facetKeys.map((facetKey) => {
                     const facetValue = facets[facetKey];
-                    return (
-                      <div key={facetKey}>
-                        <div className="font-semibold text-lg mb-2 capitalize">
-                          {facetKey.replaceAll("_", " ")}
-                        </div>
-                        <fieldset className="mb-4">
-                          {facetKey && Object.keys(facetValue).length > 0
-                            ? Object.keys(facetValue).map((facetSubKey) => {
-                                facetFieldsCopy = { ...facetFields };
-                                return (
-                                  <label
-                                    key={facetSubKey}
-                                    htmlFor={facetSubKey}
-                                    className="block p-1 w-fit whitespace-nowrap"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      id={facetSubKey}
-                                      className="invisible hidden peer"
-                                      checked={
-                                        !!facetFields[facetKey] &&
-                                        !!Array.isArray(
-                                          facetFields[facetKey]
-                                        ) &&
-                                        !!facetFields[facetKey].find(
-                                          (key: string) => key === facetSubKey
-                                        )
-                                      }
-                                      onChange={(e) => {
-                                        if (
-                                          facetFieldsCopy[facetKey] &&
-                                          Array.isArray(
-                                            facetFieldsCopy[facetKey]
+                    if (facetKey.toLowerCase() !== "confidence") {
+                      return (
+                        <div key={facetKey}>
+                          <div className="font-semibold text-lg mb-2 capitalize">
+                            {facetKey.replaceAll("_", " ")}
+                          </div>
+                          <fieldset className="mb-4">
+                            {facetKey && Object.keys(facetValue).length > 0
+                              ? Object.keys(facetValue).map((facetSubKey) => {
+                                  facetFieldsCopy = { ...facetFields };
+                                  return (
+                                    <label
+                                      key={facetSubKey}
+                                      htmlFor={facetSubKey}
+                                      className="block p-1 w-fit whitespace-nowrap"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        id={facetSubKey}
+                                        className="invisible hidden peer"
+                                        checked={
+                                          !!facetFields[facetKey] &&
+                                          !!Array.isArray(
+                                            facetFields[facetKey]
+                                          ) &&
+                                          !!facetFields[facetKey].find(
+                                            (key: string) => key === facetSubKey
                                           )
-                                        ) {
+                                        }
+                                        onChange={(e) => {
                                           if (
-                                            facetFieldsCopy[facetKey].find(
-                                              (key: string) =>
-                                                key === facetSubKey
+                                            facetFieldsCopy[facetKey] &&
+                                            Array.isArray(
+                                              facetFieldsCopy[facetKey]
                                             )
                                           ) {
-                                            const facetCopy = facetFieldsCopy[
-                                              facetKey
-                                            ].filter(
-                                              (key: string) =>
-                                                key !== facetSubKey
-                                            );
-                                            if (facetCopy.length === 0) {
-                                              facetFieldsCopy[facetKey] =
-                                                undefined;
-                                            } else {
-                                              facetFieldsCopy[facetKey] =
-                                                facetCopy;
+                                            if (
+                                              facetFieldsCopy[facetKey].find(
+                                                (key: string) =>
+                                                  key === facetSubKey
+                                              )
+                                            ) {
+                                              const facetCopy = facetFieldsCopy[
+                                                facetKey
+                                              ].filter(
+                                                (key: string) =>
+                                                  key !== facetSubKey
+                                              );
+                                              if (facetCopy.length === 0) {
+                                                facetFieldsCopy[facetKey] =
+                                                  undefined;
+                                              } else {
+                                                facetFieldsCopy[facetKey] =
+                                                  facetCopy;
+                                              }
                                             }
+                                          } else {
+                                            facetFieldsCopy[facetKey] = [
+                                              facetSubKey,
+                                            ];
                                           }
-                                        } else {
-                                          facetFieldsCopy[facetKey] = [
-                                            facetSubKey,
-                                          ];
-                                        }
-                                        setFacetFields(facetFieldsCopy);
-                                      }}
-                                    />
-                                    <span className="input-checkbox mr-4" />
-                                    <span className="mr-4">
-                                      {facetSubKey.substring(
-                                        facetSubKey.lastIndexOf("/") + 1
-                                      )}
-                                      &nbsp;&#40;
-                                      {facetValue[facetSubKey]}&#41;
-                                    </span>
-                                  </label>
-                                );
-                              })
-                            : null}
-                        </fieldset>
-                      </div>
-                    );
+                                          setFacetFields(facetFieldsCopy);
+                                        }}
+                                      />
+                                      <span className="input-checkbox mr-4" />
+                                      <span className="mr-4">
+                                        {facetSubKey.substring(
+                                          facetSubKey.lastIndexOf("/") + 1
+                                        )}
+                                        &nbsp;&#40;
+                                        {facetValue[facetSubKey]}&#41;
+                                      </span>
+                                    </label>
+                                  );
+                                })
+                              : null}
+                          </fieldset>
+                        </div>
+                      );
+                    } else return null;
                   })}
                 </div>
               ) : null}
@@ -288,7 +299,7 @@ export default function Search({ appRef }: { appRef: any }) {
                 <label>Confidence</label>
                 <div className="flex flex-row items-center">
                   <div className="text-sm font-bold text-neutral-default pr-5">
-                    {minValue.toFixed(1)}
+                    {minValue.toFixed(2)}
                   </div>
                   <ThemeProvider theme={theme}>
                     <Slider
@@ -296,13 +307,14 @@ export default function Search({ appRef }: { appRef: any }) {
                       onChange={handleChange}
                       valueLabelDisplay="off"
                       disableSwap
-                      min={0}
-                      step={0.1}
-                      max={1}
+                      min={minLimit}
+                      step={(maxLimit - minLimit) / 10}
+                      max={maxLimit}
+                      disabled={minLimit === maxLimit}
                     />
                   </ThemeProvider>
                   <div className="text-sm font-bold text-neutral-default pl-5">
-                    {maxValue.toFixed(1)}
+                    {maxValue.toFixed(2)}
                   </div>
                 </div>
               </div>
