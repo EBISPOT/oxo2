@@ -26,7 +26,6 @@ export default function EntityView() {
   useEffect(() => {
     let entityMappingsCopy = [...entityMappings];
     entityMappingsCopy.sort((a, b) => {
-      console.log(a.getSubjectCurie());
       if (a.getSubjectCurie() && a.getSubjectCurie() === entityId) return 1;
       else if (b.getSubjectCurie() && b.getSubjectCurie() === entityId)
         return 1;
@@ -40,7 +39,10 @@ export default function EntityView() {
       {mappings && mappings.length > 0
         ? mappings.map((mapping) => {
             return (
-              <div className="mb-6 text-neutral-black flex flex-col items-stretch items-center lg:flex-row">
+              <div
+                key={mapping.getMappingId()}
+                className="mb-6 text-neutral-black flex flex-col items-stretch items-center lg:flex-row"
+              >
                 <div
                   className={`flex-1 lg:min-w-0 h-[6rem] px-6 py-3 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none ${
                     mapping.getSubjectCurie() === entityId
@@ -170,7 +172,7 @@ export default function EntityView() {
                   </div>
                 </div>
                 <div
-                  className="link-default text-sm font-bold text-center cursor-pointer self-center m-2"
+                  className="link-default text-sm font-bold text-center cursor-pointer self-center my-2 mx-4"
                   onClick={() => {
                     navigate(
                       `/mapping/${encodeURIComponent(mapping.getMappingId())}`

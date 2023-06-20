@@ -60,7 +60,7 @@ export default function Home() {
                       search: `?${createSearchParams({
                         ids: query
                           .split(/[\n,]+/)
-                          .filter((id) => id !== "")
+                          .filter((id) => id.trim() !== "")
                           .map((id) => id.trim())
                           .join(","),
                       })}`,

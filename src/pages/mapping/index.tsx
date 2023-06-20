@@ -414,6 +414,11 @@ export default function MappingView() {
         }
         return null;
       })}
+      {loadingMappings ? (
+        <div className="text-center my-3">
+          <div className="spinner-default animate-spin w-10 h-10" />
+        </div>
+      ) : null} 
       <button
         className="button-secondary text-lg font-bold mb-6"
         onClick={() => navigate(-1)}
@@ -421,11 +426,6 @@ export default function MappingView() {
         Back
       </button>
       {loading ? <LoadingOverlay message="Loading mapping..." /> : null}
-      {loadingMappings ? (
-        <div className="text-center my-3">
-          <div className="spinner-default animate-spin w-10 h-10" />
-        </div>
-      ) : null}
     </main>
   );
 }
