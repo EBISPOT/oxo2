@@ -5,7 +5,7 @@ import { copyToClipboard } from "../../app/util";
 import LoadingOverlay from "../../common/LoadingOverlay";
 import { getMapping, getMappings } from "./slice";
 
-export default function Mapping() {
+export default function MappingView({ appRef }: { appRef: any }) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const params = useParams();
@@ -22,8 +22,11 @@ export default function Mapping() {
   const [isObjectCopied, setIsObjectCopied] = useState(false);
 
   useEffect(() => {
-    dispatch(getMapping(mappingId));
-  }, [dispatch, mappingId]);
+    if (mappingId && mappingId !== appRef.current.mapping) {
+      dispatch(getMapping(mappingId));
+      appRef.current.mapping = mappingId;
+    }
+  }, [dispatch, appRef, mappingId]);
 
   useEffect(() => {
     if (mapping) {

@@ -8,9 +8,9 @@ import LoadingOverlay from "../../common/LoadingOverlay";
 import { Pagination } from "../../common/Pagination";
 import Mapping from "../../model/Mapping";
 import { getMappings } from "../mapping/slice";
-import { getMappingsByEntityIds } from "./slice";
+import { getMappingsByEntities } from "./slice";
 
-export default function Search() {
+export default function Search({ appRef }: { appRef: any }) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -29,7 +29,7 @@ export default function Search() {
     searchParams.get("ids")?.replaceAll(",", "\n") || ""
   );
   const [facetFields, setFacetFields] = useState<any>({});
-  var facetFieldsCopy: any = {};
+  let facetFieldsCopy: any = {};
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
@@ -134,15 +134,21 @@ export default function Search() {
   }, [otherMappings, widgetParams]);
 
   useEffect(() => {
-    dispatch(
-      getMappingsByEntityIds({
-        entityIds: searchParams.get("ids")?.split(",") || [],
-        facetIds: facetFields,
-        limit: rowsPerPage,
-        page: page + 1,
-      })
-    );
-  }, [dispatch, searchParams, facetFields, page, rowsPerPage]);
+    if (
+      searchParams.get("ids") &&
+      searchParams.get("ids") !== appRef.current.searchQuery
+    ) {
+      dispatch(
+        getMappingsByEntities({
+          entityIds: searchParams.get("ids")?.split(",") || [],
+          facetIds: facetFields,
+          limit: rowsPerPage,
+          page: page + 1,
+        })
+      );
+      appRef.current.searchQuery = searchParams.get("ids");
+    }
+  }, [dispatch, appRef, searchParams, facetFields, page, rowsPerPage]);
 
   return (
     <div>
@@ -355,7 +361,16 @@ export default function Search() {
                       key={searchResult.getMappingId()}
                       className="flex flex-row items-center gap-3 mb-4"
                     >
-                      <div className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2">
+                      <div
+                        className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2 cursor-pointer"
+                        onClick={() => {
+                          navigate(
+                            `/entity/${encodeURIComponent(
+                              searchResult.getSubjectCurie()
+                            )}`
+                          );
+                        }}
+                      >
                         <strong>{searchResult.getSubjectCurie()}</strong>
                         <br />
                         {searchResult.getSubjectLabel()
@@ -372,7 +387,16 @@ export default function Search() {
                           : ""}
                         <br />
                       </div>
-                      <div className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2">
+                      <div
+                        className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2 cursor-pointer"
+                        onClick={() => {
+                          navigate(
+                            `/entity/${encodeURIComponent(
+                              searchResult.getObjectCurie()
+                            )}`
+                          );
+                        }}
+                      >
                         <strong>{searchResult.getObjectCurie()}</strong>
                         <br />
                         {searchResult.getObjectLabel()
