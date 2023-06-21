@@ -35,8 +35,6 @@ export default function Search({ appRef }: { appRef: any }) {
 
   const [minValue, setMinValue] = useState<number>(0);
   const [maxValue, setMaxValue] = useState<number>(0);
-  const [minLimit, setMinLimit] = useState<number>(0);
-  const [maxLimit, setMaxLimit] = useState<number>(0);
   const handleChange = (event: Event, newValue: number | number[]) => {
     const newVal = newValue as number[];
     setMinValue(newVal[0]);
@@ -153,10 +151,12 @@ export default function Search({ appRef }: { appRef: any }) {
   }, [dispatch, appRef, searchParams, facetFields, page, rowsPerPage]);
 
   useEffect(() => {
-    setMinValue(facets["confidence"]?.min || 0);
-    setMaxValue(facets["confidence"]?.max || 0);
-    setMinLimit(facets["confidence"]?.min || 0);
-    setMaxLimit(facets["confidence"]?.max || 0);
+    setMinValue(
+      parseFloat(
+        (Math.floor(facets["confidence"]?.min * 10) / 10).toFixed(1)
+      ) || 0
+    );
+    setMaxValue(parseFloat(facets["confidence"]?.max.toFixed(1)) || 0);
   }, [facets]);
 
   return (
@@ -299,7 +299,7 @@ export default function Search({ appRef }: { appRef: any }) {
                 <label>Confidence</label>
                 <div className="flex flex-row items-center">
                   <div className="text-sm font-bold text-neutral-default pr-5">
-                    {minValue.toFixed(2)}
+                    {minValue.toFixed(1)}
                   </div>
                   <ThemeProvider theme={theme}>
                     <Slider
@@ -307,14 +307,13 @@ export default function Search({ appRef }: { appRef: any }) {
                       onChange={handleChange}
                       valueLabelDisplay="off"
                       disableSwap
-                      min={minLimit}
-                      step={(maxLimit - minLimit) / 10}
-                      max={maxLimit}
-                      disabled={minLimit === maxLimit}
+                      min={0}
+                      step={0.1}
+                      max={1}
                     />
                   </ThemeProvider>
                   <div className="text-sm font-bold text-neutral-default pl-5">
-                    {maxValue.toFixed(2)}
+                    {maxValue.toFixed(1)}
                   </div>
                 </div>
               </div>
