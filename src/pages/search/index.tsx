@@ -1,6 +1,6 @@
 import { Close, KeyboardArrowDown } from "@mui/icons-material";
 import { Slider, ThemeProvider } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { theme } from "../../app/mui";
@@ -25,13 +25,22 @@ export default function Search({ appRef }: { appRef: any }) {
   );
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const refQuery = useRef(appRef.current.searchQuery);
   const [query, setQuery] = useState<string>(
     searchParams.get("ids")?.replaceAll(",", "\n") || ""
   );
   const [facetFields, setFacetFields] = useState<any>({});
   let facetFieldsCopy: any = {};
-  const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  const [page, setPage] = useState<number>(
+    paging.page_number > 0 ? paging.page_number - 1 : 0
+  );
+  const [rowsPerPage, setRowsPerPage] = useState<number>(
+    paging.total_pages > 1
+      ? results.length
+      : paging.total_items > 0
+      ? paging.total_items
+      : 10
+  );
 
   const [minValue, setMinValue] = useState<number>(0);
   const [maxValue, setMaxValue] = useState<number>(0);
@@ -136,8 +145,10 @@ export default function Search({ appRef }: { appRef: any }) {
   useEffect(() => {
     if (
       searchParams.get("ids") &&
-      searchParams.get("ids") !== appRef.current.searchQuery
+      searchParams.get("ids") === refQuery.current
     ) {
+      refQuery.current = "";
+    } else {
       dispatch(
         getMappingsByEntities({
           entityIds: searchParams.get("ids")?.split(",") || [],
@@ -146,9 +157,8 @@ export default function Search({ appRef }: { appRef: any }) {
           page: page + 1,
         })
       );
-      appRef.current.searchQuery = searchParams.get("ids");
     }
-  }, [dispatch, appRef, searchParams, facetFields, page, rowsPerPage]);
+  }, [dispatch, refQuery, searchParams, facetFields, page, rowsPerPage]);
 
   useEffect(() => {
     setMinValue(
@@ -158,6 +168,13 @@ export default function Search({ appRef }: { appRef: any }) {
     );
     setMaxValue(parseFloat(facets["confidence"]?.max.toFixed(1)) || 0);
   }, [facets]);
+
+  useEffect(() => {
+    const arc = appRef.current;
+    return () => {
+      arc.searchQuery = searchParams.get("ids");
+    };
+  });
 
   return (
     <div>
@@ -187,6 +204,7 @@ export default function Search({ appRef }: { appRef: any }) {
                     .map((id) => id.trim())
                     .join(","),
                 });
+                setPage(0);
               }
             }}
           >
@@ -270,6 +288,7 @@ export default function Search({ appRef }: { appRef: any }) {
                                             ];
                                           }
                                           setFacetFields(facetFieldsCopy);
+                                          setPage(0);
                                         }}
                                       />
                                       <span className="input-checkbox mr-4" />

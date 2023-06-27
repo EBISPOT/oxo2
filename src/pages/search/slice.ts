@@ -24,7 +24,7 @@ const initialState: SearchState = {
 export const getMappingsByEntities = createAsyncThunk(
   "search_mappings_by_entities",
   async ({ entityIds, facetIds, limit, page }: any, { rejectWithValue }) => {
-    let searchBody = facetIds;
+    let searchBody = JSON.parse(JSON.stringify(facetIds));
     searchBody["curies"] = entityIds;
     try {
       const searchResponse = await post<{ curies: string[] }, Page<Mapping>>(
