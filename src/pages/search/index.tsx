@@ -1,6 +1,6 @@
 import { Close, KeyboardArrowDown } from "@mui/icons-material";
 import { Slider, ThemeProvider } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { theme } from "../../app/mui";
@@ -25,16 +25,25 @@ export default function Search({ appRef }: { appRef: any }) {
   );
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const refQuery = useRef(appRef.current.searchQuery);
   const [query, setQuery] = useState<string>(
     searchParams.get("ids")?.replaceAll(",", "\n") || ""
   );
   const [facetFields, setFacetFields] = useState<any>({});
   let facetFieldsCopy: any = {};
-  const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  const [page, setPage] = useState<number>(
+    paging.page_number > 0 ? paging.page_number - 1 : 0
+  );
+  const [rowsPerPage, setRowsPerPage] = useState<number>(
+    paging.total_pages > 1
+      ? results.length
+      : paging.total_items > 0
+      ? paging.total_items
+      : 10
+  );
 
   const [minValue, setMinValue] = useState<number>(0);
-  const [maxValue, setMaxValue] = useState<number>(1);
+  const [maxValue, setMaxValue] = useState<number>(0);
   const handleChange = (event: Event, newValue: number | number[]) => {
     const newVal = newValue as number[];
     setMinValue(newVal[0]);
@@ -136,8 +145,10 @@ export default function Search({ appRef }: { appRef: any }) {
   useEffect(() => {
     if (
       searchParams.get("ids") &&
-      searchParams.get("ids") !== appRef.current.searchQuery
+      searchParams.get("ids") === refQuery.current
     ) {
+      refQuery.current = "";
+    } else {
       dispatch(
         getMappingsByEntities({
           entityIds: searchParams.get("ids")?.split(",") || [],
@@ -146,9 +157,24 @@ export default function Search({ appRef }: { appRef: any }) {
           page: page + 1,
         })
       );
-      appRef.current.searchQuery = searchParams.get("ids");
     }
-  }, [dispatch, appRef, searchParams, facetFields, page, rowsPerPage]);
+  }, [dispatch, refQuery, searchParams, facetFields, page, rowsPerPage]);
+
+  useEffect(() => {
+    setMinValue(
+      parseFloat(
+        (Math.floor(facets["confidence"]?.min * 10) / 10).toFixed(1)
+      ) || 0
+    );
+    setMaxValue(parseFloat(facets["confidence"]?.max.toFixed(1)) || 0);
+  }, [facets]);
+
+  useEffect(() => {
+    const arc = appRef.current;
+    return () => {
+      arc.searchQuery = searchParams.get("ids");
+    };
+  });
 
   return (
     <div>
@@ -178,6 +204,7 @@ export default function Search({ appRef }: { appRef: any }) {
                     .map((id) => id.trim())
                     .join(","),
                 });
+                setPage(0);
               }
             }}
           >
@@ -199,84 +226,87 @@ export default function Search({ appRef }: { appRef: any }) {
                 <div className="text-neutral-black">
                   {facetKeys.map((facetKey) => {
                     const facetValue = facets[facetKey];
-                    return (
-                      <div key={facetKey}>
-                        <div className="font-semibold text-lg mb-2 capitalize">
-                          {facetKey.replaceAll("_", " ")}
-                        </div>
-                        <fieldset className="mb-4">
-                          {facetKey && Object.keys(facetValue).length > 0
-                            ? Object.keys(facetValue).map((facetSubKey) => {
-                                facetFieldsCopy = { ...facetFields };
-                                return (
-                                  <label
-                                    key={facetSubKey}
-                                    htmlFor={facetSubKey}
-                                    className="block p-1 w-fit whitespace-nowrap"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      id={facetSubKey}
-                                      className="invisible hidden peer"
-                                      checked={
-                                        !!facetFields[facetKey] &&
-                                        !!Array.isArray(
-                                          facetFields[facetKey]
-                                        ) &&
-                                        !!facetFields[facetKey].find(
-                                          (key: string) => key === facetSubKey
-                                        )
-                                      }
-                                      onChange={(e) => {
-                                        if (
-                                          facetFieldsCopy[facetKey] &&
-                                          Array.isArray(
-                                            facetFieldsCopy[facetKey]
+                    if (facetKey.toLowerCase() !== "confidence") {
+                      return (
+                        <div key={facetKey}>
+                          <div className="font-semibold text-lg mb-2 capitalize">
+                            {facetKey.replaceAll("_", " ")}
+                          </div>
+                          <fieldset className="mb-4">
+                            {facetKey && Object.keys(facetValue).length > 0
+                              ? Object.keys(facetValue).map((facetSubKey) => {
+                                  facetFieldsCopy = { ...facetFields };
+                                  return (
+                                    <label
+                                      key={facetSubKey}
+                                      htmlFor={facetSubKey}
+                                      className="block p-1 w-fit whitespace-nowrap"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        id={facetSubKey}
+                                        className="invisible hidden peer"
+                                        checked={
+                                          !!facetFields[facetKey] &&
+                                          !!Array.isArray(
+                                            facetFields[facetKey]
+                                          ) &&
+                                          !!facetFields[facetKey].find(
+                                            (key: string) => key === facetSubKey
                                           )
-                                        ) {
+                                        }
+                                        onChange={(e) => {
                                           if (
-                                            facetFieldsCopy[facetKey].find(
-                                              (key: string) =>
-                                                key === facetSubKey
+                                            facetFieldsCopy[facetKey] &&
+                                            Array.isArray(
+                                              facetFieldsCopy[facetKey]
                                             )
                                           ) {
-                                            const facetCopy = facetFieldsCopy[
-                                              facetKey
-                                            ].filter(
-                                              (key: string) =>
-                                                key !== facetSubKey
-                                            );
-                                            if (facetCopy.length === 0) {
-                                              facetFieldsCopy[facetKey] =
-                                                undefined;
-                                            } else {
-                                              facetFieldsCopy[facetKey] =
-                                                facetCopy;
+                                            if (
+                                              facetFieldsCopy[facetKey].find(
+                                                (key: string) =>
+                                                  key === facetSubKey
+                                              )
+                                            ) {
+                                              const facetCopy = facetFieldsCopy[
+                                                facetKey
+                                              ].filter(
+                                                (key: string) =>
+                                                  key !== facetSubKey
+                                              );
+                                              if (facetCopy.length === 0) {
+                                                facetFieldsCopy[facetKey] =
+                                                  undefined;
+                                              } else {
+                                                facetFieldsCopy[facetKey] =
+                                                  facetCopy;
+                                              }
                                             }
+                                          } else {
+                                            facetFieldsCopy[facetKey] = [
+                                              facetSubKey,
+                                            ];
                                           }
-                                        } else {
-                                          facetFieldsCopy[facetKey] = [
-                                            facetSubKey,
-                                          ];
-                                        }
-                                        setFacetFields(facetFieldsCopy);
-                                      }}
-                                    />
-                                    <span className="input-checkbox mr-4" />
-                                    <span className="mr-4">
-                                      {facetSubKey.substring(
-                                        facetSubKey.lastIndexOf("/") + 1
-                                      )}
-                                      &nbsp;&#40;
-                                      {facetValue[facetSubKey]}&#41;
-                                    </span>
-                                  </label>
-                                );
-                              })
-                            : null}
-                        </fieldset>
-                      </div>
-                    );
+                                          setFacetFields(facetFieldsCopy);
+                                          setPage(0);
+                                        }}
+                                      />
+                                      <span className="input-checkbox mr-4" />
+                                      <span className="mr-4">
+                                        {facetSubKey.substring(
+                                          facetSubKey.lastIndexOf("/") + 1
+                                        )}
+                                        &nbsp;&#40;
+                                        {facetValue[facetSubKey]}&#41;
+                                      </span>
+                                    </label>
+                                  );
+                                })
+                              : null}
+                          </fieldset>
+                        </div>
+                      );
+                    } else return null;
                   })}
                 </div>
               ) : null}
