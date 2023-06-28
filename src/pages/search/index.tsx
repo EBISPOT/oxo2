@@ -43,6 +43,7 @@ export default function Search({ appRef }: { appRef: any }) {
       ? 25
       : 100
   );
+  const [hideFilters, setHideFilters] = useState<boolean>(true);
 
   const [minValue, setMinValue] = useState<number>(0);
   const [maxValue, setMaxValue] = useState<number>(0);
@@ -214,10 +215,14 @@ export default function Search({ appRef }: { appRef: any }) {
             Search
           </button>
         </div>
-        <div className="grid grid-cols-4 gap-8">
-          <div className="col-span-1 mb-4">
-            <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg p-8 text-neutral-black overflow-x-auto">
-              <div className="font-bold text-neutral-dark text-sm mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 lg:gap-8">
+          <div
+            className={`fixed top-0 left-0 mb-4 z-30 lg:z-0 lg:static lg:col-span-1 bg-gradient-to-r from-neutral-light to-white rounded-lg p-8 text-neutral-black overflow-x-auto h-full lg:h-fit lg:translate-x-0 transition-transform ${
+              hideFilters ? "-translate-x-full" : "translate-x-0"
+            }`}
+          >
+            <div className="flex flex-row items-center justify-between mb-4">
+              <div className="font-bold text-neutral-dark text-sm">
                 {`Showing ${
                   paging.total_items > rowsPerPage
                     ? rowsPerPage
@@ -225,99 +230,108 @@ export default function Search({ appRef }: { appRef: any }) {
                 } `}
                 from a total&nbsp;of&nbsp;{paging.total_items}
               </div>
-              {facetKeys.length > 0 ? (
-                <div className="text-neutral-black">
-                  {facetKeys.map((facetKey) => {
-                    const facetValue = facets[facetKey];
-                    if (facetKey.toLowerCase() !== "confidence") {
-                      return (
-                        <div key={facetKey}>
-                          <div className="font-semibold text-lg mb-2 capitalize">
-                            {facetKey.replaceAll("_", " ")}
-                          </div>
-                          <fieldset className="mb-4">
-                            {facetKey && Object.keys(facetValue).length > 0
-                              ? Object.keys(facetValue).map((facetSubKey) => {
-                                  facetFieldsCopy = { ...facetFields };
-                                  return (
-                                    <label
-                                      key={facetSubKey}
-                                      htmlFor={facetSubKey}
-                                      className="block p-1 w-fit whitespace-nowrap"
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        id={facetSubKey}
-                                        className="invisible hidden peer"
-                                        checked={
-                                          !!facetFields[facetKey] &&
-                                          !!Array.isArray(
-                                            facetFields[facetKey]
-                                          ) &&
-                                          !!facetFields[facetKey].find(
-                                            (key: string) => key === facetSubKey
+              <button
+                className="lg:hidden"
+                type="button"
+                onClick={() => {
+                  setHideFilters(true);
+                }}
+              >
+                <Close />
+              </button>
+            </div>
+            {facetKeys.length > 0 ? (
+              <div className="text-neutral-black">
+                {facetKeys.map((facetKey) => {
+                  const facetValue = facets[facetKey];
+                  if (facetKey.toLowerCase() !== "confidence") {
+                    return (
+                      <div key={facetKey}>
+                        <div className="font-semibold text-lg mb-2 capitalize">
+                          {facetKey.replaceAll("_", " ")}
+                        </div>
+                        <fieldset className="mb-4">
+                          {facetKey && Object.keys(facetValue).length > 0
+                            ? Object.keys(facetValue).map((facetSubKey) => {
+                                facetFieldsCopy = { ...facetFields };
+                                return (
+                                  <label
+                                    key={facetSubKey}
+                                    htmlFor={facetSubKey}
+                                    className="block p-1 w-fit whitespace-nowrap"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      id={facetSubKey}
+                                      className="invisible hidden peer"
+                                      checked={
+                                        !!facetFields[facetKey] &&
+                                        !!Array.isArray(
+                                          facetFields[facetKey]
+                                        ) &&
+                                        !!facetFields[facetKey].find(
+                                          (key: string) => key === facetSubKey
+                                        )
+                                      }
+                                      onChange={(e) => {
+                                        if (
+                                          facetFieldsCopy[facetKey] &&
+                                          Array.isArray(
+                                            facetFieldsCopy[facetKey]
                                           )
-                                        }
-                                        onChange={(e) => {
+                                        ) {
                                           if (
-                                            facetFieldsCopy[facetKey] &&
-                                            Array.isArray(
-                                              facetFieldsCopy[facetKey]
+                                            facetFieldsCopy[facetKey].find(
+                                              (key: string) =>
+                                                key === facetSubKey
                                             )
                                           ) {
-                                            if (
-                                              facetFieldsCopy[facetKey].find(
-                                                (key: string) =>
-                                                  key === facetSubKey
-                                              )
-                                            ) {
-                                              const facetCopy = facetFieldsCopy[
-                                                facetKey
-                                              ].filter(
-                                                (key: string) =>
-                                                  key !== facetSubKey
-                                              );
-                                              if (facetCopy.length === 0) {
-                                                facetFieldsCopy[facetKey] =
-                                                  undefined;
-                                              } else {
-                                                facetFieldsCopy[facetKey] =
-                                                  facetCopy;
-                                              }
+                                            const facetCopy = facetFieldsCopy[
+                                              facetKey
+                                            ].filter(
+                                              (key: string) =>
+                                                key !== facetSubKey
+                                            );
+                                            if (facetCopy.length === 0) {
+                                              facetFieldsCopy[facetKey] =
+                                                undefined;
+                                            } else {
+                                              facetFieldsCopy[facetKey] =
+                                                facetCopy;
                                             }
-                                          } else {
-                                            facetFieldsCopy[facetKey] = [
-                                              facetSubKey,
-                                            ];
                                           }
-                                          setFacetFields(facetFieldsCopy);
-                                          setPage(0);
-                                        }}
-                                      />
-                                      <span className="input-checkbox mr-4" />
-                                      <span className="mr-4">
-                                        {facetSubKey.substring(
-                                          facetSubKey.lastIndexOf("/") + 1
-                                        )}
-                                        &nbsp;&#40;
-                                        {facetValue[facetSubKey]}&#41;
-                                      </span>
-                                    </label>
-                                  );
-                                })
-                              : null}
-                          </fieldset>
-                        </div>
-                      );
-                    } else return null;
-                  })}
-                </div>
-              ) : null}
-            </div>
+                                        } else {
+                                          facetFieldsCopy[facetKey] = [
+                                            facetSubKey,
+                                          ];
+                                        }
+                                        setFacetFields(facetFieldsCopy);
+                                        setPage(0);
+                                      }}
+                                    />
+                                    <span className="input-checkbox mr-4" />
+                                    <span className="mr-4">
+                                      {facetSubKey.substring(
+                                        facetSubKey.lastIndexOf("/") + 1
+                                      )}
+                                      &nbsp;&#40;
+                                      {facetValue[facetSubKey]}&#41;
+                                    </span>
+                                  </label>
+                                );
+                              })
+                            : null}
+                        </fieldset>
+                      </div>
+                    );
+                  } else return null;
+                })}
+              </div>
+            ) : null}
           </div>
-          <div className="col-span-3">
-            <div className="flex flex-row justify-between mb-4">
-              <div className="basis-1/4 flex flex-col">
+          <div className="lg:col-span-3">
+            <div className="flex flex-col-reverse lg:flex-row justify-between mb-4">
+              <div className="lg:basis-1/3 flex flex-col">
                 <label>Confidence</label>
                 <div className="flex flex-row items-center">
                   <div className="text-sm font-bold text-neutral-default pr-5">
@@ -339,22 +353,31 @@ export default function Search({ appRef }: { appRef: any }) {
                   </div>
                 </div>
               </div>
-              <div className="justify-end flex flex-row gap-4">
+              <div className="lg:justify-end justify-between flex flex-row items-center gap-4 mb-2">
+                <button
+                  className="lg:hidden button-secondary"
+                  type="button"
+                  onClick={() => {
+                    setHideFilters(false);
+                  }}
+                >
+                  Filters
+                </button>
                 <div className="flex group relative text-md">
-                  <select className="input-default appearance-none pr-7 z-20 bg-transparent">
+                  <select className="input-default appearance-none pr-7 z-10 bg-transparent">
                     <option>Download as...</option>
                     <option>CSV</option>
                     <option>TSV</option>
                   </select>
-                  <div className="absolute right-2 top-2 z-10 text-neutral-default group-focus:text-neutral-dark group-hover:text-neutral-dark">
+                  <div className="absolute right-2 top-2 text-neutral-default group-focus:text-neutral-dark group-hover:text-neutral-dark">
                     <KeyboardArrowDown fontSize="medium" />
                   </div>
                 </div>
-                <div className="flex group relative text-md">
-                  <label className="self-center px-3">Show</label>
+                <div className="flex group relative text-md items-center">
+                  <label className="px-3">Show</label>
                   <select
                     value={rowsPerPage}
-                    className="input-default appearance-none pr-7 z-20 bg-transparent"
+                    className="input-default appearance-none pr-7 z-10 bg-transparent"
                     onChange={(e) => {
                       const rows = parseInt(e.target.value);
                       setRowsPerPage((prev) => {
@@ -369,7 +392,7 @@ export default function Search({ appRef }: { appRef: any }) {
                     <option value={25}>25</option>
                     <option value={100}>100</option>
                   </select>
-                  <div className="absolute right-2 top-2 z-10 text-neutral-default group-focus:text-neutral-dark group-hover:text-neutral-dark">
+                  <div className="absolute right-2 top-2 text-neutral-default group-focus:text-neutral-dark group-hover:text-neutral-dark">
                     <KeyboardArrowDown fontSize="medium" />
                   </div>
                 </div>
@@ -390,7 +413,7 @@ export default function Search({ appRef }: { appRef: any }) {
                       className="flex flex-col items-stretch items-center lg:flex-row my-4"
                     >
                       <div
-                        className="flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none bg-yellow-300 cursor-pointer"
+                        className="flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none bg-yellow-300 cursor-pointer hover:underline"
                         onClick={() => {
                           navigate(
                             `/entity/${encodeURIComponent(
@@ -426,7 +449,7 @@ export default function Search({ appRef }: { appRef: any }) {
                       </div>
                       <div className="w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[2.5rem] lg:border-l-[1rem] lg:border-l-neutral-light lg:border-y-yellow-300" />
                       <div
-                        className="flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none bg-yellow-300 cursor-pointer"
+                        className="flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none bg-yellow-300 cursor-pointer hover:underline"
                         onClick={() => {
                           navigate(
                             `/entity/${encodeURIComponent(
@@ -504,24 +527,7 @@ export default function Search({ appRef }: { appRef: any }) {
                           }}
                         >
                           View
-                          <br />
-                          mapping
                         </div>
-                        {/* <div
-                          className="w-fit cursor-pointer"
-                          onClick={() => {
-                            navigate(
-                              `/mapping/${encodeURIComponent(
-                                searchResult.getMappingId()
-                              )}`
-                            );
-                          }}
-                        >
-                          <i
-                            title="View"
-                            className="icon icon-common icon-eye text-link-default"
-                          />
-                        </div> */}
                       </div>
                     </div>
                   );
@@ -542,7 +548,7 @@ export default function Search({ appRef }: { appRef: any }) {
         </div>
       </main>
       <div
-        className={`fixed top-0 right-0 z-30 w-96 h-full transition-transform bg-neutral-light shadow-card p-6 ${
+        className={`fixed top-0 right-0 z-20 w-96 h-full transition-transform bg-neutral-light shadow-card p-6 ${
           !widgetParams.entries().next().done
             ? "translate-x-0"
             : "translate-x-96"
@@ -664,7 +670,7 @@ export default function Search({ appRef }: { appRef: any }) {
       </div>
       <div
         className={`fixed top-0 right-0 backdrop-blur h-full w-full ${
-          !widgetParams.entries().next().done ? "z-20" : "z-[-1]"
+          !widgetParams.entries().next().done ? "z-10" : "hidden"
         }`}
         onClick={() => setWidgetParams(new URLSearchParams())}
       />

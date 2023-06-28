@@ -150,8 +150,6 @@ export default function EntityView({ appRef }: { appRef: any }) {
                   }}
                 >
                   View
-                  <br />
-                  mapping
                 </div>
               </div>
             );
