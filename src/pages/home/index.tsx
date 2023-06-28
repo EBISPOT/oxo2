@@ -3,7 +3,7 @@ import { Link, createSearchParams, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { getStats } from "./slice";
 
-export default function Home() {
+export default function Home({ appRef }: { appRef: any }) {
   const dispatch = useAppDispatch();
   const stats = useAppSelector((state) => state.home.stats);
   const loadingStats = useAppSelector((state) => state.home.loadingStats);
@@ -55,6 +55,7 @@ export default function Home() {
                 className="button-primary text-lg font-bold self-end md:self-center"
                 onClick={() => {
                   if (query) {
+                    appRef.current.searchQuery = "";
                     navigate({
                       pathname: "/search",
                       search: `?${createSearchParams({

@@ -15,8 +15,8 @@ function App() {
     <div>
       <Header />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/home" element={<Home />} />
+        <Route path="/" element={<Home appRef={appRef} />} />
+        <Route path="/home" element={<Home appRef={appRef} />} />
         <Route path="/search" element={<Search appRef={appRef} />} />
         <Route
           path="/mapping/:mappingId"

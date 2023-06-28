@@ -37,9 +37,11 @@ export default function Search({ appRef }: { appRef: any }) {
   const [rowsPerPage, setRowsPerPage] = useState<number>(
     paging.total_pages > 1
       ? results.length
-      : paging.total_items > 0
-      ? paging.total_items
-      : 10
+      : paging.total_items <= 10
+      ? 10
+      : paging.total_items <= 25
+      ? 25
+      : 100
   );
 
   const [minValue, setMinValue] = useState<number>(0);
@@ -205,6 +207,7 @@ export default function Search({ appRef }: { appRef: any }) {
                     .join(","),
                 });
                 setPage(0);
+                setFacetFields({});
               }
             }}
           >

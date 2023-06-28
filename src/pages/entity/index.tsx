@@ -46,52 +46,47 @@ export default function EntityView({ appRef }: { appRef: any }) {
                 className="mb-6 text-neutral-black flex flex-col items-stretch items-center lg:flex-row"
               >
                 <div
-                  className={`flex-1 lg:min-w-0 h-[6rem] px-6 py-3 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none ${
+                  className={`flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none ${
                     mapping.getSubjectCurie() === entityId
                       ? "bg-yellow-300"
                       : "bg-grey-300"
                   }`}
                 >
                   <div className="text-center font-bold">
-                    {mapping.getSubjectCurie()}
-                  </div>
-                  <div
-                    title={mapping.getSubjectId()}
-                    className="text-center truncate italic text-sm"
-                  >
-                    <a
-                      href={mapping.getSubjectId()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <i className="icon icon-common icon-external-link-alt icon-spacer" />
-                    </a>
+                    <span className="pr-2">{mapping.getSubjectCurie()}</span>
                     <i
                       title="Copy"
                       className={`icon icon-common icon-copy icon-spacer ${
                         isSubjectCopied ? "cursor-wait" : "cursor-pointer"
                       }`}
                       onClick={() => {
-                        copyText(mapping.getSubjectId(), setIsSubjectCopied);
+                        copyText(mapping.getSubjectCurie(), setIsSubjectCopied);
                       }}
                     />
-                    {mapping.getSubjectId()}
+                    <a
+                      href={mapping.getSubjectId()}
+                      title={mapping.getSubjectId()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <i className="icon icon-common icon-external-link-alt icon-spacer" />
+                    </a>
                   </div>
                   <div
                     title={mapping.getSubjectLabel()}
                     className="text-center truncate"
                   >
-                    {mapping.getSubjectLabel() || <span>&nbsp;</span>}
+                    {mapping.getSubjectLabel() || ""}
                   </div>
                 </div>
                 <div
-                  className={`w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[3rem] lg:border-l-[1.5rem] lg:border-y-neutral-light ${
+                  className={`w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[2.5rem] lg:border-l-[1rem] lg:border-y-neutral-light ${
                     mapping.getSubjectCurie() === entityId
                       ? "lg:border-l-yellow-300"
                       : "lg:border-l-grey-300"
                   }`}
                 ></div>
-                <div className="flex-none flex flex-col justify-center lg:min-w-0 lg:h-[6rem] bg-neutral-light px-6 py-3 rounded-2xl lg:rounded-none">
+                <div className="flex-none flex flex-col justify-center lg:min-w-0 lg:h-[5rem] bg-neutral-light px-6 py-3 rounded-2xl lg:rounded-none">
                   <div
                     title={mapping.getPredicateId()}
                     className="text-center font-bold"
@@ -106,49 +101,44 @@ export default function EntityView({ appRef }: { appRef: any }) {
                   </div>
                 </div>
                 <div
-                  className={`w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[3rem] lg:border-l-[1.5rem] lg:border-l-neutral-light ${
+                  className={`w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[2.5rem] lg:border-l-[1rem] lg:border-l-neutral-light ${
                     mapping.getObjectCurie() === entityId
                       ? "lg:border-y-yellow-300"
                       : "lg:border-y-grey-300"
                   }`}
                 ></div>
                 <div
-                  className={`flex-1 lg:min-w-0 h-[6rem] px-6 py-3 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none ${
+                  className={`flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none ${
                     mapping.getObjectCurie() === entityId
                       ? "bg-yellow-300"
                       : "bg-grey-300"
                   }`}
                 >
                   <div className="text-center font-bold">
-                    {mapping.getObjectCurie()}
-                  </div>
-                  <div
-                    title={mapping.getObjectId()}
-                    className="text-center truncate italic text-sm"
-                  >
-                    <a
-                      href={mapping.getObjectId()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <i className="icon icon-common icon-external-link-alt icon-spacer" />
-                    </a>
+                    <span className="pr-2">{mapping.getObjectCurie()}</span>
                     <i
                       title="Copy"
                       className={`icon icon-common icon-copy icon-spacer ${
                         isObjectCopied ? "cursor-wait" : "cursor-pointer"
                       }`}
                       onClick={() => {
-                        copyText(mapping.getObjectId(), setIsObjectCopied);
+                        copyText(mapping.getObjectCurie(), setIsObjectCopied);
                       }}
                     />
-                    {mapping.getObjectId()}
+                    <a
+                      href={mapping.getObjectId()}
+                      title={mapping.getObjectId()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <i className="icon icon-common icon-external-link-alt icon-spacer" />
+                    </a>
                   </div>
                   <div
                     title={mapping.getObjectLabel()}
                     className="text-center truncate"
                   >
-                    {mapping.getObjectLabel() || <span>&nbsp;</span>}
+                    {mapping.getObjectLabel() || ""}
                   </div>
                 </div>
                 <div
