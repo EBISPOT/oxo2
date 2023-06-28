@@ -37,7 +37,7 @@ export default function EntityView({ appRef }: { appRef: any }) {
   }, [entityMappings, setMappings, entityId]);
   return (
     <main className="container mx-auto">
-      <div className="text-2xl font-bold mt-6 mb-4">{entityId}</div>
+      <div className="text-2xl font-bold mt-6 mb-4">Mappings for {entityId}</div>
       {mappings && mappings.length > 0
         ? mappings.map((mapping) => {
             return (

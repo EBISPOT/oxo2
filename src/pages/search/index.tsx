@@ -383,19 +383,14 @@ export default function Search({ appRef }: { appRef: any }) {
                   dataCount={paging.total_items}
                   rowsPerPage={rowsPerPage}
                 />
-                <div className="flex flex-row text-neutral-default font-bold gap-3 my-4">
-                  <div className="basis-4/12">Subject</div>
-                  <div className="basis-3/12">Predicate</div>
-                  <div className="basis-5/12">Object</div>
-                </div>
                 {results.map((searchResult: Mapping) => {
                   return (
                     <div
                       key={searchResult.getMappingId()}
-                      className="flex flex-row items-center gap-3 mb-4"
+                      className="flex flex-col items-stretch items-center lg:flex-row my-4"
                     >
                       <div
-                        className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2 cursor-pointer"
+                        className="flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none bg-yellow-300 cursor-pointer"
                         onClick={() => {
                           navigate(
                             `/entity/${encodeURIComponent(
@@ -404,24 +399,34 @@ export default function Search({ appRef }: { appRef: any }) {
                           );
                         }}
                       >
-                        <strong>{searchResult.getSubjectCurie()}</strong>
-                        <br />
-                        {searchResult.getSubjectLabel()
-                          ? `(${searchResult.getSubjectLabel()})`
-                          : ""}
-                        <br />
-                        {searchResult.getSubjectCategory()}
+                        <div className="text-center font-bold">
+                          {searchResult.getSubjectCurie()}
+                        </div>
+                        <div
+                          title={searchResult.getSubjectLabel()}
+                          className="text-center truncate"
+                        >
+                          {searchResult.getSubjectLabel() || ""}
+                        </div>
                       </div>
-                      <div className="basis-3/12 border-2 border-neutral-black rounded-lg px-4 py-2">
-                        <span>{searchResult.getPredicateCurie()}</span>
-                        <br />
-                        {searchResult.getPredicateModifier()
-                          ? "Modifier: " + searchResult.getPredicateModifier()
-                          : ""}
-                        <br />
+                      <div className="w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[2.5rem] lg:border-l-[1rem] lg:border-y-neutral-light lg:border-l-yellow-300" />
+                      <div className="flex-none flex flex-col justify-center lg:min-w-0 lg:h-[5rem] bg-neutral-light px-6 py-3 rounded-2xl lg:rounded-none">
+                        <div
+                          title={searchResult.getPredicateId()}
+                          className="text-center font-bold"
+                        >
+                          {searchResult.getPredicateCurie()}
+                        </div>
+                        <div
+                          title={searchResult.getPredicateLabel()}
+                          className="text-center truncate"
+                        >
+                          {searchResult.getPredicateLabel() || ""}
+                        </div>
                       </div>
+                      <div className="w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[2.5rem] lg:border-l-[1rem] lg:border-l-neutral-light lg:border-y-yellow-300" />
                       <div
-                        className="basis-4/12 bg-yellow-300 rounded-lg px-4 py-2 cursor-pointer"
+                        className="flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none bg-yellow-300 cursor-pointer"
                         onClick={() => {
                           navigate(
                             `/entity/${encodeURIComponent(
@@ -430,17 +435,19 @@ export default function Search({ appRef }: { appRef: any }) {
                           );
                         }}
                       >
-                        <strong>{searchResult.getObjectCurie()}</strong>
-                        <br />
-                        {searchResult.getObjectLabel()
-                          ? `(${searchResult.getObjectLabel()})`
-                          : ""}
-                        <br />
-                        {searchResult.getObjectCategory()}
-                      </div>
-                      <div className="basis-1/12 mt-4 grid grid-cols-2 justify-items-center text-xl">
+                        <div className="text-center font-bold">
+                          {searchResult.getObjectCurie()}
+                        </div>
                         <div
-                          className="w-fit cursor-pointer"
+                          title={searchResult.getObjectLabel()}
+                          className="text-center truncate"
+                        >
+                          {searchResult.getObjectLabel() || ""}
+                        </div>
+                      </div>
+                      <div className="flex-0 grid grid-cols-2 m-3 gap-3 justify-items-center content-center text-xl">
+                        <div
+                          className="cursor-pointer self-center"
                           onClick={() => {
                             const queryObject = new URLSearchParams({
                               subject_id: searchResult.getSubjectCurie()
@@ -487,6 +494,20 @@ export default function Search({ appRef }: { appRef: any }) {
                           />
                         </div>
                         <div
+                          className="link-default text-sm font-bold cursor-pointer text-center self-center"
+                          onClick={() => {
+                            navigate(
+                              `/mapping/${encodeURIComponent(
+                                searchResult.getMappingId()
+                              )}`
+                            );
+                          }}
+                        >
+                          View
+                          <br />
+                          mapping
+                        </div>
+                        {/* <div
                           className="w-fit cursor-pointer"
                           onClick={() => {
                             navigate(
@@ -500,7 +521,7 @@ export default function Search({ appRef }: { appRef: any }) {
                             title="View"
                             className="icon icon-common icon-eye text-link-default"
                           />
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   );
