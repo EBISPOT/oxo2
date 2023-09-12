@@ -33,7 +33,7 @@ export default function Home({ appRef }: { appRef: any }) {
                   <div
                     className="link-default md:mx-0.5"
                     onClick={() => {
-                      setQuery("UBERON:0002107\nHP:0000518\nMP:0001289");
+                      setQuery("UBERON:0002107\nHP:0000518\nMP:0001289\nMP:0000564");
                     }}
                   >
                     Examples...

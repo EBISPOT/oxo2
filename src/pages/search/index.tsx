@@ -312,9 +312,7 @@ export default function Search({ appRef }: { appRef: any }) {
                                     />
                                     <span className="input-checkbox mr-4" />
                                     <span className="mr-4">
-                                      {facetSubKey.substring(
-                                        facetSubKey.lastIndexOf("/") + 1
-                                      )}
+                                      {facetSubKey}
                                       &nbsp;&#40;
                                       {facetValue[facetSubKey]}&#41;
                                     </span>
