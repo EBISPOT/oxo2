@@ -17,6 +17,11 @@ export const getEntities = createAsyncThunk(
   async (entityId: string, { rejectWithValue }) => {
     let searchBody = {
       curies: [entityId],
+      // show all
+      confidence: {
+        min: 0,
+        max: 1,
+      },
     };
     try {
       const searchResponse = await post<{ curies: string[] }, Page<Mapping>>(
