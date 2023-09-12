@@ -46,7 +46,7 @@ export default function Search({ appRef }: { appRef: any }) {
   const [hideFilters, setHideFilters] = useState<boolean>(true);
 
   const [minValue, setMinValue] = useState<number>(0);
-  const [maxValue, setMaxValue] = useState<number>(0);
+  const [maxValue, setMaxValue] = useState<number>(1);
   const handleChange = (event: Event, newValue: number | number[]) => {
     const newVal = newValue as number[];
     setMinValue(newVal[0]);
@@ -156,21 +156,22 @@ export default function Search({ appRef }: { appRef: any }) {
         getMappingsByEntities({
           entityIds: searchParams.get("ids")?.split(",") || [],
           facetIds: facetFields,
+          confidence: { min: minValue, max: maxValue },
           limit: rowsPerPage,
           page: page + 1,
         })
       );
     }
-  }, [dispatch, refQuery, searchParams, facetFields, page, rowsPerPage]);
-
-  useEffect(() => {
-    setMinValue(
-      parseFloat(
-        (Math.floor(facets["confidence"]?.min * 10) / 10).toFixed(1)
-      ) || 0
-    );
-    setMaxValue(parseFloat(facets["confidence"]?.max.toFixed(1)) || 0);
-  }, [facets]);
+  }, [
+    dispatch,
+    refQuery,
+    searchParams,
+    facetFields,
+    minValue,
+    maxValue,
+    page,
+    rowsPerPage,
+  ]);
 
   useEffect(() => {
     const arc = appRef.current;
