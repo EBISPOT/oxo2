@@ -17,7 +17,7 @@ export default function Home({ appRef }: { appRef: any }) {
 
   return (
     <main className="container mx-auto">
-      <div className="grid gird-cols-1 lg:grid-cols-4 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 lg:gap-8">
         <div className="lg:col-span-3">
           <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg my-8 p-8">
             <div className="text-3xl mb-4 text-neutral-black font-bold">
