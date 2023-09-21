@@ -47,7 +47,18 @@ export default function MappingView({ appRef }: { appRef: any }) {
       <div className="mb-6 text-neutral-black flex flex-col items-stretch items-center lg:flex-row">
         <div className="flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none bg-yellow-300">
           <div className="text-center font-bold">
-            <span className="pr-2">{mapping?.getSubjectCurie()}</span>
+            <span
+              className="pr-2 cursor-pointer hover:underline"
+              onClick={() => {
+                navigate(
+                  `/entity/${encodeURIComponent(
+                    mapping?.getSubjectCurie() || ""
+                  )}`
+                );
+              }}
+            >
+              {mapping?.getSubjectCurie() || ""}
+            </span>
             <a
               href={mapping?.getSubjectId()}
               title={mapping?.getSubjectId()}
@@ -91,7 +102,18 @@ export default function MappingView({ appRef }: { appRef: any }) {
         <div className="w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[2.5rem] lg:border-l-[1rem] lg:border-l-neutral-light lg:border-y-yellow-300" />
         <div className="flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none bg-yellow-300">
           <div className="text-center font-bold">
-            <span className="pr-2">{mapping?.getObjectCurie()}</span>
+            <span
+              className="pr-2 cursor-pointer hover:underline"
+              onClick={() => {
+                navigate(
+                  `/entity/${encodeURIComponent(
+                    mapping?.getObjectCurie() || ""
+                  )}`
+                );
+              }}
+            >
+              {mapping?.getObjectCurie()}
+            </span>
             <a
               href={mapping?.getObjectId()}
               target="_blank"
@@ -170,7 +192,7 @@ export default function MappingView({ appRef }: { appRef: any }) {
       {mapping?.getProvider() ? (
         <div className="px-2 pt-1 text-neutral-black lg:col-span-3">
           <strong>Provider:&nbsp;</strong>
-          {mapping?.getProvider()}
+          {mapping.getProvider()}
         </div>
       ) : null}
       {mapping && (mapping.getCreatorLabels() || mapping.getCreatorIds()) ? (
@@ -198,11 +220,21 @@ export default function MappingView({ appRef }: { appRef: any }) {
       ) : null}
       <div className="text-2xl font-bold mb-4">Justification</div>
       <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg mb-4 p-8 text-neutral-black">
-        <div
-          title={mapping?.getJustification()}
-          className="font-bold text-lg mb-4 truncate"
-        >
-          {mapping?.getJustification()}
+        <div className="mb-4">
+          <i
+            title={mapping?.getJustificationCurie()}
+            className="font-bold text-xl pr-2 truncate"
+          >
+            {mapping?.getJustificationCurie()}
+          </i>
+          <a
+            href={mapping?.getJustificationId()}
+            title={mapping?.getJustificationId()}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <i className="icon icon-common icon-external-link-alt icon-spacer" />
+          </a>
         </div>
         {mapping?.getConfidence() ? (
           <div>
@@ -343,18 +375,28 @@ export default function MappingView({ appRef }: { appRef: any }) {
       {otherMappings.map((otherMapping) => {
         if (
           mapping &&
-          mapping.getJustification() !== otherMapping.getJustification()
+          mapping.getJustificationId() !== otherMapping.getJustificationId()
         ) {
           return (
             <div
-              key={otherMapping.getJustification()}
+              key={otherMapping.getJustificationId()}
               className="bg-gradient-to-r from-neutral-light to-white rounded-lg mb-4 p-8 text-neutral-black"
             >
-              <div
-                title={otherMapping.getJustification()}
-                className="text-xl font-bold mb-2 truncate"
-              >
-                {otherMapping.getJustification()}
+              <div className="mb-4">
+                <i
+                  title={otherMapping.getJustificationCurie()}
+                  className="font-bold text-xl pr-2 truncate"
+                >
+                  {otherMapping.getJustificationCurie()}
+                </i>
+                <a
+                  href={otherMapping.getJustificationId()}
+                  title={otherMapping.getJustificationId()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i className="icon icon-common icon-external-link-alt icon-spacer" />
+                </a>
               </div>
               <ul className="list-disc list-inside pl-2">
                 {otherMapping.getConfidence() ? (

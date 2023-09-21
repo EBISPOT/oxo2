@@ -26,8 +26,11 @@ export default class Mapping {
   getObjectCurie(): string {
     return this.properties["object_id_curie"];
   }
-  getJustification(): string {
+  getJustificationId(): string {
     return this.properties["mapping_justification"];
+  }
+  getJustificationCurie(): string {
+    return this.properties["mapping_justification_curie"];
   }
   getSubjectLabel(): string {
     return this.properties["subject_label"];

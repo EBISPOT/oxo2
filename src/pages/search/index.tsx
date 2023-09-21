@@ -113,7 +113,7 @@ export default function Search({ appRef }: { appRef: any }) {
     const justifs: any[] = [];
     otherMappings.forEach((mapping: Mapping) => {
       justifs.push({
-        uri: mapping.getJustification(),
+        uri: mapping.getJustificationId(),
         confidence: mapping.getConfidence(),
         provider: mapping.getProvider(),
         subjectMatches: mapping.getSubjectMatchFields()
@@ -481,8 +481,8 @@ export default function Search({ appRef }: { appRef: any }) {
                               object_id: searchResult.getObjectCurie()
                                 ? searchResult.getObjectCurie()
                                 : searchResult.getObjectId(),
-                              justif_uri: searchResult.getJustification()
-                                ? searchResult.getJustification()
+                              justif_uri: searchResult.getJustificationId()
+                                ? searchResult.getJustificationId()
                                 : "",
                               justif_confidence: searchResult.getConfidence()
                                 ? searchResult.getConfidence().toString()
