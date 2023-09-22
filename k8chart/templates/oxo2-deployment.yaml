@@ -27,9 +27,8 @@ spec:
               cpu: 0.5
           ports:
             - containerPort: 8080
-          env:
-            - name: PUBLIC_URL
-              value: /spot/oxo2
           envFrom:
-          - configMapRef:
-              name: oxo2-env
+            - configMapRef:
+                name: oxo2-env
+          command: ["/bin/bash", "-c"]
+          args: ["/opt/oxo2/entrypoint.dockersh"]
