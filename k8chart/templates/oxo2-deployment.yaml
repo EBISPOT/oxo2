@@ -30,7 +30,6 @@ spec:
           env:
             - name: PUBLIC_URL
               value: /spot/oxo2
-          command: ["/bin/bash", "-c"]
           envFrom:
           - configMapRef:
               name: oxo2-env
