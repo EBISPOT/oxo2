@@ -1,2 +1,3 @@
 name: oxo2
 envFile: ./.env
+imageTag: dev
