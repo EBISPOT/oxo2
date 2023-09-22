@@ -29,3 +29,5 @@ COPY . /opt/oxo2/
 RUN chmod +x /opt/oxo2/entrypoint.dockersh
 
 CMD ["/opt/oxo2/entrypoint.dockersh"]
+
+EXPOSE 8080
