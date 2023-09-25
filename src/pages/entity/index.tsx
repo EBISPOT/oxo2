@@ -37,7 +37,9 @@ export default function EntityView({ appRef }: { appRef: any }) {
   }, [entityMappings, setMappings, entityId]);
   return (
     <main className="container mx-auto">
-      <div className="text-2xl font-bold mt-6 mb-4">Mappings for {entityId}</div>
+      <div className="text-2xl font-bold mt-6 mb-4">
+        Mappings for {entityId}
+      </div>
       {mappings && mappings.length > 0
         ? mappings.map((mapping) => {
             return (
@@ -53,7 +55,22 @@ export default function EntityView({ appRef }: { appRef: any }) {
                   }`}
                 >
                   <div className="text-center font-bold">
-                    <span className="pr-2">{mapping.getSubjectCurie()}</span>
+                    <span
+                      className={`pr-2 ${
+                        mapping.getSubjectCurie() === entityId
+                          ? ""
+                          : "cursor-pointer hover:underline"
+                      }`}
+                      onClick={() => {
+                        navigate(
+                          `/entity/${encodeURIComponent(
+                            mapping.getSubjectCurie() || ""
+                          )}`
+                        );
+                      }}
+                    >
+                      {mapping.getSubjectCurie()}
+                    </span>
                     <i
                       title="Copy"
                       className={`icon icon-common icon-copy icon-spacer ${
@@ -115,7 +132,22 @@ export default function EntityView({ appRef }: { appRef: any }) {
                   }`}
                 >
                   <div className="text-center font-bold">
-                    <span className="pr-2">{mapping.getObjectCurie()}</span>
+                    <span
+                      className={`pr-2 ${
+                        mapping.getObjectCurie() === entityId
+                          ? ""
+                          : "cursor-pointer hover:underline"
+                      }`}
+                      onClick={() => {
+                        navigate(
+                          `/entity/${encodeURIComponent(
+                            mapping.getObjectCurie() || ""
+                          )}`
+                        );
+                      }}
+                    >
+                      {mapping.getObjectCurie()}
+                    </span>
                     <i
                       title="Copy"
                       className={`icon icon-common icon-copy icon-spacer ${
