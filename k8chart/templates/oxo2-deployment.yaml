@@ -32,3 +32,7 @@ spec:
                 name: oxo2-env
           command: ["/bin/bash", "-c"]
           args: ["/opt/oxo2/entrypoint.dockersh"]
+      volumes:
+        - name: log
+          persistentVolumeClaim:
+            claimName: oxo2-logs
