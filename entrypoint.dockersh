@@ -2,8 +2,10 @@
 
 cd /opt/oxo2
 
-echo Building frontend. PUBLIC_URL: $PUBLIC_URL
+echo Building frontend. REACT_APP_ENV: $REACT_APP_ENV
 
-yarn react-scripts build
+npm run build
 
 caddy run --config ./Caddyfile
+
+

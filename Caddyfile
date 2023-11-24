@@ -4,7 +4,7 @@
 
 :8080 {
     handle_path {$PUBLIC_URL}* {
-        root * /opt/oxo2/build
+        root * /opt/oxo2/dist
         try_files {path} /
         file_server
     }

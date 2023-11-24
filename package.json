@@ -20,15 +20,14 @@
     "react-dom": "^18.2.0",
     "react-redux": "^8.0.5",
     "react-router-dom": "^6.8.1",
-    "react-scripts": "^5.0.1",
     "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "url-join": "^5.0.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "build": "dotenv -e .env.$REACT_APP_ENV -e .env -- node build.mjs",
+    "watch": "dotenv -e .env.$REACT_APP_ENV -e .env -- nodemon -e 'ts,tsx,js,jsx,css' -w src -w index.html.in --exec 'npm run build'",
+    "start": "dotenv -e .env.$REACT_APP_ENV -e .env -- concurrently -n 'Build,Serve' 'npm run watch' 'node dev_server.mjs'"
   },
   "eslintConfig": {
     "extends": [
@@ -49,6 +48,14 @@
     ]
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
+    "dotenv-cli": "^7.2.1",
+    "esbuild": "^0.18.11",
+    "express": "^4.18.2",
+    "express-http-proxy": "^1.6.3",
+    "nocache": "^4.0.0",
+    "node-fetch": "^3.3.1",
+    "nodemon": "^2.0.22",
     "tailwindcss": "^3.2.7"
   }
 }

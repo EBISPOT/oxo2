@@ -21,8 +21,8 @@ RUN mkdir /opt/oxo2
 
 WORKDIR /opt/oxo2
 
-COPY package.json yarn.lock .yarnrc.yml /opt/oxo2/
-RUN yarn install
+COPY package.json package-lock.json /opt/oxo2/
+RUN npm install
 
 COPY . /opt/oxo2/
 
