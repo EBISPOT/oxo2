@@ -10,10 +10,12 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonDeserialize(builder = NodeReference.Builder.class)
 public class NodeReference extends LabelledReference {
+    /**
+     * See
+     */
     @JsonProperty("category")
     private final Optional<String> category;
 
-    @JsonProperty("role")
     private final NodeReferenceEnum role;
 
     @JsonProperty("type")
@@ -28,8 +30,6 @@ public class NodeReference extends LabelledReference {
     @JsonProperty("match_field")
     private final SortedSet<String> matchField;
 
-    @JsonProperty("match_string")
-    private final SortedSet<String> matchString;
 
     @JsonProperty("preprocessing")
     private final List<EntityReference> preprocessing;
@@ -42,7 +42,6 @@ public class NodeReference extends LabelledReference {
         this.source = builder.source;
         this.sourceVersion = builder.sourceVersion;
         this.matchField = builder.matchField;
-        this.matchString = builder.matchString;
         this.preprocessing = builder.preprocessing;
     }
 
@@ -70,9 +69,6 @@ public class NodeReference extends LabelledReference {
         return matchField;
     }
 
-    public SortedSet<String> getMatchString() {
-        return matchString;
-    }
 
     public List<EntityReference> getPreprocessing() {
         return preprocessing;
@@ -96,7 +92,6 @@ public class NodeReference extends LabelledReference {
 
         private SortedSet<String> matchField = new TreeSet<>();
 
-        private SortedSet<String> matchString = new TreeSet<>();
 
         private List<EntityReference> preprocessing = new ArrayList<>();
 
@@ -132,13 +127,8 @@ public class NodeReference extends LabelledReference {
             return this;
         }
 
-        public Builder matchFields(Set<String> matchFields) {
+        public Builder matchField(Set<String> matchFields) {
             this.matchField = new TreeSet<>(matchFields);
-            return this;
-        }
-
-        public Builder matchString(Set<String> matchString) {
-            this.matchString = new TreeSet<>(matchString);
             return this;
         }
 

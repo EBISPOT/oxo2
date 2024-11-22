@@ -1,11 +1,26 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-public class SimilarityScore {
-    private final Double score;
-    private final String measure;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
-    public SimilarityScore(Double score, String measure) {
-        this.score = score;
-        this.measure = measure;
+import java.util.Optional;
+
+public class SimilarityScore {
+    @JsonValue
+    private final String scoreAsString;
+
+    private final Optional<java.lang.Double> scoreRepresentation;
+
+
+    public SimilarityScore(String score, String measure) {
+        this.scoreAsString = score;
+        Optional<java.lang.Double> tempDouble;
+        try {
+            tempDouble = Optional.of(java.lang.Double.parseDouble(score));
+
+        } catch (Exception e) {
+            tempDouble = Optional.empty();
+        }
+        this.scoreRepresentation = tempDouble;
     }
 }
