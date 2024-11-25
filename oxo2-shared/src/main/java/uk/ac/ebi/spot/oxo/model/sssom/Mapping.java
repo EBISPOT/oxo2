@@ -25,6 +25,12 @@ public class Mapping {
 
     /**
      * @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_justification">mapping_justification</a>
+     *
+     * Note that even though the documentation states mapping_justification is a mandatory field, it is often left out in
+     * practice. For examples where mapping_justification is not provided, see
+     * <a href="https://github.com/mapping-commons/microbial-trait-mappings/blob/main/mappings/matches-all.sssom.tsv"/> and
+     * <a href="https://github.com/mapping-commons/microbial-trait-mappings/blob/main/mappings/matches-all.sssom.tsv"/>
+     *
      */
     @JsonProperty("mapping_justification")
     private final Optional<EntityReference> mappingJustification;

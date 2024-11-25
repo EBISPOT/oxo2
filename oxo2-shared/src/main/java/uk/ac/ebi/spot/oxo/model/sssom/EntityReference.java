@@ -4,8 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * EntityReference refers to an rdfs:Resource @see <a href="https://mapping-commons.github.io/sssom/EntityReference/>EntityReference</a>.
+ * EntityReference refers to an rdfs:Resource @see <a href="https://mapping-commons.github.io/sssom/EntityReference/>
+ * EntityReference</a>.
  *
+ *  According to <a href="https://mapping-commons.github.io/sssom/spec-model/#identifiers"/> can represent a full length
+ *  IRI or a curie.
  */
 public class EntityReference {
     @JsonValue
