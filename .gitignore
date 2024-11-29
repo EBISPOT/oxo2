@@ -28,3 +28,6 @@ target/
 
 # IntelliJ IDEA project files
 .idea/
+
+# Mappings
+mappings/

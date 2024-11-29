@@ -9,6 +9,13 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
 /**
  * @see <a href="https://mapping-commons.github.io/sssom/Mapping/>Mapping</a>
+ *
+ *
+ * <a href="https://mapping-commons.github.io/sssom/spec-model/#overview/>Overview</a> states that:
+ * Of note, within a set, a mapping may not necessarily be uniquely identified by the combination
+ * of its four mandatory slots (subject_id, predicate_id, object_id, and mapping_justification).
+ * A set may very well contain several mappings with the same subject, predicate, object, and
+ * justification, but that differ on some of the other, complementary slots.
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonDeserialize(builder = Mapping.Builder.class)
