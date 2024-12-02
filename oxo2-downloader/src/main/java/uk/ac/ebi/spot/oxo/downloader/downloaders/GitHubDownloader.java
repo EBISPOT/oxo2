@@ -23,8 +23,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-public class GitHubFileDownloader {
-    private static final Logger logger = LoggerFactory.getLogger(GitHubFileDownloader.class);
+public class GitHubDownloader {
+    private static final Logger logger = LoggerFactory.getLogger(GitHubDownloader.class);
     private static final String GITHUB_API_URL = "https://api.github.com/repos/";
 
     public static class DownloadGithubDirectoryTask implements Callable<Collection<Future>> {
@@ -98,12 +98,14 @@ public class GitHubFileDownloader {
             }
         }
 
-        private static void downloadFile(CloseableHttpClient httpClient, String fileUrl, String destination) throws IOException {
+        private static void downloadFile(CloseableHttpClient httpClient, String fileUrl, String destination)
+                throws IOException {
             HttpGet request = new HttpGet(fileUrl);
 
             try (CloseableHttpResponse response = httpClient.execute(request);
                  InputStream in = response.getEntity().getContent();
                  FileOutputStream out = new FileOutputStream(destination)) {
+
                 byte[] buffer = new byte[2024];
                 int count;
                 while ((count = in.read(buffer)) != -1) {
@@ -124,7 +126,6 @@ public class GitHubFileDownloader {
                 "/contents/" + components.directory;
 
         logger.debug("apiUrl = {}", apiUrl);
-
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpGet request = new HttpGet(apiUrl);

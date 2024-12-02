@@ -6,7 +6,9 @@ import uk.ac.ebi.spot.oxo.downloader.config.OxoConfiguration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.spot.oxo.downloader.downloaders.GitHubFileDownloader;
+import uk.ac.ebi.spot.oxo.downloader.downloaders.FTPDownloader;
+import uk.ac.ebi.spot.oxo.downloader.downloaders.GitHubDownloader;
+import uk.ac.ebi.spot.oxo.downloader.downloaders.HTTPDowloader;
 
 import java.io.File;
 import java.util.Collection;
@@ -29,8 +31,12 @@ public class DownloadMappings {
 
         oxoConfiguration.getMappingRegistries().forEach(mappingRegistry -> {
             logger.debug("Downloading registry {} from {}", mappingRegistry.getId(), mappingRegistry.getGithubRepository());
-            futures.add(downloadMappings(executorService, mappingRegistry,
-                    inputParameters.downloadDirectory + File.separator + mappingRegistry.getId()));
+            try {
+                futures.add(downloadMappings(executorService, mappingRegistry,
+                        inputParameters.downloadDirectory + File.separator + mappingRegistry.getId()));
+            } catch (IllegalArgumentException e) {
+                logger.error("Failed to download registry {}: {}", mappingRegistry.getId(), e.getMessage());
+            }
         });
 
         waitForFutures(futures);
@@ -71,21 +77,32 @@ public class DownloadMappings {
     }
 
     private static Future downloadMappings(ExecutorService executorService,
-                                                         OxoConfiguration.MappingRegistry mappingRegistry,
-                                                         String downloadDirectory) {
+                                           OxoConfiguration.MappingRegistry mappingRegistry,
+                                           String downloadDirectory) {
 
         Future<?> future = null;
 
 
         if (mappingRegistry.getGithubRepository().isPresent()) {
-            future = executorService.submit(new GitHubFileDownloader.DownloadGithubDirectoryTask(
+            future = executorService.submit(new GitHubDownloader.DownloadGithubDirectoryTask(
                     executorService,
                     mappingRegistry.getGithubRepository().get(),
                     mappingRegistry.getDirectory().get(),
                     downloadDirectory));
 
-        } else throw new IllegalArgumentException("Unsupported download location: " + mappingRegistry.getGithubRepository());
-
+        } else if (mappingRegistry.getUrl().isPresent()) {
+            future = executorService.submit(new HTTPDowloader.HTTPDownloadTask(
+                    mappingRegistry.getUrl().get(),
+                    downloadDirectory));
+        } else if (mappingRegistry.getFtpServer().isPresent()) {
+            future = executorService.submit(new FTPDownloader.FTPDownloadTask(
+                    executorService,
+                    mappingRegistry.getFtpServer().get(),
+                    mappingRegistry.getPort().get().intValue(),
+                    mappingRegistry.getDirectory().get(),
+                    downloadDirectory));
+        } else
+            throw new IllegalArgumentException("Unsupported download option: " + mappingRegistry.getId());
 
         return future;
     }
