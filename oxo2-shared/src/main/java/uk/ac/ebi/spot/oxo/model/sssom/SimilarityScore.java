@@ -23,4 +23,12 @@ public class SimilarityScore {
         }
         this.scoreRepresentation = tempDouble;
     }
+
+    @Override
+    public String toString() {
+        return "SimilarityScore{" +
+                "scoreAsString='" + scoreAsString + '\'' +
+                ", scoreRepresentation=" + scoreRepresentation +
+                '}';
+    }
 }

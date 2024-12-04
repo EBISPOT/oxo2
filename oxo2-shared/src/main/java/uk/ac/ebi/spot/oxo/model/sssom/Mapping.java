@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 
 /**
  * @see <a href="https://mapping-commons.github.io/sssom/Mapping/>Mapping</a>
@@ -20,14 +21,13 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonDeserialize(builder = Mapping.Builder.class)
 public class Mapping {
-
-    @JsonProperty("subject")
+    @JsonProperty(SUBJECT)
     private final NodeReference subject;
 
-    @JsonProperty("predicate")
+    @JsonProperty(PREDICATE)
     private final PredicateReference predicate;
 
-    @JsonProperty("object")
+    @JsonProperty(OBJECT)
     private final NodeReference object;
 
     /**
@@ -39,7 +39,7 @@ public class Mapping {
      * <a href="https://github.com/mapping-commons/microbial-trait-mappings/blob/main/mappings/matches-all.sssom.tsv"/>
      *
      */
-    @JsonProperty("mapping_justification")
+    @JsonProperty(MAPPING_JUSTIFICATION)
     private final Optional<EntityReference> mappingJustification;
 
     /**
@@ -48,68 +48,68 @@ public class Mapping {
      * Authors, reviewers and creators are represented here a LabelledReference to allow for the possibility of enriching
      * ids with labels.
      */
-    @JsonProperty("author")
+    @JsonProperty(AUTHOR)
     private final SortedSet<LabelledReference> author;
 
-    @JsonProperty("reviewer")
+    @JsonProperty(REVIEWER)
     private final SortedSet<LabelledReference> reviewer;
 
-    @JsonProperty("creator")
+    @JsonProperty(CREATOR)
     private final SortedSet<LabelledReference> creator;
 
     /**
      * @see <a href="https://mapping-commons.github.io/sssom/Mapping/license">license</a>
      */
-    @JsonProperty("license")
+    @JsonProperty(LICENSE)
     private final Optional<Uri> license;
 
     /**
      * @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_provider">mapping_provider</a>
      */
-    @JsonProperty("mapping_provider")
+    @JsonProperty(MAPPING_PROVIDER)
     private final Optional<Uri> mappingProvider;
 
     /**
      * @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_source">mapping_source</a>
      */
-    @JsonProperty("mapping_source")
+    @JsonProperty(MAPPING_SOURCE)
     private final Optional<EntityReference> mappingSource;
 
     /**
      * @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_cardinality">mapping_cardinality</a>
      */
-    @JsonProperty("mapping_cardinality")
+    @JsonProperty(MAPPING_CARDINALITY)
     private final Optional<MappingCardinalityEnum> mappingCardinality;
 
     /**
      *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_tool">mapping_tool</a>
      */
-    @JsonProperty("mapping_tool")
+    @JsonProperty(MAPPING_TOOL)
     private final Optional<String> mappingTool;
 
     /**
      *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_tool_version">mapping_tool_version</a>
      */
-    @JsonProperty("mapping_tool_version")
+    @JsonProperty(MAPPING_TOOL_VERSION)
     private final Optional<String> mappingToolVersion;
 
     /**
      *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_date">mapping_date</a>
      */
-    @JsonProperty("mapping_date")
+    @JsonProperty(MAPPING_DATE)
     private final Optional<Date> mappingDate;
 
     /**
      *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/publication_date">publication_date</a>
      */
-    @JsonProperty("publication_date")
+    @JsonProperty(PUBLICATION_DATE)
     private final Optional<Date> publicationDate;
 
 
     /**
      * @see <a href="https://mapping-commons.github.io/sssom/Mapping/confidence">confidence</a>
      */
-    @JsonProperty("confidence")
+    @JsonProperty(CONFIDENCE)
     private final Optional<Double> confidence;
 
     /**
@@ -118,49 +118,49 @@ public class Mapping {
      * As with authors, reviewers and creators, curation rules are represented here as a CurationRule to allow for
      * associating a rule with text even though SSSOM does not have a relationship between curation_rule and curation_rule_text.
      */
-    @JsonProperty("curation")
+@JsonProperty(CURATION_RULE)
     private final SortedSet<CurationRule> curationRule;
 
     /**
      *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/match_string">match_string</a>
      */
-    @JsonProperty("match_string")
+    @JsonProperty(MATCH_STRING)
     private final SortedSet<String> matchString;
 
     /**
      *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/similarity_score">similarity_score</a>
      */
-    @JsonProperty("similarity_score")
+    @JsonProperty(SIMILARITY_SCORE)
     private final Optional<Double> similarityScore;
 
     /**
      *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/similarity_measure">similarity_measure</a>
      */
-    @JsonProperty("similarity_measure")
+    @JsonProperty(SIMILARITY_MEASURE)
     private final Optional<String> similarityMeasure;
 
     /**
      *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/see_also">see_also</a>
      */
-    @JsonProperty("see_also")
+    @JsonProperty(SEE_ALSO)
     private final SortedSet<String> seeAlso;
 
     /**
      *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/issue_tracker_item">issue_tracker_item</a>
      */
-    @JsonProperty("issue_tracker_item")
+    @JsonProperty(ISSUE_TRACKER_ITEM)
     private final Optional<EntityReference> issueTrackerItem;
 
     /**
      * @see <a href="https://mapping-commons.github.io/sssom/Mapping/other">other</a>
      */
-    @JsonProperty("other")
+    @JsonProperty(OTHER)
     private final Optional<KeyValuePairsAsString> other;
 
     /**
      * @see <a href="https://mapping-commons.github.io/sssom/Mapping/comment">comment</a>
      */
-    @JsonProperty("comment")
+    @JsonProperty(COMMENT)
     private final Optional<String> comment;
 
     private Mapping(Builder builder) {
@@ -284,6 +284,36 @@ public class Mapping {
 
     public Optional<String> getComment() {
         return comment;
+    }
+
+    @Override
+    public String toString() {
+        return "Mapping{" +
+                "subject=" + subject +
+                ", predicate=" + predicate +
+                ", object=" + object +
+                ", mappingJustification=" + mappingJustification +
+                ", author=" + author +
+                ", reviewer=" + reviewer +
+                ", creator=" + creator +
+                ", license=" + license +
+                ", mappingProvider=" + mappingProvider +
+                ", mappingSource=" + mappingSource +
+                ", mappingCardinality=" + mappingCardinality +
+                ", mappingTool=" + mappingTool +
+                ", mappingToolVersion=" + mappingToolVersion +
+                ", mappingDate=" + mappingDate +
+                ", publicationDate=" + publicationDate +
+                ", confidence=" + confidence +
+                ", curationRule=" + curationRule +
+                ", matchString=" + matchString +
+                ", similarityScore=" + similarityScore +
+                ", similarityMeasure=" + similarityMeasure +
+                ", seeAlso=" + seeAlso +
+                ", issueTrackerItem=" + issueTrackerItem +
+                ", other=" + other +
+                ", comment=" + comment +
+                '}';
     }
 
     @JsonPOJOBuilder
@@ -435,6 +465,43 @@ public class Mapping {
 
         public Mapping build() {
             return new Mapping(this);
+        }
+    }
+
+    public enum MappingFieldsEnum {
+        SUBJECT(MappingConstants.SUBJECT),
+        PREDICATE(MappingConstants.PREDICATE),
+        OBJECT(MappingConstants.OBJECT),
+        MAPPING_JUSTIFICATION(MappingConstants.MAPPING_JUSTIFICATION),
+        AUTHOR(MappingConstants.AUTHOR),
+        REVIEWER(MappingConstants.REVIEWER),
+        CREATOR(MappingConstants.CREATOR),
+        LICENSE(MappingConstants.LICENSE),
+        MAPPING_PROVIDER(MappingConstants.MAPPING_PROVIDER),
+        MAPPING_SOURCE(MappingConstants.MAPPING_SOURCE),
+        MAPPING_CARDINALITY(MappingConstants.MAPPING_CARDINALITY),
+        MAPPING_TOOL(MappingConstants.MAPPING_TOOL),
+        MAPPING_TOOL_VERSION(MappingConstants.MAPPING_TOOL_VERSION),
+        MAPPING_DATE(MappingConstants.MAPPING_DATE),
+        PUBLICATION_DATE(MappingConstants.PUBLICATION_DATE),
+        CONFIDENCE(MappingConstants.CONFIDENCE),
+        CURATION_RULE(MappingConstants.CURATION_RULE),
+        MATCH_STRING(MappingConstants.MATCH_STRING),
+        SIMILARITY_SCORE(MappingConstants.SIMILARITY_SCORE),
+        SIMILARITY_MEASURE(MappingConstants.SIMILARITY_MEASURE),
+        SEE_ALSO(MappingConstants.SEE_ALSO),
+        ISSUE_TRACKER_ITEM(MappingConstants.ISSUE_TRACKER_ITEM),
+        OTHER(MappingConstants.OTHER),
+        COMMENT(MappingConstants.COMMENT);
+
+        private final String fieldName;
+
+        MappingFieldsEnum(String fieldName) {
+            this.fieldName = fieldName;
+        }
+
+        public String getFieldName() {
+            return fieldName;
         }
     }
 }

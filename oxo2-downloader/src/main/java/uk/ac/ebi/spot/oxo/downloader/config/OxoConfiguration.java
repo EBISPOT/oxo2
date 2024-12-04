@@ -47,7 +47,6 @@ public class OxoConfiguration {
 
         private final Optional<String> url;
 
-
         public MappingRegistry(Builder builder) {
             this.id = builder.id;
             this.githubRepository = Optional.ofNullable(builder.githubRepository);
@@ -57,7 +56,6 @@ public class OxoConfiguration {
             this.url = Optional.ofNullable(builder.url);
         }
 
-
         public String getId() {
             return id;
         }
@@ -65,7 +63,6 @@ public class OxoConfiguration {
         public Optional<String> getGithubRepository() {
             return githubRepository;
         }
-
 
         public Optional<String> getDirectory() {
             return directory;

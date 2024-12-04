@@ -23,4 +23,11 @@ public class EntityReference {
     public String getUri() {
         return uri;
     }
+
+    @Override
+    public String toString() {
+        return "EntityReference{" +
+                "uri='" + uri + '\'' +
+                '}';
+    }
 }

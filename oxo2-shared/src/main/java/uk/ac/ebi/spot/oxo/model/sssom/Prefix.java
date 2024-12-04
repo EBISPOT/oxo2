@@ -32,4 +32,11 @@ public class Prefix {
         prefixes.forEach((k,v)-> prefixMap.put(k, v));
     }
 
+    @Override
+    public String toString() {
+        return "Prefix{" +
+                "name='" + name + '\'' +
+                ", url='" + url + '\'' +
+                '}';
+    }
 }

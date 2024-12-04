@@ -47,4 +47,12 @@ public class Date {
         return dateRepresentation;
     }
 
+
+    @Override
+    public String toString() {
+        return "Date{" +
+                "dateAsString='" + dateAsString + '\'' +
+                ", dateRepresentation=" + dateRepresentation +
+                '}';
+    }
 }

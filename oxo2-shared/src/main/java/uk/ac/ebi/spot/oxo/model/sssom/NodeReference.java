@@ -74,6 +74,21 @@ public class NodeReference extends LabelledReference {
         return preprocessing;
     }
 
+    @Override
+    public String toString() {
+        return "NodeReference{" +
+                "category=" + category +
+                ", role=" + role +
+                ", type=" + type +
+                ", source=" + source +
+                ", sourceVersion=" + sourceVersion +
+                ", matchField=" + matchField +
+                ", preprocessing=" + preprocessing +
+                ", id=" + id +
+                ", label=" + label +
+                '}';
+    }
+
     @JsonPOJOBuilder
     public static class Builder {
         private final Optional<EntityReference> id;

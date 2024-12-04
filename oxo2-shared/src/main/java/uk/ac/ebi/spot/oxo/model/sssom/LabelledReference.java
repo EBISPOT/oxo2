@@ -38,4 +38,12 @@ public class LabelledReference implements Comparable<LabelledReference>{
         return this.id.map(EntityReference::toString).orElse("")
                 .compareTo(other.id.map(EntityReference::toString).orElse(""));
     }
+
+    @Override
+    public String toString() {
+        return "LabelledReference{" +
+                "id=" + id +
+                ", label=" + label +
+                '}';
+    }
 }

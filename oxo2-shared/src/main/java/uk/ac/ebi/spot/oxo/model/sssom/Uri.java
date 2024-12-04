@@ -1,6 +1,5 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.net.URI;
@@ -25,5 +24,13 @@ public class Uri {
             tempUri = Optional.empty();
         }
         this.uriRepresentation = tempUri;
+    }
+
+    @Override
+    public String toString() {
+        return "Uri{" +
+                "uriAsString='" + uriAsString + '\'' +
+                ", uriRepresentation=" + uriRepresentation +
+                '}';
     }
 }

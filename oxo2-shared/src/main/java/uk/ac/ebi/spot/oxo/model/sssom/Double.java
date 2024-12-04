@@ -34,4 +34,12 @@ public class Double {
     public Optional<java.lang.Double> getDoubleRepresentation() {
         return doubleRepresentation;
     }
+
+    @Override
+    public String toString() {
+        return "Double{" +
+                "doubleAsString='" + doubleAsString + '\'' +
+                ", doubleRepresentation=" + doubleRepresentation +
+                '}';
+    }
 }

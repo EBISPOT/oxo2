@@ -57,4 +57,11 @@ public class KeyValuePairsAsString {
     public SortedMap<String, String> getKeyValuePairsAsMap() {
         return keyValuePairsAsMap;
     }
+
+    @Override
+    public String toString() {
+        return "KeyValuePairsAsString{" +
+                "keyValuePairsAsMap=" + keyValuePairsAsMap +
+                '}';
+    }
 }

@@ -6,109 +6,113 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 
 /**
  * @see <a href="https://mapping-commons.github.io/sssom/MappingSet/">MappingSet</a>
+ *
+ * A SSSOM TSV file contains 1 MappingSet object. See structure of TSV discussed
+ * <a href="https://mapping-commons.github.io/sssom/spec-formats-tsv/#structure">here</a>.
+ *
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonDeserialize(builder = MappingSet.Builder.class)
 public class MappingSet {
 
-    @JsonProperty("curie_map")
+    @JsonProperty(CURIE_MAP)
     private final SortedMap<String, String> curieMap;
 
-    @JsonProperty("mappings")
     private final SortedSet<Mapping> mappings;
 
-    @JsonProperty("mapping_set_id")
+    @JsonProperty(MAPPING_SET_ID)
     private final Uri mappingSetId;
 
-    @JsonProperty("mapping_set_version")
+    @JsonProperty(MAPPING_SET_VERSION)
     private final Optional<String> mappingSetVersion;
 
-    @JsonProperty("mapping_set_source")
+    @JsonProperty(MAPPING_SET_SOURCE)
     private final SortedSet<Uri> mappingSetSource;
 
-    @JsonProperty("mapping_set_title")
+    @JsonProperty(MAPPING_SET_TITLE)
     private final Optional<String> mappingSetTitle;
 
-    @JsonProperty("mapping_set_description")
+    @JsonProperty(MAPPING_SET_DESCRIPTION)
     private final Optional<String> mappingSetDescription;
 
-    @JsonProperty("creator_id")
+    @JsonProperty(CREATOR_ID)
     private final SortedSet<EntityReference> creatorId;
 
-    @JsonProperty("creator_label")
+    @JsonProperty(CREATOR_LABEL)
     private final SortedSet<String> creatorLabel;
 
-    @JsonProperty("license")
+    @JsonProperty(LICENSE)
     private final Uri license;
 
-    @JsonProperty("subject_type")
+    @JsonProperty(SUBJECT_TYPE)
     private final Optional<EntityTypeEnum> subjectType;
 
-    @JsonProperty("subject_source")
+    @JsonProperty(SUBJECT_SOURCE)
     private final Optional<EntityReference> subjectSource;
 
 
-    @JsonProperty("subject_source_version")
+    @JsonProperty(SUBJECT_SOURCE_VERSION)
     private final Optional<String> subjectSourceVersion;
 
-    @JsonProperty("object_type")
+    @JsonProperty(OBJECT_TYPE)
     private final Optional<EntityTypeEnum> objectType;
 
-    @JsonProperty("object_source")
+    @JsonProperty(OBJECT_SOURCE)
     private final Optional<EntityReference> objectSource;
 
 
-    @JsonProperty("object_source_version")
+    @JsonProperty(OBJECT_SOURCE_VERSION)
     private final Optional<String> objectSourceVersion;
 
 
-    @JsonProperty("mapping_provider")
+    @JsonProperty(MAPPING_PROVIDER)
     private final Optional<Uri> mappingProvider;
 
 
-    @JsonProperty("mapping_tool")
+    @JsonProperty(MAPPING_TOOL)
     private final Optional<String> mappingTool;
 
-    @JsonProperty("mapping_tool_version")
+    @JsonProperty(MAPPING_TOOL_VERSION)
     private final Optional<String> mappingToolVersion;
 
-    @JsonProperty("mapping_date")
+    @JsonProperty(MAPPING_DATE)
     private final Optional<Date> mappingDate;
 
-    @JsonProperty("publication_date")
+    @JsonProperty(PUBLICATION_DATE)
     private final Optional<Date> publicationDate;
 
 
-    @JsonProperty("subject_match_field")
+    @JsonProperty(SUBJECT_MATCH_FIELD)
     private final SortedSet<EntityReference> subjectMatchField;
 
-    @JsonProperty("object_match_field")
+    @JsonProperty(OBJECT_MATCH_FIELD)
     private final SortedSet<EntityReference> objectMatchField;
 
-    @JsonProperty("subject_preprocessing")
+    @JsonProperty(SUBJECT_PREPROCESSING)
     private final List<EntityReference> subjectPreprocessing;
 
 
-    @JsonProperty("object_preprocessing")
+    @JsonProperty(OBJECT_PREPROCESSING)
     private final List<EntityReference> objectPreprocessing;
 
-    @JsonProperty("see_also")
+    @JsonProperty(SEE_ALSO)
     private final SortedSet<String> seeAlso;
 
-    @JsonProperty("issue_tracker")
+    @JsonProperty(ISSUE_TRACKER)
     private final Optional<Uri> issueTracker;
 
-    @JsonProperty("other")
+    @JsonProperty(OTHER)
     private final Optional<String> other;
 
 
-    @JsonProperty("comment")
+    @JsonProperty(COMMENT)
     private final Optional<String> comment;
 
-    @JsonProperty("extension_definitions")
+    @JsonProperty(EXTENSION_DEFINITIONS)
     private final SortedSet<ExtensionDefinition> extensionDefinitions;
 
 
@@ -267,35 +271,94 @@ public class MappingSet {
 
     @JsonPOJOBuilder
     public static class Builder {
+        @JsonProperty("curie_map")
         private SortedMap<String, String> curieMap = new TreeMap<>();
+
+        @JsonProperty("mappings")
         private SortedSet<Mapping> mappings = new TreeSet<>();
+
+        @JsonProperty("mapping_set_id")
         private Uri mappingSetId;
+
+        @JsonProperty("mapping_set_version")
         private Optional<String> mappingSetVersion = Optional.empty();
+
+        @JsonProperty("mapping_set_source")
         private SortedSet<Uri> mappingSetSource = new TreeSet<>();
+
+        @JsonProperty("mapping_set_title")
         private Optional<String> mappingSetTitle = Optional.empty();
+
+        @JsonProperty("mapping_set_description")
         private Optional<String> mappingSetDescription = Optional.empty();
+
+        @JsonProperty("creator_id")
         private SortedSet<EntityReference> creatorId = new TreeSet<>();
+
+        @JsonProperty("creator_label")
         private SortedSet<String> creatorLabel = new TreeSet<>();
+
+        @JsonProperty("license")
         private Uri license;
+
+        @JsonProperty("subject_type")
         private Optional<EntityTypeEnum> subjectType = Optional.empty();
+
+        @JsonProperty("subject_source")
         private Optional<EntityReference> subjectSource = Optional.empty();
+
+        @JsonProperty("subject_source_version")
         private Optional<String> subjectSourceVersion = Optional.empty();
+
+        @JsonProperty("object_type")
         private Optional<EntityTypeEnum> objectType = Optional.empty();
+
+        @JsonProperty("object_source")
         private Optional<EntityReference> objectSource = Optional.empty();
+
+        @JsonProperty("object_source_version")
         private Optional<String> objectSourceVersion = Optional.empty();
+
+        @JsonProperty("mapping_provider")
         private Optional<Uri> mappingProvider = Optional.empty();
+
+        @JsonProperty("mapping_tool")
         private Optional<String> mappingTool = Optional.empty();
+
+        @JsonProperty("mapping_tool_version")
         private Optional<String> mappingToolVersion = Optional.empty();
+
+        @JsonProperty("mapping_date")
         private Optional<Date> mappingDate = Optional.empty();
+
+        @JsonProperty("publication_date")
         private Optional<Date> publicationDate = Optional.empty();
+
+        @JsonProperty("subject_match_field")
         private SortedSet<EntityReference> subjectMatchField = new TreeSet<>();
+
+        @JsonProperty("object_match_field")
         private SortedSet<EntityReference> objectMatchField = new TreeSet<>();
+
+        @JsonProperty("subject_preprocessing")
         private List<EntityReference> subjectPreprocessing = new ArrayList<>();
+
+        @JsonProperty("object_preprocessing")
         private List<EntityReference> objectPreprocessing = new ArrayList<>();
+
+        @JsonProperty("see_also")
         private SortedSet<String> seeAlso = new TreeSet<>();
+
+        @JsonProperty("issue_tracker")
         private Optional<Uri> issueTracker = Optional.empty();
+
+        @JsonProperty("other")
         private Optional<String> other = Optional.empty();
+
+        @JsonProperty("comment")
         private Optional<String> comment = Optional.empty();
+
+        @JsonProperty("extension_definitions")
         private SortedSet<ExtensionDefinition> extensionDefinitions = new TreeSet<>();
 
         public Builder curieMap(SortedMap<String, String> curieMap) {
@@ -450,6 +513,42 @@ public class MappingSet {
 
         public MappingSet build() {
             return new MappingSet(this);
+        }
+
+        @Override
+        public String toString() {
+            return "Builder{" +
+                    "curieMap=" + curieMap +
+                    ", mappings=" + mappings +
+                    ", mappingSetId=" + mappingSetId +
+                    ", mappingSetVersion=" + mappingSetVersion +
+                    ", mappingSetSource=" + mappingSetSource +
+                    ", mappingSetTitle=" + mappingSetTitle +
+                    ", mappingSetDescription=" + mappingSetDescription +
+                    ", creatorId=" + creatorId +
+                    ", creatorLabel=" + creatorLabel +
+                    ", license=" + license +
+                    ", subjectType=" + subjectType +
+                    ", subjectSource=" + subjectSource +
+                    ", subjectSourceVersion=" + subjectSourceVersion +
+                    ", objectType=" + objectType +
+                    ", objectSource=" + objectSource +
+                    ", objectSourceVersion=" + objectSourceVersion +
+                    ", mappingProvider=" + mappingProvider +
+                    ", mappingTool=" + mappingTool +
+                    ", mappingToolVersion=" + mappingToolVersion +
+                    ", mappingDate=" + mappingDate +
+                    ", publicationDate=" + publicationDate +
+                    ", subjectMatchField=" + subjectMatchField +
+                    ", objectMatchField=" + objectMatchField +
+                    ", subjectPreprocessing=" + subjectPreprocessing +
+                    ", objectPreprocessing=" + objectPreprocessing +
+                    ", seeAlso=" + seeAlso +
+                    ", issueTracker=" + issueTracker +
+                    ", other=" + other +
+                    ", comment=" + comment +
+                    ", extensionDefinitions=" + extensionDefinitions +
+                    '}';
         }
     }
 }

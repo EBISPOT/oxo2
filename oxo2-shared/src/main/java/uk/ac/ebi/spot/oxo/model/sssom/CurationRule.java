@@ -1,9 +1,8 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import java.io.Serializable;
-import java.util.Optional;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
+
+import java.util.Optional;
 
 public class CurationRule implements Comparable<CurationRule> {
 
@@ -33,5 +32,13 @@ public class CurationRule implements Comparable<CurationRule> {
             return ruleComparison;
         }
         return this.text.orElse("").compareTo(other.text.orElse(""));
+    }
+
+    @Override
+    public String toString() {
+        return "CurationRule{" +
+                "rule=" + rule +
+                ", text=" + text +
+                '}';
     }
 }

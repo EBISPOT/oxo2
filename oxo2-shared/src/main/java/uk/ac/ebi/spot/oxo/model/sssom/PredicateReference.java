@@ -19,11 +19,21 @@ public class PredicateReference extends LabelledReference {
         this.predicateModifier = builder.predicateModifier;
     }
 
+    @Override
+    public String toString() {
+        return "PredicateReference{" +
+                "predicateModifier=" + predicateModifier +
+                ", id=" + id +
+                ", label=" + label +
+                '}';
+    }
+
     @JsonPOJOBuilder
     public static class Builder {
         private final Optional<EntityReference> id;
         private final Optional<String> label;
         private Optional<PredicateModifierEnum> predicateModifier = Optional.empty();
+
 
         public Builder(String id, String label) {
             this.id = Optional.of(new EntityReference(id));
@@ -48,5 +58,6 @@ public class PredicateReference extends LabelledReference {
         public PredicateReference build() {
             return new PredicateReference(this);
         }
+
     }
 }
