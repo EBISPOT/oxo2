@@ -4,13 +4,14 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.stream.Stream;
+
+import static uk.ac.ebi.spot.oxo.solr.parser.TSV2JSON.processDirectory;
 
 public class SSSOM2JSON {
 
@@ -40,26 +41,30 @@ public class SSSOM2JSON {
 
     }
 
+    private static void processMappingSets(String inputDirectory, String outputDirectory) throws IOException {
+        Stream<Path> directoriesOfMappingSets = getDirectories(inputDirectory);
 
-    private static void processMappingSets(String inputDirectory, String outputDirectory) {
-        Collection<Path> directoriesOfMappingSets = getDirectories(inputDirectory);
-        for (Path directory : directoriesOfMappingSets) {
-            logger.info("Processing directory: {}", directory);
-            // 1. Check for external metadata
-            // 2. Parse metadata
-            // 3. Parse mappings
-            // 4. Write mappings to JSON
+        String mappingSetDirectory = outputDirectory + File.separator + "mappingSet";
+        String mappingDirectory = outputDirectory + File.separator + "mapping";
+
+        try {
+            Files.createDirectories(Paths.get(mappingSetDirectory));
+            Files.createDirectories(Paths.get(mappingDirectory));
+        } catch (IOException e) {
+            logger.error("Error creating output directories {} and {}", mappingDirectory, mappingDirectory, e);
+            throw new IOException("Error creating output directories", e);
         }
 
+        directoriesOfMappingSets.forEach(path -> processDirectory(path.toString(), mappingSetDirectory, mappingDirectory));
     }
 
-    private static Collection<Path> getDirectories(String inputDirectory) {
+    private static Stream<Path> getDirectories(String inputDirectory) throws IOException {
         try (Stream<Path> paths = Files.walk(Paths.get(inputDirectory))) {
-            return paths.filter(Files::isDirectory).toList();
+            return paths.filter(Files::isDirectory);
         } catch (IOException e) {
             logger.error("Error traversing input directory", e);
+            throw new IOException("Error traversing input directory", e);
         }
-        return new ArrayList<>();
     }
 
     private static Options getOptions() {

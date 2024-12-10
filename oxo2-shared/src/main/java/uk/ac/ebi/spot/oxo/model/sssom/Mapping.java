@@ -1,11 +1,12 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import java.util.*;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import uk.ac.ebi.spot.oxo.utils.StringUtils;
+
+import java.util.*;
+
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 
 /**
@@ -18,443 +19,201 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
  * A set may very well contain several mappings with the same subject, predicate, object, and
  * justification, but that differ on some of the other, complementary slots.
  */
-@JsonInclude(JsonInclude.Include.NON_ABSENT)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonDeserialize(builder = Mapping.Builder.class)
-public class Mapping {
-    @JsonProperty(SUBJECT)
-    private final NodeReference subject;
+public record Mapping (
+        @JsonProperty(MAPPING_SET_ID)
+        Uri mappingSetId,
+        @JsonProperty(MAPPING_SET_VERSION)
+        Optional<String> mappingSetVersion,
+        @JsonProperty(MAPPING_SET_SOURCE)
+        SortedSet<Uri> mappingSetSource,
+        @JsonProperty(MAPPING_SET_TITLE)
+        Optional<String> mappingSetTitle,
+        @JsonProperty(MAPPING_SET_DESCRIPTION)
+        Optional<String> mappingSetDescription,
+        @JsonProperty(AUTHOR_ID)
+        SortedSet<EntityReference> authorId,
+        @JsonProperty(AUTHOR_LABEL)
+        SortedSet<String> authorLabel,
+        @JsonProperty(COMMENT)
+        Optional<String> comment,
+        @JsonProperty(CONFIDENCE)
+        Optional<Double> confidence,
+        @JsonProperty(CREATOR_ID)
+        SortedSet<String> creatorId,
+        @JsonProperty(CREATOR_LABEL)
+        SortedSet<String> creatorLabel,
+        @JsonProperty(CURATION_RULE)
+        SortedSet<CurationRule> curationRule,
+        @JsonProperty(ISSUE_TRACKER_ITEM)
+        Optional<EntityReference> issueTrackerItem,
+        @JsonProperty(LICENSE)
+        Optional<Uri> license,
+        @JsonProperty(MAPPING_CARDINALITY)
+        Optional<MappingCardinalityEnum> mappingCardinality,
+        @JsonProperty(MAPPING_DATE)
+        Optional<Date> mappingDate,
+        @JsonProperty(MAPPING_JUSTIFICATION)
+        Optional<EntityReference> mappingJustification,
+        @JsonProperty(MAPPING_PROVIDER)
+        Optional<Uri> mappingProvider,
+        @JsonProperty(MAPPING_SOURCE)
+        Optional<EntityReference> mappingSource,
+        @JsonProperty(MAPPING_TOOL)
+        Optional<String> mappingTool,
+        @JsonProperty(MAPPING_TOOL_VERSION)
+        Optional<String> mappingToolVersion,
+        @JsonProperty(MATCH_STRING)
+        SortedSet<String> matchString,
+        @JsonProperty(OBJECT_CATEGORY)
+        Optional<String> objectCategory,
+        @JsonProperty(OBJECT_ID)
+        Optional<EntityReference> objectId,
+        @JsonProperty(OBJECT_LABEL)
+        Optional<String> objectLabel,
+        @JsonProperty(OBJECT_MATCH_FIELD)
+        SortedSet<EntityReference> objectMatchField,
+        @JsonProperty(OBJECT_PREPROCESSING)
+        List<EntityReference> objectPreprocessing,
+        @JsonProperty(OBJECT_SOURCE)
+        Optional<EntityReference> objectSource,
+        @JsonProperty(OBJECT_SOURCE_VERSION)
+        Optional<String> objectSourceVersion,
+        @JsonProperty(OBJECT_TYPE)
+        Optional<EntityTypeEnum> objectType,
+        @JsonProperty(OTHER)
+        Optional<KeyValuePairsAsString> other,
+        @JsonProperty(PREDICATE_ID)
+        Optional<EntityReference> predicateId,
+        @JsonProperty(PREDICATE_LABEL)
+        Optional<String> predicateLabel,
+        @JsonProperty(PREDICATE_MODIFIER)
+        Optional<PredicateModifierEnum> predicateModifier,
+        @JsonProperty(PUBLICATION_DATE)
+        Optional<Date> publicationDate,
+        @JsonProperty(REVIEWER_ID)
+        SortedSet<String> reviewerId,
+        @JsonProperty(REVIEWER_LABEL)
+        SortedSet<String> reviewerLabel,
+        @JsonProperty(SEE_ALSO)
+        SortedSet<String> seeAlso,
+        @JsonProperty(SIMILARITY_MEASURE)
+        Optional<String> similarityMeasure,
+        @JsonProperty(SIMILARITY_SCORE)
+        Optional<Double> similarityScore,
+        @JsonProperty(SUBJECT_CATEGORY)
+        Optional<String> subjectCategory,
+        @JsonProperty(SUBJECT_ID)
+        Optional<EntityReference> subjectId,
+        @JsonProperty(SUBJECT_LABEL)
+        Optional<String> subjectLabel,
+        @JsonProperty(SUBJECT_MATCH_FIELD)
+        SortedSet<EntityReference> subjectMatchField,
+        @JsonProperty(SUBJECT_PREPROCESSING)
+        List<EntityReference> subjectPreprocessing,
+        @JsonProperty(SUBJECT_SOURCE)
+        Optional<EntityReference> subjectSource,
+        @JsonProperty(SUBJECT_SOURCE_VERSION)
+        Optional<String> subjectSourceVersion,
+        @JsonProperty(SUBJECT_TYPE)
+        Optional<EntityTypeEnum> subjectType) {
 
-    @JsonProperty(PREDICATE)
-    private final PredicateReference predicate;
-
-    @JsonProperty(OBJECT)
-    private final NodeReference object;
-
-    /**
-     * @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_justification">mapping_justification</a>
-     *
-     * Note that even though the documentation states mapping_justification is a mandatory field, it is often left out in
-     * practice. For examples where mapping_justification is not provided, see
-     * <a href="https://github.com/mapping-commons/microbial-trait-mappings/blob/main/mappings/matches-all.sssom.tsv"/> and
-     * <a href="https://github.com/mapping-commons/microbial-trait-mappings/blob/main/mappings/matches-all.sssom.tsv"/>
-     *
-     */
-    @JsonProperty(MAPPING_JUSTIFICATION)
-    private final Optional<EntityReference> mappingJustification;
-
-    /**
-     * Note that strictly speaking, according to SSSOM, there is no relationship between author_id and author_label.
-     * The same holds for reviewers and creators. @see <a href="https://github.com/mapping-commons/sssom/issues/344"/>.
-     * Authors, reviewers and creators are represented here a LabelledReference to allow for the possibility of enriching
-     * ids with labels.
-     */
-    @JsonProperty(AUTHOR)
-    private final SortedSet<LabelledReference> author;
-
-    @JsonProperty(REVIEWER)
-    private final SortedSet<LabelledReference> reviewer;
-
-    @JsonProperty(CREATOR)
-    private final SortedSet<LabelledReference> creator;
-
-    /**
-     * @see <a href="https://mapping-commons.github.io/sssom/Mapping/license">license</a>
-     */
-    @JsonProperty(LICENSE)
-    private final Optional<Uri> license;
-
-    /**
-     * @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_provider">mapping_provider</a>
-     */
-    @JsonProperty(MAPPING_PROVIDER)
-    private final Optional<Uri> mappingProvider;
-
-    /**
-     * @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_source">mapping_source</a>
-     */
-    @JsonProperty(MAPPING_SOURCE)
-    private final Optional<EntityReference> mappingSource;
-
-    /**
-     * @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_cardinality">mapping_cardinality</a>
-     */
-    @JsonProperty(MAPPING_CARDINALITY)
-    private final Optional<MappingCardinalityEnum> mappingCardinality;
-
-    /**
-     *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_tool">mapping_tool</a>
-     */
-    @JsonProperty(MAPPING_TOOL)
-    private final Optional<String> mappingTool;
-
-    /**
-     *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_tool_version">mapping_tool_version</a>
-     */
-    @JsonProperty(MAPPING_TOOL_VERSION)
-    private final Optional<String> mappingToolVersion;
-
-    /**
-     *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/mapping_date">mapping_date</a>
-     */
-    @JsonProperty(MAPPING_DATE)
-    private final Optional<Date> mappingDate;
-
-    /**
-     *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/publication_date">publication_date</a>
-     */
-    @JsonProperty(PUBLICATION_DATE)
-    private final Optional<Date> publicationDate;
-
-
-    /**
-     * @see <a href="https://mapping-commons.github.io/sssom/Mapping/confidence">confidence</a>
-     */
-    @JsonProperty(CONFIDENCE)
-    private final Optional<Double> confidence;
-
-    /**
-     * @see <a href="https://mapping-commons.github.io/sssom/Mapping/curation_rule">curation_rule</a>
-     *
-     * As with authors, reviewers and creators, curation rules are represented here as a CurationRule to allow for
-     * associating a rule with text even though SSSOM does not have a relationship between curation_rule and curation_rule_text.
-     */
-@JsonProperty(CURATION_RULE)
-    private final SortedSet<CurationRule> curationRule;
-
-    /**
-     *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/match_string">match_string</a>
-     */
-    @JsonProperty(MATCH_STRING)
-    private final SortedSet<String> matchString;
-
-    /**
-     *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/similarity_score">similarity_score</a>
-     */
-    @JsonProperty(SIMILARITY_SCORE)
-    private final Optional<Double> similarityScore;
-
-    /**
-     *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/similarity_measure">similarity_measure</a>
-     */
-    @JsonProperty(SIMILARITY_MEASURE)
-    private final Optional<String> similarityMeasure;
-
-    /**
-     *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/see_also">see_also</a>
-     */
-    @JsonProperty(SEE_ALSO)
-    private final SortedSet<String> seeAlso;
-
-    /**
-     *  @see <a href="https://mapping-commons.github.io/sssom/Mapping/issue_tracker_item">issue_tracker_item</a>
-     */
-    @JsonProperty(ISSUE_TRACKER_ITEM)
-    private final Optional<EntityReference> issueTrackerItem;
-
-    /**
-     * @see <a href="https://mapping-commons.github.io/sssom/Mapping/other">other</a>
-     */
-    @JsonProperty(OTHER)
-    private final Optional<KeyValuePairsAsString> other;
-
-    /**
-     * @see <a href="https://mapping-commons.github.io/sssom/Mapping/comment">comment</a>
-     */
-    @JsonProperty(COMMENT)
-    private final Optional<String> comment;
-
-    private Mapping(Builder builder) {
-        this.subject = builder.subject;
-        this.predicate = builder.predicate;
-        this.object = builder.object;
-        this.mappingJustification = builder.mappingJustification;
-        this.author = builder.author;
-        this.reviewer = builder.reviewer;
-        this.creator = builder.creator;
-        this.license = builder.license;
-        this.mappingProvider = builder.mappingProvider;
-        this.mappingSource = builder.mappingSource;
-        this.mappingCardinality = builder.mappingCardinality;
-        this.mappingTool = builder.mappingTool;
-        this.mappingToolVersion = builder.mappingToolVersion;
-        this.mappingDate = builder.mappingDate;
-        this.publicationDate = builder.publicationDate;
-        this.confidence = builder.confidence;
-        this.curationRule = builder.curationRule;
-        this.matchString = builder.matchString;
-        this.similarityScore = builder.similarityScore;
-        this.similarityMeasure = builder.similarityMeasure;
-        this.seeAlso = builder.seeAlso;
-        this.issueTrackerItem = builder.issueTrackerItem;
-        this.other = builder.other;
-        this.comment = builder.comment;
-    }
-
-    public NodeReference getSubject() {
-        return subject;
-    }
-
-    public PredicateReference getPredicate() {
-        return predicate;
-    }
-
-    public NodeReference getObject() {
-        return object;
-    }
-
-    public Optional<EntityReference> getMappingJustification() {
-        return mappingJustification;
-    }
-
-    public SortedSet<LabelledReference> getAuthor() {
-        return author;
-    }
-
-    public SortedSet<LabelledReference> getReviewer() {
-        return reviewer;
-    }
-
-    public SortedSet<LabelledReference> getCreator() {
-        return creator;
-    }
-
-    public Optional<Uri> getLicense() {
-        return license;
-    }
-
-    public Optional<Uri> getMappingProvider() {
-        return mappingProvider;
-    }
-
-    public Optional<EntityReference> getMappingSource() {
-        return mappingSource;
-    }
-
-    public Optional<MappingCardinalityEnum> getMappingCardinality() {
-        return mappingCardinality;
-    }
-
-    public Optional<String> getMappingTool() {
-        return mappingTool;
-    }
-
-    public Optional<String> getMappingToolVersion() {
-        return mappingToolVersion;
-    }
-
-    public Optional<Date> getMappingDate() {
-        return mappingDate;
-    }
-
-    public Optional<Date> getPublicationDate() {
-        return publicationDate;
-    }
-
-    public Optional<Double> getConfidence() {
-        return confidence;
-    }
-
-    public SortedSet<CurationRule> getCurationRule() {
-        return curationRule;
-    }
-
-    public SortedSet<String> getMatchString() {
-        return matchString;
-    }
-
-    public Optional<Double> getSimilarityScore() {
-        return similarityScore;
-    }
-
-    public Optional<String> getSimilarityMeasure() {
-        return similarityMeasure;
-    }
-
-    public SortedSet<String> getSeeAlso() {
-        return seeAlso;
-    }
-
-    public Optional<EntityReference> getIssueTrackerItem() {
-        return issueTrackerItem;
-    }
-
-    public SortedSet<String> getOther() {
-        return other.isPresent() ? other.get().getKeyValuePairsAsSet() : new TreeSet<>();
-    }
-
-    public Optional<String> getComment() {
-        return comment;
-    }
-
-    @Override
-    public String toString() {
-        return "Mapping{" +
-                "subject=" + subject +
-                ", predicate=" + predicate +
-                ", object=" + object +
-                ", mappingJustification=" + mappingJustification +
-                ", author=" + author +
-                ", reviewer=" + reviewer +
-                ", creator=" + creator +
-                ", license=" + license +
-                ", mappingProvider=" + mappingProvider +
-                ", mappingSource=" + mappingSource +
-                ", mappingCardinality=" + mappingCardinality +
-                ", mappingTool=" + mappingTool +
-                ", mappingToolVersion=" + mappingToolVersion +
-                ", mappingDate=" + mappingDate +
-                ", publicationDate=" + publicationDate +
-                ", confidence=" + confidence +
-                ", curationRule=" + curationRule +
-                ", matchString=" + matchString +
-                ", similarityScore=" + similarityScore +
-                ", similarityMeasure=" + similarityMeasure +
-                ", seeAlso=" + seeAlso +
-                ", issueTrackerItem=" + issueTrackerItem +
-                ", other=" + other +
-                ", comment=" + comment +
-                '}';
-    }
-
-    @JsonPOJOBuilder
     public static class Builder {
-        private NodeReference subject;
-        private PredicateReference predicate;
-        private NodeReference object;
-        private Optional<EntityReference> mappingJustification;
-        private SortedSet<LabelledReference> author = new TreeSet<>();
-        private SortedSet<LabelledReference> reviewer = new TreeSet<>();
-        private SortedSet<LabelledReference> creator = new TreeSet<>();
+        private Uri mappingSetId;
+        private Optional<String> mappingSetVersion = Optional.empty();
+        private SortedSet<Uri> mappingSetSource = new TreeSet<>();
+        private Optional<String> mappingSetTitle = Optional.empty();
+        private Optional<String> mappingSetDescription = Optional.empty();
+        private SortedSet<EntityReference> authorId = new TreeSet<>();
+        private SortedSet<String> authorLabel = new TreeSet<>();
+        private Optional<String> comment = Optional.empty();
+        private Optional<Double> confidence = Optional.empty();
+        private SortedSet<String> creatorId = new TreeSet<>();
+        private SortedSet<String> creatorLabel = new TreeSet<>();
+        private SortedSet<CurationRule> curationRule = new TreeSet<>();
+        private Optional<EntityReference> issueTrackerItem = Optional.empty();
         private Optional<Uri> license = Optional.empty();
+        private Optional<MappingCardinalityEnum> mappingCardinality = Optional.empty();
+        private Optional<Date> mappingDate = Optional.empty();
+        private Optional<EntityReference> mappingJustification = Optional.empty();
         private Optional<Uri> mappingProvider = Optional.empty();
         private Optional<EntityReference> mappingSource = Optional.empty();
-        private Optional<MappingCardinalityEnum> mappingCardinality = Optional.empty();
         private Optional<String> mappingTool = Optional.empty();
         private Optional<String> mappingToolVersion = Optional.empty();
-        private Optional<Date> mappingDate = Optional.empty();
-        private Optional<Date> publicationDate = Optional.empty();
-        private Optional<Double> confidence = Optional.empty();
-        private SortedSet<CurationRule> curationRule = new TreeSet<>();
         private SortedSet<String> matchString = new TreeSet<>();
-        private Optional<Double> similarityScore = Optional.empty();
-        private Optional<String> similarityMeasure = Optional.empty();
-        private SortedSet<String> seeAlso = new TreeSet<>();
-        private Optional<EntityReference> issueTrackerItem = Optional.empty();
+        private Optional<String> objectCategory = Optional.empty();
+        private Optional<EntityReference> objectId = Optional.empty();
+        private Optional<String> objectLabel = Optional.empty();
+        private SortedSet<EntityReference> objectMatchField = new TreeSet<>();
+        private List<EntityReference> objectPreprocessing = new ArrayList<>();
+        private Optional<EntityReference> objectSource = Optional.empty();
+        private Optional<String> objectSourceVersion = Optional.empty();
+        private Optional<EntityTypeEnum> objectType = Optional.empty();
         private Optional<KeyValuePairsAsString> other = Optional.empty();
-        private Optional<String> comment = Optional.empty();
+        private Optional<EntityReference> predicateId = Optional.empty();
+        private Optional<String> predicateLabel = Optional.empty();
+        private Optional<PredicateModifierEnum> predicateModifier = Optional.empty();
+        private Optional<Date> publicationDate = Optional.empty();
+        private SortedSet<String> reviewerId = new TreeSet<>();
+        private SortedSet<String> reviewerLabel = new TreeSet<>();
+        private SortedSet<String> seeAlso = new TreeSet<>();
+        private Optional<String> similarityMeasure = Optional.empty();
+        private Optional<Double> similarityScore = Optional.empty();
+        private Optional<String> subjectCategory = Optional.empty();
+        private Optional<EntityReference> subjectId = Optional.empty();
+        private Optional<String> subjectLabel = Optional.empty();
+        private SortedSet<EntityReference> subjectMatchField = new TreeSet<>();
+        private List<EntityReference> subjectPreprocessing = new ArrayList<>();
+        private Optional<EntityReference> subjectSource = Optional.empty();
+        private Optional<String> subjectSourceVersion = Optional.empty();
+        private Optional<EntityTypeEnum> subjectType = Optional.empty();
 
-        public Builder subject(NodeReference subject) {
-            this.subject = subject;
+        public static Builder builder() {
+            return new Builder();
+        }
+        public Builder mappingSetId(String mappingSetId) {
+            this.mappingSetId = new Uri(mappingSetId);
             return this;
         }
 
-        public Builder predicate(PredicateReference predicate) {
-            this.predicate = predicate;
+        public Builder mappingSetVersion(String mappingSetVersion) {
+            this.mappingSetVersion = Optional.of(mappingSetVersion);
             return this;
         }
 
-        public Builder object(NodeReference object) {
-            this.object = object;
+        public Builder mappingSetSource(SortedSet<Uri> mappingSetSource) {
+            this.mappingSetSource = mappingSetSource;
             return this;
         }
 
-        public Builder mappingJustification(EntityReference mappingJustification) {
-            this.mappingJustification = Optional.of(mappingJustification);
+        public Builder mappingSetSource(String mappingSetSource) {
+            this.mappingSetSource = StringUtils.splitStringToSortedSet(mappingSetSource, "\\|", Uri::new);
             return this;
         }
 
-        public Builder author(SortedSet<LabelledReference> author) {
-            this.author = author;
+        public Builder mappingSetTitle(String mappingSetTitle) {
+            this.mappingSetTitle = Optional.of(mappingSetTitle);
             return this;
         }
 
-        public Builder reviewer(SortedSet<LabelledReference> reviewer) {
-            this.reviewer = reviewer;
+        public Builder authorId(SortedSet<EntityReference> authorId) {
+            this.authorId = authorId;
             return this;
         }
 
-        public Builder creator(SortedSet<LabelledReference> creator) {
-            this.creator = creator;
+        public Builder authorId(String authorId) {
+            this.authorId = StringUtils.splitStringToSortedSet(authorId, "\\|", EntityReference::new);
             return this;
         }
 
-        public Builder license(String license) {
-            this.license = Optional.of(new Uri(license));
+        public Builder authorLabel(SortedSet<String> authorLabel) {
+            this.authorLabel = authorLabel;
             return this;
         }
 
-        public Builder mappingProvider(String mappingProvider) {
-            this.mappingProvider = Optional.of(new Uri(mappingProvider));
-            return this;
-        }
-
-        public Builder mappingSource(EntityReference mappingSource) {
-            this.mappingSource = Optional.of(mappingSource);
-            return this;
-        }
-
-        public Builder mappingCardinality(MappingCardinalityEnum mappingCardinality) {
-            this.mappingCardinality = Optional.of(mappingCardinality);
-            return this;
-        }
-
-        public Builder mappingTool(String mappingTool) {
-            this.mappingTool = Optional.of(mappingTool);
-            return this;
-        }
-
-        public Builder mappingToolVersion(String mappingToolVersion) {
-            this.mappingToolVersion = Optional.of(mappingToolVersion);
-            return this;
-        }
-
-        public Builder mappingDate(String mappingDate) {
-            this.mappingDate = Optional.of(new Date(mappingDate));
-            return this;
-        }
-
-        public Builder publicationDate(String publicationDate) {
-            this.publicationDate = Optional.of(new Date(publicationDate));
-            return this;
-        }
-
-        public Builder confidence(String confidence) {
-            this.confidence = Optional.of(new Double(confidence));
-            return this;
-        }
-
-        public Builder curationRule(SortedSet<CurationRule> curationRule) {
-            this.curationRule = curationRule;
-            return this;
-        }
-
-        public Builder matchString(SortedSet<String> matchString) {
-            this.matchString = matchString;
-            return this;
-        }
-
-        public Builder similarityScore(String similarityScore) {
-            this.similarityScore = Optional.of(new Double(similarityScore));
-            return this;
-        }
-
-        public Builder similarityMeasure(String similarityMeasure) {
-            this.similarityMeasure = Optional.of(similarityMeasure);
-            return this;
-        }
-
-        public Builder seeAlso(SortedSet<String> seeAlso) {
-            this.seeAlso = seeAlso;
-            return this;
-        }
-
-        public Builder issueTrackerItem(EntityReference issueTrackerItem) {
-            this.issueTrackerItem = Optional.of(issueTrackerItem);
-            return this;
-        }
-
-        public Builder other(String other) {
-            this.other = Optional.of(new KeyValuePairsAsString(other));
+        public Builder authorLabel(String authorLabel) {
+            this.authorLabel = StringUtils.splitStringToSortedSet(authorLabel, "\\|", String::new);
             return this;
         }
 
@@ -463,45 +222,398 @@ public class Mapping {
             return this;
         }
 
+        public Builder confidence(String confidence) {
+            this.confidence = Optional.of(new Double(confidence));
+            return this;
+        }
+
+        public Builder creatorId(SortedSet<String> creatorId) {
+            this.creatorId = creatorId;
+            return this;
+        }
+
+        public Builder creatorLabel(SortedSet<String> creatorLabel) {
+            this.creatorLabel = creatorLabel;
+            return this;
+        }
+
+        public Builder curationRule(SortedSet<CurationRule> curationRule) {
+            this.curationRule = curationRule;
+            return this;
+        }
+
+        public Builder curationRule(String curationRule) {
+            this.curationRule = StringUtils.splitStringToSortedSet(curationRule, "\\|", CurationRule::new);
+            return this;
+        }
+
+        public Builder issueTrackerItem(String issueTrackerItem) {
+            this.issueTrackerItem = Optional.of(new EntityReference(issueTrackerItem));
+            return this;
+        }
+
+        public Builder license(String license) {
+            this.license = Optional.of(new Uri(license));
+            return this;
+        }
+
+        public Builder mappingCardinality(MappingCardinalityEnum mappingCardinality) {
+            this.mappingCardinality = Optional.of(mappingCardinality);
+            return this;
+        }
+
+        public Builder mappingCardinality(String mappingCardinality) {
+            this.mappingCardinality = MappingCardinalityEnum.fromString(mappingCardinality);
+            return this;
+        }
+
+        public Builder mappingDate(String mappingDate) {
+            this.mappingDate = Optional.of(new Date(mappingDate));
+            return this;
+        }
+
+        public Builder mappingDate(String mappingDate, Optional<Date>propagateDate) {
+            Date tempMappingDate = new Date(mappingDate);
+            if (tempMappingDate.getDateRepresentation().isPresent())
+                this.mappingDate = Optional.of(tempMappingDate);
+            else if (propagateDate.isPresent())
+                this.mappingDate = propagateDate;
+
+            return this;
+        }
+
+        public Builder mappingJustification(String mappingJustification) {
+            this.mappingJustification = Optional.of(new EntityReference(mappingJustification));
+            return this;
+        }
+
+        public Builder mappingProvider(String mappingProvider, Optional<Uri> propagateProvider) {
+            Uri tempMappingProvider = new Uri(mappingProvider);
+            if (tempMappingProvider.getUriRepresentation().isPresent())
+                this.mappingProvider = Optional.of(tempMappingProvider);
+            else if (propagateProvider.isPresent())
+                this.mappingProvider = propagateProvider;
+
+            return this;
+        }
+
+        public Builder mappingProvider(String mappingProvider) {
+            this.mappingProvider = Optional.of(new Uri(mappingProvider));
+            return this;
+        }
+
+        public Builder mappingSource(String mappingSource) {
+            this.mappingSource = Optional.of(new EntityReference(mappingSource));
+            return this;
+        }
+
+        public Builder mappingTool(String mappingTool, Optional<String> propagateMappingTool) {
+            if (mappingTool != null && !mappingTool.isEmpty())
+                this.mappingTool = Optional.of(mappingTool);
+            else if (propagateMappingTool.isPresent())
+                this.mappingTool = propagateMappingTool;
+
+            return this;
+        }
+
+        public Builder mappingTool(String mappingTool) {
+            this.mappingTool = Optional.of(mappingTool);
+            return this;
+        }
+
+        public Builder mappingToolVersion(String mappingToolVersion, Optional<String> propagateMappingToolVersion) {
+            if (mappingToolVersion != null && !mappingToolVersion.isEmpty())
+                this.mappingToolVersion = Optional.of(mappingToolVersion);
+            else if (propagateMappingToolVersion.isPresent())
+                this.mappingToolVersion = propagateMappingToolVersion;
+            return this;
+        }
+
+        public Builder mappingToolVersion(String mappingToolVersion) {
+            this.mappingToolVersion = Optional.of(mappingToolVersion);
+            return this;
+        }
+
+        public Builder matchString(SortedSet<String> matchString) {
+            this.matchString = matchString;
+            return this;
+        }
+
+        public Builder matchString(String matchString) {
+            this.matchString = StringUtils.splitStringToSortedSet(matchString, "\\|", String::new);
+            return this;
+        }
+
+        public Builder objectCategory(String objectCategory) {
+            this.objectCategory = Optional.of(objectCategory);
+            return this;
+        }
+
+        public Builder objectId(String objectId) {
+            this.objectId = Optional.of(new EntityReference(objectId));
+            return this;
+        }
+
+        public Builder objectLabel(String objectLabel) {
+            this.objectLabel = Optional.of(objectLabel);
+            return this;
+        }
+
+        public Builder objectMatchField(String objectMatchField, SortedSet<EntityReference> propagateObjectMatchField) {
+            if (objectMatchField != null && !objectMatchField.isEmpty())
+                this.objectMatchField = StringUtils.splitStringToSortedSet(
+                        objectMatchField, "\\|", EntityReference::new);
+            else
+                this.objectMatchField = propagateObjectMatchField;
+            return this;
+        }
+
+        public Builder objectPreprocessing(List<EntityReference> objectPreprocessing,
+                                           List<EntityReference> propagateObjectPreprocessing) {
+            if (objectPreprocessing != null && objectPreprocessing.size() > 0)
+                this.objectPreprocessing = objectPreprocessing;
+            else
+                this.objectPreprocessing = propagateObjectPreprocessing;
+            return this;
+        }
+
+        public Builder objectPreprocessing(String objectPreprocessing, List<EntityReference> propagateObjectPreprocessing) {
+            if (objectPreprocessing != null && !objectPreprocessing.isEmpty())
+                this.objectPreprocessing = StringUtils.splitStringToList(
+                    objectPreprocessing, "\\|", EntityReference::new);
+            else
+                this.objectPreprocessing = propagateObjectPreprocessing;
+            return this;
+        }
+
+        public Builder objectSource(String objectSource, Optional<EntityReference> propagateObjectSource) {
+            if (objectSource != null && !objectSource.isEmpty())
+                this.objectSource = Optional.of(new EntityReference(objectSource));
+            else if (propagateObjectSource.isPresent())
+                this.objectSource = propagateObjectSource;
+            return this;
+        }
+
+        public Builder objectSource(String objectSource) {
+            this.objectSource = Optional.of(new EntityReference(objectSource));
+            return this;
+        }
+
+        public Builder objectSourceVersion(String objectSourceVersion, Optional<String> propagateObjectSourceVersion) {
+            if (objectSourceVersion != null && !objectSourceVersion.isEmpty())
+                this.objectSourceVersion = Optional.of(objectSourceVersion);
+            else if (propagateObjectSourceVersion.isPresent())
+                this.objectSourceVersion = Optional.of(propagateObjectSourceVersion.get());
+            return this;
+        }
+
+        public Builder objectType(EntityTypeEnum objectType) {
+            this.objectType = Optional.of(objectType);
+            return this;
+        }
+
+        public Builder objectType(String objectType, Optional<EntityTypeEnum> propagateObjectType) {
+            Optional<EntityTypeEnum> tempObjectType = EntityTypeEnum.fromString(objectType);
+            if (tempObjectType.isPresent())
+                this.objectType = tempObjectType;
+            else if (propagateObjectType.isPresent())
+                this.objectType = propagateObjectType;
+            return this;
+        }
+
+        public Builder other(String other) {
+            this.other = Optional.of(new KeyValuePairsAsString(other));
+            return this;
+        }
+
+        public Builder predicateId(String predicateId) {
+            this.predicateId = Optional.of(new EntityReference(predicateId));
+            return this;
+        }
+
+        public Builder predicateLabel(String predicateLabel) {
+            this.predicateLabel = Optional.of(predicateLabel);
+            return this;
+        }
+
+        public Builder predicateModifier(PredicateModifierEnum predicateModifier) {
+            this.predicateModifier = Optional.of(predicateModifier);
+            return this;
+        }
+
+        public Builder predicateModifier(String predicateModifier) {
+            this.predicateModifier = PredicateModifierEnum.fromString(predicateModifier);
+            return this;
+        }
+
+        public Builder publicationDate(String publicationDate) {
+            this.publicationDate = Optional.of(new Date(publicationDate));
+            return this;
+        }
+
+        public Builder reviewerId(SortedSet<String> reviewerId) {
+            this.reviewerId = reviewerId;
+            return this;
+        }
+
+        public Builder reviewerLabel(SortedSet<String> reviewerLabel) {
+            this.reviewerLabel = reviewerLabel;
+            return this;
+        }
+
+        public Builder seeAlso(SortedSet<String> seeAlso) {
+            this.seeAlso = seeAlso;
+            return this;
+        }
+
+        public Builder similarityMeasure(String similarityMeasure) {
+            this.similarityMeasure = Optional.of(similarityMeasure);
+            return this;
+        }
+
+        public Builder similarityScore(String similarityScore) {
+            this.similarityScore = Optional.of(new Double(similarityScore));
+            return this;
+        }
+
+        public Builder subjectCategory(String subjectCategory) {
+            this.subjectCategory = Optional.of(subjectCategory);
+            return this;
+        }
+
+        public Builder subjectId(String subjectId) {
+            this.subjectId = Optional.of(new EntityReference(subjectId));
+            return this;
+        }
+
+        public Builder subjectLabel(String subjectLabel) {
+            this.subjectLabel = Optional.of(subjectLabel);
+            return this;
+        }
+
+        /**
+         * See <a href="https://mapping-commons.github.io/sssom/subject_match_field/">subject_match_field</a>.
+         * @param subjectMatchField
+         * @return
+         */
+        public Builder subjectMatchField(String subjectMatchField, SortedSet<EntityReference> propagateSubjectMatchField) {
+            if (subjectMatchField != null && !subjectMatchField.isEmpty())
+                this.subjectMatchField = StringUtils.splitStringToSortedSet(subjectMatchField, "\\|", EntityReference::new);
+            else
+                this.subjectMatchField = propagateSubjectMatchField;
+            return this;
+        }
+
+        public Builder subjectMatchField(String subjectMatchField) {
+            this.subjectMatchField = StringUtils.splitStringToSortedSet(subjectMatchField, "\\|", EntityReference::new);
+            return this;
+        }
+
+        public Builder subjectPreprocessing(List<EntityReference> subjectPreprocessing) {
+            this.subjectPreprocessing = subjectPreprocessing;
+            return this;
+        }
+
+        public Builder subjectPreprocessing(String subjectPreprocessing,
+                                            List<EntityReference> propagateSubjectPreprocessing) {
+            if (subjectPreprocessing != null && !subjectPreprocessing.isEmpty())
+                this.subjectPreprocessing = StringUtils.splitStringToList(
+                    subjectPreprocessing, "\\|", EntityReference::new);
+            else
+                this.subjectPreprocessing = propagateSubjectPreprocessing;
+            return this;
+        }
+
+        public Builder subjectSource(String subjectSource, Optional<EntityReference> propagateSubjectSource) {
+            if (subjectSource != null && !subjectSource.isEmpty())
+                this.subjectSource = Optional.of(new EntityReference(subjectSource));
+            else if (propagateSubjectSource.isPresent())
+                this.subjectSource = propagateSubjectSource;
+            return this;
+        }
+
+        public Builder subjectSource(String subjectSource) {
+            this.subjectSource = Optional.of(new EntityReference(subjectSource));
+            return this;
+        }
+
+        public Builder subjectSourceVersion(String subjectSourceVersion, Optional<String> propagateSubjectSourceVersion) {
+            if (subjectSourceVersion != null && !subjectSourceVersion.isEmpty())
+                this.subjectSourceVersion = Optional.of(subjectSourceVersion);
+            else if (propagateSubjectSourceVersion.isPresent())
+                this.subjectSourceVersion = Optional.of(propagateSubjectSourceVersion.get());
+            return this;
+        }
+
+        public Builder subjectSourceVersion(String subjectSourceVersion) {
+            this.subjectSourceVersion = Optional.of(subjectSourceVersion);
+            return this;
+        }
+
+        public Builder subjectType(EntityTypeEnum subjectType) {
+            this.subjectType = Optional.of(subjectType);
+            return this;
+        }
+
+        public Builder subjectType(String subjectType, Optional<EntityTypeEnum> propagateSubjectType) {
+            if (subjectType != null && !subjectType.isEmpty())
+                this.subjectType = EntityTypeEnum.fromString(subjectType);
+            else if (propagateSubjectType.isPresent())
+                this.subjectType = propagateSubjectType;
+            return this;
+        }
+
         public Mapping build() {
-            return new Mapping(this);
-        }
-    }
-
-    public enum MappingFieldsEnum {
-        SUBJECT(MappingConstants.SUBJECT),
-        PREDICATE(MappingConstants.PREDICATE),
-        OBJECT(MappingConstants.OBJECT),
-        MAPPING_JUSTIFICATION(MappingConstants.MAPPING_JUSTIFICATION),
-        AUTHOR(MappingConstants.AUTHOR),
-        REVIEWER(MappingConstants.REVIEWER),
-        CREATOR(MappingConstants.CREATOR),
-        LICENSE(MappingConstants.LICENSE),
-        MAPPING_PROVIDER(MappingConstants.MAPPING_PROVIDER),
-        MAPPING_SOURCE(MappingConstants.MAPPING_SOURCE),
-        MAPPING_CARDINALITY(MappingConstants.MAPPING_CARDINALITY),
-        MAPPING_TOOL(MappingConstants.MAPPING_TOOL),
-        MAPPING_TOOL_VERSION(MappingConstants.MAPPING_TOOL_VERSION),
-        MAPPING_DATE(MappingConstants.MAPPING_DATE),
-        PUBLICATION_DATE(MappingConstants.PUBLICATION_DATE),
-        CONFIDENCE(MappingConstants.CONFIDENCE),
-        CURATION_RULE(MappingConstants.CURATION_RULE),
-        MATCH_STRING(MappingConstants.MATCH_STRING),
-        SIMILARITY_SCORE(MappingConstants.SIMILARITY_SCORE),
-        SIMILARITY_MEASURE(MappingConstants.SIMILARITY_MEASURE),
-        SEE_ALSO(MappingConstants.SEE_ALSO),
-        ISSUE_TRACKER_ITEM(MappingConstants.ISSUE_TRACKER_ITEM),
-        OTHER(MappingConstants.OTHER),
-        COMMENT(MappingConstants.COMMENT);
-
-        private final String fieldName;
-
-        MappingFieldsEnum(String fieldName) {
-            this.fieldName = fieldName;
-        }
-
-        public String getFieldName() {
-            return fieldName;
+            return new Mapping(
+                    mappingSetId,
+                    mappingSetVersion,
+                    mappingSetSource,
+                    mappingSetTitle,
+                    mappingSetDescription,
+                    authorId,
+                    authorLabel,
+                    comment,
+                    confidence,
+                    creatorId,
+                    creatorLabel,
+                    curationRule,
+                    issueTrackerItem,
+                    license,
+                    mappingCardinality,
+                    mappingDate,
+                    mappingJustification,
+                    mappingProvider,
+                    mappingSource,
+                    mappingTool,
+                    mappingToolVersion,
+                    matchString,
+                    objectCategory,
+                    objectId,
+                    objectLabel,
+                    objectMatchField,
+                    objectPreprocessing,
+                    objectSource,
+                    objectSourceVersion,
+                    objectType,
+                    other,
+                    predicateId,
+                    predicateLabel,
+                    predicateModifier,
+                    publicationDate,
+                    reviewerId,
+                    reviewerLabel,
+                    seeAlso,
+                    similarityMeasure,
+                    similarityScore,
+                    subjectCategory,
+                    subjectId,
+                    subjectLabel,
+                    subjectMatchField,
+                    subjectPreprocessing,
+                    subjectSource,
+                    subjectSourceVersion,
+                    subjectType
+            );
         }
     }
 }

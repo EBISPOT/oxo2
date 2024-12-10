@@ -1,6 +1,5 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
@@ -10,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  *  According to <a href="https://mapping-commons.github.io/sssom/spec-model/#identifiers"/> can represent a full length
  *  IRI or a curie.
  */
-public class EntityReference {
+public class EntityReference implements Comparable<EntityReference> {
     @JsonValue
     private  final String uri;
 
@@ -22,6 +21,11 @@ public class EntityReference {
 
     public String getUri() {
         return uri;
+    }
+
+    @Override
+    public int compareTo(EntityReference o) {
+        return this.uri.compareTo(o.uri);
     }
 
     @Override

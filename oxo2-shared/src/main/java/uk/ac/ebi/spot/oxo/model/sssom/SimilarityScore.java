@@ -1,6 +1,5 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.Optional;

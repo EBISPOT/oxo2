@@ -39,9 +39,10 @@ public class Date {
         this.dateRepresentation = tempDate;
     }
 
-    public String getDate() {
+    public String getDateAsString() {
         return dateAsString;
     }
+
 
     public Optional<LocalDate> getDateRepresentation() {
         return dateRepresentation;

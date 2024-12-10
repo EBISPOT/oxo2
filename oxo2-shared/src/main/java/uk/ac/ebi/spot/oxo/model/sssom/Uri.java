@@ -26,6 +26,14 @@ public class Uri {
         this.uriRepresentation = tempUri;
     }
 
+    public String getUriAsString() {
+        return uriAsString;
+    }
+
+    public Optional<URI> getUriRepresentation() {
+        return uriRepresentation;
+    }
+
     @Override
     public String toString() {
         return "Uri{" +

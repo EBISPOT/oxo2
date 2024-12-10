@@ -1,14 +1,5 @@
 package uk.ac.ebi.spot.oxo.solr.parser;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -18,7 +9,18 @@ import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
+import uk.ac.ebi.spot.oxo.model.sssom.MappingConstants;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingSet;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.csv.CSVFormat.TDF;
 
@@ -31,7 +33,8 @@ public class TSV2JSON {
     private static final Logger logger = LoggerFactory.getLogger(TSV2JSON.class);
 
 
-    public static Collection<MappingSet> processDirectory(String directory) {
+    public static void processDirectory(String directory, String mappingSetOutputDirectory, String mappingsOutputDirectiory) {
+
         Map<String, MappingSet.Builder> filenameToExternalMetadataMap = parseExternalMetadata(directory);
 
         try (Stream<Path> paths = Files.walk(Paths.get(directory))) {
@@ -40,35 +43,170 @@ public class TSV2JSON {
                     .filter(path -> path.toString().endsWith(".tsv"))
                     .forEach(path -> {
                         String filename = getFilenameWithoutExtension(path);
+                        Optional<MappingSet.Builder> externalMappingSetBuilderOptional = Optional.empty();
                         if (filenameToExternalMetadataMap.containsKey(filename)) {
-                            MappingSet.Builder builder = filenameToExternalMetadataMap.get(filename);
+                            MappingSet.Builder externalMappingBuilderSet = filenameToExternalMetadataMap.get(filename);
+                            externalMappingSetBuilderOptional = Optional.of(externalMappingBuilderSet);
                         }
-                        Collection<Mapping> mappings = readTSVFile(path.toFile());
+                        Optional<MappingSet> mappingSetOptional = readTSVFile(path.toFile(), externalMappingSetBuilderOptional);
+                        if (mappingSetOptional.isPresent()) {
+                            writeJSONFile(mappingSetOptional.get(), mappingSetOutputDirectory, mappingsOutputDirectiory);
+                        }
                     });
         } catch (IOException e) {
             logger.error("Error while looking for .yml files in {}",directory, e);
         }
-
-        return null;
     }
 
-    private static Collection<Mapping> readTSVFile(File file) {
-        List<Mapping> mappings = new ArrayList<>();
-        try {
-            CSVParser parser = CSVParser.parse(file, java.nio.charset.StandardCharsets.UTF_8, TDF.withFirstRecordAsHeader());
-            for (CSVRecord record : parser) {
-                Mapping.Builder mappingBuilder = new Mapping.Builder();
+    private static void writeJSONFile(MappingSet mappingSet, String mappingSetOutputDirectory, String mappingsOutputDirectiory) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new Jdk8Module());
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-                record.get("subject_id");
+        String mappingSetFilename = mappingSetOutputDirectory + File.separator + mappingSet.mappingSetId().getUriAsString() + ".json";
+        String mappingsFilename = mappingsOutputDirectiory + File.separator +
+                mappingSet.mappingSetId().getUriAsString() + ".json";
+
+        try {
+            objectMapper.writeValue(new File(mappingSetFilename), mappingSet);
+            List<Mapping> mappingsForMappingSet = new ArrayList<>(mappingSet.mappings());
+
+            objectMapper.writeValue(new File(mappingsFilename), mappingsForMappingSet);
+        } catch (IOException e) {
+            logger.error("Error while writing JSON file for MappingSet {}", mappingSet.mappingSetId(), e);
+        }
+    }
+
+    private static Optional<MappingSet> readTSVFile(File file, Optional<MappingSet.Builder> externalMappingSetBuilderOptional) {
+        SortedSet<Mapping> mappings = new TreeSet<>();
+        Optional<MappingSet> mappingSetOptional = Optional.empty();
+        Optional<MappingSet.Builder> embeddedMappingSetBuilderOptional = Optional.empty();
+
+        try {
+            embeddedMappingSetBuilderOptional = readYamlHeader(file);
+            if (externalMappingSetBuilderOptional.isEmpty() && embeddedMappingSetBuilderOptional.isEmpty()) {
+                logger.error("Both external and embedded metadata are missing. See TSV file {}", file);
+                throw new IllegalArgumentException("Both external and embedded metadata are missing. See TSV file " + file);
+            }
+            CSVParser parser = CSVParser.parse(file, java.nio.charset.StandardCharsets.UTF_8, TDF.withFirstRecordAsHeader());
+            Mapping.Builder mappingBuilder = Mapping.Builder.builder();
+            for (CSVRecord record : parser) {
+                mappingBuilder
+                        .subjectId(record.get(MappingConstants.SUBJECT_ID))
+                        .subjectLabel(record.get(MappingConstants.SUBJECT_LABEL))
+                        .subjectCategory(record.get(MappingConstants.SUBJECT_CATEGORY))
+                        .predicateId(record.get(MappingConstants.PREDICATE_ID))
+                        .predicateLabel(record.get(MappingConstants.PREDICATE_LABEL))
+                        .predicateModifier(record.get(MappingConstants.PREDICATE_MODIFIER))
+                        .objectId(record.get(MappingConstants.OBJECT_ID))
+                        .objectLabel(record.get(MappingConstants.OBJECT_LABEL))
+                        .mappingJustification(record.get(MappingConstants.MAPPING_JUSTIFICATION))
+                        .authorId(record.get(MappingConstants.AUTHOR_ID))
+                        .authorLabel(record.get(MappingConstants.AUTHOR_LABEL))
+                        .license(record.get(MappingConstants.LICENSE))
+                        .mappingSource(record.get(MappingConstants.MAPPING_SOURCE))
+                        .mappingCardinality(record.get(MappingConstants.MAPPING_CARDINALITY))
+                        .publicationDate(record.get(MappingConstants.PUBLICATION_DATE))
+                        .confidence(record.get(MappingConstants.CONFIDENCE))
+                        .curationRule(record.get(MappingConstants.CURATION_RULE))
+                        .matchString(record.get(MappingConstants.MATCH_STRING))
+                        .similarityScore(record.get(MappingConstants.SIMILARITY_SCORE));
+
+                if (externalMappingSetBuilderOptional.isPresent()) {
+                    mappingBuilder = propagateValuesFromMappingSet(
+                            mappingBuilder, externalMappingSetBuilderOptional.get(), record);
+                }
+                if (embeddedMappingSetBuilderOptional.isPresent()) {
+                    mappingBuilder = propagateValuesFromMappingSet(
+                            mappingBuilder, embeddedMappingSetBuilderOptional.get(), record);
+                }
 
                 mappings.add(mappingBuilder.build());
             }
+            MappingSet.Builder mappingSetBuilder = MappingSet.Builder.builder();
+            if (externalMappingSetBuilderOptional.isPresent() && embeddedMappingSetBuilderOptional.isPresent()) {
+                MappingSet.Builder tempMappingSet = embeddedMappingSetBuilderOptional.get();
+                mappingSetBuilder = updateBuilder(mappingSetBuilder, tempMappingSet.build());
+            } else if (externalMappingSetBuilderOptional.isPresent()) {
+                mappingSetBuilder = externalMappingSetBuilderOptional.get();
+            } else if (embeddedMappingSetBuilderOptional.isPresent()) {
+                mappingSetBuilder = embeddedMappingSetBuilderOptional.get();
+            }
+            mappingSetBuilder.mappings(mappings);
+            mappingSetOptional = Optional.of(mappingSetBuilder.build());
         } catch (IOException e) {
             logger.error("Error while reading TSV file {}", file, e);
         }
-        return mappings;
+        return mappingSetOptional;
     }
 
+    /**
+     * Some values from mapping sets are propagated to mappings. For the list of propagated values see
+     * <a href="https://mapping-commons.github.io/sssom/spec-model/#propagation-of-mapping-set-slots">.
+     *
+     * @param mappingBuilder
+     * @param mappingSetBuilder
+     * @param record
+     * @return
+     */
+    private static Mapping.Builder propagateValuesFromMappingSet(Mapping.Builder mappingBuilder,
+                                                                 MappingSet.Builder mappingSetBuilder,
+                                                                 CSVRecord record) {
+        MappingSet tempMappingSet = mappingSetBuilder.build();
+
+        mappingBuilder.mappingDate(record.get(MappingConstants.MAPPING_DATE), tempMappingSet.mappingDate());
+        mappingBuilder.mappingProvider(record.get(MappingConstants.MAPPING_PROVIDER), tempMappingSet.mappingProvider());
+        mappingBuilder.mappingTool(record.get(MappingConstants.MAPPING_TOOL), tempMappingSet.mappingTool());
+        mappingBuilder.mappingToolVersion(record.get(MappingConstants.MAPPING_TOOL_VERSION), tempMappingSet.mappingToolVersion());
+        mappingBuilder.objectMatchField(record.get(MappingConstants.OBJECT_MATCH_FIELD), tempMappingSet.objectMatchField());
+        mappingBuilder.objectPreprocessing(record.get(MappingConstants.OBJECT_PREPROCESSING), tempMappingSet.objectPreprocessing());
+        mappingBuilder.objectSource(record.get(MappingConstants.OBJECT_SOURCE), tempMappingSet.objectSource());
+        mappingBuilder.objectSourceVersion(record.get(MappingConstants.OBJECT_SOURCE_VERSION), tempMappingSet.objectSourceVersion());
+        mappingBuilder.objectType(record.get(MappingConstants.OBJECT_TYPE), tempMappingSet.objectType());
+        mappingBuilder.subjectMatchField(record.get(MappingConstants.SUBJECT_MATCH_FIELD), tempMappingSet.subjectMatchField());
+        mappingBuilder.mappingProvider(record.get(MappingConstants.MAPPING_PROVIDER), tempMappingSet.mappingProvider());
+        mappingBuilder.subjectSource(record.get(MappingConstants.SUBJECT_SOURCE), tempMappingSet.subjectSource());
+        mappingBuilder.subjectSourceVersion(record.get(MappingConstants.SUBJECT_SOURCE_VERSION), tempMappingSet.subjectSourceVersion());
+        mappingBuilder.subjectType(record.get(MappingConstants.SUBJECT_TYPE), tempMappingSet.subjectType());
+
+        return mappingBuilder;
+    }
+
+    private static Optional<MappingSet.Builder> readYamlHeader(File file)
+            throws IOException {
+        String yamlCommentsAsString = getCommentsFromTSVAsYaml(file);
+        return readYaml(yamlCommentsAsString);
+    }
+
+    private static String getCommentsFromTSVAsYaml(File file) throws IOException {
+        StringBuilder stringBuilder = new StringBuilder();
+        FileInputStream fileInputStream = null;
+        Scanner scanner = null;
+        try {
+            fileInputStream = new FileInputStream(file);
+            scanner = new Scanner(fileInputStream, "UTF-8");
+            String line = "# ";
+            while (scanner.hasNextLine() && line.startsWith("# ")) {
+                if (line.length() > 2) {
+                    stringBuilder.append(line.substring(2));
+                    stringBuilder.append("\n");
+                }
+                line = scanner.nextLine();
+            }
+            // note that Scanner suppresses exceptions
+            if (scanner.ioException() != null) {
+                throw scanner.ioException();
+            }
+        } finally {
+            if (fileInputStream != null) {
+                fileInputStream.close();
+            }
+            if (scanner != null) {
+                scanner.close();
+            }
+        }
+        return stringBuilder.toString();
+    }
 
     /**
      *
@@ -85,7 +223,10 @@ public class TSV2JSON {
 
         for (Path path : externalMetadata) {
             if (path.toString().endsWith(".yml")) {
-                filenameToBuilderMap.put(getFilenameWithoutExtension(path), readYaml(path.toFile()));
+                Optional<MappingSet.Builder> mappingSetBuilderOptional = readYaml(path.toFile());
+                if (mappingSetBuilderOptional.isPresent()) {
+                    filenameToBuilderMap.put(getFilenameWithoutExtension(path), mappingSetBuilderOptional.get());
+                }
             }
         }
 
@@ -97,47 +238,62 @@ public class TSV2JSON {
         return (dotIndex == -1) ? filename : filename.substring(0, dotIndex);
     }
 
-    public static MappingSet.Builder readYaml(File file) {
+    public static Optional<MappingSet.Builder> readYaml(File file) {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         objectMapper.registerModule(new Jdk8Module());
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        MappingSet.Builder builder = new MappingSet.Builder();
+        Optional<MappingSet.Builder> mappingSetBuilderOptional = Optional.empty();
         try {
-            MappingSet tempMappingSet = objectMapper.readValue(file, MappingSet.class);
-
-            builder.curieMap(tempMappingSet.getCurieMap())
-                    .mappings(tempMappingSet.getMappings())
-                    .mappingSetId(tempMappingSet.getMappingSetId())
-                    .mappingSetVersion(tempMappingSet.getMappingSetVersion())
-                    .mappingSetSource(tempMappingSet.getMappingSetSource())
-                    .mappingSetTitle(tempMappingSet.getMappingSetTitle())
-                    .mappingSetDescription(tempMappingSet.getMappingSetDescription())
-                    .creatorId(tempMappingSet.getCreatorId())
-                    .creatorLabel(tempMappingSet.getCreatorLabel())
-                    .license(tempMappingSet.getLicense())
-                    .subjectType(tempMappingSet.getSubjectType())
-                    .subjectSource(tempMappingSet.getSubjectSource())
-                    .subjectSourceVersion(tempMappingSet.getSubjectSourceVersion())
-                    .objectType(tempMappingSet.getObjectType())
-                    .objectSource(tempMappingSet.getObjectSource())
-                    .objectSourceVersion(tempMappingSet.getObjectSourceVersion())
-                    .mappingProvider(tempMappingSet.getMappingProvider())
-                    .mappingTool(tempMappingSet.getMappingTool())
-                    .mappingToolVersion(tempMappingSet.getMappingToolVersion())
-                    .mappingDate(tempMappingSet.getMappingDate())
-                    .publicationDate(tempMappingSet.getPublicationDate())
-                    .subjectMatchField(tempMappingSet.getSubjectMatchField())
-                    .objectMatchField(tempMappingSet.getObjectMatchField())
-                    .subjectPreprocessing(tempMappingSet.getSubjectPreprocessing())
-                    .objectPreprocessing(tempMappingSet.getObjectPreprocessing())
-                    .seeAlso(tempMappingSet.getSeeAlso())
-                    .issueTracker(tempMappingSet.getIssueTracker())
-                    .other(tempMappingSet.getOther())
-                    .comment(tempMappingSet.getComment())
-                    .extensionDefinitions(tempMappingSet.getExtensionDefinitions());
+            mappingSetBuilderOptional = Optional.of(objectMapper.readValue(file, MappingSet.Builder.class));
         } catch (IOException e) {
             logger.error("Error while reading YAML file {}", file, e);
         }
+        return mappingSetBuilderOptional;
+    }
+
+    private static Optional<MappingSet.Builder> readYaml(String yaml) {
+        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+        objectMapper.registerModule(new Jdk8Module());
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        Optional<MappingSet.Builder> mappingSetBuilderOptional = Optional.empty();
+        try {
+            mappingSetBuilderOptional = Optional.of(objectMapper.readValue(yaml, MappingSet.Builder.class));
+        } catch (IOException e) {
+            logger.error("Error while reading YAML String={}", yaml, e);
+        }
+        return mappingSetBuilderOptional;
+    }
+    private static MappingSet.Builder updateBuilder(MappingSet.Builder builder, MappingSet tempMappingSet) {
+        builder.curieMap(tempMappingSet.curieMap())
+                .mappings(tempMappingSet.mappings())
+                .mappingSetId(tempMappingSet.mappingSetId())
+                .mappingSetVersion(tempMappingSet.mappingSetVersion())
+                .mappingSetSource(tempMappingSet.mappingSetSource())
+                .mappingSetTitle(tempMappingSet.mappingSetTitle())
+                .mappingSetDescription(tempMappingSet.mappingSetDescription())
+                .creatorId(tempMappingSet.creatorId())
+                .creatorLabel(tempMappingSet.creatorLabel())
+                .license(tempMappingSet.license())
+                .subjectType(tempMappingSet.subjectType())
+                .subjectSource(tempMappingSet.subjectSource())
+                .subjectSourceVersion(tempMappingSet.subjectSourceVersion())
+                .objectType(tempMappingSet.objectType())
+                .objectSource(tempMappingSet.objectSource())
+                .objectSourceVersion(tempMappingSet.objectSourceVersion())
+                .mappingProvider(tempMappingSet.mappingProvider())
+                .mappingTool(tempMappingSet.mappingTool())
+                .mappingToolVersion(tempMappingSet.mappingToolVersion())
+                .mappingDate(tempMappingSet.mappingDate())
+                .publicationDate(tempMappingSet.publicationDate())
+                .subjectMatchField(tempMappingSet.subjectMatchField())
+                .objectMatchField(tempMappingSet.objectMatchField())
+                .subjectPreprocessing(tempMappingSet.subjectPreprocessing())
+                .objectPreprocessing(tempMappingSet.objectPreprocessing())
+                .seeAlso(tempMappingSet.seeAlso())
+                .issueTracker(tempMappingSet.issueTracker())
+                .other(tempMappingSet.other())
+                .comment(tempMappingSet.comment())
+                .extensionDefinitions(tempMappingSet.extensionDefinitions());
         return builder;
     }
 
@@ -163,9 +319,8 @@ public class TSV2JSON {
     }
 
 
-    public static void main(String args[]) {
-        Path path = Paths.get("/home/henriette007/ebi-dev/oxo2/oxo2/mappings/mondo_diseases/mp_hp_example.sssom.tsv");
-        logger.trace("Filename = {}", getFilenameWithoutExtension(path));
-    }
-
+//    public static void main(String args[]) {
+//        Path path = Paths.get("/home/henriette007/ebi-dev/oxo2/oxo2/mappings/mondo_diseases/mp_hp_example.sssom.tsv");
+//        logger.trace("Filename = {}", getFilenameWithoutExtension(path));
+//    }
 }

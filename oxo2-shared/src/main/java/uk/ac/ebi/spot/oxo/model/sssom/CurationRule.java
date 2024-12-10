@@ -4,17 +4,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Optional;
 
-public class CurationRule implements Comparable<CurationRule> {
-
+public record CurationRule (
     @JsonProperty
-    private final EntityReference rule;
-
+    EntityReference rule,
     @JsonProperty("rule_text")
-    private final Optional<String> text;
+    Optional<String> text) implements Comparable<CurationRule> {
+
 
     public CurationRule(EntityReference rule, Optional<String> text) {
         this.rule = rule;
         this.text = text;
+    }
+
+    public CurationRule(EntityReference rule) {
+        this(rule, Optional.empty());
+    }
+
+    public CurationRule(String s) {
+        this(new EntityReference(s));
     }
 
     public EntityReference getRule() {

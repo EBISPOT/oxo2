@@ -46,7 +46,7 @@ public enum EntityTypeEnum {
 
 
     public static Optional<EntityTypeEnum> fromString(String value) {
-        return Optional.ofNullable(stringToEnum.get(value));
+        return Optional.ofNullable(stringToEnum.get(value.toLowerCase()));
     }
 
 

@@ -1,5 +1,11 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toMap;
+
 /**
  * @see <a haref="https://mapping-commons.github.io/sssom/MappingCardinalityEnum/">MappingCardinalityEnum</a>
  */
@@ -15,8 +21,15 @@ public enum MappingCardinalityEnum {
     private final String value;
     private final String description;
 
+    private static final Map<String, MappingCardinalityEnum> stringToEnum =
+            Stream.of(values()).collect(toMap(MappingCardinalityEnum::toString, e -> e));
+
     MappingCardinalityEnum(String value, String description) {
         this.value = value;
         this.description = description;
+    }
+
+    public static Optional<MappingCardinalityEnum> fromString(String value) {
+        return Optional.ofNullable(stringToEnum.get(value.toLowerCase()));
     }
 }
