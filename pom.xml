@@ -10,7 +10,7 @@
     <modules>
         <module>oxo2-downloader</module>
         <module>oxo2-shared</module>
-		<module>oxo2-solr</module>
+		<module>oxo2-sssom2json</module>
     </modules>
 
 </project>

@@ -1,5 +1,7 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -24,7 +26,7 @@ public enum EntityTypeEnum {
     private final String description;
 
     private static final Map<String, EntityTypeEnum> stringToEnum =
-            Stream.of(values()).collect(toMap(EntityTypeEnum::toString, e -> e));
+            Stream.of(values()).collect(toMap(EntityTypeEnum::value, e -> e));
 
     EntityTypeEnum(String value, String meaning, String description) {
         this.value = value;
@@ -32,7 +34,8 @@ public enum EntityTypeEnum {
         this.description = description;
     }
 
-    public String getValue() {
+    @JsonValue
+    public String value() {
         return value;
     }
 

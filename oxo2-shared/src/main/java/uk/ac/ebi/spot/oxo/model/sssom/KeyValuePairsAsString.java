@@ -1,5 +1,7 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import java.util.*;
 
 /**
@@ -9,6 +11,7 @@ import java.util.*;
  */
 public class KeyValuePairsAsString {
 
+    @JsonValue
     private final String keyValuePairsAsString;
 
     private final SortedSet<String> keyValuePairsAsSet;

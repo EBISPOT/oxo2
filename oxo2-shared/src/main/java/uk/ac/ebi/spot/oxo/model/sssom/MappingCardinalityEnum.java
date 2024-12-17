@@ -1,5 +1,8 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -21,12 +24,18 @@ public enum MappingCardinalityEnum {
     private final String value;
     private final String description;
 
+
     private static final Map<String, MappingCardinalityEnum> stringToEnum =
-            Stream.of(values()).collect(toMap(MappingCardinalityEnum::toString, e -> e));
+            Stream.of(values()).collect(toMap(MappingCardinalityEnum::value, e -> e));
 
     MappingCardinalityEnum(String value, String description) {
         this.value = value;
         this.description = description;
+    }
+
+    @JsonValue
+    public String value() {
+        return value;
     }
 
     public static Optional<MappingCardinalityEnum> fromString(String value) {

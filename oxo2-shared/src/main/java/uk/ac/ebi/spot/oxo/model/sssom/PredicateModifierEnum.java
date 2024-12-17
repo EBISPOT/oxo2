@@ -1,6 +1,8 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -16,7 +18,7 @@ public enum PredicateModifierEnum {
     private final String value;
 
     private static final Map<String, PredicateModifierEnum> stringToEnum =
-            Stream.of(values()).collect(toMap(PredicateModifierEnum::toString, e -> e));
+            Stream.of(values()).collect(toMap(PredicateModifierEnum::value, e -> e));
 
     PredicateModifierEnum(String value) {
         this.value = value;
@@ -24,5 +26,10 @@ public enum PredicateModifierEnum {
 
     public static Optional<PredicateModifierEnum> fromString(String value) {
         return Optional.ofNullable(stringToEnum.get(value.toLowerCase()));
+    }
+
+    @JsonValue
+    public String value() {
+        return value;
     }
 }

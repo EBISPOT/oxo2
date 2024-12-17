@@ -8,7 +8,7 @@ import java.util.Optional;
 /**
  * In SSSOM Uri refers to instances xsd:anyURI.
  */
-public class Uri {
+public class Uri implements Comparable<Uri> {
     @JsonValue
     private final String uriAsString;
 
@@ -32,6 +32,11 @@ public class Uri {
 
     public Optional<URI> getUriRepresentation() {
         return uriRepresentation;
+    }
+
+    @Override
+    public int compareTo(Uri other) {
+        return this.uriAsString.compareTo(other.uriAsString);
     }
 
     @Override

@@ -7,14 +7,13 @@ public class MappingConstants {
     public static final String CONFIDENCE = "confidence";
     public static final String CREATOR_ID = "creator_id";
     public static final String CREATOR_LABEL = "creator_label";
-    public static final String CURATION_RULE = "curation";
+    public static final String CURATION_RULE = "curation_rule";
     public static final String CURIE_MAP = "curie_map";
     public static final String EXTENSION_DEFINITIONS = "extension_definitions";
 
     public static final String ISSUE_TRACKER = "issue_tracker";
     public static final String ISSUE_TRACKER_ITEM = "issue_tracker_item";
     public static final String LICENSE = "license";
-    public static final String MAPPINGS = "mappings";
     public static final String MAPPING_CARDINALITY = "mapping_cardinality";
     public static final String MAPPING_DATE = "mapping_date";
     public static final String MAPPING_JUSTIFICATION = "mapping_justification";

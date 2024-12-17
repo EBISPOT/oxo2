@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 
@@ -22,16 +24,6 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonDeserialize(builder = Mapping.Builder.class)
 public record Mapping (
-        @JsonProperty(MAPPING_SET_ID)
-        Uri mappingSetId,
-        @JsonProperty(MAPPING_SET_VERSION)
-        Optional<String> mappingSetVersion,
-        @JsonProperty(MAPPING_SET_SOURCE)
-        SortedSet<Uri> mappingSetSource,
-        @JsonProperty(MAPPING_SET_TITLE)
-        Optional<String> mappingSetTitle,
-        @JsonProperty(MAPPING_SET_DESCRIPTION)
-        Optional<String> mappingSetDescription,
         @JsonProperty(AUTHOR_ID)
         SortedSet<EntityReference> authorId,
         @JsonProperty(AUTHOR_LABEL)
@@ -44,8 +36,12 @@ public record Mapping (
         SortedSet<String> creatorId,
         @JsonProperty(CREATOR_LABEL)
         SortedSet<String> creatorLabel,
+        /**
+         * An example of curation rules can be seen
+         * <a href="https://github.com/mapping-commons/sssom/blob/master/examples/schema/curation_rule.sssom.tsv">here</a>.
+         */
         @JsonProperty(CURATION_RULE)
-        SortedSet<CurationRule> curationRule,
+        SortedSet<EntityReference> curationRule,
         @JsonProperty(ISSUE_TRACKER_ITEM)
         Optional<EntityReference> issueTrackerItem,
         @JsonProperty(LICENSE)
@@ -58,6 +54,16 @@ public record Mapping (
         Optional<EntityReference> mappingJustification,
         @JsonProperty(MAPPING_PROVIDER)
         Optional<Uri> mappingProvider,
+        @JsonProperty(MAPPING_SET_DESCRIPTION)
+        Optional<String> mappingSetDescription,
+        @JsonProperty(MAPPING_SET_ID)
+        Uri mappingSetId,
+        @JsonProperty(MAPPING_SET_SOURCE)
+        SortedSet<Uri> mappingSetSource,
+        @JsonProperty(MAPPING_SET_TITLE)
+        Optional<String> mappingSetTitle,
+        @JsonProperty(MAPPING_SET_VERSION)
+        Optional<String> mappingSetVersion,
         @JsonProperty(MAPPING_SOURCE)
         Optional<EntityReference> mappingSource,
         @JsonProperty(MAPPING_TOOL)
@@ -93,7 +99,7 @@ public record Mapping (
         @JsonProperty(PUBLICATION_DATE)
         Optional<Date> publicationDate,
         @JsonProperty(REVIEWER_ID)
-        SortedSet<String> reviewerId,
+        SortedSet<EntityReference> reviewerId,
         @JsonProperty(REVIEWER_LABEL)
         SortedSet<String> reviewerLabel,
         @JsonProperty(SEE_ALSO)
@@ -117,7 +123,16 @@ public record Mapping (
         @JsonProperty(SUBJECT_SOURCE_VERSION)
         Optional<String> subjectSourceVersion,
         @JsonProperty(SUBJECT_TYPE)
-        Optional<EntityTypeEnum> subjectType) {
+        Optional<EntityTypeEnum> subjectType) implements Comparable<Mapping> {
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    @Override
+    public int compareTo(Mapping other) {
+        return this.mappingSetId.compareTo(other.mappingSetId);
+    }
 
     public static class Builder {
         private Uri mappingSetId;
@@ -131,7 +146,7 @@ public record Mapping (
         private Optional<Double> confidence = Optional.empty();
         private SortedSet<String> creatorId = new TreeSet<>();
         private SortedSet<String> creatorLabel = new TreeSet<>();
-        private SortedSet<CurationRule> curationRule = new TreeSet<>();
+        private SortedSet<EntityReference> curationRule = new TreeSet<>();
         private Optional<EntityReference> issueTrackerItem = Optional.empty();
         private Optional<Uri> license = Optional.empty();
         private Optional<MappingCardinalityEnum> mappingCardinality = Optional.empty();
@@ -155,7 +170,7 @@ public record Mapping (
         private Optional<String> predicateLabel = Optional.empty();
         private Optional<PredicateModifierEnum> predicateModifier = Optional.empty();
         private Optional<Date> publicationDate = Optional.empty();
-        private SortedSet<String> reviewerId = new TreeSet<>();
+        private SortedSet<EntityReference> reviewerId = new TreeSet<>();
         private SortedSet<String> reviewerLabel = new TreeSet<>();
         private SortedSet<String> seeAlso = new TreeSet<>();
         private Optional<String> similarityMeasure = Optional.empty();
@@ -169,9 +184,9 @@ public record Mapping (
         private Optional<String> subjectSourceVersion = Optional.empty();
         private Optional<EntityTypeEnum> subjectType = Optional.empty();
 
-        public static Builder builder() {
-            return new Builder();
-        }
+        private static Logger logger = LoggerFactory.getLogger(Builder.class);
+
+
         public Builder mappingSetId(String mappingSetId) {
             this.mappingSetId = new Uri(mappingSetId);
             return this;
@@ -197,10 +212,15 @@ public record Mapping (
             return this;
         }
 
-        public Builder authorId(SortedSet<EntityReference> authorId) {
-            this.authorId = authorId;
+        public Builder mappingSetDescription(String mappingSetDescription) {
+            this.mappingSetDescription = Optional.of(mappingSetDescription);
             return this;
         }
+
+//        public Builder authorId(SortedSet<EntityReference> authorId) {
+//            this.authorId = authorId;
+//            return this;
+//        }
 
         public Builder authorId(String authorId) {
             this.authorId = StringUtils.splitStringToSortedSet(authorId, "\\|", EntityReference::new);
@@ -232,18 +252,23 @@ public record Mapping (
             return this;
         }
 
-        public Builder creatorLabel(SortedSet<String> creatorLabel) {
-            this.creatorLabel = creatorLabel;
+        public Builder creatorId(String creatorId) {
+            this.authorId = StringUtils.splitStringToSortedSet(creatorId, "\\|", EntityReference::new);
             return this;
         }
 
-        public Builder curationRule(SortedSet<CurationRule> curationRule) {
-            this.curationRule = curationRule;
-            return this;
-        }
+//        public Builder creatorLabel(SortedSet<String> creatorLabel) {
+//            this.creatorLabel = creatorLabel;
+//            return this;
+//        }
+
+//        public Builder curationRule(SortedSet<EntityReference> curationRule) {
+//            this.curationRule = curationRule;
+//            return this;
+//        }
 
         public Builder curationRule(String curationRule) {
-            this.curationRule = StringUtils.splitStringToSortedSet(curationRule, "\\|", CurationRule::new);
+            this.curationRule = StringUtils.splitStringToSortedSet(curationRule, "\\|", EntityReference::new);
             return this;
         }
 
@@ -334,10 +359,10 @@ public record Mapping (
             return this;
         }
 
-        public Builder matchString(SortedSet<String> matchString) {
-            this.matchString = matchString;
-            return this;
-        }
+//        public Builder matchString(SortedSet<String> matchString) {
+//            this.matchString = matchString;
+//            return this;
+//        }
 
         public Builder matchString(String matchString) {
             this.matchString = StringUtils.splitStringToSortedSet(matchString, "\\|", String::new);
@@ -442,7 +467,9 @@ public record Mapping (
         }
 
         public Builder predicateModifier(String predicateModifier) {
+            logger.debug("predicateModifier = {}", predicateModifier);
             this.predicateModifier = PredicateModifierEnum.fromString(predicateModifier);
+            logger.debug("this.predicateModifier = {}", this.predicateModifier);
             return this;
         }
 
@@ -451,18 +478,23 @@ public record Mapping (
             return this;
         }
 
-        public Builder reviewerId(SortedSet<String> reviewerId) {
-            this.reviewerId = reviewerId;
+        public Builder reviewerId(String reviewerId) {
+            this.reviewerId = StringUtils.splitStringToSortedSet(reviewerId, "\\|", EntityReference::new);
             return this;
         }
 
-        public Builder reviewerLabel(SortedSet<String> reviewerLabel) {
-            this.reviewerLabel = reviewerLabel;
+        public Builder reviewerLabel(String reviewerLabel) {
+            this.reviewerLabel = StringUtils.splitStringToSortedSet(reviewerLabel, "\\|", String::new);
             return this;
         }
 
         public Builder seeAlso(SortedSet<String> seeAlso) {
             this.seeAlso = seeAlso;
+            return this;
+        }
+
+        public Builder seeAlso(String seeAlso) {
+            this.seeAlso = StringUtils.splitStringToSortedSet(seeAlso, "\\|", String::new);
             return this;
         }
 
@@ -565,11 +597,6 @@ public record Mapping (
 
         public Mapping build() {
             return new Mapping(
-                    mappingSetId,
-                    mappingSetVersion,
-                    mappingSetSource,
-                    mappingSetTitle,
-                    mappingSetDescription,
                     authorId,
                     authorLabel,
                     comment,
@@ -583,6 +610,11 @@ public record Mapping (
                     mappingDate,
                     mappingJustification,
                     mappingProvider,
+                    mappingSetDescription,
+                    mappingSetId,
+                    mappingSetSource,
+                    mappingSetTitle,
+                    mappingSetVersion,
                     mappingSource,
                     mappingTool,
                     mappingToolVersion,

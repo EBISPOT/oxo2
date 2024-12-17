@@ -1,7 +1,10 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
 import java.util.*;
@@ -16,72 +19,74 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
  *
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
-//@JsonDeserialize(builder = MappingSet.Builder.class)
+@JsonDeserialize(builder = MappingSet.Builder.class)
 public record MappingSet (
-        @JsonProperty(CURIE_MAP)
-        SortedMap<String, String> curieMap,
-        @JsonProperty(MAPPINGS)
-        SortedSet<Mapping> mappings,
-        @JsonProperty(MAPPING_SET_ID)
-        Uri mappingSetId,
-        @JsonProperty(MAPPING_SET_VERSION)
-        Optional<String> mappingSetVersion,
-        @JsonProperty(MAPPING_SET_SOURCE)
-        SortedSet<Uri> mappingSetSource,
-        @JsonProperty(MAPPING_SET_TITLE)
-        Optional<String> mappingSetTitle,
-        @JsonProperty(MAPPING_SET_DESCRIPTION)
-        Optional<String> mappingSetDescription,
+        @JsonProperty(COMMENT)
+        Optional<String> comment,
         @JsonProperty(CREATOR_ID)
         SortedSet<EntityReference> creatorId,
         @JsonProperty(CREATOR_LABEL)
         SortedSet<String> creatorLabel,
+        @JsonProperty(CURIE_MAP)
+        CurieMap curieMap,
+        @JsonProperty(ISSUE_TRACKER)
+        Optional<Uri> issueTracker,
         @JsonProperty(LICENSE)
         Uri license,
-        @JsonProperty(SUBJECT_TYPE)
-        Optional<EntityTypeEnum> subjectType,
-        @JsonProperty(SUBJECT_SOURCE)
-        Optional<EntityReference> subjectSource,
-        @JsonProperty(SUBJECT_SOURCE_VERSION)
-        Optional<String> subjectSourceVersion,
-        @JsonProperty(OBJECT_TYPE)
-        Optional<EntityTypeEnum> objectType,
-        @JsonProperty(OBJECT_SOURCE)
-        Optional<EntityReference> objectSource,
-        @JsonProperty(OBJECT_SOURCE_VERSION)
-        Optional<String> objectSourceVersion,
+        @JsonProperty(MAPPING_DATE)
+        Optional<Date> mappingDate,
         @JsonProperty(MAPPING_PROVIDER)
         Optional<Uri> mappingProvider,
+        @JsonIgnore
+        SortedSet<Mapping> mappings,
+        @JsonProperty(MAPPING_SET_DESCRIPTION)
+        Optional<String> mappingSetDescription,
+        @JsonProperty(MAPPING_SET_ID)
+        Uri mappingSetId,
+        @JsonProperty(MAPPING_SET_SOURCE)
+        SortedSet<Uri> mappingSetSource,
+        @JsonProperty(MAPPING_SET_TITLE)
+        Optional<String> mappingSetTitle,
+        @JsonProperty(MAPPING_SET_VERSION)
+        Optional<String> mappingSetVersion,
         @JsonProperty(MAPPING_TOOL)
         Optional<String> mappingTool,
         @JsonProperty(MAPPING_TOOL_VERSION)
         Optional<String> mappingToolVersion,
-        @JsonProperty(MAPPING_DATE)
-        Optional<Date> mappingDate,
-        @JsonProperty(PUBLICATION_DATE)
-        Optional<Date> publicationDate,
-        @JsonProperty(SUBJECT_MATCH_FIELD)
-        SortedSet<EntityReference> subjectMatchField,
         @JsonProperty(OBJECT_MATCH_FIELD)
         SortedSet<EntityReference> objectMatchField,
-        @JsonProperty(SUBJECT_PREPROCESSING)
-        List<EntityReference> subjectPreprocessing,
         @JsonProperty(OBJECT_PREPROCESSING)
         List<EntityReference> objectPreprocessing,
+        @JsonProperty(OBJECT_SOURCE)
+        Optional<EntityReference> objectSource,
+        @JsonProperty(OBJECT_SOURCE_VERSION)
+        Optional<String> objectSourceVersion,
+        @JsonProperty(OBJECT_TYPE)
+        Optional<EntityTypeEnum> objectType,
+        @JsonProperty(OTHER)
+        Optional<KeyValuePairsAsString> other,
+        @JsonProperty(PUBLICATION_DATE)
+        Optional<Date> publicationDate,
         @JsonProperty(SEE_ALSO)
         SortedSet<String> seeAlso,
-        @JsonProperty(ISSUE_TRACKER)
-        Optional<Uri> issueTracker,
-        @JsonProperty(OTHER)
-        Optional<String> other,
-        @JsonProperty(COMMENT)
-        Optional<String> comment,
-        @JsonProperty(EXTENSION_DEFINITIONS)
-        SortedSet<ExtensionDefinition> extensionDefinitions) {
+        @JsonProperty(SUBJECT_MATCH_FIELD)
+        SortedSet<EntityReference> subjectMatchField,
+        @JsonProperty(SUBJECT_PREPROCESSING)
+        List<EntityReference> subjectPreprocessing,
+        @JsonProperty(SUBJECT_SOURCE)
+        Optional<EntityReference> subjectSource,
+        @JsonProperty(SUBJECT_SOURCE_VERSION)
+        Optional<String> subjectSourceVersion,
+        @JsonProperty(SUBJECT_TYPE)
+        Optional<EntityTypeEnum> subjectType) {
 
-    @JsonPOJOBuilder(withPrefix = "")
+    public static MappingSet.Builder builder() {
+        return new MappingSet.Builder();
+    }
+
+//    @JsonPOJOBuilder(withPrefix = "")
     public static class Builder {
-        private SortedMap<String, String> curieMap = new TreeMap<>();
+        private CurieMap curieMap = new CurieMap(new TreeMap<>());
         private SortedSet<Mapping> mappings = new TreeSet<>();
         private Uri mappingSetId;
         private Optional<String> mappingSetVersion = Optional.empty();
@@ -108,15 +113,15 @@ public record MappingSet (
         private List<EntityReference> objectPreprocessing = new ArrayList<>();
         private SortedSet<String> seeAlso = new TreeSet<>();
         private Optional<Uri> issueTracker = Optional.empty();
-        private Optional<String> other = Optional.empty();
+        private Optional<KeyValuePairsAsString> other = Optional.empty();
         private Optional<String> comment = Optional.empty();
-        private SortedSet<ExtensionDefinition> extensionDefinitions = new TreeSet<>();
-
-        public static MappingSet.Builder builder() {
-            return new MappingSet.Builder();
-        }
 
         public Builder curieMap(SortedMap<String, String> curieMap) {
+            this.curieMap = new CurieMap(curieMap);
+            return this;
+        }
+
+        public Builder curieMap(CurieMap curieMap) {
             this.curieMap = curieMap;
             return this;
         }
@@ -327,12 +332,8 @@ public record MappingSet (
             return this;
         }
 
-        public Builder other(String other) {
-            this.other = Optional.of(other);
-            return this;
-        }
 
-        public Builder other(Optional<String> other) {
+        public Builder other(Optional<KeyValuePairsAsString> other) {
             this.other = other;
             return this;
         }
@@ -347,43 +348,38 @@ public record MappingSet (
             return this;
         }
 
-        public Builder extensionDefinitions(SortedSet<ExtensionDefinition> extensionDefinitions) {
-            this.extensionDefinitions = extensionDefinitions;
-            return this;
-        }
 
         public MappingSet build() {
             return new MappingSet(
-                    curieMap,
-                    mappings,
-                    mappingSetId,
-                    mappingSetVersion,
-                    mappingSetSource,
-                    mappingSetTitle,
-                    mappingSetDescription,
+                    comment,
                     creatorId,
                     creatorLabel,
+                    curieMap,
+                    issueTracker,
                     license,
-                    subjectType,
-                    subjectSource,
-                    subjectSourceVersion,
-                    objectType,
-                    objectSource,
-                    objectSourceVersion,
+                    mappingDate,
                     mappingProvider,
+                    mappings,
+                    mappingSetDescription,
+                    mappingSetId,
+                    mappingSetSource,
+                    mappingSetTitle,
+                    mappingSetVersion,
                     mappingTool,
                     mappingToolVersion,
-                    mappingDate,
-                    publicationDate,
-                    subjectMatchField,
                     objectMatchField,
-                    subjectPreprocessing,
                     objectPreprocessing,
-                    seeAlso,
-                    issueTracker,
+                    objectSource,
+                    objectSourceVersion,
+                    objectType,
                     other,
-                    comment,
-                    extensionDefinitions
+                    publicationDate,
+                    seeAlso,
+                    subjectMatchField,
+                    subjectPreprocessing,
+                    subjectSource,
+                    subjectSourceVersion,
+                    subjectType
             );
         }
     }
