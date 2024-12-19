@@ -24,6 +24,13 @@ public class KeyValuePairsAsString {
         this.keyValuePairsAsSet = new TreeSet<>(extractKeyValuePairsAsSet(keyValuePairsAsString));
         this.keyValuePairsAsMap = new TreeMap<>(extractKeyValuePairs(keyValuePairsAsString));
     }
+
+    public KeyValuePairsAsString(Map<String, String> keyValuePairsAsMap) {
+        this.keyValuePairsAsMap = new TreeMap<>(keyValuePairsAsMap);
+        this.keyValuePairsAsSet = new TreeSet<>(keyValuePairsAsMap.keySet());
+        this.keyValuePairsAsString = convertMapToString(keyValuePairsAsMap);
+    }
+
     private static Map<String, String> extractKeyValuePairs(String pipeDelimitedString) {
         Map<String, String> keyValuePairs = new HashMap<>();
         if (pipeDelimitedString == null || pipeDelimitedString.isEmpty()) {
@@ -51,6 +58,21 @@ public class KeyValuePairsAsString {
             keyValuePairsSet.add(pair.trim());
         }
         return keyValuePairsSet;
+    }
+
+    private static String convertMapToString(Map<String, String> map) {
+        if (map == null || map.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            if (sb.length() > 0) {
+                sb.append("|");
+            }
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
+        }
+        return sb.toString();
     }
 
     public SortedSet<String> getKeyValuePairsAsSet() {

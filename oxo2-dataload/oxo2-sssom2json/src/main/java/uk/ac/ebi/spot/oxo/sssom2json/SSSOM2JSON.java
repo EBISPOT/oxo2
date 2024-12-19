@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static uk.ac.ebi.spot.oxo.sssom2json.parser.TSV2JSON.processDirectory;
@@ -17,7 +18,7 @@ public class SSSOM2JSON {
 
     private static final Logger logger = LoggerFactory.getLogger(SSSOM2JSON.class);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Options options = getOptions();
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -39,6 +40,7 @@ public class SSSOM2JSON {
         logger.info("Output Directory: {}", outputDirectory);
 
 
+        processMappingSets(inputDirectory, outputDirectory);
     }
 
     private static void processMappingSets(String inputDirectory, String outputDirectory) throws IOException {
@@ -60,7 +62,7 @@ public class SSSOM2JSON {
 
     private static Stream<Path> getDirectories(String inputDirectory) throws IOException {
         try (Stream<Path> paths = Files.walk(Paths.get(inputDirectory))) {
-            return paths.filter(Files::isDirectory);
+            return paths.filter(Files::isDirectory).collect(Collectors.toList()).stream();
         } catch (IOException e) {
             logger.error("Error traversing input directory", e);
             throw new IOException("Error traversing input directory", e);

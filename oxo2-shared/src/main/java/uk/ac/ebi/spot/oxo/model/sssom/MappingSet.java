@@ -3,9 +3,9 @@ package uk.ac.ebi.spot.oxo.model.sssom;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
 import java.util.*;
 
@@ -23,26 +23,33 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 public record MappingSet (
         @JsonProperty(COMMENT)
         Optional<String> comment,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(CREATOR_ID)
         SortedSet<EntityReference> creatorId,
         @JsonProperty(CREATOR_LABEL)
         SortedSet<String> creatorLabel,
         @JsonProperty(CURIE_MAP)
         CurieMap curieMap,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
         @JsonProperty(ISSUE_TRACKER)
         Optional<Uri> issueTracker,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
         @JsonProperty(LICENSE)
         Uri license,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Date.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_DATE)
         Optional<Date> mappingDate,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_PROVIDER)
         Optional<Uri> mappingProvider,
         @JsonIgnore
         SortedSet<Mapping> mappings,
         @JsonProperty(MAPPING_SET_DESCRIPTION)
         Optional<String> mappingSetDescription,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_SET_ID)
         Uri mappingSetId,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_SET_SOURCE)
         SortedSet<Uri> mappingSetSource,
         @JsonProperty(MAPPING_SET_TITLE)
@@ -53,10 +60,13 @@ public record MappingSet (
         Optional<String> mappingTool,
         @JsonProperty(MAPPING_TOOL_VERSION)
         Optional<String> mappingToolVersion,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(OBJECT_MATCH_FIELD)
         SortedSet<EntityReference> objectMatchField,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(OBJECT_PREPROCESSING)
         List<EntityReference> objectPreprocessing,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(OBJECT_SOURCE)
         Optional<EntityReference> objectSource,
         @JsonProperty(OBJECT_SOURCE_VERSION)
@@ -65,14 +75,18 @@ public record MappingSet (
         Optional<EntityTypeEnum> objectType,
         @JsonProperty(OTHER)
         Optional<KeyValuePairsAsString> other,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Date.ConditionalInclusionFilter.class)
         @JsonProperty(PUBLICATION_DATE)
         Optional<Date> publicationDate,
         @JsonProperty(SEE_ALSO)
         SortedSet<String> seeAlso,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(SUBJECT_MATCH_FIELD)
         SortedSet<EntityReference> subjectMatchField,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(SUBJECT_PREPROCESSING)
         List<EntityReference> subjectPreprocessing,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(SUBJECT_SOURCE)
         Optional<EntityReference> subjectSource,
         @JsonProperty(SUBJECT_SOURCE_VERSION)
@@ -84,7 +98,7 @@ public record MappingSet (
         return new MappingSet.Builder();
     }
 
-//    @JsonPOJOBuilder(withPrefix = "")
+    @JsonPOJOBuilder(withPrefix = "")
     public static class Builder {
         private CurieMap curieMap = new CurieMap(new TreeMap<>());
         private SortedSet<Mapping> mappings = new TreeSet<>();
@@ -116,6 +130,7 @@ public record MappingSet (
         private Optional<KeyValuePairsAsString> other = Optional.empty();
         private Optional<String> comment = Optional.empty();
 
+        @JsonProperty(CURIE_MAP)
         public Builder curieMap(SortedMap<String, String> curieMap) {
             this.curieMap = new CurieMap(curieMap);
             return this;
@@ -126,11 +141,17 @@ public record MappingSet (
             return this;
         }
 
+        public Builder curieMap(String curieMap){
+            this.curieMap = new CurieMap(curieMap);
+            return this;
+        }
+
         public Builder mappings(SortedSet<Mapping> mappings) {
             this.mappings = mappings;
             return this;
         }
 
+        @JsonProperty(MAPPING_SET_ID)
         public Builder mappingSetId(String mappingSetId) {
             this.mappingSetId = new Uri(mappingSetId);
             return this;
@@ -139,6 +160,24 @@ public record MappingSet (
             this.mappingSetId = mappingSetId;
             return this;
         }
+
+
+        /**
+         * MappingSetId is a required field, but may not be supplied. In these cases the mapping file name will be used as
+         * MappingSetId.
+         * Allows for mappingSetId to be derived from the name of the mapping file.
+         * @param mappingSetFileName
+         * @return
+         */
+        public Builder setMappingSetIdIfNotSetAlready(String mappingSetFileName) {
+            if (this.mappingSetId == null) {
+                this.mappingSetId = new Uri(mappingSetFileName);
+            }
+            return this;
+        }
+
+
+        @JsonProperty(MAPPING_SET_VERSION)
         public Builder mappingSetVersion(String mappingSetVersion) {
             this.mappingSetVersion = Optional.of(mappingSetVersion);
             return this;
@@ -154,6 +193,13 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(MAPPING_SET_SOURCE)
+        public Builder mappingSetSource(String mappingSetSource) {
+            this.mappingSetSource = StringUtils.splitStringToSortedSet(mappingSetSource, "\\|", Uri::new);
+            return this;
+        }
+
+        @JsonProperty(MAPPING_SET_TITLE)
         public Builder mappingSetTitle(String mappingSetTitle) {
             this.mappingSetTitle = Optional.of(mappingSetTitle);
             return this;
@@ -163,6 +209,7 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(MAPPING_SET_DESCRIPTION)
         public Builder mappingSetDescription(String mappingSetDescription) {
             this.mappingSetDescription = Optional.of(mappingSetDescription);
             return this;
@@ -176,11 +223,25 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(CREATOR_ID)
+        public Builder creatorId(String creatorId) {
+            this.creatorId = StringUtils.splitStringToSortedSet(creatorId, "\\|", EntityReference::new);
+            return this;
+        }
+
+
         public Builder creatorLabel(SortedSet<String> creatorLabel) {
             this.creatorLabel = creatorLabel;
             return this;
         }
 
+        @JsonProperty(CREATOR_LABEL)
+        public Builder creatorLabel(String creatorLabel) {
+            this.creatorLabel = StringUtils.splitStringToSortedSet(creatorLabel, "\\|", String::new);
+            return this;
+        }
+
+        @JsonProperty(LICENSE)
         public Builder license(String license) {
             this.license = new Uri(license);
             return this;
@@ -195,11 +256,18 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(SUBJECT_TYPE)
+        public Builder subjectType(String subjectType) {
+            this.subjectType = Optional.of(EntityTypeEnum.valueOf(subjectType));
+            return this;
+        }
+
         public Builder subjectType(Optional<EntityTypeEnum> subjectType) {
             this.subjectType = subjectType;
             return this;
         }
 
+        @JsonProperty(SUBJECT_SOURCE)
         public Builder subjectSource(String subjectSource) {
             this.subjectSource = Optional.of(new EntityReference(subjectSource));
             return this;
@@ -210,6 +278,7 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(SUBJECT_SOURCE_VERSION)
         public Builder subjectSourceVersion(String subjectSourceVersion) {
             this.subjectSourceVersion = Optional.of(subjectSourceVersion);
             return this;
@@ -222,6 +291,12 @@ public record MappingSet (
 
         public Builder objectType(EntityTypeEnum objectType) {
             this.objectType = Optional.of(objectType);
+            return this;
+        }
+
+        @JsonProperty(OBJECT_TYPE)
+        public Builder objectType(String objectType) {
+            this.objectType = Optional.of(EntityTypeEnum.valueOf(objectType));
             return this;
         }
 
@@ -239,6 +314,14 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(OBJECT_SOURCE)
+        public Builder objectSource(String objectSource) {
+            this.objectSource = Optional.of(new EntityReference(objectSource));
+            return this;
+        }
+
+
+        @JsonProperty(OBJECT_SOURCE_VERSION)
         public Builder objectSourceVersion(String objectSourceVersion) {
             this.objectSourceVersion = Optional.of(objectSourceVersion);
             return this;
@@ -249,6 +332,7 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(MAPPING_PROVIDER)
         public Builder mappingProvider(String mappingProvider) {
             this.mappingProvider = Optional.of(new Uri(mappingProvider));
             return this;
@@ -258,6 +342,7 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(MAPPING_TOOL)
         public Builder mappingTool(String mappingTool) {
             this.mappingTool = Optional.of(mappingTool);
             return this;
@@ -267,6 +352,8 @@ public record MappingSet (
             this.mappingTool = mappingTool;
             return this;
         }
+
+        @JsonProperty(MAPPING_TOOL_VERSION)
         public Builder mappingToolVersion(String mappingToolVersion) {
             this.mappingToolVersion = Optional.of(mappingToolVersion);
             return this;
@@ -277,6 +364,7 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(MAPPING_DATE)
         public Builder mappingDate(String mappingDate) {
             this.mappingDate = Optional.of(new Date(mappingDate));
             return this;
@@ -287,6 +375,8 @@ public record MappingSet (
             return this;
         }
 
+
+        @JsonProperty(PUBLICATION_DATE)
         public Builder publicationDate(String publicationDate) {
             this.publicationDate = Optional.of(new Date(publicationDate));
             return this;
@@ -302,8 +392,21 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(SUBJECT_MATCH_FIELD)
+        public Builder subjectMatchField(String subjectMatchField) {
+            this.subjectMatchField = StringUtils.splitStringToSortedSet(subjectMatchField, "\\|", EntityReference::new);
+            return this;
+        }
+
+
         public Builder objectMatchField(SortedSet<EntityReference> objectMatchField) {
             this.objectMatchField = objectMatchField;
+            return this;
+        }
+
+        @JsonProperty(OBJECT_MATCH_FIELD)
+        public Builder objectMatchField(String objectMatchField) {
+            this.objectMatchField = StringUtils.splitStringToSortedSet(objectMatchField, "\\|", EntityReference::new);
             return this;
         }
 
@@ -312,8 +415,20 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(SUBJECT_PREPROCESSING)
+        public Builder subjectPreprocessing(String subjectPreprocessing) {
+            this.subjectPreprocessing = StringUtils.splitStringToList(subjectPreprocessing, "\\|", EntityReference::new);
+            return this;
+        }
+
         public Builder objectPreprocessing(List<EntityReference> objectPreprocessing) {
             this.objectPreprocessing = objectPreprocessing;
+            return this;
+        }
+
+        @JsonProperty(OBJECT_PREPROCESSING)
+        public Builder objectPreprocessing(String objectPreprocessing) {
+            this.objectPreprocessing = StringUtils.splitStringToList(objectPreprocessing, "\\|", EntityReference::new);
             return this;
         }
 
@@ -322,6 +437,13 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(SEE_ALSO)
+        public Builder seeAlso(String seeAlso) {
+            this.seeAlso = StringUtils.splitStringToSortedSet(seeAlso, "\\|", String::new);
+            return this;
+        }
+
+        @JsonProperty(ISSUE_TRACKER)
         public Builder issueTracker(String issueTracker) {
             this.issueTracker = Optional.of(new Uri(issueTracker));
             return this;
@@ -338,6 +460,19 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(OTHER)
+        public Builder other(Map<String, String> other) {
+            this.other = Optional.of(new KeyValuePairsAsString(other));
+            return this;
+        }
+
+        public Builder other(String other) {
+            this.other = Optional.of(new KeyValuePairsAsString(other));
+            return this;
+        }
+
+
+        @JsonProperty(COMMENT)
         public Builder comment(String comment) {
             this.comment = Optional.of(comment);
             return this;
@@ -347,7 +482,6 @@ public record MappingSet (
             this.comment = comment;
             return this;
         }
-
 
         public MappingSet build() {
             return new MappingSet(

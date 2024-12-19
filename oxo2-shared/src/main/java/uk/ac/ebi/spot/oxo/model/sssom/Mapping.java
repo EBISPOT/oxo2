@@ -3,6 +3,8 @@ package uk.ac.ebi.spot.oxo.model.sssom;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
 import java.util.*;
@@ -21,49 +23,62 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
  * A set may very well contain several mappings with the same subject, predicate, object, and
  * justification, but that differ on some of the other, complementary slots.
  */
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonDeserialize(builder = Mapping.Builder.class)
 public record Mapping (
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(AUTHOR_ID)
         SortedSet<EntityReference> authorId,
+        @JsonInclude(JsonInclude.Include.NON_ABSENT)
         @JsonProperty(AUTHOR_LABEL)
         SortedSet<String> authorLabel,
         @JsonProperty(COMMENT)
         Optional<String> comment,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Double.ConditionalInclusionFilter.class)
         @JsonProperty(CONFIDENCE)
         Optional<Double> confidence,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(CREATOR_ID)
-        SortedSet<String> creatorId,
+        SortedSet<EntityReference> creatorId,
         @JsonProperty(CREATOR_LABEL)
         SortedSet<String> creatorLabel,
         /**
          * An example of curation rules can be seen
          * <a href="https://github.com/mapping-commons/sssom/blob/master/examples/schema/curation_rule.sssom.tsv">here</a>.
          */
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(CURATION_RULE)
         SortedSet<EntityReference> curationRule,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(ISSUE_TRACKER_ITEM)
         Optional<EntityReference> issueTrackerItem,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
         @JsonProperty(LICENSE)
         Optional<Uri> license,
         @JsonProperty(MAPPING_CARDINALITY)
         Optional<MappingCardinalityEnum> mappingCardinality,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Date.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_DATE)
         Optional<Date> mappingDate,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_JUSTIFICATION)
         Optional<EntityReference> mappingJustification,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_PROVIDER)
         Optional<Uri> mappingProvider,
         @JsonProperty(MAPPING_SET_DESCRIPTION)
         Optional<String> mappingSetDescription,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_SET_ID)
         Uri mappingSetId,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_SET_SOURCE)
         SortedSet<Uri> mappingSetSource,
         @JsonProperty(MAPPING_SET_TITLE)
         Optional<String> mappingSetTitle,
         @JsonProperty(MAPPING_SET_VERSION)
         Optional<String> mappingSetVersion,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_SOURCE)
         Optional<EntityReference> mappingSource,
         @JsonProperty(MAPPING_TOOL)
@@ -74,14 +89,18 @@ public record Mapping (
         SortedSet<String> matchString,
         @JsonProperty(OBJECT_CATEGORY)
         Optional<String> objectCategory,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(OBJECT_ID)
         Optional<EntityReference> objectId,
         @JsonProperty(OBJECT_LABEL)
         Optional<String> objectLabel,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(OBJECT_MATCH_FIELD)
         SortedSet<EntityReference> objectMatchField,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(OBJECT_PREPROCESSING)
         List<EntityReference> objectPreprocessing,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(OBJECT_SOURCE)
         Optional<EntityReference> objectSource,
         @JsonProperty(OBJECT_SOURCE_VERSION)
@@ -90,14 +109,17 @@ public record Mapping (
         Optional<EntityTypeEnum> objectType,
         @JsonProperty(OTHER)
         Optional<KeyValuePairsAsString> other,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(PREDICATE_ID)
         Optional<EntityReference> predicateId,
         @JsonProperty(PREDICATE_LABEL)
         Optional<String> predicateLabel,
         @JsonProperty(PREDICATE_MODIFIER)
         Optional<PredicateModifierEnum> predicateModifier,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Date.ConditionalInclusionFilter.class)
         @JsonProperty(PUBLICATION_DATE)
         Optional<Date> publicationDate,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(REVIEWER_ID)
         SortedSet<EntityReference> reviewerId,
         @JsonProperty(REVIEWER_LABEL)
@@ -106,18 +128,23 @@ public record Mapping (
         SortedSet<String> seeAlso,
         @JsonProperty(SIMILARITY_MEASURE)
         Optional<String> similarityMeasure,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Double.ConditionalInclusionFilter.class)
         @JsonProperty(SIMILARITY_SCORE)
         Optional<Double> similarityScore,
         @JsonProperty(SUBJECT_CATEGORY)
         Optional<String> subjectCategory,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(SUBJECT_ID)
         Optional<EntityReference> subjectId,
         @JsonProperty(SUBJECT_LABEL)
         Optional<String> subjectLabel,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(SUBJECT_MATCH_FIELD)
         SortedSet<EntityReference> subjectMatchField,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(SUBJECT_PREPROCESSING)
         List<EntityReference> subjectPreprocessing,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(SUBJECT_SOURCE)
         Optional<EntityReference> subjectSource,
         @JsonProperty(SUBJECT_SOURCE_VERSION)
@@ -134,6 +161,7 @@ public record Mapping (
         return this.mappingSetId.compareTo(other.mappingSetId);
     }
 
+    @JsonPOJOBuilder(withPrefix = "")
     public static class Builder {
         private Uri mappingSetId;
         private Optional<String> mappingSetVersion = Optional.empty();
@@ -144,7 +172,7 @@ public record Mapping (
         private SortedSet<String> authorLabel = new TreeSet<>();
         private Optional<String> comment = Optional.empty();
         private Optional<Double> confidence = Optional.empty();
-        private SortedSet<String> creatorId = new TreeSet<>();
+        private SortedSet<EntityReference> creatorId = new TreeSet<>();
         private SortedSet<String> creatorLabel = new TreeSet<>();
         private SortedSet<EntityReference> curationRule = new TreeSet<>();
         private Optional<EntityReference> issueTrackerItem = Optional.empty();
@@ -247,20 +275,15 @@ public record Mapping (
             return this;
         }
 
-        public Builder creatorId(SortedSet<String> creatorId) {
-            this.creatorId = creatorId;
-            return this;
-        }
-
         public Builder creatorId(String creatorId) {
-            this.authorId = StringUtils.splitStringToSortedSet(creatorId, "\\|", EntityReference::new);
+            this.creatorId = StringUtils.splitStringToSortedSet(creatorId, "\\|", EntityReference::new);
             return this;
         }
 
-//        public Builder creatorLabel(SortedSet<String> creatorLabel) {
-//            this.creatorLabel = creatorLabel;
-//            return this;
-//        }
+        public Builder creatorLabel(String creatorLabel) {
+            this.creatorLabel = StringUtils.splitStringToSortedSet(creatorLabel, "\\|", String::new);
+            return this;
+        }
 
 //        public Builder curationRule(SortedSet<EntityReference> curationRule) {
 //            this.curationRule = curationRule;
@@ -308,7 +331,10 @@ public record Mapping (
         }
 
         public Builder mappingJustification(String mappingJustification) {
-            this.mappingJustification = Optional.of(new EntityReference(mappingJustification));
+            if (mappingJustification == null || mappingJustification.isEmpty())
+                this.mappingJustification = Optional.empty();
+            else
+                this.mappingJustification = Optional.of(new EntityReference(mappingJustification));
             return this;
         }
 
@@ -432,6 +458,11 @@ public record Mapping (
             return this;
         }
 
+        public Builder objectSourceVersion(String objectSourceVersion) {
+            this.objectSourceVersion = Optional.of(objectSourceVersion);
+            return this;
+        }
+
         public Builder objectType(EntityTypeEnum objectType) {
             this.objectType = Optional.of(objectType);
             return this;
@@ -513,6 +544,7 @@ public record Mapping (
             return this;
         }
 
+        @JsonProperty(SUBJECT_ID)
         public Builder subjectId(String subjectId) {
             this.subjectId = Optional.of(new EntityReference(subjectId));
             return this;

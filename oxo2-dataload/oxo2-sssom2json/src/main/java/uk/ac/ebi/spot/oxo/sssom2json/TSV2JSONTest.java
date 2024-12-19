@@ -41,7 +41,7 @@ public class TSV2JSONTest {
                 .mappingToolVersion("2.0.0")
                 .matchString("heart|disease")
                 .objectCategory("Disease|Illness")
-                .objectId("NCIT:C3079")
+                .objectId("SNOMEDCT:56265001")
                 .objectLabel("Heart Disorder")
                 .objectMatchField("rdfs:label|skos:prefLabel", new TreeSet<>())
                 .objectPreprocessing("semapv:Stemming|semapv:StopwordsRemoval", new ArrayList<>())
@@ -88,10 +88,12 @@ public class TSV2JSONTest {
                 v -> logger.info("Mappings as JSON = {}", v),
                 () -> logger.error("Mappings is empty"));
 
-        SortedMap<String, String> curieMap = new TreeMap<>();
-        curieMap.put("EFO", "http://www.ebi.ac.uk/efo/");
-        curieMap.put("NCIT", "http://purl.obolibrary.org/obo/NCIT_");
-        curieMap.put("DOID", "http://purl.obolibrary.org/obo/DOID_");
+//        SortedMap<String, String> curieMap = new TreeMap<>();
+//        curieMap.put("EFO", "http://www.ebi.ac.uk/efo/");
+//        curieMap.put("NCIT", "http://purl.obolibrary.org/obo/NCIT_");
+//        curieMap.put("DOID", "http://purl.obolibrary.org/obo/DOID_");
+        String curieMap = "EFO:http://www.ebi.ac.uk/efo/, NCIT:http://purl.obolibrary.org/obo/NCIT_, " +
+                "DOID:http://purl.obolibrary.org/obo/DOID_";
 
         List<MappingSet> mappingSets = new ArrayList<>();
 
