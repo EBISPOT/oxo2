@@ -1,6 +1,5 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +10,6 @@ import java.util.Optional;
  * In SSSOM date represents an xsd:Date @see <a href="https://mapping-commons.github.io/sssom/Date/>Date</a>.
  */
 
-@JsonSerialize(using = SSSOMDataType.Serializer.class)
 public class Date extends SSSOMDataType<LocalDate> {
     private static final Logger logger = LoggerFactory.getLogger(Date.class);
 
@@ -22,6 +20,9 @@ public class Date extends SSSOMDataType<LocalDate> {
     @Override
     protected Optional<LocalDate> parseData(String date) {
         Optional<LocalDate> tempDate;
+        if (date == null || date.isBlank()) {
+            return Optional.empty();
+        }
         try {
             tempDate = Optional.of(LocalDate.parse(date));
         } catch (Exception e) {

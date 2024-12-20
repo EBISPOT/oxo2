@@ -18,7 +18,7 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
  * <a href="https://mapping-commons.github.io/sssom/spec-formats-tsv/#structure">here</a>.
  *
  */
-@JsonInclude(JsonInclude.Include.NON_ABSENT)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonDeserialize(builder = MappingSet.Builder.class)
 public record MappingSet (
         @JsonProperty(COMMENT)
@@ -60,13 +60,13 @@ public record MappingSet (
         Optional<String> mappingTool,
         @JsonProperty(MAPPING_TOOL_VERSION)
         Optional<String> mappingToolVersion,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(OBJECT_MATCH_FIELD)
         SortedSet<EntityReference> objectMatchField,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(OBJECT_PREPROCESSING)
         List<EntityReference> objectPreprocessing,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(OBJECT_SOURCE)
         Optional<EntityReference> objectSource,
         @JsonProperty(OBJECT_SOURCE_VERSION)
@@ -80,13 +80,13 @@ public record MappingSet (
         Optional<Date> publicationDate,
         @JsonProperty(SEE_ALSO)
         SortedSet<String> seeAlso,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(SUBJECT_MATCH_FIELD)
         SortedSet<EntityReference> subjectMatchField,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(SUBJECT_PREPROCESSING)
         List<EntityReference> subjectPreprocessing,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(SUBJECT_SOURCE)
         Optional<EntityReference> subjectSource,
         @JsonProperty(SUBJECT_SOURCE_VERSION)
@@ -462,19 +462,21 @@ public record MappingSet (
 
         @JsonProperty(OTHER)
         public Builder other(Map<String, String> other) {
-            this.other = Optional.of(new KeyValuePairsAsString(other));
+            if (other != null && !other.isEmpty())
+                this.other = Optional.of(new KeyValuePairsAsString(other));
             return this;
         }
 
         public Builder other(String other) {
-            this.other = Optional.of(new KeyValuePairsAsString(other));
+            if (other != null && !other.isBlank())
+                this.other = Optional.of(new KeyValuePairsAsString(other));
             return this;
         }
 
 
-        @JsonProperty(COMMENT)
         public Builder comment(String comment) {
-            this.comment = Optional.of(comment);
+            if (comment != null && !comment.isBlank())
+                this.comment = Optional.of(comment);
             return this;
         }
 

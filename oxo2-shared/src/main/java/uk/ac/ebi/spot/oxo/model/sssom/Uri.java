@@ -1,18 +1,15 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.annotation.JsonValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.Collection;
 import java.util.Optional;
 
 /**
  * In SSSOM Uri refers to instances xsd:anyURI.
  */
 public class Uri extends SSSOMDataType<URI> implements Comparable<Uri> {
-
 
     private static final Logger logger = LoggerFactory.getLogger(Uri.class);
 
@@ -24,6 +21,9 @@ public class Uri extends SSSOMDataType<URI> implements Comparable<Uri> {
     @Override
     protected Optional<URI> parseData(String uri) {
         Optional<URI> tempUri = Optional.empty();
+        if (uri == null || uri.isBlank()) {
+            return tempUri;
+        }
         if (!uri.isBlank()) {
             if (!uri.contains(":")) {
                 logger.warn("URI is null or does not contain a colon, uri: {}", uri);

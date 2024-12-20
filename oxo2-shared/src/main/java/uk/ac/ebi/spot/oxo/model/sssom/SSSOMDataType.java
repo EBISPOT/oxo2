@@ -11,6 +11,13 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
 
+/**
+ * Represents an SSSOM data type such as Date, Double, EntityReference, Uri.
+ * It stores both the String and a parsed representation of the data. The parsed representation is stored as an Optional
+ * since it may not be possible to parse the data into its proper type because of data quality issues.
+ *
+ * @param <T>
+ */
 @JsonSerialize(using = SSSOMDataType.Serializer.class)
 abstract public class SSSOMDataType<T> {
     protected final String dataAsString;
@@ -49,6 +56,7 @@ abstract public class SSSOMDataType<T> {
     public enum SSSOMDataTypesEnum {
         DATE,
         DOUBLE,
+        ENTITY_REFERENCE,
         URI;
 
         SSSOMDataTypesEnum() {
@@ -67,7 +75,7 @@ abstract public class SSSOMDataType<T> {
                             jsonGenerator.writeObject(value.dataRepresentation.get());
                     case DOUBLE ->
                         jsonGenerator.writeNumber((java.lang.Double) value.dataRepresentation.get());
-                    case URI ->
+                    case ENTITY_REFERENCE, URI ->
                         jsonGenerator.writeString(value.dataRepresentation.get().toString());
                 }
             } else if (value.dataAsString != null && !value.dataAsString.isEmpty()) {
@@ -99,6 +107,9 @@ abstract public class SSSOMDataType<T> {
                             and result ={}""",
                             sssomDataType.dataRepresentation.isEmpty(),
                             sssomDataType.dataAsString.isEmpty(), result);
+                } else {
+                    result = true;
+                    logger.trace("Optional.isPresent() is false, set result to true");
                 }
             }
             else if (object instanceof SSSOMDataType) {

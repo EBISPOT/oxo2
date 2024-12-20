@@ -69,6 +69,7 @@ public class TSV2JSON {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        objectMapper.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
 
@@ -109,6 +110,7 @@ public class TSV2JSON {
                         .authorLabel(record.isSet(AUTHOR_LABEL) ? record.get(AUTHOR_LABEL) : "")
                         .confidence(record.isSet(CONFIDENCE) ? record.get(CONFIDENCE) : "")
                         .curationRule(record.isSet(CURATION_RULE) ? record.get(CURATION_RULE) : "")
+                        .issueTrackerItem(record.isSet(ISSUE_TRACKER_ITEM) ? record.get(ISSUE_TRACKER_ITEM) : "")
                         .license(record.isSet(LICENSE) ? record.get(LICENSE) : "")
                         .mappingCardinality(record.isSet(MAPPING_CARDINALITY) ? record.get(MAPPING_CARDINALITY) : "")
                         .mappingJustification(record.isSet(MAPPING_JUSTIFICATION) ? record.get(MAPPING_JUSTIFICATION) : "")
