@@ -54,9 +54,11 @@ abstract public class SSSOMDataType<T> {
 
 
     public enum SSSOMDataTypesEnum {
+        CURIE_MAP,
         DATE,
         DOUBLE,
         ENTITY_REFERENCE,
+        KEY_VALUE_PAIRS,
         URI;
 
         SSSOMDataTypesEnum() {
@@ -71,7 +73,7 @@ abstract public class SSSOMDataType<T> {
             logger.debug("Serializing S: {}", value);
             if (value.dataRepresentation.isPresent()) {
                 switch(value.type) {
-                    case DATE ->
+                    case CURIE_MAP, DATE, KEY_VALUE_PAIRS ->
                             jsonGenerator.writeObject(value.dataRepresentation.get());
                     case DOUBLE ->
                         jsonGenerator.writeNumber((java.lang.Double) value.dataRepresentation.get());

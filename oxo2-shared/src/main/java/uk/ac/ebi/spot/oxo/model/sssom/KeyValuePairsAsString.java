@@ -1,7 +1,5 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.annotation.JsonValue;
-
 import java.util.*;
 
 /**
@@ -9,27 +7,28 @@ import java.util.*;
  * Can be used to encode additional provenance data.
  *
  */
-public class KeyValuePairsAsString {
-
-    @JsonValue
-    private final String keyValuePairsAsString;
-
-    private final SortedSet<String> keyValuePairsAsSet;
-
-    private final SortedMap<String, String> keyValuePairsAsMap;
-
+public class KeyValuePairsAsString extends SSSOMDataType<Map<String,String>> {
 
     public KeyValuePairsAsString(String keyValuePairsAsString) {
-        this.keyValuePairsAsString = keyValuePairsAsString;
-        this.keyValuePairsAsSet = new TreeSet<>(extractKeyValuePairsAsSet(keyValuePairsAsString));
-        this.keyValuePairsAsMap = new TreeMap<>(extractKeyValuePairs(keyValuePairsAsString));
+        super(keyValuePairsAsString);
     }
 
-    public KeyValuePairsAsString(Map<String, String> keyValuePairsAsMap) {
-        this.keyValuePairsAsMap = new TreeMap<>(keyValuePairsAsMap);
-        this.keyValuePairsAsSet = new TreeSet<>(keyValuePairsAsMap.keySet());
-        this.keyValuePairsAsString = convertMapToString(keyValuePairsAsMap);
+    public KeyValuePairsAsString(Map<String, String> keyValuePairs) {
+        super(convertMapToString(keyValuePairs));
     }
+    @Override
+    protected Optional<Map<String, String>> parseData(String pipeDelimitedString) {
+        if (pipeDelimitedString != null && !pipeDelimitedString.isBlank()) {
+            return Optional.of(extractKeyValuePairs(pipeDelimitedString));
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    protected SSSOMDataTypesEnum getType() {
+        return SSSOMDataTypesEnum.KEY_VALUE_PAIRS;
+    }
+
 
     private static Map<String, String> extractKeyValuePairs(String pipeDelimitedString) {
         Map<String, String> keyValuePairs = new HashMap<>();
@@ -73,20 +72,5 @@ public class KeyValuePairsAsString {
             sb.append(entry.getKey()).append("=").append(entry.getValue());
         }
         return sb.toString();
-    }
-
-    public SortedSet<String> getKeyValuePairsAsSet() {
-        return keyValuePairsAsSet;
-    }
-
-    public SortedMap<String, String> getKeyValuePairsAsMap() {
-        return keyValuePairsAsMap;
-    }
-
-    @Override
-    public String toString() {
-        return "KeyValuePairsAsString{" +
-                "keyValuePairsAsMap=" + keyValuePairsAsMap +
-                '}';
     }
 }

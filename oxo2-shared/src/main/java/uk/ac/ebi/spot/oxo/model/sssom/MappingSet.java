@@ -28,6 +28,7 @@ public record MappingSet (
         SortedSet<EntityReference> creatorId,
         @JsonProperty(CREATOR_LABEL)
         SortedSet<String> creatorLabel,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(CURIE_MAP)
         CurieMap curieMap,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
@@ -100,7 +101,7 @@ public record MappingSet (
 
     @JsonPOJOBuilder(withPrefix = "")
     public static class Builder {
-        private CurieMap curieMap = new CurieMap(new TreeMap<>());
+        private CurieMap curieMap = new CurieMap("");
         private SortedSet<Mapping> mappings = new TreeSet<>();
         private Uri mappingSetId;
         private Optional<String> mappingSetVersion = Optional.empty();
@@ -132,7 +133,7 @@ public record MappingSet (
 
         @JsonProperty(CURIE_MAP)
         public Builder curieMap(SortedMap<String, String> curieMap) {
-            this.curieMap = new CurieMap(curieMap);
+            this.curieMap = new CurieMap(CurieMap.convertMapToString(curieMap));
             return this;
         }
 
@@ -141,6 +142,7 @@ public record MappingSet (
             return this;
         }
 
+//        @JsonProperty(CURIE_MAP)
         public Builder curieMap(String curieMap){
             this.curieMap = new CurieMap(curieMap);
             return this;
