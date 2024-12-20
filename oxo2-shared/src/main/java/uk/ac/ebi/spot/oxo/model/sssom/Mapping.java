@@ -34,7 +34,7 @@ public record Mapping (
         SortedSet<String> authorLabel,
         @JsonProperty(COMMENT)
         Optional<String> comment,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Double.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(CONFIDENCE)
         Optional<Double> confidence,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
@@ -52,26 +52,26 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(ISSUE_TRACKER_ITEM)
         Optional<EntityReference> issueTrackerItem,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(LICENSE)
         Optional<Uri> license,
         @JsonProperty(MAPPING_CARDINALITY)
         Optional<MappingCardinalityEnum> mappingCardinality,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Date.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_DATE)
         Optional<Date> mappingDate,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_JUSTIFICATION)
         Optional<EntityReference> mappingJustification,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_PROVIDER)
         Optional<Uri> mappingProvider,
         @JsonProperty(MAPPING_SET_DESCRIPTION)
         Optional<String> mappingSetDescription,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_SET_ID)
         Uri mappingSetId,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_SET_SOURCE)
         SortedSet<Uri> mappingSetSource,
         @JsonProperty(MAPPING_SET_TITLE)
@@ -116,7 +116,7 @@ public record Mapping (
         Optional<String> predicateLabel,
         @JsonProperty(PREDICATE_MODIFIER)
         Optional<PredicateModifierEnum> predicateModifier,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Date.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(PUBLICATION_DATE)
         Optional<Date> publicationDate,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
@@ -128,7 +128,7 @@ public record Mapping (
         SortedSet<String> seeAlso,
         @JsonProperty(SIMILARITY_MEASURE)
         Optional<String> similarityMeasure,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Double.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(SIMILARITY_SCORE)
         Optional<Double> similarityScore,
         @JsonProperty(SUBJECT_CATEGORY)
@@ -217,6 +217,16 @@ public record Mapping (
 
         public Builder mappingSetId(String mappingSetId) {
             this.mappingSetId = new Uri(mappingSetId);
+            return this;
+        }
+
+        public Builder mappingSetId(String mappingSetId, Optional<Uri> propagateMappingSetId) {
+            Uri tempMappingSetId = new Uri(mappingSetId);
+            if (tempMappingSetId.getDataRepresentation().isPresent())
+                this.mappingSetId = tempMappingSetId;
+            else if (propagateMappingSetId.isPresent())
+                this.mappingSetId = propagateMappingSetId.get();
+
             return this;
         }
 
@@ -322,7 +332,7 @@ public record Mapping (
 
         public Builder mappingDate(String mappingDate, Optional<Date>propagateDate) {
             Date tempMappingDate = new Date(mappingDate);
-            if (tempMappingDate.getDateRepresentation().isPresent())
+            if (tempMappingDate.dataRepresentation.isPresent())
                 this.mappingDate = Optional.of(tempMappingDate);
             else if (propagateDate.isPresent())
                 this.mappingDate = propagateDate;
@@ -340,7 +350,7 @@ public record Mapping (
 
         public Builder mappingProvider(String mappingProvider, Optional<Uri> propagateProvider) {
             Uri tempMappingProvider = new Uri(mappingProvider);
-            if (tempMappingProvider.getUriRepresentation().isPresent())
+            if (tempMappingProvider.getDataRepresentation().isPresent())
                 this.mappingProvider = Optional.of(tempMappingProvider);
             else if (propagateProvider.isPresent())
                 this.mappingProvider = propagateProvider;

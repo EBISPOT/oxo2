@@ -30,26 +30,26 @@ public record MappingSet (
         SortedSet<String> creatorLabel,
         @JsonProperty(CURIE_MAP)
         CurieMap curieMap,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(ISSUE_TRACKER)
         Optional<Uri> issueTracker,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(LICENSE)
         Uri license,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Date.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_DATE)
         Optional<Date> mappingDate,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_PROVIDER)
         Optional<Uri> mappingProvider,
         @JsonIgnore
         SortedSet<Mapping> mappings,
         @JsonProperty(MAPPING_SET_DESCRIPTION)
         Optional<String> mappingSetDescription,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_SET_ID)
         Uri mappingSetId,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Uri.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(MAPPING_SET_SOURCE)
         SortedSet<Uri> mappingSetSource,
         @JsonProperty(MAPPING_SET_TITLE)
@@ -75,7 +75,7 @@ public record MappingSet (
         Optional<EntityTypeEnum> objectType,
         @JsonProperty(OTHER)
         Optional<KeyValuePairsAsString> other,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = Date.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
         @JsonProperty(PUBLICATION_DATE)
         Optional<Date> publicationDate,
         @JsonProperty(SEE_ALSO)

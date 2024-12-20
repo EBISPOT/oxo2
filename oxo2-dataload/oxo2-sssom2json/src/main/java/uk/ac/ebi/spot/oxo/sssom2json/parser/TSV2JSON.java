@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -64,9 +65,12 @@ public class TSV2JSON {
     private static void writeJSONFile(MappingSet mappingSet, String mappingSetOutputDirectory, String mappingsOutputDirectiory) {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new Jdk8Module());
+        objectMapper.registerModule(new JavaTimeModule());
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
 
         String mappingSetFilename = mappingSetOutputDirectory + File.separator +
                 mappingSet.mappingSetId().extractFragmentOrLastPathSegment() + ".json";
@@ -97,27 +101,29 @@ public class TSV2JSON {
             CSVParser parser = CSVParser.parse(file, java.nio.charset.StandardCharsets.UTF_8,
                     CSVFormat.TDF.builder().setCommentMarker('#').setHeader().build());
             Mapping.Builder mappingBuilder = Mapping.builder();
+
             for (CSVRecord record : parser) {
+                logger.debug("Processing record {}", record);
                 mappingBuilder
-                        .subjectId(record.isSet(SUBJECT_ID) ? record.get(SUBJECT_ID) : "")
-                        .subjectLabel(record.isSet(SUBJECT_LABEL) ? record.get(SUBJECT_LABEL) : "")
-                        .subjectCategory(record.isSet(SUBJECT_CATEGORY) ? record.get(SUBJECT_CATEGORY) : "")
+                        .authorId(record.isSet(AUTHOR_ID) ? record.get(AUTHOR_ID) : "")
+                        .authorLabel(record.isSet(AUTHOR_LABEL) ? record.get(AUTHOR_LABEL) : "")
+                        .confidence(record.isSet(CONFIDENCE) ? record.get(CONFIDENCE) : "")
+                        .curationRule(record.isSet(CURATION_RULE) ? record.get(CURATION_RULE) : "")
+                        .license(record.isSet(LICENSE) ? record.get(LICENSE) : "")
+                        .mappingCardinality(record.isSet(MAPPING_CARDINALITY) ? record.get(MAPPING_CARDINALITY) : "")
+                        .mappingJustification(record.isSet(MAPPING_JUSTIFICATION) ? record.get(MAPPING_JUSTIFICATION) : "")
+                        .mappingSource(record.isSet(MAPPING_SOURCE) ? record.get(MAPPING_SOURCE) : "")
+                        .matchString(record.isSet(MATCH_STRING) ? record.get(MATCH_STRING) : "")
+                        .objectId(record.isSet(OBJECT_ID) ? record.get(OBJECT_ID) : "")
+                        .objectLabel(record.isSet(OBJECT_LABEL) ? record.get(OBJECT_LABEL) : "")
                         .predicateId(record.isSet(PREDICATE_ID) ? record.get(PREDICATE_ID) : "")
                         .predicateLabel(record.isSet(PREDICATE_LABEL) ? record.get(PREDICATE_LABEL) : "")
                         .predicateModifier(record.isSet(PREDICATE_MODIFIER) ? record.get(PREDICATE_MODIFIER) : "")
-                        .objectId(record.isSet(OBJECT_ID) ? record.get(OBJECT_ID) : "")
-                        .objectLabel(record.isSet(OBJECT_LABEL) ? record.get(OBJECT_LABEL) : "")
-                        .mappingJustification(record.isSet(MAPPING_JUSTIFICATION) ? record.get(MAPPING_JUSTIFICATION) : "")
-                        .authorId(record.isSet(AUTHOR_ID) ? record.get(AUTHOR_ID) : "")
-                        .authorLabel(record.isSet(AUTHOR_LABEL) ? record.get(AUTHOR_LABEL) : "")
-                        .license(record.isSet(LICENSE) ? record.get(LICENSE) : "")
-                        .mappingSource(record.isSet(MAPPING_SOURCE) ? record.get(MAPPING_SOURCE) : "")
-                        .mappingCardinality(record.isSet(MAPPING_CARDINALITY) ? record.get(MAPPING_CARDINALITY) : "")
                         .publicationDate(record.isSet(PUBLICATION_DATE) ? record.get(PUBLICATION_DATE) : "")
-                        .confidence(record.isSet(CONFIDENCE) ? record.get(CONFIDENCE) : "")
-                        .curationRule(record.isSet(CURATION_RULE) ? record.get(CURATION_RULE) : "")
-                        .matchString(record.isSet(MATCH_STRING) ? record.get(MATCH_STRING) : "")
-                        .similarityScore(record.isSet(SIMILARITY_SCORE) ? record.get(SIMILARITY_SCORE) : "");
+                        .similarityScore(record.isSet(SIMILARITY_SCORE) ? record.get(SIMILARITY_SCORE) : "")
+                        .subjectCategory(record.isSet(SUBJECT_CATEGORY) ? record.get(SUBJECT_CATEGORY) : "")
+                        .subjectId(record.isSet(SUBJECT_ID) ? record.get(SUBJECT_ID) : "")
+                        .subjectLabel(record.isSet(SUBJECT_LABEL) ? record.get(SUBJECT_LABEL) : "");
 
                 if (externalMappingSetBuilderOptional.isPresent()) {
                     externalMappingSetBuilderOptional.get().setMappingSetIdIfNotSetAlready(file.getName());
@@ -163,8 +169,9 @@ public class TSV2JSON {
                                                                  CSVRecord record) {
         MappingSet tempMappingSet = mappingSetBuilder.build();
 
-        mappingBuilder.mappingSetId(tempMappingSet.mappingSetId().getUriAsString());
+        mappingBuilder.mappingSetId(tempMappingSet.mappingSetId().getDataAsString(), Optional.of(tempMappingSet.mappingSetId()));
         mappingBuilder.mappingDate(record.isSet(MAPPING_DATE) ? record.get(MAPPING_DATE) : "", tempMappingSet.mappingDate());mappingBuilder.mappingProvider(record.isSet(MAPPING_PROVIDER) ? record.get(MAPPING_PROVIDER) : "", tempMappingSet.mappingProvider());
+        mappingBuilder.mappingProvider(record.isSet(MAPPING_PROVIDER) ? record.get(MAPPING_PROVIDER) : "", tempMappingSet.mappingProvider());
         mappingBuilder.mappingTool(record.isSet(MAPPING_TOOL) ? record.get(MAPPING_TOOL) : "", tempMappingSet.mappingTool());
         mappingBuilder.mappingToolVersion(record.isSet(MAPPING_TOOL_VERSION) ? record.get(MAPPING_TOOL_VERSION) : "", tempMappingSet.mappingToolVersion());
         mappingBuilder.objectMatchField(record.isSet(OBJECT_MATCH_FIELD) ? record.get(OBJECT_MATCH_FIELD) : "", tempMappingSet.objectMatchField());
@@ -173,7 +180,6 @@ public class TSV2JSON {
         mappingBuilder.objectSourceVersion(record.isSet(OBJECT_SOURCE_VERSION) ? record.get(OBJECT_SOURCE_VERSION) : "", tempMappingSet.objectSourceVersion());
         mappingBuilder.objectType(record.isSet(OBJECT_TYPE) ? record.get(OBJECT_TYPE) : "", tempMappingSet.objectType());
         mappingBuilder.subjectMatchField(record.isSet(SUBJECT_MATCH_FIELD) ? record.get(SUBJECT_MATCH_FIELD) : "", tempMappingSet.subjectMatchField());
-        mappingBuilder.mappingProvider(record.isSet(MAPPING_PROVIDER) ? record.get(MAPPING_PROVIDER) : "", tempMappingSet.mappingProvider());
         mappingBuilder.subjectSource(record.isSet(SUBJECT_SOURCE) ? record.get(SUBJECT_SOURCE) : "", tempMappingSet.subjectSource());
         mappingBuilder.subjectSourceVersion(record.isSet(SUBJECT_SOURCE_VERSION) ? record.get(SUBJECT_SOURCE_VERSION) : "", tempMappingSet.subjectSourceVersion());
         mappingBuilder.subjectType(record.isSet(SUBJECT_TYPE) ? record.get(SUBJECT_TYPE) : "", tempMappingSet.subjectType());
