@@ -24,7 +24,7 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
             return Optional.empty();
         if (!uri.contains(":"))
             logger.warn("EntityReference uri is null or does not contain a colon, uri: {}", uri);
-        return Optional.of(uri);
+        return Optional.of(uri.toLowerCase());
     }
 
     @Override

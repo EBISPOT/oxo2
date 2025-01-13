@@ -1,11 +1,9 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
 import java.util.*;
@@ -27,17 +25,17 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonDeserialize(builder = Mapping.Builder.class)
 public record Mapping (
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(AUTHOR_ID)
         SortedSet<EntityReference> authorId,
         @JsonProperty(AUTHOR_LABEL)
         SortedSet<String> authorLabel,
         @JsonProperty(COMMENT)
         Optional<String> comment,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(CONFIDENCE)
         Optional<Double> confidence,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(CREATOR_ID)
         SortedSet<EntityReference> creatorId,
         @JsonProperty(CREATOR_LABEL)
@@ -46,39 +44,39 @@ public record Mapping (
          * An example of curation rules can be seen
          * <a href="https://github.com/mapping-commons/sssom/blob/master/examples/schema/curation_rule.sssom.tsv">here</a>.
          */
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(CURATION_RULE)
         SortedSet<EntityReference> curationRule,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(ISSUE_TRACKER_ITEM)
         Optional<EntityReference> issueTrackerItem,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(LICENSE)
         Optional<Uri> license,
         @JsonProperty(MAPPING_CARDINALITY)
         Optional<MappingCardinalityEnum> mappingCardinality,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(MAPPING_DATE)
         Optional<Date> mappingDate,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(MAPPING_JUSTIFICATION)
         Optional<EntityReference> mappingJustification,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(MAPPING_PROVIDER)
         Optional<Uri> mappingProvider,
         @JsonProperty(MAPPING_SET_DESCRIPTION)
         Optional<String> mappingSetDescription,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(MAPPING_SET_ID)
         Uri mappingSetId,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(MAPPING_SET_SOURCE)
         SortedSet<Uri> mappingSetSource,
         @JsonProperty(MAPPING_SET_TITLE)
         Optional<String> mappingSetTitle,
         @JsonProperty(MAPPING_SET_VERSION)
         Optional<String> mappingSetVersion,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(MAPPING_SOURCE)
         Optional<EntityReference> mappingSource,
         @JsonProperty(MAPPING_TOOL)
@@ -89,19 +87,19 @@ public record Mapping (
         SortedSet<String> matchString,
         @JsonProperty(OBJECT_CATEGORY)
         Optional<String> objectCategory,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_ID)
         Optional<EntityReference> objectId,
         @JsonInclude(JsonInclude.Include.NON_EMPTY)
         @JsonProperty(OBJECT_LABEL)
         Optional<String> objectLabel,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_MATCH_FIELD)
         SortedSet<EntityReference> objectMatchField,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_PREPROCESSING)
         List<EntityReference> objectPreprocessing,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_SOURCE)
         Optional<EntityReference> objectSource,
         @JsonProperty(OBJECT_SOURCE_VERSION)
@@ -109,18 +107,19 @@ public record Mapping (
         @JsonProperty(OBJECT_TYPE)
         Optional<EntityTypeEnum> objectType,
         @JsonProperty(OTHER)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         Optional<KeyValuePairsAsString> other,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(PREDICATE_ID)
         Optional<EntityReference> predicateId,
         @JsonProperty(PREDICATE_LABEL)
         Optional<String> predicateLabel,
         @JsonProperty(PREDICATE_MODIFIER)
         Optional<PredicateModifierEnum> predicateModifier,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(PUBLICATION_DATE)
         Optional<Date> publicationDate,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(REVIEWER_ID)
         SortedSet<EntityReference> reviewerId,
         @JsonProperty(REVIEWER_LABEL)
@@ -129,23 +128,23 @@ public record Mapping (
         SortedSet<String> seeAlso,
         @JsonProperty(SIMILARITY_MEASURE)
         Optional<String> similarityMeasure,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SIMILARITY_SCORE)
         Optional<Double> similarityScore,
         @JsonProperty(SUBJECT_CATEGORY)
         Optional<String> subjectCategory,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SUBJECT_ID)
         Optional<EntityReference> subjectId,
         @JsonProperty(SUBJECT_LABEL)
         Optional<String> subjectLabel,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SUBJECT_MATCH_FIELD)
         SortedSet<EntityReference> subjectMatchField,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SUBJECT_PREPROCESSING)
         List<EntityReference> subjectPreprocessing,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SUBJECT_SOURCE)
         Optional<EntityReference> subjectSource,
         @JsonProperty(SUBJECT_SOURCE_VERSION)
@@ -277,7 +276,7 @@ public record Mapping (
         }
 
         public Builder comment(String comment) {
-            if (comment != null && comment.isEmpty())
+            if (comment != null && !comment.isBlank())
                 this.comment = Optional.of(comment);
             return this;
         }
@@ -308,7 +307,7 @@ public record Mapping (
         }
 
         public Builder issueTrackerItem(String issueTrackerItem) {
-            if (issueTrackerItem != null && !issueTrackerItem.isEmpty())
+            if (issueTrackerItem != null && !issueTrackerItem.isBlank())
                 this.issueTrackerItem = Optional.of(new EntityReference(issueTrackerItem));
             return this;
         }
@@ -408,7 +407,7 @@ public record Mapping (
         }
 
         public Builder objectCategory(String objectCategory) {
-            if (objectCategory != null && !objectCategory.isEmpty())
+            if (objectCategory != null && !objectCategory.isBlank())
                 this.objectCategory = Optional.of(objectCategory);
             return this;
         }
@@ -419,7 +418,7 @@ public record Mapping (
         }
 
         public Builder objectLabel(String objectLabel) {
-            if (objectLabel != null && !objectLabel.isEmpty())
+            if (objectLabel != null && !objectLabel.isBlank())
                 this.objectLabel = Optional.of(objectLabel);
             return this;
         }
@@ -433,12 +432,9 @@ public record Mapping (
             return this;
         }
 
-        public Builder objectPreprocessing(List<EntityReference> objectPreprocessing,
-                                           List<EntityReference> propagateObjectPreprocessing) {
-            if (objectPreprocessing != null && objectPreprocessing.size() > 0)
-                this.objectPreprocessing = objectPreprocessing;
-            else
-                this.objectPreprocessing = propagateObjectPreprocessing;
+        public Builder objectMatchField(String objectMatchField) {
+            if (objectMatchField != null && !objectMatchField.isBlank())
+                this.objectMatchField = StringUtils.splitStringToSortedSet(objectMatchField, "\\|", EntityReference::new);
             return this;
         }
 
@@ -448,6 +444,11 @@ public record Mapping (
                     objectPreprocessing, "\\|", EntityReference::new);
             else
                 this.objectPreprocessing = propagateObjectPreprocessing;
+            return this;
+        }
+
+        public Builder objectPreprocessing(String objectPreprocessing) {
+            this.objectPreprocessing = StringUtils.splitStringToList(objectPreprocessing, "\\|", EntityReference::new);
             return this;
         }
 
@@ -489,6 +490,11 @@ public record Mapping (
                 this.objectType = tempObjectType;
             else if (propagateObjectType.isPresent())
                 this.objectType = propagateObjectType;
+            return this;
+        }
+
+        public Builder objectType(String objectType) {
+            this.objectType = EntityTypeEnum.fromString(objectType);
             return this;
         }
 
@@ -592,11 +598,6 @@ public record Mapping (
             return this;
         }
 
-        public Builder subjectPreprocessing(List<EntityReference> subjectPreprocessing) {
-            this.subjectPreprocessing = subjectPreprocessing;
-            return this;
-        }
-
         public Builder subjectPreprocessing(String subjectPreprocessing,
                                             List<EntityReference> propagateSubjectPreprocessing) {
             if (subjectPreprocessing != null && !subjectPreprocessing.isBlank())
@@ -604,6 +605,11 @@ public record Mapping (
                     subjectPreprocessing, "\\|", EntityReference::new);
             else
                 this.subjectPreprocessing = propagateSubjectPreprocessing;
+            return this;
+        }
+
+        public Builder subjectPreprocessing(String subjectPreprocessing) {
+            this.subjectPreprocessing = StringUtils.splitStringToList(subjectPreprocessing, "\\|", EntityReference::new);
             return this;
         }
 
@@ -621,7 +627,7 @@ public record Mapping (
         }
 
         public Builder subjectSourceVersion(String subjectSourceVersion, Optional<String> propagateSubjectSourceVersion) {
-            if (subjectSourceVersion != null && !subjectSourceVersion.isEmpty())
+            if (subjectSourceVersion != null && !subjectSourceVersion.isBlank())
                 this.subjectSourceVersion = Optional.of(subjectSourceVersion);
             else if (propagateSubjectSourceVersion.isPresent())
                 this.subjectSourceVersion = Optional.of(propagateSubjectSourceVersion.get());
@@ -634,16 +640,16 @@ public record Mapping (
             return this;
         }
 
-        public Builder subjectType(EntityTypeEnum subjectType) {
-            this.subjectType = Optional.of(subjectType);
-            return this;
-        }
-
         public Builder subjectType(String subjectType, Optional<EntityTypeEnum> propagateSubjectType) {
             if (subjectType != null && !subjectType.isBlank())
                 this.subjectType = EntityTypeEnum.fromString(subjectType);
             else if (propagateSubjectType.isPresent())
                 this.subjectType = propagateSubjectType;
+            return this;
+        }
+
+        public Builder subjectType(String subjectType) {
+            this.subjectType = EntityTypeEnum.fromString(subjectType);
             return this;
         }
 

@@ -88,72 +88,79 @@ abstract public class SSSOMDataType<T> {
         }
     }
 
-    public static class ConditionalInclusionFilter<S extends SSSOMDataType> {
+    public static class FilterOut<S extends SSSOMDataType> {
+        /**
+         * This method returns true if the object should be filtered out and false if the object should be included.
+         * @see com.fasterxml.jackson.annotation.JsonInclude#valueFilter()
+         *
+         * @param object
+         * @return
+         */
         @Override
         public boolean equals(Object object) {
-            logger.debug("Checking if S should be included: {}", object);
-            boolean result = false;
-            logger.trace("Initialize result to false");
+            logger.debug("Checking if S should be filtered out: {}", object);
+            boolean filterOut = false;
+            logger.trace("Set filterOut to false");
             if (object == null) {
-                result = true;
-                logger.trace("Object is null, set result to true");
+                filterOut = true;
+                logger.trace("Object is null, set filterOut to true");
             } else if (object instanceof Optional) {
                 Optional optional = (Optional) object;
                 logger.trace("Object is Optional");
                 if (optional.isPresent()) {
                     logger.trace("Optional.isPresent() is true");
                     SSSOMDataType sssomDataType = (SSSOMDataType)optional.get();
-                    result = sssomDataType.dataRepresentation.isEmpty() && sssomDataType.dataAsString.isEmpty();
+                    filterOut = sssomDataType.dataRepresentation.isEmpty() && sssomDataType.dataAsString.isEmpty();
                     logger.trace("""
                             SSSOMDataType.dataRepresentation.isEmpty()={}, SSSOMDataType.dataAsString.isEmpty()={}
-                            and result ={}""",
+                            and filterOut ={}""",
                             sssomDataType.dataRepresentation.isEmpty(),
-                            sssomDataType.dataAsString.isEmpty(), result);
+                            sssomDataType.dataAsString.isEmpty(), filterOut);
                 } else {
-                    result = true;
-                    logger.trace("Optional.isPresent() is false, set result to true");
+                    filterOut = true;
+                    logger.trace("Optional.isPresent() is false, set filterOut to true");
                 }
             }
             else if (object instanceof SSSOMDataType) {
                 logger.trace("object is of type SSSOMDataType");
                 SSSOMDataType sssomDataType = (SSSOMDataType) object;
-                result = sssomDataType.dataRepresentation.isEmpty() && sssomDataType.dataAsString.isEmpty();
+                filterOut = sssomDataType.dataRepresentation.isEmpty() && sssomDataType.dataAsString.isEmpty();
                 logger.trace("""
                         SSSOMDataType.dataRepresentation.isEmpty()={}, SSSOMDataType.dataAsString.isEmpty()={}
                         and result ={}""",
                         sssomDataType.dataRepresentation.isEmpty(),
-                        sssomDataType.dataAsString.isEmpty(), result);
+                        sssomDataType.dataAsString.isEmpty(), filterOut);
             } else if (object instanceof Collection<?>){
                 Collection collection = (Collection) object;
                 logger.trace("SSSOMDataType is part of a collection.size={}", collection.size());
                 if (collection.isEmpty()) {
-                    result = true;
-                    logger.trace("Collection is empty. Setting result = {}", result);
+                    filterOut = true;
+                    logger.trace("Collection is empty. Setting filterOut = {}", filterOut);
                 } else {
                     Optional firstElementOptional = collection.stream().findFirst();
                     if (firstElementOptional.isEmpty()) {
-                        result = true;
-                        logger.error("First element of collection is empty. Setting result = {}", result);
+                        filterOut = true;
+                        logger.error("First element of collection is empty. Setting filterOut = {}", filterOut);
                     } else {
                         Object firstElement = firstElementOptional.get();
                         if (firstElement instanceof SSSOMDataType<?>) {
                             SSSOMDataType value = (SSSOMDataType) firstElement;
-                            result = value.getDataRepresentation().isPresent() && !value.getDataAsString().isBlank();
+                            filterOut = value.getDataRepresentation().isEmpty() || value.getDataAsString().isBlank();
                             logger.debug("""
-                                    value.getDataRepresentation().isPresent() = {}, value.getDataAsString().isBlank() = {} 
+                                    value.getDataRepresentation().isEmpty() = {}, value.getDataAsString().isBlank() = {} 
                                     and result={}
                                     """,
-                                    value.getDataRepresentation().isPresent(),
+                                    value.getDataRepresentation().isEmpty(),
                                     value.getDataAsString().isBlank(),
-                                    result);
+                                    filterOut);
                         }
                     }
                 }
             }
             else
-                result = false;
-            logger.debug("Checking if S should be included for object {} result = {}", object, result);
-            return result;
+                filterOut = false;
+            logger.debug("Checking if S should be filtered out for object {} result = {}", object, filterOut);
+            return filterOut;
         }
     }
 }

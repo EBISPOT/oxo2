@@ -26,8 +26,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.apache.commons.csv.CSVFormat.TDF;
-
 /**
  *  A SSSOM TSV file contains 1 MappingSet object. See structure of TSV discussed
  * <a href="https://mapping-commons.github.io/sssom/spec-formats-tsv/#structure">here</a>.
@@ -39,7 +37,7 @@ public class TSV2JSON {
 
     public static void processDirectory(String directory, String mappingSetOutputDirectory, String mappingsOutputDirectiory) {
 
-        Map<String, MappingSet.Builder> filenameToExternalMetadataMap = parseExternalMetadata(directory);
+        Map<String, MappingSet.Builder> filenameToExternalMetadataMap = readExternalMetadata(directory);
 
         try (Stream<Path> paths = Files.walk(Paths.get(directory))) {
             paths
@@ -63,6 +61,7 @@ public class TSV2JSON {
     }
 
     private static void writeJSONFile(MappingSet mappingSet, String mappingSetOutputDirectory, String mappingsOutputDirectiory) {
+        logger.info("Writing JSON file for MappingSet {}", mappingSet.mappingSetId());
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new Jdk8Module());
         objectMapper.registerModule(new JavaTimeModule());
@@ -89,6 +88,7 @@ public class TSV2JSON {
     }
 
     private static Optional<MappingSet> readTSVFile(File file, Optional<MappingSet.Builder> externalMappingSetBuilderOptional) {
+        logger.info("Reading TSV file {}", file);
         SortedSet<Mapping> mappings = new TreeSet<>();
         Optional<MappingSet> mappingSetOptional = Optional.empty();
         Optional<MappingSet.Builder> embeddedMappingSetBuilderOptional = Optional.empty();
@@ -108,24 +108,47 @@ public class TSV2JSON {
                 mappingBuilder
                         .authorId(record.isSet(AUTHOR_ID) ? record.get(AUTHOR_ID) : "")
                         .authorLabel(record.isSet(AUTHOR_LABEL) ? record.get(AUTHOR_LABEL) : "")
+                        .comment(record.isSet(COMMENT) ? record.get(COMMENT) : "")
                         .confidence(record.isSet(CONFIDENCE) ? record.get(CONFIDENCE) : "")
+                        .creatorId(record.isSet(CREATOR_ID) ? record.get(CREATOR_ID) : "")
+                        .creatorLabel(record.isSet(CREATOR_LABEL) ? record.get(CREATOR_LABEL) : "")
                         .curationRule(record.isSet(CURATION_RULE) ? record.get(CURATION_RULE) : "")
                         .issueTrackerItem(record.isSet(ISSUE_TRACKER_ITEM) ? record.get(ISSUE_TRACKER_ITEM) : "")
                         .license(record.isSet(LICENSE) ? record.get(LICENSE) : "")
                         .mappingCardinality(record.isSet(MAPPING_CARDINALITY) ? record.get(MAPPING_CARDINALITY) : "")
+                        .mappingDate(record.isSet(MAPPING_DATE) ? record.get(MAPPING_DATE) : "")
                         .mappingJustification(record.isSet(MAPPING_JUSTIFICATION) ? record.get(MAPPING_JUSTIFICATION) : "")
+                        .mappingProvider(record.isSet(MAPPING_PROVIDER) ? record.get(MAPPING_PROVIDER) : "")
                         .mappingSource(record.isSet(MAPPING_SOURCE) ? record.get(MAPPING_SOURCE) : "")
+                        .mappingTool(record.isSet(MAPPING_TOOL) ? record.get(MAPPING_TOOL) : "")
+                        .mappingToolVersion(record.isSet(MAPPING_TOOL_VERSION) ? record.get(MAPPING_TOOL_VERSION) : "")
                         .matchString(record.isSet(MATCH_STRING) ? record.get(MATCH_STRING) : "")
+                        .objectCategory(record.isSet(OBJECT_CATEGORY) ? record.get(OBJECT_CATEGORY) : "")
                         .objectId(record.isSet(OBJECT_ID) ? record.get(OBJECT_ID) : "")
                         .objectLabel(record.isSet(OBJECT_LABEL) ? record.get(OBJECT_LABEL) : "")
+                        .objectMatchField(record.isSet(OBJECT_MATCH_FIELD) ? record.get(OBJECT_MATCH_FIELD) : "")
+                        .objectPreprocessing(record.isSet(OBJECT_PREPROCESSING) ? record.get(OBJECT_PREPROCESSING) : "")
+                        .objectSource(record.isSet(OBJECT_SOURCE) ? record.get(OBJECT_SOURCE) : "")
+                        .objectSourceVersion(record.isSet(OBJECT_SOURCE_VERSION) ? record.get(OBJECT_SOURCE_VERSION) : "")
+                        .objectType(record.isSet(OBJECT_TYPE) ? record.get(OBJECT_TYPE) : "")
+                        .other(record.isSet(OTHER) ? record.get(OTHER) : "")
                         .predicateId(record.isSet(PREDICATE_ID) ? record.get(PREDICATE_ID) : "")
                         .predicateLabel(record.isSet(PREDICATE_LABEL) ? record.get(PREDICATE_LABEL) : "")
                         .predicateModifier(record.isSet(PREDICATE_MODIFIER) ? record.get(PREDICATE_MODIFIER) : "")
                         .publicationDate(record.isSet(PUBLICATION_DATE) ? record.get(PUBLICATION_DATE) : "")
+                        .reviewerId(record.isSet(REVIEWER_ID) ? record.get(REVIEWER_ID) : "")
+                        .reviewerLabel(record.isSet(REVIEWER_LABEL) ? record.get(REVIEWER_LABEL) : "")
+                        .seeAlso(record.isSet(SEE_ALSO) ? record.get(SEE_ALSO) : "")
+                        .similarityMeasure(record.isSet(SIMILARITY_MEASURE) ? record.get(SIMILARITY_MEASURE) : "")
                         .similarityScore(record.isSet(SIMILARITY_SCORE) ? record.get(SIMILARITY_SCORE) : "")
                         .subjectCategory(record.isSet(SUBJECT_CATEGORY) ? record.get(SUBJECT_CATEGORY) : "")
                         .subjectId(record.isSet(SUBJECT_ID) ? record.get(SUBJECT_ID) : "")
-                        .subjectLabel(record.isSet(SUBJECT_LABEL) ? record.get(SUBJECT_LABEL) : "");
+                        .subjectLabel(record.isSet(SUBJECT_LABEL) ? record.get(SUBJECT_LABEL) : "")
+                        .subjectMatchField(record.isSet(SUBJECT_MATCH_FIELD) ? record.get(SUBJECT_MATCH_FIELD) : "")
+                        .subjectPreprocessing(record.isSet(SUBJECT_PREPROCESSING) ? record.get(SUBJECT_PREPROCESSING) : "")
+                        .subjectSource(record.isSet(SUBJECT_SOURCE) ? record.get(SUBJECT_SOURCE) : "")
+                        .subjectSourceVersion(record.isSet(SUBJECT_SOURCE_VERSION) ? record.get(SUBJECT_SOURCE_VERSION) : "")
+                        .subjectType(record.isSet(SUBJECT_TYPE) ? record.get(SUBJECT_TYPE) : "");
 
                 if (externalMappingSetBuilderOptional.isPresent()) {
                     externalMappingSetBuilderOptional.get().setMappingSetIdIfNotSetAlready(file.getName());
@@ -230,7 +253,7 @@ public class TSV2JSON {
      * @param directory
      * @return Map of filenames mapped to MappingSet.Builders.
      */
-    private static Map<String, MappingSet.Builder> parseExternalMetadata(String directory) {
+    private static Map<String, MappingSet.Builder> readExternalMetadata(String directory) {
         Collection<Path> externalMetadata = findExternalMetadata(directory);
         Map<String, MappingSet.Builder> filenameToBuilderMap = new HashMap<>();
 

@@ -23,34 +23,34 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 public record MappingSet (
         @JsonProperty(COMMENT)
         Optional<String> comment,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = EntityReference.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(CREATOR_ID)
         SortedSet<EntityReference> creatorId,
         @JsonProperty(CREATOR_LABEL)
         SortedSet<String> creatorLabel,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(CURIE_MAP)
         CurieMap curieMap,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(ISSUE_TRACKER)
         Optional<Uri> issueTracker,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(LICENSE)
         Uri license,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(MAPPING_DATE)
         Optional<Date> mappingDate,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(MAPPING_PROVIDER)
         Optional<Uri> mappingProvider,
         @JsonIgnore
         SortedSet<Mapping> mappings,
         @JsonProperty(MAPPING_SET_DESCRIPTION)
         Optional<String> mappingSetDescription,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(MAPPING_SET_ID)
         Uri mappingSetId,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(MAPPING_SET_SOURCE)
         SortedSet<Uri> mappingSetSource,
         @JsonProperty(MAPPING_SET_TITLE)
@@ -61,13 +61,13 @@ public record MappingSet (
         Optional<String> mappingTool,
         @JsonProperty(MAPPING_TOOL_VERSION)
         Optional<String> mappingToolVersion,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_MATCH_FIELD)
         SortedSet<EntityReference> objectMatchField,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_PREPROCESSING)
         List<EntityReference> objectPreprocessing,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_SOURCE)
         Optional<EntityReference> objectSource,
         @JsonProperty(OBJECT_SOURCE_VERSION)
@@ -76,18 +76,18 @@ public record MappingSet (
         Optional<EntityTypeEnum> objectType,
         @JsonProperty(OTHER)
         Optional<KeyValuePairsAsString> other,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(PUBLICATION_DATE)
         Optional<Date> publicationDate,
         @JsonProperty(SEE_ALSO)
         SortedSet<String> seeAlso,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SUBJECT_MATCH_FIELD)
         SortedSet<EntityReference> subjectMatchField,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SUBJECT_PREPROCESSING)
         List<EntityReference> subjectPreprocessing,
-        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.ConditionalInclusionFilter.class)
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SUBJECT_SOURCE)
         Optional<EntityReference> subjectSource,
         @JsonProperty(SUBJECT_SOURCE_VERSION)
@@ -142,7 +142,6 @@ public record MappingSet (
             return this;
         }
 
-//        @JsonProperty(CURIE_MAP)
         public Builder curieMap(String curieMap){
             this.curieMap = new CurieMap(curieMap);
             return this;
@@ -260,7 +259,7 @@ public record MappingSet (
 
         @JsonProperty(SUBJECT_TYPE)
         public Builder subjectType(String subjectType) {
-            this.subjectType = Optional.of(EntityTypeEnum.valueOf(subjectType));
+            this.subjectType = EntityTypeEnum.fromString(subjectType);
             return this;
         }
 
@@ -298,7 +297,7 @@ public record MappingSet (
 
         @JsonProperty(OBJECT_TYPE)
         public Builder objectType(String objectType) {
-            this.objectType = Optional.of(EntityTypeEnum.valueOf(objectType));
+            this.objectType = EntityTypeEnum.fromString(objectType);
             return this;
         }
 
@@ -475,7 +474,7 @@ public record MappingSet (
             return this;
         }
 
-
+        @JsonProperty(COMMENT)
         public Builder comment(String comment) {
             if (comment != null && !comment.isBlank())
                 this.comment = Optional.of(comment);

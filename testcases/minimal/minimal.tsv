@@ -1,0 +1,10 @@
+# curie_map:
+#   DOID: http://purl.obolibrary.org/obo/DOID_
+#   skos: http://www.w3.org/2004/02/skos/core#
+#   NCI: http://purl.obolibrary.org/obo/NCIT_
+# license: https://github.com/mapping-commons/mapping-commons.github.io/blob/main/docs/original_license_applies.md
+# mapping_date: '2022-02-23'
+# mapping_set_id: http://w3id.org/mapping_commons/disease-mappings/onto-icd10
+# mapping_tool: https://github.com/mapping-commons/sssom-py
+subject_id	predicate_id	object_id
+DOID:8717	oboInOwl:hasDbXref	NCI:C50706
