@@ -1,0 +1,11 @@
+#!/bin/bash
+
+cd /opt/oxo2
+
+echo Building frontend. REACT_APP_ENV: $REACT_APP_ENV
+
+npm run build
+
+caddy run --config ./Caddyfile
+
+
