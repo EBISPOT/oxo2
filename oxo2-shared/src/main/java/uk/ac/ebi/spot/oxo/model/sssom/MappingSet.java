@@ -384,7 +384,9 @@ public record MappingSet (
         }
 
         public Builder publicationDate(Optional<Date> publicationDate) {
-            this.publicationDate = publicationDate;
+            if (publicationDate != null && publicationDate.isPresent() && publicationDate.get().getDataRepresentation().isPresent()) {
+                this.publicationDate = publicationDate;
+            }
             return this;
         }
 

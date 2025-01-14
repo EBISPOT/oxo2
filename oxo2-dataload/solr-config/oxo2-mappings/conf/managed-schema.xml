@@ -456,7 +456,7 @@
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="issue_tracker_item" type="string" multiValued="false" indexed="false" stored="true"/>
   <field name="license" type="string" multiValued="false" indexed="true" stored="true"/>
-  <field name="mapping_cardinality" type="text_general"/>
+  <field name="mapping_cardinality" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="mapping_date" type="pdates" multiValued="false" indexed="true" stored="true"/>
   <field name="mapping_justification" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="mapping_provider" type="string" multiValued="false" indexed="true" stored="true"/>
@@ -477,11 +477,11 @@
   <field name="object_source" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_source_version" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_type" type="string" multiValued="false" indexed="true" stored="true"/>
-  <field name="other" type="text_general" multiValued="false" indexed="true" stored="true"/>
+  <field name="other" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="predicate_id" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_modifier" type="string" multiValued="false" indexed="true" stored="true"/>
-  <field name="publication_date" type="pdates" multiValued="true" indexed="true" stored="true"/>
+  <field name="publication_date" type="pdates" multiValued="false" indexed="true" stored="true"/>
   <field name="reviewer_id" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="reviewer_label" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="see_also" type="text_general" multiValued="true" indexed="true" stored="true"/>
@@ -560,19 +560,50 @@
   <dynamicField name="*_d" type="pdouble" indexed="true" stored="true"/>
   <dynamicField name="*_t" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="*_p" type="location" indexed="true" stored="true"/>
-  <copyField source="match_string" dest="match_string_str" maxChars="256"/>
-  <copyField source="mapping_set_title" dest="mapping_set_title_str" maxChars="256"/>
-  <copyField source="subject_label" dest="subject_label_str" maxChars="256"/>
-  <copyField source="see_also" dest="see_also_str" maxChars="256"/>
+  <copyField source="author_id" dest="author_id_str" maxChars="256"/>
   <copyField source="author_label" dest="author_label_str" maxChars="256"/>
-  <copyField source="mapping_set_description" dest="mapping_set_description_str" maxChars="256"/>
-  <copyField source="subject_category" dest="subject_category_str" maxChars="256"/>
-  <copyField source="object_label" dest="object_label_str" maxChars="256"/>
-  <copyField source="other" dest="other_str" maxChars="256"/>
-  <copyField source="mapping_tool" dest="mapping_tool_str" maxChars="256"/>
-  <copyField source="predicate_label" dest="predicate_label_str" maxChars="256"/>
   <copyField source="comment" dest="comment_str" maxChars="256"/>
-  <copyField source="reviewer_label" dest="reviewer_label_str" maxChars="256"/>
-  <copyField source="object_category" dest="object_category_str" maxChars="256"/>
+  <copyField source="confidence" dest="confidence_str" maxChars="256"/>
+  <copyField source="curation_rule" dest="curation_rule_str" maxChars="256"/>
+  <copyField source="issue_tracker_item" dest="issue_tracker_item_str" maxChars="256"/>
+  <copyField source="license" dest="license_str" maxChars="256"/>
   <copyField source="mapping_cardinality" dest="mapping_cardinality_str" maxChars="256"/>
+  <copyField source="mapping_date" dest="mapping_date_str" maxChars="256"/>
+  <copyField source="mapping_justification" dest="mapping_justification_str" maxChars="256"/>
+  <copyField source="mapping_provider" dest="mapping_provider_str" maxChars="256"/>
+  <copyField source="mapping_set_description" dest="mapping_set_description_str" maxChars="256"/>
+  <copyField source="mapping_set_id" dest="mapping_set_id_str" maxChars="256"/>
+  <copyField source="mapping_set_source" dest="mapping_set_source_str" maxChars="256"/>
+  <copyField source="mapping_set_title" dest="mapping_set_title_str" maxChars="256"/>
+  <copyField source="mapping_set_version" dest="mapping_set_version_str" maxChars="256"/>
+  <copyField source="mapping_source" dest="mapping_source_str" maxChars="256"/>
+  <copyField source="mapping_tool" dest="mapping_tool_str" maxChars="256"/>
+  <copyField source="mapping_tool_version" dest="mapping_tool_version_str" maxChars="256"/>
+  <copyField source="match_string" dest="match_string_str" maxChars="256"/>
+  <copyField source="object_category" dest="object_category_str" maxChars="256"/>
+  <copyField source="object_id" dest="object_id_str" maxChars="256"/>
+  <copyField source="object_label" dest="object_label_str" maxChars="256"/>
+  <copyField source="object_match_field" dest="object_match_str" maxChars="256"/>
+  <copyField source="object_preprocessing" dest="object_preprocessing_str" maxChars="256"/>
+  <copyField source="object_source" dest="object_source_str" maxChars="256"/>
+  <copyField source="object_source_version" dest="object_source_version_str" maxChars="256"/>
+  <copyField source="object_type" dest="object_type_str" maxChars="256"/>
+  <copyField source="other" dest="other_str" maxChars="256"/>
+  <copyField source="predicate_id" dest="predicate_id_str" maxChars="256"/>
+  <copyField source="predicate_label" dest="predicate_label_str" maxChars="256"/>
+  <copyField source="predicate_modifier" dest="predicate_modifier_str" maxChars="256"/>
+  <copyField source="publication_date" dest="publication_date_str" maxChars="256"/>
+  <copyField source="reviewer_id" dest="reviewer_id_str" maxChars="256"/>
+  <copyField source="reviewer_label" dest="reviewer_label_str" maxChars="256"/>
+  <copyField source="see_also" dest="see_also_str" maxChars="256"/>
+  <copyField source="similarity_measure" dest="similarity_measure_str" maxChars="256"/>
+  <copyField source="similarity_score" dest="similarity_score_str" maxChars="256"/>
+  <copyField source="subject_category" dest="subject_category_str" maxChars="256"/>
+  <copyField source="subject_id" dest="subject_id_str" maxChars="256"/>
+  <copyField source="subject_label" dest="subject_label_str" maxChars="256"/>
+  <copyField source="subject_match_field" dest="subject_match_str" maxChars="256"/>
+  <copyField source="subject_preprocessing" dest="subject_preprocessing_str" maxChars="256"/>
+  <copyField source="subject_source" dest="subject_source_str" maxChars="256"/>
+  <copyField source="subject_source_version" dest="subject_source_version_str" maxChars="256"/>
+  <copyField source="subject_type" dest="subject_type_str" maxChars="256"/>
 </schema>

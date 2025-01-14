@@ -235,8 +235,15 @@ public record Mapping (
             return this;
         }
 
+        public Builder mappingSetVersion(Optional<String> mappingSetVersion) {
+            if (mappingSetVersion != null && mappingSetVersion.isPresent() && !mappingSetVersion.get().isBlank())
+                this.mappingSetVersion = mappingSetVersion;
+            return this;
+        }
+
         public Builder mappingSetSource(SortedSet<Uri> mappingSetSource) {
-            this.mappingSetSource = mappingSetSource;
+            if (mappingSetSource != null && !mappingSetSource.isEmpty())
+                this.mappingSetSource = mappingSetSource;
             return this;
         }
 
@@ -246,19 +253,30 @@ public record Mapping (
         }
 
         public Builder mappingSetTitle(String mappingSetTitle) {
-            this.mappingSetTitle = Optional.of(mappingSetTitle);
+            if (mappingSetTitle != null && !mappingSetTitle.isBlank())
+                this.mappingSetTitle = Optional.of(mappingSetTitle);
             return this;
+        }
+
+        public Builder mappingSetTitle(Optional<String> mappingSetTitle) {
+            if (mappingSetTitle != null && mappingSetTitle.isPresent() && !mappingSetTitle.get().isBlank())
+                this.mappingSetTitle = mappingSetTitle;
+            return this;
+
         }
 
         public Builder mappingSetDescription(String mappingSetDescription) {
-            this.mappingSetDescription = Optional.of(mappingSetDescription);
+            if (mappingSetDescription != null && !mappingSetDescription.isBlank())
+                this.mappingSetDescription = Optional.of(mappingSetDescription);
             return this;
         }
 
-//        public Builder authorId(SortedSet<EntityReference> authorId) {
-//            this.authorId = authorId;
-//            return this;
-//        }
+        public Builder mappingSetDescription(Optional<String> mappingSetDescription) {
+            if (mappingSetDescription != null && mappingSetDescription.isPresent() &&
+                    !mappingSetDescription.get().isBlank())
+                this.mappingSetDescription = mappingSetDescription;
+            return this;
+        }
 
         public Builder authorId(String authorId) {
             this.authorId = StringUtils.splitStringToSortedSet(authorId, "\\|", EntityReference::new);
@@ -266,7 +284,8 @@ public record Mapping (
         }
 
         public Builder authorLabel(SortedSet<String> authorLabel) {
-            this.authorLabel = authorLabel;
+            if (authorLabel != null && !authorLabel.isEmpty())
+                this.authorLabel = authorLabel;
             return this;
         }
 

@@ -546,12 +546,31 @@
   <dynamicField name="*_d" type="pdouble" indexed="true" stored="true"/>
   <dynamicField name="*_t" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="*_p" type="location" indexed="true" stored="true"/>
-  <copyField source="mapping_set_title" dest="mapping_set_title_str" maxChars="256"/>
-  <copyField source="other" dest="other_str" maxChars="256"/>
-  <copyField source="see_also" dest="see_also_str" maxChars="256"/>
-  <copyField source="mapping_set_description" dest="mapping_set_description_str" maxChars="256"/>
-  <copyField source="curie_map" dest="curie_map_str" maxChars="256"/>
-  <copyField source="creator_label" dest="creator_label_str" maxChars="256"/>
-  <copyField source="mapping_tool" dest="mapping_tool_str" maxChars="256"/>
   <copyField source="comment" dest="comment_str" maxChars="256"/>
+  <copyField source="creator_id" dest="creator_id_str" maxChars="256"/>
+  <copyField source="creator_label" dest="creator_label_str" maxChars="256"/>
+  <copyField source="issue_tracker" dest="issue_tracker_str" maxChars="256"/>
+  <copyField source="license" dest="license_str" maxChars="256"/>
+  <copyField source="mapping_date" dest="mapping_date_str" maxChars="256"/>
+  <copyField source="mapping_provider" dest="mapping_provider_str" maxChars="256"/>
+  <copyField source="mapping_set_description" dest="mapping_set_description_str" maxChars="256"/>
+  <copyField source="mapping_set_id" dest="mapping_set_id_str" maxChars="256"/>
+  <copyField source="mapping_set_source" dest="mapping_set_source_str" maxChars="256"/>
+  <copyField source="mapping_set_title" dest="mapping_set_title_str" maxChars="256"/>
+  <copyField source="mapping_set_version" dest="mapping_set_version_str" maxChars="256"/>
+  <copyField source="mapping_tool" dest="mapping_tool_str" maxChars="256"/>
+  <copyField source="mapping_tool_version" dest="mapping_tool_version_str" maxChars="256"/>
+  <copyField source="object_match_field" dest="object_match_field_str" maxChars="256"/>
+  <copyField source="object_preprocessing" dest="object_preprocessing_str" maxChars="256"/>
+  <copyField source="object_source" dest="object_source_str" maxChars="256"/>
+  <copyField source="object_source_version" dest="object_source_version_str" maxChars="256"/>
+  <copyField source="object_type" dest="object_type_str" maxChars="256"/>
+  <copyField source="other" dest="other_str" maxChars="256"/>
+  <copyField source="publication_date" dest="publication_date_str" maxChars="256"/>
+  <copyField source="see_also" dest="see_also_str" maxChars="256"/>
+  <copyField source="subject_match_field" dest="subject_match_field_str" maxChars="256"/>
+  <copyField source="subject_preprocessing" dest="subject_preprocessing_str" maxChars="256"/>
+  <copyField source="subject_source" dest="subject_source_str" maxChars="256"/>
+  <copyField source="subject_source_version" dest="subject_source_version_str" maxChars="256"/>
+  <copyField source="subject_type" dest="subject_type_str" maxChars="256"/>
 </schema>

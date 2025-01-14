@@ -194,8 +194,9 @@ public class TSV2JSON {
                                                                  CSVRecord record) {
         MappingSet tempMappingSet = mappingSetBuilder.build();
 
+        // Fields to propagate according to SSSOM specification
         mappingBuilder.mappingSetId(tempMappingSet.mappingSetId().getDataAsString(), Optional.of(tempMappingSet.mappingSetId()));
-        mappingBuilder.mappingDate(record.isSet(MAPPING_DATE) ? record.get(MAPPING_DATE) : "", tempMappingSet.mappingDate());mappingBuilder.mappingProvider(record.isSet(MAPPING_PROVIDER) ? record.get(MAPPING_PROVIDER) : "", tempMappingSet.mappingProvider());
+        mappingBuilder.mappingDate(record.isSet(MAPPING_DATE) ? record.get(MAPPING_DATE) : "", tempMappingSet.mappingDate());
         mappingBuilder.mappingProvider(record.isSet(MAPPING_PROVIDER) ? record.get(MAPPING_PROVIDER) : "", tempMappingSet.mappingProvider());
         mappingBuilder.mappingTool(record.isSet(MAPPING_TOOL) ? record.get(MAPPING_TOOL) : "", tempMappingSet.mappingTool());
         mappingBuilder.mappingToolVersion(record.isSet(MAPPING_TOOL_VERSION) ? record.get(MAPPING_TOOL_VERSION) : "", tempMappingSet.mappingToolVersion());
@@ -208,6 +209,13 @@ public class TSV2JSON {
         mappingBuilder.subjectSource(record.isSet(SUBJECT_SOURCE) ? record.get(SUBJECT_SOURCE) : "", tempMappingSet.subjectSource());
         mappingBuilder.subjectSourceVersion(record.isSet(SUBJECT_SOURCE_VERSION) ? record.get(SUBJECT_SOURCE_VERSION) : "", tempMappingSet.subjectSourceVersion());
         mappingBuilder.subjectType(record.isSet(SUBJECT_TYPE) ? record.get(SUBJECT_TYPE) : "", tempMappingSet.subjectType());
+
+
+        // We also propagate the following fields from the mapping set to mappings
+        mappingBuilder.mappingSetDescription(tempMappingSet.mappingSetDescription());
+        mappingBuilder.mappingSetSource(tempMappingSet.mappingSetSource());
+        mappingBuilder.mappingSetTitle(tempMappingSet.mappingSetTitle());
+        mappingBuilder.mappingSetVersion(tempMappingSet.mappingSetVersion());
 
         return mappingBuilder;
     }
