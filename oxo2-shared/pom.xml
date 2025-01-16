@@ -56,5 +56,11 @@
             <artifactId>logback-classic</artifactId>
             <version>1.5.12</version>
         </dependency>
+        <!-- Apache Solr - Needed reading Solr docs into Mappings and MappingSets -->
+        <dependency>
+            <groupId>org.apache.solr</groupId>
+            <artifactId>solr-solrj</artifactId>
+            <version>9.7.0</version>
+        </dependency>
     </dependencies>
 </project>

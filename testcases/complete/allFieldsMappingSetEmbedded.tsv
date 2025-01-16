@@ -29,7 +29,8 @@
 # object_source: https://www.ebi.ac.uk/ols4/ontologies/EFO
 # object_type: owl class
 # other:
-#    mapping_set_source: https://www.ebi.ac.uk/ols4/ontologies/EFO
+#    key1: value1
+#    key2: value2
 # publication_date: 2025-01-13
 # see_also: http://www.ebi.ac.uk/ols
 # subject_match_field: rdfs:label|skos:prefLabel

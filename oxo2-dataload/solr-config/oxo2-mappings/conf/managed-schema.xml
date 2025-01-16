@@ -446,6 +446,16 @@
       <tokenizer name="whitespace"/>
     </analyzer>
   </fieldType>
+  <fieldType name="json" class="solr.TextField" omitNorms="true">
+    <analyzer type="index">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+    </analyzer>
+  </fieldType>
   <field name="_text_" type="text_general" multiValued="true" indexed="true" stored="false"/>
   <field name="_version_" type="plong" indexed="false" stored="false"/>
   <field name="author_id" type="strings" multiValued="true" indexed="true" stored="true"/>
@@ -477,7 +487,7 @@
   <field name="object_source" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_source_version" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_type" type="string" multiValued="false" indexed="true" stored="true"/>
-  <field name="other" type="text_general" multiValued="true" indexed="true" stored="true"/>
+  <field name="other" type="json" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_id" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_modifier" type="string" multiValued="false" indexed="true" stored="true"/>
@@ -588,7 +598,6 @@
   <copyField source="object_source" dest="object_source_str" maxChars="256"/>
   <copyField source="object_source_version" dest="object_source_version_str" maxChars="256"/>
   <copyField source="object_type" dest="object_type_str" maxChars="256"/>
-  <copyField source="other" dest="other_str" maxChars="256"/>
   <copyField source="predicate_id" dest="predicate_id_str" maxChars="256"/>
   <copyField source="predicate_label" dest="predicate_label_str" maxChars="256"/>
   <copyField source="predicate_modifier" dest="predicate_modifier_str" maxChars="256"/>

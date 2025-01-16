@@ -52,7 +52,6 @@ public enum EntityTypeEnum {
         return Optional.ofNullable(stringToEnum.get(value.toLowerCase()));
     }
 
-
     @Override
     public String toString() {
         return value;

@@ -35,6 +35,10 @@ public class Double extends SSSOMDataType<java.lang.Double> {
         return SSSOMDataTypesEnum.DOUBLE;
     }
 
+    protected static Double of(java.lang.Double data) {
+        return new Double(data.toString());
+    }
+
 
 //    public String getDouble() {
 //        return doubleAsString;

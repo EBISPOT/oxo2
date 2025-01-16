@@ -25,10 +25,13 @@ public class CurieMap extends SSSOMDataType<Map<String, String>> {
         return Optional.empty();
     }
 
+
+
     @Override
     protected SSSOMDataTypesEnum getType() {
         return SSSOMDataTypesEnum.CURIE_MAP;
     }
+
 
     public static String convertMapToString(Map<String, String> map) {
         return map.entrySet()

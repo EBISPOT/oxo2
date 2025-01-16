@@ -2,6 +2,7 @@ package uk.ac.ebi.spot.oxo.model.sssom;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.slf4j.Logger;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -73,8 +75,13 @@ abstract public class SSSOMDataType<T> {
             logger.debug("Serializing S: {}", value);
             if (value.dataRepresentation.isPresent()) {
                 switch(value.type) {
-                    case CURIE_MAP, DATE, KEY_VALUE_PAIRS ->
-                            jsonGenerator.writeObject(value.dataRepresentation.get());
+                    case KEY_VALUE_PAIRS -> {
+                        Map<String, String> map = (Map<String, String>) value.dataRepresentation.get();
+                        String jsonString = new ObjectMapper().writeValueAsString(map);
+                        jsonGenerator.writeString(jsonString);
+                    }
+                    case CURIE_MAP, DATE ->
+                        jsonGenerator.writeObject(value.dataAsString);
                     case DOUBLE ->
                         jsonGenerator.writeNumber((java.lang.Double) value.dataRepresentation.get());
                     case ENTITY_REFERENCE, URI ->

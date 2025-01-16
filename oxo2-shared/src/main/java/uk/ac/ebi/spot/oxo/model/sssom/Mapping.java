@@ -2,13 +2,16 @@ package uk.ac.ebi.spot.oxo.model.sssom;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import org.apache.solr.client.solrj.beans.Field;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
 import java.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.stream.Collectors;
 
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 
@@ -90,7 +93,6 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_ID)
         Optional<EntityReference> objectId,
-        @JsonInclude(JsonInclude.Include.NON_EMPTY)
         @JsonProperty(OBJECT_LABEL)
         Optional<String> objectLabel,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
@@ -106,8 +108,8 @@ public record Mapping (
         Optional<String> objectSourceVersion,
         @JsonProperty(OBJECT_TYPE)
         Optional<EntityTypeEnum> objectType,
-        @JsonProperty(OTHER)
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
+        @JsonProperty(OTHER)
         Optional<KeyValuePairsAsString> other,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(PREDICATE_ID)
@@ -214,7 +216,7 @@ public record Mapping (
 
         private static Logger logger = LoggerFactory.getLogger(Builder.class);
 
-
+        @Field(MAPPING_SET_ID)
         public Builder mappingSetId(String mappingSetId) {
             this.mappingSetId = new Uri(mappingSetId);
             return this;
@@ -230,6 +232,7 @@ public record Mapping (
             return this;
         }
 
+        @Field(MAPPING_SET_VERSION)
         public Builder mappingSetVersion(String mappingSetVersion) {
             this.mappingSetVersion = Optional.of(mappingSetVersion);
             return this;
@@ -247,11 +250,22 @@ public record Mapping (
             return this;
         }
 
+        @Field(MAPPING_SET_SOURCE)
+        public Builder mappingSetSource (List<String> mappingSetSource) {
+            if (mappingSetSource != null && !mappingSetSource.isEmpty())
+                this.mappingSetSource = mappingSetSource.stream()
+                        .map(Uri::new)
+                        .collect(Collectors.toCollection(TreeSet::new));
+
+            return this;
+        }
+
         public Builder mappingSetSource(String mappingSetSource) {
             this.mappingSetSource = StringUtils.splitStringToSortedSet(mappingSetSource, "\\|", Uri::new);
             return this;
         }
 
+        @Field(MAPPING_SET_TITLE)
         public Builder mappingSetTitle(String mappingSetTitle) {
             if (mappingSetTitle != null && !mappingSetTitle.isBlank())
                 this.mappingSetTitle = Optional.of(mappingSetTitle);
@@ -265,6 +279,7 @@ public record Mapping (
 
         }
 
+        @Field(MAPPING_SET_DESCRIPTION)
         public Builder mappingSetDescription(String mappingSetDescription) {
             if (mappingSetDescription != null && !mappingSetDescription.isBlank())
                 this.mappingSetDescription = Optional.of(mappingSetDescription);
@@ -278,14 +293,24 @@ public record Mapping (
             return this;
         }
 
+        @Field(AUTHOR_ID)
+        public Builder authorId(List<String> authorId) {
+            if (authorId != null && !authorId.isEmpty())
+                this.authorId = new TreeSet<>(authorId.stream()
+                        .map(EntityReference::new)
+                        .collect(Collectors.toList()));
+            return this;
+        }
+
         public Builder authorId(String authorId) {
             this.authorId = StringUtils.splitStringToSortedSet(authorId, "\\|", EntityReference::new);
             return this;
         }
 
-        public Builder authorLabel(SortedSet<String> authorLabel) {
+        @Field(AUTHOR_LABEL)
+        public Builder authorLabel(List<String> authorLabel) {
             if (authorLabel != null && !authorLabel.isEmpty())
-                this.authorLabel = authorLabel;
+                this.authorLabel = new TreeSet<>(authorLabel);
             return this;
         }
 
@@ -294,9 +319,16 @@ public record Mapping (
             return this;
         }
 
+        @Field(COMMENT)
         public Builder comment(String comment) {
             if (comment != null && !comment.isBlank())
                 this.comment = Optional.of(comment);
+            return this;
+        }
+
+        @Field(CONFIDENCE)
+        public Builder confidence(java.lang.Double confidence) {
+            this.confidence = Optional.of(Double.of(confidence));
             return this;
         }
 
@@ -310,39 +342,65 @@ public record Mapping (
             return this;
         }
 
+
+        @Field(CREATOR_ID)
+        public Builder creatorId(List<String> creatorId) {
+            if (creatorId != null && !creatorId.isEmpty())
+                this.creatorId = new TreeSet<>(creatorId.stream()
+                        .map(EntityReference::new)
+                        .collect(Collectors.toList()));
+            return this;
+        }
+
+        @Field(CREATOR_LABEL)
+        public Builder creatorLabel(List<String> creatorLabel) {
+            if (creatorLabel != null && !creatorLabel.isEmpty())
+                this.creatorLabel = new TreeSet<>(creatorLabel);
+            return this;
+        }
+
         public Builder creatorLabel(String creatorLabel) {
             this.creatorLabel = StringUtils.splitStringToSortedSet(creatorLabel, "\\|", String::new);
             return this;
         }
 
-//        public Builder curationRule(SortedSet<EntityReference> curationRule) {
-//            this.curationRule = curationRule;
-//            return this;
-//        }
+
+        @Field(CURATION_RULE)
+        public Builder curationRule(List<String> curationRule) {
+            if (curationRule != null && !curationRule.isEmpty())
+                this.curationRule = new TreeSet<>(curationRule.stream()
+                        .map(EntityReference::new)
+                        .collect(Collectors.toList()));
+            return this;
+        }
 
         public Builder curationRule(String curationRule) {
             this.curationRule = StringUtils.splitStringToSortedSet(curationRule, "\\|", EntityReference::new);
             return this;
         }
 
+        @Field(ISSUE_TRACKER_ITEM)
         public Builder issueTrackerItem(String issueTrackerItem) {
             if (issueTrackerItem != null && !issueTrackerItem.isBlank())
                 this.issueTrackerItem = Optional.of(new EntityReference(issueTrackerItem));
             return this;
         }
 
+        @Field(LICENSE)
         public Builder license(String license) {
             this.license = Optional.of(new Uri(license));
             return this;
         }
 
-        public Builder mappingCardinality(MappingCardinalityEnum mappingCardinality) {
-            this.mappingCardinality = Optional.of(mappingCardinality);
+        @Field(MAPPING_CARDINALITY)
+        public Builder mappingCardinality(String mappingCardinality) {
+            this.mappingCardinality = MappingCardinalityEnum.fromString(mappingCardinality);
             return this;
         }
 
-        public Builder mappingCardinality(String mappingCardinality) {
-            this.mappingCardinality = MappingCardinalityEnum.fromString(mappingCardinality);
+        @Field(MAPPING_DATE)
+        public Builder mappingDate(java.util.Date mappingDate) {
+            this.mappingDate = Optional.of(Date.of(mappingDate));
             return this;
         }
 
@@ -361,6 +419,7 @@ public record Mapping (
             return this;
         }
 
+        @Field(MAPPING_JUSTIFICATION)
         public Builder mappingJustification(String mappingJustification) {
             if (mappingJustification != null && !mappingJustification.isBlank())
                 this.mappingJustification = Optional.of(new EntityReference(mappingJustification));
@@ -377,11 +436,13 @@ public record Mapping (
             return this;
         }
 
+        @Field(MAPPING_PROVIDER)
         public Builder mappingProvider(String mappingProvider) {
             this.mappingProvider = Optional.of(new Uri(mappingProvider));
             return this;
         }
 
+        @Field(MAPPING_SOURCE)
         public Builder mappingSource(String mappingSource) {
             this.mappingSource = Optional.of(new EntityReference(mappingSource));
             return this;
@@ -396,6 +457,7 @@ public record Mapping (
             return this;
         }
 
+        @Field(MAPPING_TOOL)
         public Builder mappingTool(String mappingTool) {
             this.mappingTool = Optional.of(mappingTool);
             return this;
@@ -409,33 +471,37 @@ public record Mapping (
             return this;
         }
 
+        @Field(MAPPING_TOOL_VERSION)
         public Builder mappingToolVersion(String mappingToolVersion) {
             if (mappingToolVersion != null && !mappingToolVersion.isBlank())
                 this.mappingToolVersion = Optional.of(mappingToolVersion);
             return this;
         }
 
-//        public Builder matchString(SortedSet<String> matchString) {
-//            this.matchString = matchString;
-//            return this;
-//        }
-
+        @Field(MATCH_STRING)
+        public Builder matchString(List<String> matchString) {
+            this.matchString = new TreeSet<>(matchString);
+            return this;
+        }
         public Builder matchString(String matchString) {
             this.matchString = StringUtils.splitStringToSortedSet(matchString, "\\|", String::new);
             return this;
         }
 
+        @Field(OBJECT_CATEGORY)
         public Builder objectCategory(String objectCategory) {
             if (objectCategory != null && !objectCategory.isBlank())
                 this.objectCategory = Optional.of(objectCategory);
             return this;
         }
 
+        @Field(OBJECT_ID)
         public Builder objectId(String objectId) {
             this.objectId = Optional.of(new EntityReference(objectId));
             return this;
         }
 
+        @Field(OBJECT_LABEL)
         public Builder objectLabel(String objectLabel) {
             if (objectLabel != null && !objectLabel.isBlank())
                 this.objectLabel = Optional.of(objectLabel);
@@ -448,6 +514,15 @@ public record Mapping (
                         objectMatchField, "\\|", EntityReference::new);
             else
                 this.objectMatchField = propagateObjectMatchField;
+            return this;
+        }
+
+        @Field(OBJECT_MATCH_FIELD)
+        public Builder objectMatchField(List<String> objectMatchField) {
+            if (objectMatchField != null && !objectMatchField.isEmpty())
+                this.objectMatchField = new TreeSet<>(objectMatchField.stream()
+                        .map(EntityReference::new)
+                        .collect(Collectors.toList()));
             return this;
         }
 
@@ -466,6 +541,15 @@ public record Mapping (
             return this;
         }
 
+        @Field(OBJECT_PREPROCESSING)
+        public Builder objectPreprocessing(List<String> objectPreprocessing) {
+            if (objectPreprocessing != null && !objectPreprocessing.isEmpty())
+                this.objectPreprocessing = objectPreprocessing.stream()
+                        .map(EntityReference::new)
+                        .collect(Collectors.toList());
+            return this;
+        }
+
         public Builder objectPreprocessing(String objectPreprocessing) {
             this.objectPreprocessing = StringUtils.splitStringToList(objectPreprocessing, "\\|", EntityReference::new);
             return this;
@@ -479,6 +563,7 @@ public record Mapping (
             return this;
         }
 
+        @Field(OBJECT_SOURCE)
         public Builder objectSource(String objectSource) {
             this.objectSource = Optional.of(new EntityReference(objectSource));
             return this;
@@ -492,14 +577,10 @@ public record Mapping (
             return this;
         }
 
+        @Field(OBJECT_SOURCE_VERSION)
         public Builder objectSourceVersion(String objectSourceVersion) {
             if (objectSourceVersion != null && !objectSourceVersion.isBlank())
                 this.objectSourceVersion = Optional.of(objectSourceVersion);
-            return this;
-        }
-
-        public Builder objectType(EntityTypeEnum objectType) {
-            this.objectType = Optional.of(objectType);
             return this;
         }
 
@@ -512,33 +593,41 @@ public record Mapping (
             return this;
         }
 
+        @Field(OBJECT_TYPE)
         public Builder objectType(String objectType) {
             this.objectType = EntityTypeEnum.fromString(objectType);
             return this;
         }
 
+        @Field(OTHER)
         public Builder other(String other) {
-            if (other != null && !other.isBlank())
-                this.other = Optional.of(new KeyValuePairsAsString(other));
+            if (other != null && !other.isBlank()) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                try {
+                    Map<String, String> otherAsMap = objectMapper.readValue(other, Map.class);
+                    if (otherAsMap != null && !otherAsMap.isEmpty())
+                        this.other = Optional.of(new KeyValuePairsAsString(otherAsMap));
+                } catch (Exception e) {
+                    logger.error("Error while parsing other field: {}", e.getMessage(), e);
+                }
+            }
             return this;
         }
 
+        @Field(PREDICATE_ID)
         public Builder predicateId(String predicateId) {
             this.predicateId = Optional.of(new EntityReference(predicateId));
             return this;
         }
 
+        @Field(PREDICATE_LABEL)
         public Builder predicateLabel(String predicateLabel) {
             if (predicateLabel != null && !predicateLabel.isBlank())
                 this.predicateLabel = Optional.of(predicateLabel);
             return this;
         }
 
-        public Builder predicateModifier(PredicateModifierEnum predicateModifier) {
-            this.predicateModifier = Optional.of(predicateModifier);
-            return this;
-        }
-
+        @Field(PREDICATE_MODIFIER)
         public Builder predicateModifier(String predicateModifier) {
             logger.debug("predicateModifier = {}", predicateModifier);
             this.predicateModifier = PredicateModifierEnum.fromString(predicateModifier);
@@ -551,8 +640,24 @@ public record Mapping (
             return this;
         }
 
+        @Field(PUBLICATION_DATE)
+        public Builder publicationDate(java.util.Date publicationDate) {
+            logger.trace("###### publicationDate = {}", publicationDate);
+            this.publicationDate = Optional.of(Date.of(publicationDate));
+            return this;
+        }
+
         public Builder reviewerId(String reviewerId) {
             this.reviewerId = StringUtils.splitStringToSortedSet(reviewerId, "\\|", EntityReference::new);
+            return this;
+        }
+
+        @Field(REVIEWER_ID)
+        public Builder reviewerId(List<String> reviewerId) {
+            if (reviewerId != null && !reviewerId.isEmpty())
+                this.reviewerId = new TreeSet<>(reviewerId.stream()
+                        .map(EntityReference::new)
+                        .collect(Collectors.toList()));
             return this;
         }
 
@@ -561,8 +666,17 @@ public record Mapping (
             return this;
         }
 
-        public Builder seeAlso(SortedSet<String> seeAlso) {
-            this.seeAlso = seeAlso;
+        @Field(REVIEWER_LABEL)
+        public Builder reviewLabel(List<String> reviewerLabel) {
+            if (reviewerLabel != null && !reviewerLabel.isEmpty())
+                this.reviewerLabel = new TreeSet<>(reviewerLabel);
+            return this;
+        }
+
+        @Field(SEE_ALSO)
+        public Builder seeAlso(List<String> seeAlso) {
+            if (seeAlso != null && !seeAlso.isEmpty())
+                this.seeAlso = new TreeSet<>(seeAlso);
             return this;
         }
 
@@ -571,6 +685,7 @@ public record Mapping (
             return this;
         }
 
+        @Field(SIMILARITY_MEASURE)
         public Builder similarityMeasure(String similarityMeasure) {
             if (similarityMeasure != null && !similarityMeasure.isBlank())
                 this.similarityMeasure = Optional.of(similarityMeasure);
@@ -582,17 +697,26 @@ public record Mapping (
             return this;
         }
 
+        @Field(SIMILARITY_SCORE)
+        public Builder similarityScore(java.lang.Double similarityScore) {
+            this.similarityScore = Optional.of(Double.of(similarityScore));
+            return this;
+        }
+
+        @Field(SUBJECT_CATEGORY)
         public Builder subjectCategory(String subjectCategory) {
             if (subjectCategory != null && !subjectCategory.isBlank())
                 this.subjectCategory = Optional.of(subjectCategory);
             return this;
         }
 
+        @Field(SUBJECT_ID)
         public Builder subjectId(String subjectId) {
             this.subjectId = Optional.of(new EntityReference(subjectId));
             return this;
         }
 
+        @Field(SUBJECT_LABEL)
         public Builder subjectLabel(String subjectLabel) {
             if (subjectLabel != null && !subjectLabel.isBlank())
                 this.subjectLabel = Optional.of(subjectLabel);
@@ -617,6 +741,15 @@ public record Mapping (
             return this;
         }
 
+        @Field(SUBJECT_MATCH_FIELD)
+        public Builder subjectMatchField(List<String> subjectMatchField) {
+            if (subjectMatchField != null && !subjectMatchField.isEmpty())
+                this.subjectMatchField = new TreeSet<>(subjectMatchField.stream()
+                        .map(EntityReference::new)
+                        .collect(Collectors.toList()));
+            return this;
+        }
+
         public Builder subjectPreprocessing(String subjectPreprocessing,
                                             List<EntityReference> propagateSubjectPreprocessing) {
             if (subjectPreprocessing != null && !subjectPreprocessing.isBlank())
@@ -624,6 +757,15 @@ public record Mapping (
                     subjectPreprocessing, "\\|", EntityReference::new);
             else
                 this.subjectPreprocessing = propagateSubjectPreprocessing;
+            return this;
+        }
+
+        @Field(SUBJECT_PREPROCESSING)
+        public Builder subjectProcessing(List<String> subjectPreprocessing) {
+            if (subjectPreprocessing != null && !subjectPreprocessing.isEmpty())
+                this.subjectPreprocessing = subjectPreprocessing.stream()
+                        .map(EntityReference::new)
+                        .collect(Collectors.toList());
             return this;
         }
 
@@ -640,6 +782,7 @@ public record Mapping (
             return this;
         }
 
+        @Field(SUBJECT_SOURCE)
         public Builder subjectSource(String subjectSource) {
             this.subjectSource = Optional.of(new EntityReference(subjectSource));
             return this;
@@ -653,6 +796,7 @@ public record Mapping (
             return this;
         }
 
+        @Field(SUBJECT_SOURCE_VERSION)
         public Builder subjectSourceVersion(String subjectSourceVersion) {
             if (subjectSourceVersion != null && !subjectSourceVersion.isBlank())
                 this.subjectSourceVersion = Optional.of(subjectSourceVersion);
@@ -667,6 +811,7 @@ public record Mapping (
             return this;
         }
 
+        @Field(SUBJECT_TYPE)
         public Builder subjectType(String subjectType) {
             this.subjectType = EntityTypeEnum.fromString(subjectType);
             return this;

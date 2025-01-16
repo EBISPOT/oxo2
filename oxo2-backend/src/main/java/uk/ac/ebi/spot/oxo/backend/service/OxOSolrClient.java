@@ -28,15 +28,15 @@ public class OxOSolrClient {
 
     @PostConstruct
     public void init() {
-        this.solrMappingsClient = new HttpSolrClient.Builder(solrUrl+"/oxo2-mappings")
+        this.solrMappingsClient = new HttpSolrClient.Builder(solrUrl + "/oxo2-mappings")
                 .withConnectionTimeout(connectionTimeoutMillis)
                 .withSocketTimeout(socketTimeoutMillis)
                 .build();
     }
 
-    public List<Mapping> query(SolrParams params) throws Exception {
+    public List<Mapping.Builder> query(SolrParams params) throws Exception {
         QueryResponse response = solrMappingsClient.query(params);
-        return response.getBeans(Mapping.class);
+        return response.getBeans(Mapping.Builder.class);
     }
 
     public long count(SolrParams params) throws Exception {

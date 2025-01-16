@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Optional;
 
 /**
@@ -15,6 +16,13 @@ public class Date extends SSSOMDataType<LocalDate> {
 
     public Date(String date) {
         super(date);
+    }
+
+    static public Date of(java.util.Date date) {
+        return new Date(date.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate()
+                .toString());
     }
 
     @Override
