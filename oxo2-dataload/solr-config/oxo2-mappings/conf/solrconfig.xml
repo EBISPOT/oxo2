@@ -906,8 +906,7 @@
   <updateProcessor class="solr.UUIDUpdateProcessorFactory" name="uuid"/>
   <updateProcessor class="solr.RemoveBlankFieldUpdateProcessorFactory" name="remove-blank"/>
   <updateProcessor class="solr.FieldNameMutatingUpdateProcessorFactory" name="field-name-mutating">
-    <!-- <str name="pattern">[^\w-\.]</str> -->
-    <str name="pattern">[^\w-]</str>
+    <str name="pattern">[^\w-\.]</str>
     <str name="replacement">_</str>
   </updateProcessor>
   <updateProcessor class="solr.NumFieldLimitingUpdateRequestProcessorFactory" name="max-fields">
