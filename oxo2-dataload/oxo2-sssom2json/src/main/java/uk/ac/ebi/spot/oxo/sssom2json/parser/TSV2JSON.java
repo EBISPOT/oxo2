@@ -51,12 +51,12 @@ public class TSV2JSON {
                             externalMappingSetBuilderOptional = Optional.of(externalMappingBuilderSet);
                         }
                         Optional<MappingSet> mappingSetOptional = readTSVFile(path.toFile(), externalMappingSetBuilderOptional);
-                        if (mappingSetOptional.isPresent()) {
+                        if (mappingSetOptional.isPresent() && mappingSetOptional.get().mappings().size() > 0) {
                             writeJSONFile(mappingSetOptional.get(), mappingSetOutputDirectory, mappingsOutputDirectiory);
                         }
                     });
-        } catch (IOException e) {
-            logger.error("Error while looking for .yml files in {}",directory, e);
+        } catch (Throwable t) {
+            logger.error("Error while looking for .yml files in {}", directory, t);
         }
     }
 
@@ -77,13 +77,15 @@ public class TSV2JSON {
         String mappingsFilename = mappingsOutputDirectiory + File.separator +
                 mappingSet.mappingSetId().extractFragmentOrLastPathSegment() + ".json";
 
-        try {
-            objectMapper.writeValue(new File(mappingSetFilename), mappingSet);
-            List<Mapping> mappingsForMappingSet = new ArrayList<>(mappingSet.mappings());
+        if (!mappingSet.mappings().isEmpty()) {
+            try {
+                objectMapper.writeValue(new File(mappingSetFilename), mappingSet);
+                List<Mapping> mappingsForMappingSet = new ArrayList<>(mappingSet.mappings());
 
-            objectMapper.writeValue(new File(mappingsFilename), mappingsForMappingSet);
-        } catch (IOException e) {
-            logger.error("Error while writing JSON file for MappingSet {}", mappingSet.mappingSetId(), e);
+                objectMapper.writeValue(new File(mappingsFilename), mappingsForMappingSet);
+            } catch (IOException e) {
+                logger.error("Error while writing JSON file for MappingSet {}", mappingSet.mappingSetId(), e);
+            }
         }
     }
 
@@ -227,6 +229,14 @@ public class TSV2JSON {
     }
 
     private static String getCommentsFromTSVAsYaml(File file) throws IOException {
+        String header = getCommentsFromTSVAsYaml(file, "# ");
+        if (header.isEmpty()) {
+            header = getCommentsFromTSVAsYaml(file, "#");
+        }
+        return header;
+    }
+
+    private static String getCommentsFromTSVAsYaml(File file, String startsWith) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
         FileInputStream fileInputStream = null;
         Scanner scanner = null;
@@ -234,7 +244,7 @@ public class TSV2JSON {
             fileInputStream = new FileInputStream(file);
             scanner = new Scanner(fileInputStream, "UTF-8");
             String line = "# ";
-            while (scanner.hasNextLine() && line.startsWith("# ")) {
+            while (scanner.hasNextLine() && line.startsWith(startsWith)) {
                 if (line.length() > 2) {
                     stringBuilder.append(line.substring(2));
                     stringBuilder.append("\n");

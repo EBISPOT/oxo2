@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Check if the correct number of arguments is provided
-if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <config> <download-dir> <threads>"
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+  echo "Usage: $0 <config> <download-dir> [threads]"
   exit 1
 fi
 
@@ -14,9 +14,14 @@ THREADS=$3
 # Root directory for scripts
 SCRIPT_PATH=$(dirname $(readlink -f $0))
 
+# Build the command
+COMMAND="java -jar $SCRIPT_PATH/oxo2-downloader/target/oxo2-downloader-1.0-SNAPSHOT-jar-with-dependencies.jar --config $CONFIG_FILE --download-dir $DOWNLOAD_DIR"
+if [ -n "$THREADS" ]; then
+  COMMAND="$COMMAND --threads $THREADS"
+fi
 
 # Run the oxo2-downloader
-java -jar $SCRIPT_PATH/oxo2downloasder/target/oxo2-downloader-1.0-SNAPSHOT.jar --config $CONFIG_FILE --download-dir $DOWNLOAD_DIR --threads $THREADS
+$COMMAND
 
 # Check if the command was successful
 if [ $? -eq 0 ]; then
