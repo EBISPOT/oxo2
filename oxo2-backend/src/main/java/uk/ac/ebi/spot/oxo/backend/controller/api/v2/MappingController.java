@@ -55,8 +55,7 @@ public class MappingController {
         }
     }
 
-    @PostMapping(path = "/search", consumes = {MediaType.APPLICATION_JSON_VALUE},
-            produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(path = "/search", consumes = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<Page<Mapping>> getMappings(@RequestBody MappingSearchRequest mappingSearchRequest) {
 
         Pageable pageable = PageRequest.of(mappingSearchRequest.getPage(), mappingSearchRequest.getSize());

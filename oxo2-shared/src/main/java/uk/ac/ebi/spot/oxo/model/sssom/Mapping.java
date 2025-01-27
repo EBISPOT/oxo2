@@ -28,6 +28,7 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonDeserialize(builder = Mapping.Builder.class)
 public record Mapping (
+        // SSSOM fields according to spec.
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(AUTHOR_ID)
         SortedSet<EntityReference> authorId,
@@ -93,8 +94,6 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_ID)
         Optional<EntityReference> objectId,
-        @JsonProperty(OBJECT_ID_PREFIX)
-        String objectIdPrefix,
         @JsonProperty(OBJECT_LABEL)
         Optional<String> objectLabel,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
@@ -140,8 +139,6 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SUBJECT_ID)
         Optional<EntityReference> subjectId,
-        @JsonProperty(SUBJECT_ID_PREFIX)
-        String subjectIdPrefix,
         @JsonProperty(SUBJECT_LABEL)
         Optional<String> subjectLabel,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
@@ -156,7 +153,14 @@ public record Mapping (
         @JsonProperty(SUBJECT_SOURCE_VERSION)
         Optional<String> subjectSourceVersion,
         @JsonProperty(SUBJECT_TYPE)
-        Optional<EntityTypeEnum> subjectType) implements Comparable<Mapping> {
+        Optional<EntityTypeEnum> subjectType,
+
+
+        // Additional fields for facets
+        @JsonProperty(OBJECT_ID_PREFIX)
+        Optional<String> objectIdPrefix,
+        @JsonProperty(SUBJECT_ID_PREFIX)
+        Optional<String> subjectIdPrefix) implements Comparable<Mapping> {
 
     public static Builder builder() {
         return new Builder();
@@ -164,7 +168,34 @@ public record Mapping (
 
     @Override
     public int compareTo(Mapping other) {
-        return this.mappingSetId.compareTo(other.mappingSetId);
+        int result = this.mappingSetId.compareTo(other.mappingSetId);
+        if (result != 0) return result;
+
+        result = compareOptional(this.subjectId, other.subjectId);
+        if (result != 0) return result;
+
+        result = compareOptional(this.predicateId, other.predicateId);
+        if (result != 0) return result;
+
+        result = compareOptional(this.predicateModifier, other.predicateModifier);
+        if (result != 0) return result;
+
+        result = compareOptional(this.objectId, other.objectId);
+        if (result != 0) return result;
+
+        return compareOptional(this.mappingJustification, other.mappingJustification);
+    }
+
+    private <T extends Comparable<T>> int compareOptional(Optional<T> o1, Optional<T> o2) {
+        if (o1.isPresent() && o2.isPresent()) {
+            return o1.get().compareTo(o2.get());
+        } else if (o1.isPresent()) {
+            return 1;
+        } else if (o2.isPresent()) {
+            return -1;
+        } else {
+            return 0;
+        }
     }
 
     @JsonPOJOBuilder(withPrefix = "")
@@ -193,7 +224,6 @@ public record Mapping (
         private SortedSet<String> matchString = new TreeSet<>();
         private Optional<String> objectCategory = Optional.empty();
         private Optional<EntityReference> objectId = Optional.empty();
-        private String objectIdPrefix = "";
         private Optional<String> objectLabel = Optional.empty();
         private SortedSet<EntityReference> objectMatchField = new TreeSet<>();
         private List<EntityReference> objectPreprocessing = new ArrayList<>();
@@ -212,13 +242,16 @@ public record Mapping (
         private Optional<Double> similarityScore = Optional.empty();
         private Optional<String> subjectCategory = Optional.empty();
         private Optional<EntityReference> subjectId = Optional.empty();
-        private String subjectIdPrefix = "";
         private Optional<String> subjectLabel = Optional.empty();
         private SortedSet<EntityReference> subjectMatchField = new TreeSet<>();
         private List<EntityReference> subjectPreprocessing = new ArrayList<>();
         private Optional<EntityReference> subjectSource = Optional.empty();
         private Optional<String> subjectSourceVersion = Optional.empty();
         private Optional<EntityTypeEnum> subjectType = Optional.empty();
+
+
+        private Optional<String> objectIdPrefix = Optional.empty();
+        private Optional<String> subjectIdPrefix = Optional.empty();
 
         private static Logger logger = LoggerFactory.getLogger(Builder.class);
 
@@ -394,7 +427,8 @@ public record Mapping (
 
         @Field(LICENSE)
         public Builder license(String license) {
-            this.license = Optional.of(new Uri(license));
+            if (license != null && !license.isBlank())
+                this.license = Optional.of(new Uri(license));
             return this;
         }
 
@@ -406,12 +440,14 @@ public record Mapping (
 
         @Field(MAPPING_DATE)
         public Builder mappingDate(java.util.Date mappingDate) {
-            this.mappingDate = Optional.of(Date.of(mappingDate));
+            if (mappingDate != null)
+                this.mappingDate = Optional.of(Date.of(mappingDate));
             return this;
         }
 
         public Builder mappingDate(String mappingDate) {
-            this.mappingDate = Optional.of(new Date(mappingDate));
+            if (mappingDate != null && !mappingDate.isBlank())
+                this.mappingDate = Optional.of(new Date(mappingDate));
             return this;
         }
 
@@ -487,11 +523,13 @@ public record Mapping (
 
         @Field(MATCH_STRING)
         public Builder matchString(List<String> matchString) {
-            this.matchString = new TreeSet<>(matchString);
+            if (matchString != null)
+                this.matchString = new TreeSet<>(matchString);
             return this;
         }
         public Builder matchString(String matchString) {
-            this.matchString = StringUtils.splitStringToSortedSet(matchString, "\\|", String::new);
+            if (matchString != null && !matchString.isBlank())
+                this.matchString = StringUtils.splitStringToSortedSet(matchString, "\\|", String::new);
             return this;
         }
 
@@ -504,7 +542,8 @@ public record Mapping (
 
         @Field(OBJECT_ID)
         public Builder objectId(String objectId) {
-            this.objectId = Optional.of(new EntityReference(objectId));
+            if (objectId != null && !objectId.isBlank())
+                this.objectId = Optional.of(new EntityReference(objectId));
             if (this.objectId.isPresent())
                 this.objectIdPrefix = StringUtils.extractPrefix(objectId);
             return this;
@@ -639,20 +678,23 @@ public record Mapping (
         @Field(PREDICATE_MODIFIER)
         public Builder predicateModifier(String predicateModifier) {
             logger.debug("predicateModifier = {}", predicateModifier);
-            this.predicateModifier = PredicateModifierEnum.fromString(predicateModifier);
+            if (predicateModifier != null && !predicateModifier.isBlank())
+                this.predicateModifier = PredicateModifierEnum.fromString(predicateModifier);
             logger.debug("this.predicateModifier = {}", this.predicateModifier);
             return this;
         }
 
         public Builder publicationDate(String publicationDate) {
-            this.publicationDate = Optional.of(new Date(publicationDate));
+            if (publicationDate != null && !publicationDate.isBlank())
+                this.publicationDate = Optional.of(new Date(publicationDate));
             return this;
         }
 
         @Field(PUBLICATION_DATE)
         public Builder publicationDate(java.util.Date publicationDate) {
             logger.trace("###### publicationDate = {}", publicationDate);
-            this.publicationDate = Optional.of(Date.of(publicationDate));
+            if (publicationDate != null)
+                this.publicationDate = Optional.of(Date.of(publicationDate));
             return this;
         }
 
@@ -854,7 +896,6 @@ public record Mapping (
                     matchString,
                     objectCategory,
                     objectId,
-                    objectIdPrefix,
                     objectLabel,
                     objectMatchField,
                     objectPreprocessing,
@@ -873,13 +914,14 @@ public record Mapping (
                     similarityScore,
                     subjectCategory,
                     subjectId,
-                    subjectIdPrefix,
                     subjectLabel,
                     subjectMatchField,
                     subjectPreprocessing,
                     subjectSource,
                     subjectSourceVersion,
-                    subjectType
+                    subjectType,
+                    objectIdPrefix,
+                    subjectIdPrefix
             );
         }
     }

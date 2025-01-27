@@ -14,7 +14,7 @@ public class CurieMap extends SSSOMDataType<Map<String, String>> {
     private static final Logger logger = LoggerFactory.getLogger(CurieMap.class);
 
     public CurieMap(String curieMapAsString) {
-        super(curieMapAsString.toUpperCase());
+        super(curieMapAsString);
     }
 
     @Override

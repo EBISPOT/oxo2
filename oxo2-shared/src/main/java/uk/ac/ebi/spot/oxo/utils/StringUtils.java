@@ -24,11 +24,11 @@ public class StringUtils {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    public static String extractPrefix(String curie) {
+    public static Optional<String> extractPrefix(String curie) {
         int index = curie.indexOf(':');
         if (index != -1) {
-            return curie.substring(0, index).toUpperCase();
+            return Optional.of(curie.substring(0, index).toUpperCase());
         }
-        return "";
+        return Optional.empty();
     }
 }
