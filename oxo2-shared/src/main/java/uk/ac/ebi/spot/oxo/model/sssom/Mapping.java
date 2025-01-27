@@ -93,6 +93,8 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_ID)
         Optional<EntityReference> objectId,
+        @JsonProperty(OBJECT_ID_PREFIX)
+        String objectIdPrefix,
         @JsonProperty(OBJECT_LABEL)
         Optional<String> objectLabel,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
@@ -138,6 +140,8 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SUBJECT_ID)
         Optional<EntityReference> subjectId,
+        @JsonProperty(SUBJECT_ID_PREFIX)
+        String subjectIdPrefix,
         @JsonProperty(SUBJECT_LABEL)
         Optional<String> subjectLabel,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
@@ -189,6 +193,7 @@ public record Mapping (
         private SortedSet<String> matchString = new TreeSet<>();
         private Optional<String> objectCategory = Optional.empty();
         private Optional<EntityReference> objectId = Optional.empty();
+        private String objectIdPrefix = "";
         private Optional<String> objectLabel = Optional.empty();
         private SortedSet<EntityReference> objectMatchField = new TreeSet<>();
         private List<EntityReference> objectPreprocessing = new ArrayList<>();
@@ -207,6 +212,7 @@ public record Mapping (
         private Optional<Double> similarityScore = Optional.empty();
         private Optional<String> subjectCategory = Optional.empty();
         private Optional<EntityReference> subjectId = Optional.empty();
+        private String subjectIdPrefix = "";
         private Optional<String> subjectLabel = Optional.empty();
         private SortedSet<EntityReference> subjectMatchField = new TreeSet<>();
         private List<EntityReference> subjectPreprocessing = new ArrayList<>();
@@ -459,7 +465,8 @@ public record Mapping (
 
         @Field(MAPPING_TOOL)
         public Builder mappingTool(String mappingTool) {
-            this.mappingTool = Optional.of(mappingTool);
+            if (mappingTool != null && !mappingTool.isBlank())
+                this.mappingTool = Optional.of(mappingTool);
             return this;
         }
 
@@ -498,6 +505,8 @@ public record Mapping (
         @Field(OBJECT_ID)
         public Builder objectId(String objectId) {
             this.objectId = Optional.of(new EntityReference(objectId));
+            if (this.objectId.isPresent())
+                this.objectIdPrefix = StringUtils.extractPrefix(objectId);
             return this;
         }
 
@@ -713,6 +722,8 @@ public record Mapping (
         @Field(SUBJECT_ID)
         public Builder subjectId(String subjectId) {
             this.subjectId = Optional.of(new EntityReference(subjectId));
+            if (this.subjectId.isPresent())
+                this.subjectIdPrefix = StringUtils.extractPrefix(subjectId);
             return this;
         }
 
@@ -843,6 +854,7 @@ public record Mapping (
                     matchString,
                     objectCategory,
                     objectId,
+                    objectIdPrefix,
                     objectLabel,
                     objectMatchField,
                     objectPreprocessing,
@@ -861,6 +873,7 @@ public record Mapping (
                     similarityScore,
                     subjectCategory,
                     subjectId,
+                    subjectIdPrefix,
                     subjectLabel,
                     subjectMatchField,
                     subjectPreprocessing,

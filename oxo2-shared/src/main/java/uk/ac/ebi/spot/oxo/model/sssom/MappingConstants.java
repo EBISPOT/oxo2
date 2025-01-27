@@ -56,4 +56,10 @@ public class MappingConstants {
     public static final String SUBJECT_SOURCE = "subject_source";
     public static final String SUBJECT_SOURCE_VERSION = "subject_source_version";
     public static final String SUBJECT_TYPE = "subject_type";
+
+
+    // Auxilary fields
+    public static final String MAPPING_ID = "mapping_id";
+    public static final String OBJECT_ID_PREFIX = "object_id_prefix";
+    public static final String SUBJECT_ID_PREFIX = "subject_id_prefix";
 }

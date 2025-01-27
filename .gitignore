@@ -31,3 +31,5 @@ target/
 
 # Mappings
 mappings/
+output/
+oxo2-frontend/dist/

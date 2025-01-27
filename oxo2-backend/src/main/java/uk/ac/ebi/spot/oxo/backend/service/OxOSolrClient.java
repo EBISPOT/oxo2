@@ -4,6 +4,8 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.params.SolrParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +17,7 @@ import java.util.List;
 
 @Service
 public class OxOSolrClient {
-    private SolrClient solrMappingsClient;
+    private SolrClient solrMappingClient;
 
     @Value("${solr.url}")
     private String solrUrl;
@@ -26,26 +28,29 @@ public class OxOSolrClient {
     @Value("${socketTimeoutMillis}")
     private int socketTimeoutMillis;
 
+    private static final Logger logger = LoggerFactory.getLogger(OxOSolrClient.class);
+
     @PostConstruct
     public void init() {
-        this.solrMappingsClient = new HttpSolrClient.Builder(solrUrl + "/oxo2-mappings")
+
+        this.solrMappingClient = new HttpSolrClient.Builder(solrUrl + "/oxo2-mappings")
                 .withConnectionTimeout(connectionTimeoutMillis)
                 .withSocketTimeout(socketTimeoutMillis)
                 .build();
     }
 
     public List<Mapping.Builder> query(SolrParams params) throws Exception {
-        QueryResponse response = solrMappingsClient.query(params);
+        QueryResponse response = solrMappingClient.query(params);
         return response.getBeans(Mapping.Builder.class);
     }
 
     public long count(SolrParams params) throws Exception {
-        QueryResponse response = solrMappingsClient.query(params);
+        QueryResponse response = solrMappingClient.query(params);
         return response.getResults().getNumFound();
     }
 
     @PreDestroy
     public void close() throws Exception {
-        solrMappingsClient.close();
+        solrMappingClient.close();
     }
 }

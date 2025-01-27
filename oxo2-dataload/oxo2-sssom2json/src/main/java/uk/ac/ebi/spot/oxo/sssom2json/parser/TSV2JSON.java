@@ -376,8 +376,4 @@ public class TSV2JSON {
         return new ArrayList<>();
     }
 
-
-    public static void main(String args[]) {
-        readYaml(new File("/home/henriette007/ebi-dev/oxo2/oxo2/testcases/test.yml"));
-    }
 }

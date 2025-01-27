@@ -8,8 +8,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.MappingSearchRequest;
+import uk.ac.ebi.spot.oxo.backend.controller.api.helper.SolrQueryBuilder;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 
@@ -21,7 +24,7 @@ import java.util.stream.Collectors;
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_ID;
 
 @RestController
-@RequestMapping("/api/v2/mappings")
+@RequestMapping(path="/api/v2/mappings", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class MappingController {
     @Autowired
     private OxOSolrClient solrClient;
@@ -52,4 +55,27 @@ public class MappingController {
         }
     }
 
+    @PostMapping(path = "/search", consumes = {MediaType.APPLICATION_JSON_VALUE},
+            produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<Page<Mapping>> getMappings(@RequestBody MappingSearchRequest mappingSearchRequest) {
+
+        Pageable pageable = PageRequest.of(mappingSearchRequest.getPage(), mappingSearchRequest.getSize());
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(mappingSearchRequest, pageable);
+
+        logger.trace("Solr query={}", solrQuery.toString());
+
+        try {
+            List<Mapping.Builder> mappingBuilders = solrClient.query(solrQuery);
+            List<Mapping> mappings = mappingBuilders.stream()
+                    .map(Mapping.Builder::build)
+                    .collect(Collectors.toList());
+            long total = solrClient.count(solrQuery);
+
+            Page<Mapping> mappingPage = new PageImpl<>(mappings, pageable, total);
+            return ResponseEntity.ok(mappingPage);
+        } catch (Exception e) {
+            logger.error("Error while fetching mappings for subjectId: {}", mappingSearchRequest, e);
+            return ResponseEntity.status(500).build();
+        }
+    }
 }

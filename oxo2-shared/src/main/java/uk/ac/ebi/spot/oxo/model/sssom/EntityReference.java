@@ -18,13 +18,19 @@ import java.util.Optional;
  *  boilerplate code.
  */
 public class EntityReference extends SSSOMDataType<String> implements Comparable<EntityReference> {
+
     @Override
     protected Optional<String> parseData(String uri) {
         if (uri == null || uri.isBlank())
             return Optional.empty();
-        if (!uri.contains(":"))
+        int index = uri.indexOf(':');
+        if (index != -1) {
+            String prefix = uri.substring(0, index).toUpperCase();
+            String suffix = uri.substring(index);
+            return Optional.of(prefix + suffix);
+        } else
             logger.warn("EntityReference uri is null or does not contain a colon, uri: {}", uri);
-        return Optional.of(uri.toLowerCase());
+        return Optional.of(uri.toUpperCase());
     }
 
     @Override

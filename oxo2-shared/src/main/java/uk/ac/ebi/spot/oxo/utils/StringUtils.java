@@ -23,4 +23,12 @@ public class StringUtils {
                 .map(mapper)
                 .collect(Collectors.toCollection(ArrayList::new));
     }
+
+    public static String extractPrefix(String curie) {
+        int index = curie.indexOf(':');
+        if (index != -1) {
+            return curie.substring(0, index).toUpperCase();
+        }
+        return "";
+    }
 }
