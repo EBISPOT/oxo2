@@ -70,6 +70,7 @@
             <artifactId>logback-classic</artifactId>
             <version>1.5.12</version>
         </dependency>
+
     </dependencies>
     <dependencyManagement>
         <dependencies>

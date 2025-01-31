@@ -2,13 +2,10 @@ package uk.ac.ebi.spot.oxo.backend.controller.api.helper;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.util.ClientUtils;
-import static org.apache.solr.common.params.CommonParams.*;
 
-import org.apache.solr.common.params.CommonParams;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import uk.ac.ebi.spot.oxo.backend.controller.api.dto.MappingFacetEnum;
-import uk.ac.ebi.spot.oxo.backend.controller.api.dto.MappingSearchRequest;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingFacetEnum;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.List;
@@ -58,18 +55,25 @@ public class SolrQueryBuilder {
     }
 
     private static String[] constructFieldList(List<MappingEnum> fieldList) {
+        if (fieldList == null || fieldList.isEmpty()) {
+            return new String[]{
+                    MappingEnum.SUBJECT_ID.getField(),
+                    MappingEnum.SUBJECT_ID_PREFIX.getField(),
+                    MappingEnum.PREDICATE_ID.getField(),
+                    MappingEnum.OBJECT_ID.getField(),
+                    MappingEnum.OBJECT_ID_PREFIX.getField(),
+                    MappingEnum.MAPPING_JUSTIFICATION.getField()};
+        }
         String[] fields = new String[fieldList.size()];
-        fieldList.forEach(f -> fields[fieldList.indexOf(f)] = f.getField());
+        fieldList.forEach(f -> {
+            if (f != null)
+                fields[fieldList.indexOf(f)] = f.getField();
+        });
         return fields;
     }
 
     private static SolrQuery configureFacets(SolrQuery solrQuery, Set<MappingFacetEnum> facets) {
-        facets.forEach(f -> {
-            if (f.getQuery().isPresent())
-                solrQuery.addFacetField(f.getQuery().get());
-            if (f.getPivot().isPresent())
-                solrQuery.addFacetPivotField(f.getPivot().get());
-        });
+        facets.forEach(f ->  solrQuery.addFacetField(f.getValue()));
         return solrQuery;
     }
 

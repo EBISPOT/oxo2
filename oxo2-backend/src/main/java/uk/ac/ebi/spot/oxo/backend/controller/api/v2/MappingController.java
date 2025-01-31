@@ -11,7 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uk.ac.ebi.spot.oxo.backend.controller.api.dto.MappingSearchRequest;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.FacetedMappingResponse;
 import uk.ac.ebi.spot.oxo.backend.controller.api.helper.SolrQueryBuilder;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
@@ -30,7 +31,7 @@ public class MappingController {
     private OxOSolrClient solrClient;
     private static final Logger logger = LoggerFactory.getLogger(MappingController.class);
     @GetMapping("/{subjectId}")
-    public ResponseEntity<Page<Mapping>> getMappingsById(@PathVariable String subjectId,
+    public ResponseEntity<FacetedMappingResponse> getMappingsById(@PathVariable String subjectId,
                                                          @RequestParam(defaultValue = "0") int page,
                                                          @RequestParam(defaultValue = "10") int size) {
         try {
@@ -41,14 +42,8 @@ public class MappingController {
             solrQuery.setStart((int) pageable.getOffset());
             solrQuery.setRows(pageable.getPageSize());
 
-            List<Mapping.Builder> mappingBuilders = solrClient.query(solrQuery);
-            List<Mapping> mappings = mappingBuilders.stream()
-                    .map(Mapping.Builder::build)
-                    .collect(Collectors.toList());
-            long total = solrClient.count(solrQuery);
-
-            Page<Mapping> mappingPage = new PageImpl<>(mappings, pageable, total);
-            return ResponseEntity.ok(mappingPage);
+            FacetedMappingResponse facetedMappingResponse = solrClient.query(solrQuery, pageable);
+            return ResponseEntity.ok(facetedMappingResponse);
         } catch (Exception e) {
             logger.error("Error while fetching mappings for subjectId: {}", subjectId, e);
             return ResponseEntity.status(500).build();
@@ -56,7 +51,7 @@ public class MappingController {
     }
 
     @PostMapping(path = "/search", consumes = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<Page<Mapping>> getMappings(@RequestBody MappingSearchRequest mappingSearchRequest) {
+    public ResponseEntity<FacetedMappingResponse> getMappings(@RequestBody MappingSearchRequest mappingSearchRequest) {
 
         Pageable pageable = PageRequest.of(mappingSearchRequest.getPage(), mappingSearchRequest.getSize());
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(mappingSearchRequest, pageable);
@@ -64,14 +59,8 @@ public class MappingController {
         logger.trace("Solr query={}", solrQuery.toString());
 
         try {
-            List<Mapping.Builder> mappingBuilders = solrClient.query(solrQuery);
-            List<Mapping> mappings = mappingBuilders.stream()
-                    .map(Mapping.Builder::build)
-                    .collect(Collectors.toList());
-            long total = solrClient.count(solrQuery);
-
-            Page<Mapping> mappingPage = new PageImpl<>(mappings, pageable, total);
-            return ResponseEntity.ok(mappingPage);
+            FacetedMappingResponse facetedMappingResponse = solrClient.query(solrQuery, pageable);
+            return ResponseEntity.ok(facetedMappingResponse);
         } catch (Exception e) {
             logger.error("Error while fetching mappings for subjectId: {}", mappingSearchRequest, e);
             return ResponseEntity.status(500).build();

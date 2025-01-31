@@ -1,10 +1,9 @@
-package uk.ac.ebi.spot.oxo.backend.controller.api.dto;
+package uk.ac.ebi.spot.oxo.backend.controller.api.dto.request;
 
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 public class MappingSearchRequest {
 
