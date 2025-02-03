@@ -4,8 +4,6 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
@@ -13,14 +11,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.FacetedMappingResponse;
-import uk.ac.ebi.spot.oxo.backend.controller.api.helper.SolrQueryBuilder;
+import uk.ac.ebi.spot.oxo.backend.service.helper.SolrQueryBuilder;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
-import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_ID;
 

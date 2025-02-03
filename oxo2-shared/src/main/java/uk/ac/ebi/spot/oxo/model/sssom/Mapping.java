@@ -869,7 +869,8 @@ public record Mapping (
         }
 
         public Mapping build() {
-            this.mappingId = generateMappingUuid();
+            if (this.mappingId == null)
+                this.mappingId = generateMappingUuid();
 
             return new Mapping(
                     authorId,

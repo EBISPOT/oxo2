@@ -1,4 +1,4 @@
-package uk.ac.ebi.spot.oxo.backend.controller.api.helper;
+package uk.ac.ebi.spot.oxo.backend.service.helper;
 
 public class SolrConstants {
     public final static String DEF_TYPE = "defType";

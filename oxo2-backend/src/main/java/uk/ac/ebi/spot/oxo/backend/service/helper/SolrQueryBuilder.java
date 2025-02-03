@@ -1,4 +1,4 @@
-package uk.ac.ebi.spot.oxo.backend.controller.api.helper;
+package uk.ac.ebi.spot.oxo.backend.service.helper;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.util.ClientUtils;
@@ -13,12 +13,11 @@ import java.util.List;
 import java.util.Set;
 
 import static org.apache.solr.common.params.DisMaxParams.QF;
-import static uk.ac.ebi.spot.oxo.backend.controller.api.helper.SolrConstants.DEF_TYPE;
-import static uk.ac.ebi.spot.oxo.backend.controller.api.helper.SolrConstants.EDISMAX;
 
 public class SolrQueryBuilder {
 
     private static final String[] MINIMAL_LIST_OF_FIELDS = new String[]{
+            MappingEnum.MAPPING_ID.getField(),
             MappingEnum.MAPPING_SET_ID.getField(),
             MappingEnum.SUBJECT_ID.getField(),
             MappingEnum.SUBJECT_LABEL.getField(),
@@ -40,7 +39,7 @@ public class SolrQueryBuilder {
         solrQuery.setStart((int) pageable.getOffset());
         solrQuery.setRows(pageable.getPageSize());
 
-        solrQuery.set(DEF_TYPE, EDISMAX);
+        solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
         solrQuery.setQuery(constructQuery(mappingSearchRequest.getQueries()));
         solrQuery.set(QF, constructQueryFields(mappingSearchRequest.getQueryFields()));
         solrQuery.setFields(constructFieldList(mappingSearchRequest.getFieldList()));
