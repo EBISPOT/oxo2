@@ -51,9 +51,9 @@ abstract public class SSSOMDataType<T> {
         return "SSSOMDataType{" +
                 "dataAsString='" + dataAsString + '\'' +
                 ", dataRepresentation=" + dataRepresentation +
+                ", type=" + type +
                 '}';
     }
-
 
     public enum SSSOMDataTypesEnum {
         CURIE_MAP,

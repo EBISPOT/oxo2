@@ -50,9 +50,15 @@ public class TSV2JSON {
                             MappingSet.Builder externalMappingBuilderSet = filenameToExternalMetadataMap.get(filename);
                             externalMappingSetBuilderOptional = Optional.of(externalMappingBuilderSet);
                         }
+                        long startReadTime = System.currentTimeMillis();
                         Optional<MappingSet> mappingSetOptional = readTSVFile(path.toFile(), externalMappingSetBuilderOptional);
+                        long endReadTime = System.currentTimeMillis();
+                        logger.info("Time taken to read TSV file: {} s", (endReadTime - startReadTime)/1000);
+
                         if (mappingSetOptional.isPresent() && mappingSetOptional.get().mappings().size() > 0) {
                             writeJSONFile(mappingSetOptional.get(), mappingSetOutputDirectory, mappingsOutputDirectiory);
+                            long endWriteTime = System.currentTimeMillis();
+                            logger.info("Time taken to write JSON file: {} s", (endWriteTime - endReadTime)/1000);
                         }
                     });
         } catch (Throwable t) {
@@ -60,7 +66,9 @@ public class TSV2JSON {
         }
     }
 
-    private static void writeJSONFile(MappingSet mappingSet, String mappingSetOutputDirectory, String mappingsOutputDirectiory) {
+    private static void writeJSONFile(MappingSet mappingSet, String mappingSetOutputDirectory,
+                                      String mappingsOutputDirectiory) {
+
         logger.info("Writing JSON file for MappingSet {}", mappingSet.mappingSetId());
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new Jdk8Module());

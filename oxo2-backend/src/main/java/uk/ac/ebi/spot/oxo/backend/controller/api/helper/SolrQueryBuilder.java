@@ -8,6 +8,7 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingFacetEnum;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -16,6 +17,19 @@ import static uk.ac.ebi.spot.oxo.backend.controller.api.helper.SolrConstants.DEF
 import static uk.ac.ebi.spot.oxo.backend.controller.api.helper.SolrConstants.EDISMAX;
 
 public class SolrQueryBuilder {
+
+    private static final String[] MINIMAL_LIST_OF_FIELDS = new String[]{
+            MappingEnum.MAPPING_SET_ID.getField(),
+            MappingEnum.SUBJECT_ID.getField(),
+            MappingEnum.SUBJECT_LABEL.getField(),
+            MappingEnum.SUBJECT_ID_PREFIX.getField(),
+            MappingEnum.PREDICATE_ID.getField(),
+            MappingEnum.PREDICATE_LABEL.getField(),
+            MappingEnum.PREDICATE_MODIFIER.getField(),
+            MappingEnum.OBJECT_ID.getField(),
+            MappingEnum.OBJECT_LABEL.getField(),
+            MappingEnum.OBJECT_ID_PREFIX.getField(),
+            MappingEnum.MAPPING_JUSTIFICATION.getField()};
 
     public static SolrQuery buildSolrQuery(MappingSearchRequest mappingSearchRequest, Pageable pageable) {
 
@@ -55,21 +69,21 @@ public class SolrQueryBuilder {
     }
 
     private static String[] constructFieldList(List<MappingEnum> fieldList) {
-        if (fieldList == null || fieldList.isEmpty()) {
-            return new String[]{
-                    MappingEnum.SUBJECT_ID.getField(),
-                    MappingEnum.SUBJECT_ID_PREFIX.getField(),
-                    MappingEnum.PREDICATE_ID.getField(),
-                    MappingEnum.OBJECT_ID.getField(),
-                    MappingEnum.OBJECT_ID_PREFIX.getField(),
-                    MappingEnum.MAPPING_JUSTIFICATION.getField()};
+        Set<String> fieldsSet = new HashSet<>();
+
+        if (fieldList != null) {
+            fieldList.forEach(f -> {
+                if (f != null) {
+                    fieldsSet.add(f.getField());
+                }
+            });
         }
-        String[] fields = new String[fieldList.size()];
-        fieldList.forEach(f -> {
-            if (f != null)
-                fields[fieldList.indexOf(f)] = f.getField();
-        });
-        return fields;
+
+        for (String minimalField : MINIMAL_LIST_OF_FIELDS) {
+            fieldsSet.add(minimalField);
+        }
+
+        return fieldsSet.toArray(new String[0]);
     }
 
     private static SolrQuery configureFacets(SolrQuery solrQuery, Set<MappingFacetEnum> facets) {

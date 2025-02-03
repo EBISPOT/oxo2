@@ -456,8 +456,10 @@
       <filter class="solr.LowerCaseFilterFactory"/>
     </analyzer>
   </fieldType>
+  <fieldType name="uuid" class="solr.UUIDField" indexed="true" stored="true"/>
   <field name="_text_" type="text_general" multiValued="true" indexed="true" stored="false"/>
   <field name="_version_" type="plong" indexed="false" stored="false"/>
+  <field name="mapping_id" type="uuid" multiValued="false" indexed="false" stored="true"/>
   <field name="author_id" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="author_label" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="comment" type="text_general" multiValued="false" indexed="true" stored="true"/>
@@ -507,12 +509,10 @@
   <field name="subject_type" type="string" multiValued="false" indexed="true" stored="true"/>
 
 <!--  Facet fields. See
-    https://solr.apache.org/guide/solr/latest/query-guide/faceting.html#combining-facet-queries-and-facet-ranges-with-pivot-facets
 -->
   <field name="mapping_set_id_facet" type="string" multiValued="false" indexed="true" stored="true" docValues="true"/>
   <field name="object_id_prefix" type="string" indexed="false" stored="true" docValues="true"/>
   <field name="subject_id_prefix" type="string" indexed="false" stored="true" docValues="true"/>
-
 
   <dynamicField name="*_txt_en_split_tight" type="text_en_splitting_tight" indexed="true" stored="true"/>
   <dynamicField name="*_descendent_path" type="descendent_path" indexed="true" stored="true"/>

@@ -39,8 +39,11 @@ public class SSSOM2JSON {
         logger.info("Input Directory: {}", inputDirectory);
         logger.info("Output Directory: {}", outputDirectory);
 
-
+        long startTime = System.currentTimeMillis();
         processMappingSets(inputDirectory, outputDirectory);
+        long endTime = System.currentTimeMillis();
+
+        logger.info("Time taken to process SSSOM files: {} s", (endTime - startTime)/1000);
     }
 
     private static void processMappingSets(String inputDirectory, String outputDirectory) throws IOException {

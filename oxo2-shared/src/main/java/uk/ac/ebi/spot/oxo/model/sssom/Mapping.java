@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -160,43 +161,32 @@ public record Mapping (
         @JsonProperty(OBJECT_ID_PREFIX)
         Optional<String> objectIdPrefix,
         @JsonProperty(SUBJECT_ID_PREFIX)
-        Optional<String> subjectIdPrefix) implements Comparable<Mapping> {
+        Optional<String> subjectIdPrefix,
+        @JsonProperty(MAPPING_ID)
+        UUID mappingId) implements Comparable<Mapping> {
 
     public static Builder builder() {
         return new Builder();
     }
 
     @Override
-    public int compareTo(Mapping other) {
-        int result = this.mappingSetId.compareTo(other.mappingSetId);
-        if (result != 0) return result;
-
-        result = compareOptional(this.subjectId, other.subjectId);
-        if (result != 0) return result;
-
-        result = compareOptional(this.predicateId, other.predicateId);
-        if (result != 0) return result;
-
-        result = compareOptional(this.predicateModifier, other.predicateModifier);
-        if (result != 0) return result;
-
-        result = compareOptional(this.objectId, other.objectId);
-        if (result != 0) return result;
-
-        return compareOptional(this.mappingJustification, other.mappingJustification);
+    public int compareTo(Mapping o) {
+        return this.mappingId.compareTo(o.mappingId);
     }
 
-    private <T extends Comparable<T>> int compareOptional(Optional<T> o1, Optional<T> o2) {
-        if (o1.isPresent() && o2.isPresent()) {
-            return o1.get().compareTo(o2.get());
-        } else if (o1.isPresent()) {
-            return 1;
-        } else if (o2.isPresent()) {
-            return -1;
-        } else {
-            return 0;
-        }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Mapping mapping = (Mapping) o;
+        return mappingId == mapping.mappingId;
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mappingId);
+    }
+
 
     @JsonPOJOBuilder(withPrefix = "")
     public static class Builder {
@@ -252,6 +242,8 @@ public record Mapping (
 
         private Optional<String> objectIdPrefix = Optional.empty();
         private Optional<String> subjectIdPrefix = Optional.empty();
+
+        private UUID mappingId = UUID.randomUUID();
 
         private static Logger logger = LoggerFactory.getLogger(Builder.class);
 
@@ -870,7 +862,15 @@ public record Mapping (
             return this;
         }
 
+        @Field(MAPPING_ID)
+        public Builder mappingId(String mappingId) {
+            this.mappingId = UUID.fromString(mappingId);
+            return this;
+        }
+
         public Mapping build() {
+            this.mappingId = generateMappingUuid();
+
             return new Mapping(
                     authorId,
                     authorLabel,
@@ -921,8 +921,29 @@ public record Mapping (
                     subjectSourceVersion,
                     subjectType,
                     objectIdPrefix,
-                    subjectIdPrefix
+                    subjectIdPrefix,
+                    mappingId
             );
+        }
+
+        private UUID generateMappingUuid() {
+            StringBuilder mappingIdAsString = new StringBuilder();
+
+            mappingIdAsString.append(this.mappingSetId.getDataAsString());
+            this.subjectId.ifPresent(subjectId -> mappingIdAsString.append(subjectId.getDataAsString()));
+            this.subjectLabel.ifPresent(subjectLabel -> mappingIdAsString.append(subjectLabel));
+            this.predicateId.ifPresent(predicateId -> mappingIdAsString.append(predicateId.getDataAsString()));
+            this.predicateLabel.ifPresent(predicateLabel -> mappingIdAsString.append(predicateLabel));
+            this.predicateModifier.ifPresent(predicateModifier -> mappingIdAsString.append(predicateModifier.value()));
+            this.objectId.ifPresent(objectId -> mappingIdAsString.append(objectId.getDataAsString()));
+            this.objectLabel.ifPresent(objectLabel -> mappingIdAsString.append(objectLabel));
+            this.mappingJustification.ifPresent(mappingJustification ->
+                    mappingIdAsString.append(mappingJustification.getDataAsString()));
+
+            logger.trace("#### mappingIdAsString = {}", mappingIdAsString);
+            byte[] bytes = mappingIdAsString.toString().getBytes(StandardCharsets.UTF_8);
+            UUID mappingId = UUID.nameUUIDFromBytes(bytes);
+            return mappingId;
         }
     }
 }
