@@ -6,9 +6,10 @@ import Documentation from "./pages/documentation";
 import Footer from "./common/Footer";
 import Header from "./common/Header";
 import Home from "./pages/home";
+import Search from "./pages/search";
 
 function App() {
-  const appRef = useRef({ searchQuery: "", mapping: ""});
+  const appRef = useRef({ searchQuery: ""});
   return (
       <div>
         <Header />
@@ -17,10 +18,12 @@ function App() {
           <Route path="/home" element={<Home appRef={appRef} />} />
           <Route path="/docs" element={<Documentation />} />
           <Route path="/about" element={<About />} />
+          <Route path="/search" element={<Search appRef={appRef}/>} />
         </Routes>
         <Footer />
       </div>
   );
 }
+
 
 export default App;

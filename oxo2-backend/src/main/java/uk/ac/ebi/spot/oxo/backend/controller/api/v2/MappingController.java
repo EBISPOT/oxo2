@@ -25,6 +25,7 @@ public class MappingController {
     @Autowired
     private OxOSolrClient solrClient;
     private static final Logger logger = LoggerFactory.getLogger(MappingController.class);
+
     @GetMapping("/{subjectId}")
     public ResponseEntity<FacetedMappingResponse> getMappingsById(@PathVariable String subjectId,
                                                          @RequestParam(defaultValue = "0") int page,
@@ -45,7 +46,8 @@ public class MappingController {
         }
     }
 
-    @PostMapping(path = "/search", consumes = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(path = "/search",
+            /*consumes = {MediaType.APPLICATION_JSON_VALUE},*/ produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<FacetedMappingResponse> getMappings(@RequestBody MappingSearchRequest mappingSearchRequest) {
 
         Pageable pageable = PageRequest.of(mappingSearchRequest.getPage(), mappingSearchRequest.getSize());

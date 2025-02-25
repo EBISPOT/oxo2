@@ -6,7 +6,7 @@ import nocache from 'nocache'
 
 
 let server = express()
-
+server.use(express.json())
 server.use(nocache())
 
 if(process.env.OXO_DEV_BACKEND_PROXY_URL === undefined) {
@@ -15,12 +15,21 @@ if(process.env.OXO_DEV_BACKEND_PROXY_URL === undefined) {
 server.use(/^\/api.*/, async (req, res) => {
   let backendUrl = urlJoin(process.env.OXO_DEV_BACKEND_PROXY_URL, req.originalUrl)
   console.log('forwarding api request to: ' + backendUrl)
+  console.log('req.method: ' + req.method)
+  console.log('req.body: ' + JSON.stringify(req.body))
+  console.log('req.headers: ' + JSON.stringify(req.headers))
   try {
     let apiResponse = await fetch(backendUrl, {
       redirect: 'follow',
       method: req.method,
-      body: req.body
+      body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+      headers: {
+        ...req.headers
+      }
     })
+    console.log('apiResponse.status: ' + apiResponse.status)
+    console.log('apiResponse.headers: ' + JSON.stringify(apiResponse.headers))
+    // console.log('apiResponse.body: ' + JSON.stringify(apiResponse.body))
     res.header('content-type', apiResponse.headers.get('content-type'))
     res.status(apiResponse.status)
     apiResponse.body.pipe(res)
@@ -35,8 +44,6 @@ server.use(express.static('dist'))
 server.get(/^(?!\/api).*$/, (req, res) => {
   res.sendFile(process.cwd() + '/dist/index.html')
 })
-
-
 
     
 server.listen(3000)    
