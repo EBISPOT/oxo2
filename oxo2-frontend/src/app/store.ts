@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import searchReducer from '../pages/search/slice';
+import searchReducer from '../components/search/SearchSlice.ts';
 
 const store = configureStore({
     reducer: {
@@ -9,5 +9,4 @@ const store = configureStore({
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
-
 export default store;

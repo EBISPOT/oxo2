@@ -1,11 +1,18 @@
-import {createAsyncThunk, createSlice} from '@reduxjs/toolkit';
-import {Mapping, MappingFields} from '../../model/Mapping';
+import {
+    createAsyncThunk,
+    createSlice,
+    AsyncThunk,
+    PayloadAction,
+    Draft,
+    Slice,
+    ActionReducerMapBuilder
+} from '@reduxjs/toolkit';
+import {MappingResponse, Mapping, MappingFields} from '../../model/Mapping';
 import {post} from "../../app/api";
 
-
-export interface FacetedMappingResponse {
+interface IFacetedMappingResponse {
     mappings: {
-        content: Mapping[];
+        content: MappingResponse[];
         totalElements: number;
         totalPages: number;
         number: number;
@@ -14,7 +21,12 @@ export interface FacetedMappingResponse {
     facets: Record<string, Record<string, number>>;
 }
 
-interface SearchRequest {
+export interface IFacetedMapping {
+    mappings: Mapping[];
+    facets: Record<string, Record<string, number>>;
+}
+
+interface ISearchRequest {
     queries: string[];
     page: number;
     size: number;
@@ -30,76 +42,134 @@ export enum SearchStatus {
     Failed = 'failed'
 }
 
-interface SearchState {
+
+interface ISearchState {
     searchInput: string;
-    mappingResponse?: FacetedMappingResponse;
+    sanitizedSearchInput: string[];
+    mappingResponse: IFacetedMapping;
     status: SearchStatus;
-    error: string | null;
+    error: string;
 }
 
-const initialState: SearchState = {
+
+const emptyMappingResponse: IFacetedMapping = {
+    mappings: [],
+    facets: {},
+}
+
+const initialState: ISearchState = {
     searchInput: '',
-    mappingResponse: undefined,
+    sanitizedSearchInput: [],
+    mappingResponse: emptyMappingResponse,
     status: SearchStatus.Idle,
     error: '',
 };
 
 
-export const fetchMappings = createAsyncThunk(
-    'search/fetchMappings',
-    async (queries: string[], { rejectWithValue }) => {
-
-        const requestBody: SearchRequest = {
-            queries: queries,
-            page: 0,
-            size: 10,
-            queryFields: ['subject_id', 'object_id'],
-            fieldList: ['mapping_set_id', 'subject_id', 'subject_label', 'subject_id_prefix', 'predicate_id', 'predicate_label', 'predicate_modifier', 'object_id', 'object_label', 'object_id_prefix', 'mapping_justification'],
-            facets: ['object_id_prefix', 'subject_id_prefix'],
-        };
-
-        try {
-            const searchResponse = await post<SearchRequest, FacetedMappingResponse>(
-                '/api/v2/mappings/search',
-                requestBody);
-            return searchResponse;
-        } catch (error: any) {
-            return rejectWithValue(error.message);
-        }
+function fromJson(json: IFacetedMappingResponse): IFacetedMapping {
+    if (!json || !json.mappings || !json.mappings.content || !json.facets) {
+        return emptyMappingResponse;
     }
+    return {
+        mappings: json.mappings.content.map(item => {
+            return {
+                mappingId: item.mapping_id,
+                mappingJustification: item.mapping_justification || '',
+                mappingSetId: item.mapping_set_id,
+                objectId: item.object_id || '',
+                predicateId: item.predicate_id || '',
+                subjectId: item.subject_id || ''
+            };
+        }),
+        facets: json.facets
+    }
+}
+
+function parseString(input: string): string[] {
+    return input.trim().split('\n').map(item => item.trim());
+}
+
+export const fetchMappings: AsyncThunk<
+                                        IFacetedMappingResponse,
+                                        string[],
+                                        { rejectValue: string }> =
+    createAsyncThunk<
+                    IFacetedMappingResponse,
+                    string[],
+                    { rejectValue: string }>(
+        'search/fetchMappings',
+        async (queries: string[], { rejectWithValue }) => {
+
+            const requestBody: ISearchRequest = {
+                queries: queries,
+                page: 0,
+                size: 10,
+                queryFields: [MappingFields.subjectId, MappingFields.objectId],
+                fieldList: [],
+                facets: [MappingFields.subjectIdPrefix, MappingFields.objectIdPrefix],
+            };
+
+            try {
+                const searchResponse: IFacetedMappingResponse =
+                    await post<ISearchRequest, IFacetedMappingResponse>(
+                        '/api/v2/mappings/search',
+                        requestBody);
+                return searchResponse;
+            } catch (error) {
+                const details = 'Error fetching mappings for queries = ${queries}: ';
+                return rejectWithValue(error instanceof Error ? details + error.message : details + 'Unknown error: ${error}');
+            }
+        }
 );
 
-const searchSlice = createSlice({
-    name: 'search',
-    initialState,
-    reducers: {
-        setSearchInput(state, action) {
-            state.searchInput = action.payload;
+/**
+ * A function that accepts an initial state, an object full of reducer
+ * functions, and a "slice name", and automatically generates
+ * action creators and action types that correspond to the
+ * reducers and state.
+ *
+ * declare const createSlice: <
+ *      State,
+ *      CaseReducers extends SliceCaseReducers<State>,
+ *      Name extends string,
+ *      Selectors extends SliceSelectors<State>,
+ *      ReducerPath extends string = Name>
+ *  (options: CreateSliceOptions<State, CaseReducers, Name, ReducerPath, Selectors>) =>
+ *      Slice<State, CaseReducers, Name, ReducerPath, Selectors>;
+ */
+
+const searchSlice: Slice<
+                        ISearchState,
+                        { setSearchInput: (state: Draft<ISearchState>, action: PayloadAction<string>) => void },
+                        "search",
+                        string> =
+    createSlice({
+        name: 'search',
+        initialState: initialState,
+        reducers: {
+            setSearchInput(state: Draft<ISearchState>, action: PayloadAction<string>) {
+                state.searchInput = action.payload;
+                state.sanitizedSearchInput = parseString(action.payload);
+            },
         },
-    },
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchMappings.pending, (state) => {
-                state.status = SearchStatus.Loading;
-            })
-            .addCase(fetchMappings.fulfilled, (state, action) => {
-                state.mappingResponse = action.payload;
-                state.mappingResponse.mappings.content = action.payload.mappings.content.map((item: any) => ({
-                    ...Object.keys(MappingFields).reduce((acc, key) => {
-                        acc[key] = item[MappingFields[key]];
-                        return acc;
-                    }, {} as Mapping)
-                }));
-                state.status = SearchStatus.Succeeded;
-            })
-            .addCase(fetchMappings.rejected, (state, action) => {
-                state.status = SearchStatus.Failed;
-                state.error = action.error.message ?? null;
-            });
-    },
+        extraReducers: (builder: ActionReducerMapBuilder<ISearchState>) => {
+            builder
+                .addCase(fetchMappings.pending, (state: Draft<ISearchState>) => {
+                    state.status = SearchStatus.Loading;
+                })
+                .addCase(fetchMappings.fulfilled, (state: Draft<ISearchState>, action: PayloadAction<IFacetedMappingResponse>) => {
+                    state.mappingResponse = fromJson(action.payload);
+                    state.status = SearchStatus.Succeeded;
+                })
+                .addCase(fetchMappings.rejected, (state: Draft<ISearchState>, action: PayloadAction<string|undefined>) => {
+                    state.status = SearchStatus.Failed;
+                    state.error = action.payload || 'Unknown error';
+                    state.mappingResponse = emptyMappingResponse;
+                });
+        },
 });
 
-export const { setSearchInput } = searchSlice.actions;
+// export const { setSearchInput } = searchSlice.actions;
 
 
-export default searchSlice.reducer;
+// export default searchSlice.reducer;

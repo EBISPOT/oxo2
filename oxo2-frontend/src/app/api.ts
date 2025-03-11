@@ -22,7 +22,7 @@ export async function get<TRes>(path: string): Promise<TRes> {
     return await doHTTPRequest<TRes>(path);
 }
 
-export async function post<TReq, TRes>(    path: string,
+export async function post<TReq, TRes>(path: string,
     body: TReq
 ): Promise<TRes> {
     return await doHTTPRequest<TRes>(path, {

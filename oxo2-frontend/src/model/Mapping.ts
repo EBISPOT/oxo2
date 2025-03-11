@@ -1,5 +1,6 @@
 
 export enum MappingFields {
+    mappingId = "mapping_id",
     mappingSetId = "mapping_set_id",
     subjectId = "subject_id",
     subjectLabel = "subject_label",
@@ -13,16 +14,21 @@ export enum MappingFields {
     mappingJustification = "mapping_justification"
 }
 
+
+export interface MappingResponse {
+    mapping_id: string;
+    mapping_justification?: string;
+    mapping_set_id: string;
+    object_id?: string;
+    predicate_id?: string;
+    subject_id?: string;
+}
+
 export interface Mapping {
-    mappingSetId: string;
-    subjectId: string;
-    subjectLabel: string;
-    subjectIdPrefix: string;
-    predicateId: string;
-    predicateLabel: string;
-    predicateModifier: string;
-    objectId: string;
-    objectLabel: string;
-    objectIdPrefix: string;
+    mappingId: string;
     mappingJustification: string;
+    mappingSetId: string;
+    objectId: string;
+    predicateId: string;
+    subjectId: string;
 }

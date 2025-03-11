@@ -54,7 +54,7 @@ build({
 /// Build styles.css (tailwind)
 ///
 console.log("### Building styles.css");
-exec("tailwind -i ./src/index.css -o ./dist/styles.css");
+exec("tailwind -i ./src/index.css -o ./dist/styles.css --watch");
 
 ///
 /// Copy files

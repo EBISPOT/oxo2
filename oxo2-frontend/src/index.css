@@ -29,7 +29,7 @@ code {
     active:shadow-button-active
     active:translate-x-2
     active:translate-y-2
-    disabled:shadow
+    disabled:shadow-sm
     disabled:shadow-neutral-black
     disabled:transition-none
     disabled:translate-x-0
@@ -45,7 +45,7 @@ code {
     active:shadow-button-active
     active:translate-x-2
     active:translate-y-2
-    disabled:shadow
+    disabled:shadow-sm
     disabled:shadow-neutral-black
     disabled:transition-none
     disabled:translate-x-0
@@ -61,7 +61,7 @@ code {
     active:shadow-button-dark-active
     active:translate-x-2
     active:translate-y-2
-    disabled:shadow
+    disabled:shadow-sm
     disabled:shadow-neutral-black
     disabled:transition-none
     disabled:translate-x-0
