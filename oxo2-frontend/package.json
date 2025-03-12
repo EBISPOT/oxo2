@@ -5,7 +5,6 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@reduxjs/toolkit": "^2.5.1",
-    "@tailwindcss/vite": "^4.0.12",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -45,7 +44,6 @@
     ]
   },
   "devDependencies": {
-    "@babel/plugin-transform-private-property-in-object": "^7.25.9",
     "@eslint/eslintrc": "^3.3.0",
     "@eslint/js": "^9.21.0",
     "@typescript-eslint/eslint-plugin": "^8.26.0",

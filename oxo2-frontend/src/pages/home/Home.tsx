@@ -1,4 +1,3 @@
-// import React from 'react';
 import { InfoCard } from "../../components/infoCard/InfoCard";
 import { Search } from "../../components/search/Search";
 import { ExclamationTriangleIcon, WrenchIcon, InformationCircleIcon } from "@heroicons/react/24/solid";
@@ -6,7 +5,7 @@ import {JSX} from "react";
 
 
 export default function Home(): JSX.Element {
-    const iconClass = "w-6 h-6 icon icon-common icon-spacer text-yellow-default";
+    const iconClass = "w-6 h-6 text-yellow-default";
 
     return (
         <main className="container mx-auto">
