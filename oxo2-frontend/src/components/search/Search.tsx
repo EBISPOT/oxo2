@@ -29,13 +29,13 @@ export function Search(searchInput: SearchInput) {
 
     return  (
         <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg my-8 p-8">
-            <div className="text-3xl mb-4 text-neutral-black font-bold">
+            <div className="text-primary">
                 Welcome to the EMBL-EBI OxO Mapping Service
             </div>
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="w-full">
-                    <div className="flex flex-col md:flex-row justify-between text-neutral-black mb-2">
-                        <div>
+                    <div className="flex flex-col md:flex-row justify-between mb-2">
+                        <div className="text-tertiary">
                             Enter identifiers (CURIE format) separated by comma or newline:
                         </div>
                         <div

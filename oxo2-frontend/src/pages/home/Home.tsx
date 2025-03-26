@@ -22,28 +22,28 @@ export default function Home(): JSX.Element {
                             link="/about"
                             description="OxO is a service for finding mappings between entities based on the {link}. OxO is developed and maintained by the Samples, Phenotypes and Ontologies Team (SPOT) at {link}."
                             externalLinks={[
-                                { href: process.env.REACT_APP_SSSOM_HOME, text: "Simple Standard for Sharing Ontological Mappings (SSSOM)" },
-                                { href: process.env.REACT_APP_EBI_HOME, text: "EMBL-EBI" }
+                                { href: import.meta.env.REACT_APP_SSSOM_HOME, text: "Simple Standard for Sharing Ontological Mappings (SSSOM)" },
+                                { href: import.meta.env.REACT_APP_EBI_HOME, text: "EMBL-EBI" }
                             ]}
                         />
                         <InfoCard
                             icon={<WrenchIcon className={iconClass}/>}
                             title="Related Tools"
-                            link={process.env.REACT_APP_SPOT_ONTOTOOLS}
+                            link={import.meta.env.REACT_APP_SPOT_ONTOTOOLS}
                             description="In addition to OxO, SPOT also provides {link} and {link} services. OLS provides access to the latest ontology versions. ZOOMA is a service to assist in mapping strings of text to ontology terms in OLS."
                             externalLinks={[
-                                { href: process.env.REACT_APP_SPOT_OLS, text: "OLS" },
-                                { href: process.env.REACT_APP_SPOT_ZOOMA, text: "ZOOMA" }
+                                { href: import.meta.env.REACT_APP_SPOT_OLS, text: "OLS" },
+                                { href: import.meta.env.REACT_APP_SPOT_ZOOMA, text: "ZOOMA" }
                             ]}
                         />
                         <InfoCard
                             icon={<ExclamationTriangleIcon className={iconClass}/>}
                             title="Report an Issue"
-                            link={`${process.env.REACT_APP_SPOT_OXO2_REPO}/issues`}
+                            link={`${import.meta.env.REACT_APP_SPOT_OXO2_REPO}/issues`}
                             description="For feedback, suggestion or requests about OxO please use our {link}. For announcements relating to OxO, such as new releases and new features sign up to the {link}."
                             externalLinks={[
-                                { href: `${process.env.REACT_APP_SPOT_OXO2_REPO}/issues`, text: "GitHub issue tracker" },
-                                { href: process.env.REACT_APP_SPOT_OLS_ANNOUNCE, text: "OLS announce mailing list" }
+                                { href: `${import.meta.env.REACT_APP_SPOT_OXO2_REPO}/issues`, text: "GitHub issue tracker" },
+                                { href: import.meta.env.REACT_APP_SPOT_OLS_ANNOUNCE, text: "OLS announce mailing list" }
                             ]}
                         />
                     </div>

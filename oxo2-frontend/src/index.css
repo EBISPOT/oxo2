@@ -1,6 +1,142 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+/*@import "tailwindcss" prefix(tw);*/
+/*@config "../tailwind.config.ts";*/
+
+/*
+ Help on tailwind:
+    1. https://tailwindcss.com/docs
+    2. https://nerdcave.com/tailwind-cheat-sheet
+*/
+
+@theme {
+  --color-petrol-default: #389196;
+  --color-petrol-50: #c3dedf;
+  --color-petrol-100: #9bc8ca;
+  --color-petrol-200: #87bdc0;
+  --color-petrol-300: #73b2b5;
+  --color-petrol-400: #5fa7ab;
+  --color-petrol-500: #4b9ca0;
+  --color-petrol-600: #2c7478;
+  --color-petrol-700: #276569;
+  --color-petrol-800: #21575a;
+  --color-petrol-900: #163a3c;
+
+  --color-blue-default: #008cb5;
+  --color-blue-50: #b2dce8;
+  --color-blue-100: #7fc5da;
+  --color-blue-200: #66bad2;
+  --color-blue-300: #4caecb;
+  --color-blue-400: #32a3c3;
+  --color-blue-500: #1997bc;
+  --color-blue-600: #007090;
+  --color-blue-700: #00627e;
+  --color-blue-800: #00546c;
+  --color-blue-900: #003848;
+
+  --color-grey-default: #c3c0ab;
+  --color-grey-50: #edece5;
+  --color-grey-100: #e1dfd5;
+  --color-grey-200: #dbd9cc;
+  --color-grey-300: #d5d2c4;
+  --color-grey-400: #cfccbb;
+  --color-grey-500: #c9c6b3;
+  --color-grey-600: #9c9988;
+  --color-grey-700: #888677;
+  --color-grey-800: #757366;
+  --color-grey-900: #4e4c44;
+
+  --color-green-default: #9fcc3b;
+  --color-green-50: #e2efc4;
+  --color-green-100: #cfe59d;
+  --color-green-200: #c5e089;
+  --color-green-300: #bbdb75;
+  --color-green-400: #b2d662;
+  --color-green-500: #a8d14e;
+  --color-green-600: #7fa32f;
+  --color-green-700: #6f8e29;
+  --color-green-800: #5f7a23;
+  --color-green-900: #3f5117;
+
+  --color-yellow-default: #e6b222;
+  --color-yellow-50: #f7e7bc;
+  --color-yellow-100: #f2d890;
+  --color-yellow-200: #f0d07a;
+  --color-yellow-300: #edc964;
+  --color-yellow-400: #ebc14e;
+  --color-yellow-500: #e8b938;
+  --color-yellow-600: #b88e1b;
+  --color-yellow-700: #a17c17;
+  --color-yellow-800: #8a6a14;
+  --color-yellow-900: #5c470d;
+
+  --color-orange-default: #e57300;
+  --color-orange-50: #f7d5b2;
+  --color-orange-100: #f2b97f;
+  --color-orange-200: #efab66;
+  --color-orange-300: #ec9d4c;
+  --color-orange-400: #ea8f32;
+  --color-orange-500: #e78119;
+  --color-orange-600: #b75c00;
+  --color-orange-700: #a05000;
+  --color-orange-800: #894500;
+  --color-orange-900: #5b2e00;
+
+  --color-neutral-default: #666666;
+  --color-neutral-light: #eaeaea;
+  --color-neutral-dark: #525252;
+  --color-neutral-black: #292929;
+
+  --color-link-default: #d4522c;
+  --color-link-light: #f4941c;
+  --color-link-dark: #9f2923;
+  --color-link-hover: #c7342c;
+  --color-link-visited: #ef8423;
+
+  --color-embl-green-default: #18974C;
+  --color-embl-green-lightest: #D0DEBB;
+  --color-embl-green-light: #6CC24A;
+  --color-embl-green-dark: #007B53;
+  --color-embl-green-darkest: #0A5032;
+
+  --color-embl-grey-default: #707372;
+  --color-embl-grey-lightest: #D0D0CE;
+  --color-embl-grey-light: #A8A99E;
+  --color-embl-grey-dark: #54585A;
+  --color-embl-grey-darkest: #373A36;
+
+  --color-embl-blue-default: #3B6FB6;
+  --color-embl-blue-light: #8BB8E8;
+  --color-embl-blue-dark: #193F90;
+
+  --color-embl-purple-default: #734595;
+  --color-embl-purple-light: #CBA3D8;
+  --color-embl-purple-dark: #563D82;
+
+  --color-embl-orange-default: #F49E17;
+  --color-embl-orange-light: #EFC06E;
+  --color-embl-orange-dark: #B65417;
+
+  --color-embl-yellow-default: #F4C61F;
+  --color-embl-yellow-light: #FDD757;
+  --color-embl-yellow-dark: #FDD757;
+
+  --color-embl-lime-default: #A1BE1F;
+  --color-embl-lime-light: #E2E868;
+  --color-embl-lime-dark: #7FB428;
+
+  --color-embl-red-default: #D41645;
+  --color-embl-red-light: #E58F9E;
+  --color-embl-red-dark: #A6093D;
+
+  /*--box-shadow-sm: 8px 8px 0 theme(colors.link.hover), -5px -5px rgba(0,0,0,0);*/
+  /*--box-shadow-sm-hover: 4px 4px 0 theme(colors.link.hover), 2px 2px 4px rgba(0,0,0,.25),-5px -5px rgba(0,0,0,0);*/
+  /*--box-shadow-sm-active: 0px 0px 0 theme(colors.link.hover), 2px 2px 2px rgba(0,0,0,.125), -5px -5px rgba(0,0,0,0);*/
+  /*--box-shadow-sm-dark: 8px 8px 0 theme(colors.neutral.dark), -5px -5px rgba(0,0,0,0);*/
+  /*--box-shadow-sm-dark-hover: 4px 4px 0 theme(colors.neutral.dark), 2px 2px 4px rgba(0,0,0,.25),-5px -5px rgba(0,0,0,0);*/
+  /*--box-shadow-sm-dark-active: 0px 0px 0 theme(colors.neutral.dark), 2px 2px 2px rgba(0,0,0,.125), -5px -5px rgba(0,0,0,0);*/
+  /*--box-shadow-sm-card: 0px 2px 6px theme(colors.neutral.dark / 50%);*/
+  /*--box-shadow-sm-input: 0 0 0 1px theme(colors.neutral.dark);*/
+}
 
 body {
   margin: 0;
@@ -21,85 +157,105 @@ code {
 }
 
 @layer components {
+  .text-primary {
+    @apply text-3xl mb-4 text-neutral-black font-extrabold;
+  }
+  .text-secondary {
+    @apply text-embl-grey-dark text-2xl font-bold;
+  }
+  .text-tertiary {
+    @apply text-neutral-dark text-xl;
+  }
+  .text-quaternary {
+    @apply text-embl-grey-light text-xl font-light;
+  }
   .button-primary {
-    @apply text-white px-4 py-2 mb-2 mr-2 h-fit rounded-md bg-link-default border-4 border-link-default shadow-button transition-all ease-linear
-    hover:shadow-button-hover
+    @apply text-white px-4 py-2 mb-2 mr-2 h-fit rounded-md bg-link-default border-4
+    border-link-default transition-all ease-linear shadow-md
+    hover:shadow-amber-950
     hover:translate-x-1
     hover:translate-y-1
-    active:shadow-button-active
+    active:shadow-md
     active:translate-x-2
     active:translate-y-2
     disabled:shadow-sm
-    disabled:shadow-neutral-black
+    disabled:shadow-sm
     disabled:transition-none
     disabled:translate-x-0
     disabled:translate-y-0
     disabled:cursor-not-allowed
     disabled:m-1;
   }
-  .button-secondary {
-    @apply text-link-default px-4 py-2 mb-2 mr-2 h-fit rounded-md bg-white border-4 border-link-default shadow-button transition-all ease-linear
-    hover:shadow-button-hover
-    hover:translate-x-1
-    hover:translate-y-1
-    active:shadow-button-active
-    active:translate-x-2
-    active:translate-y-2
-    disabled:shadow-sm
-    disabled:shadow-neutral-black
-    disabled:transition-none
-    disabled:translate-x-0
-    disabled:translate-y-0
-    disabled:cursor-not-allowed
-    disabled:m-1;
-  }
-  .button-tertiary {
-    @apply text-white px-4 py-2 mb-2 mr-2 h-fit rounded-md bg-neutral-default border-4 border-neutral-default shadow-button-dark transition-all ease-linear
-    hover:shadow-button-dark-hover
-    hover:translate-x-1
-    hover:translate-y-1
-    active:shadow-button-dark-active
-    active:translate-x-2
-    active:translate-y-2
-    disabled:shadow-sm
-    disabled:shadow-neutral-black
-    disabled:transition-none
-    disabled:translate-x-0
-    disabled:translate-y-0
-    disabled:cursor-not-allowed
-    disabled:m-1;
-  }
+  /*  .button-secondary {*/
+  /*    @apply text-link-default px-4 py-2 mb-2 mr-2 h-fit rounded-md bg-white border-4 border-link-default shadow-sm transition-all ease-linear*/
+  /*    hover:shadow-sm-hover*/
+  /*    hover:translate-x-1*/
+  /*    hover:translate-y-1*/
+  /*    active:shadow-sm-active*/
+  /*    active:translate-x-2*/
+  /*    active:translate-y-2*/
+  /*    disabled:shadow-sm-xs*/
+  /*    disabled:shadow-sm-neutral-black*/
+  /*    disabled:transition-none*/
+  /*    disabled:translate-x-0*/
+  /*    disabled:translate-y-0*/
+  /*    disabled:cursor-not-allowed*/
+  /*    disabled:m-1;*/
+  /*  }*/
+  /*  .button-tertiary {*/
+  /*    @apply text-white px-4 py-2 mb-2 mr-2 h-fit rounded-md bg-neutral-default border-4 border-neutral-default shadow-sm-dark transition-all ease-linear*/
+  /*    hover:shadow-sm-dark-hover*/
+  /*    hover:translate-x-1*/
+  /*    hover:translate-y-1*/
+  /*    active:shadow-sm-dark-active*/
+  /*    active:translate-x-2*/
+  /*    active:translate-y-2*/
+  /*    disabled:shadow-sm-xs*/
+  /*    disabled:shadow-sm-neutral-black*/
+  /*    disabled:transition-none*/
+  /*    disabled:translate-x-0*/
+  /*    disabled:translate-y-0*/
+  /*    disabled:cursor-not-allowed*/
+  /*    disabled:m-1;*/
+  /*  }*/
   .input-default {
-    @apply outline-none w-full h-fit bg-white p-2 rounded-md border-2 border-neutral-default
-    hover:shadow-input
+    @apply outline-0 w-full h-fit bg-white rounded-md p-2 border-1
+    hover:shadow-md
+    hover:shadow-embl-grey-dark
     hover:border-neutral-dark
-    focus:outline-0
-    focus:shadow-input
-    focus:border-neutral-dark
+    focus:outline-2
+    focus:border-b-embl-grey-darkest
+    focus:border-2
     focus-visible:outline-0
-    focus-visible:shadow-input
     focus-visible:border-neutral-dark
     disabled:bg-neutral-light
     disabled:cursor-not-allowed;
   }
-  .input-checkbox {
-    @apply relative leading-8 px-4 py-1 bg-white rounded outline outline-2 outline-neutral-default
-    hover:outline-[3px]
-    hover:outline-neutral-dark
-    after:absolute
-    after:border-transparent
-    after:border-r-4
-    after:border-b-4
-    after:rotate-45
-    after:w-2
-    after:h-4
-    after:top-1
-    after:left-3
-    peer-checked:bg-link-default
-    peer-checked:after:border-white;
-  }
+  /*border-2 border-b-embl-grey-default*/
+  /*  .input-checkbox {*/
+  /*    @apply relative leading-8 px-4 py-1 bg-white rounded-sm outline outline-2 outline-neutral-default*/
+  /*    hover:outline-[3px]*/
+  /*    hover:outline-neutral-dark*/
+  /*    after:absolute*/
+  /*    after:border-transparent*/
+  /*    after:border-r-4*/
+  /*    after:border-b-4*/
+  /*    after:rotate-45*/
+  /*    after:w-2*/
+  /*    after:h-4*/
+  /*    after:top-1*/
+  /*    after:left-3*/
+  /*    peer-checked:bg-link-default*/
+  /*    peer-checked:after:border-white;*/
+  /*  }*/
   .link-default {
-    @apply text-link-default cursor-pointer
+    @apply text-link-default cursor-pointer text-xl p-0.5
+    hover:text-link-hover
+    hover:underline
+    visited:text-link-visited;
+  }
+  .link-header {
+    @apply text-link-default cursor-pointer text-2xl whitespace-nowrap mb-3
     hover:text-link-hover
     hover:underline
     visited:text-link-visited;
