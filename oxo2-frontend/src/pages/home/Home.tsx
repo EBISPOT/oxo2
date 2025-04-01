@@ -1,7 +1,13 @@
 import { InfoCard } from "../../components/infoCard/InfoCard";
 import { Search } from "../../components/search/Search";
-import { ExclamationTriangleIcon, WrenchIcon, InformationCircleIcon } from "@heroicons/react/24/solid";
-import {JSX} from "react";
+import {
+    ExclamationTriangleIcon,
+    WrenchIcon,
+    InformationCircleIcon
+} from "@heroicons/react/24/solid";
+import { JSX } from "react";
+import { initialSearchState } from "../../model/Search";
+
 
 
 export default function Home(): JSX.Element {
@@ -12,8 +18,8 @@ export default function Home(): JSX.Element {
             <div className="grid grid-cols-1 lg:grid-cols-4 lg:gap-8">
                 <div className="lg:col-span-3">
                     <Search
-                        userSearchInput= ""
-                        sanitizedSearchInput = {[]}
+                            searchInput = {initialSearchState}
+                            showWelcome = {true}
                     />
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                         <InfoCard
