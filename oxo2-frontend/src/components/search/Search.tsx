@@ -1,37 +1,33 @@
 import { useNavigate } from "react-router-dom";
-import { SearchInput, searchSlice } from "./SearchSlice";
-import {useEffect, useState} from "react";
-import {useAppDispatch, useAppSelector} from "../../app/hooks";
-import {RootState} from "../../app/store";
+import { SearchInput, initialSearchState } from "../../model/Search";
+import { useState } from "react";
 import React from "react";
 
-export function Search(searchInput: SearchInput) {
+export function Search({searchInput = initialSearchState, showWelcome = false }: {
+    searchInput: SearchInput,
+    showWelcome?: boolean
+}) {
     const navigate = useNavigate();
-    const dispatch = useAppDispatch();
-    const { userSearchInput } = useAppSelector((state: RootState) => state.search);
-    const [currentSearchInput, setSearchInputState] = useState<string>(userSearchInput);
-
-    // Currently this is unnecessary, but when it may be useful when this componentt froms part of the
-    // results page.
-    // useEffect(() => {
-    //     dispatch(searchSlice.actions.setSearchInput(currentSearchInput));
-    // }, [currentSearchInput]);
+    const [searchState, setSearchState] = useState<SearchInput>(searchInput);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setSearchInputState(event.target.value);
-        searchSlice.actions.setSearchInput(event.target.value);
+        const userSearchInput = event.target.value;
+        const sanitizedSearchInput = userSearchInput.split('\n');
+        setSearchState({ userSearchInput, sanitizedSearchInput });
     };
 
     const handleSearch = () => {
-        navigate({ pathname: "/search" });
+        navigate("/search", { state: { searchState } });
     };
 
 
     return  (
         <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg my-8 p-8">
-            <div className="text-primary">
-                Welcome to the EMBL-EBI OxO Mapping Service
-            </div>
+            { showWelcome && (
+                <div className="text-primary">
+                    Welcome to the EMBL-EBI OxO Mapping Service
+                </div>
+            )}
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="w-full">
                     <div className="flex flex-col md:flex-row justify-between mb-2">
@@ -41,7 +37,10 @@ export function Search(searchInput: SearchInput) {
                         <div
                             className="link-default md:mx-0.5"
                             onClick={() => {
-                                setSearchInputState("UBERON:0002107\nHP:0000518\nMP:0001289\nMP:0000564");
+                                setSearchState({
+                                    userSearchInput: "UBERON:0002107\nHP:0000518\nMP:0001289\nMP:0000564",
+                                    sanitizedSearchInput: ["UBERON:0002107", "HP:0000518", "MP:0001289", "MP:0000564"]
+                                });
                             }}
                         >
                             Examples...
@@ -53,13 +52,13 @@ export function Search(searchInput: SearchInput) {
                         style={{ resize: "vertical", minHeight: "5rem" }}
                         placeholder={"Search OxO..."}
                         className="input-default text-lg"
-                        value={currentSearchInput}
-                        onChange={handleInputChange}
+                        value={ searchState.userSearchInput }
+                        onChange={ handleInputChange }
                     />
                 </div>
                 <button
                     className="button-primary text-lg font-bold self-end md:self-center"
-                    onClick={handleSearch}
+                    onClick={ handleSearch }
                 >
                     Search
                 </button>
