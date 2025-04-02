@@ -20,8 +20,11 @@ export interface MappingResponse {
     mapping_justification?: string;
     mapping_set_id: string;
     object_id?: string;
+    object_label?: string;
     predicate_id?: string;
+    predicate_label?: string;
     subject_id?: string;
+    subject_label?: string;
 }
 
 export interface Mapping {
@@ -29,6 +32,9 @@ export interface Mapping {
     mappingJustification: string;
     mappingSetId: string;
     objectId: string;
+    objectLabel: string;
     predicateId: string;
+    predicateLabel: string;
     subjectId: string;
+    subjectLabel: string;
 }

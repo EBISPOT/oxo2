@@ -67,8 +67,11 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
                 mappingJustification: item.mapping_justification || '',
                 mappingSetId: item.mapping_set_id,
                 objectId: item.object_id || '',
+                objectLabel: item.object_label || '',
                 predicateId: item.predicate_id || '',
-                subjectId: item.subject_id || ''
+                predicateLabel: item.predicate_label || '',
+                subjectId: item.subject_id || '',
+                subjectLabel: item.subject_label || ''
             };
         }),
         facets: json.facets
