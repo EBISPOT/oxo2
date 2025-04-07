@@ -1,186 +1,161 @@
 import { Search } from "../../components/search/Search";
 import { SearchInput } from "../../model/Search";
-import {FacetedMapping, fetchMappings, fromJson} from "./MappingResultsSlice.ts";
+import { FacetedMapping, fetchMappings, fromJson, emptyFacetedMapping } from "./MappingResultsSlice";
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, JSX } from "react";
+import { Mapping } from "../../model/Mapping";
+import urlJoin from "url-join";
+import {
+    EyeIcon
+} from "@heroicons/react/24/solid";
+import { ErrorInfo } from "../../components/error/ErrorInfo";
+
+function MappingItem({
+                         mapping,
+                         navigateFn
+                     }: {
+    mapping: Mapping,
+    navigateFn: (path: string) => void
+}): JSX.Element {
+    const [isSubjectCopied, setIsSubjectCopied] = useState(false);
+    const [isObjectCopied, setIsObjectCopied] = useState(false);
+
+    function EntityBox({
+                           id,
+                           label,
+                           isCopied,
+                           setCopied,
+                           isLeftSide
+                       }: {
+        id: string;
+        label: string;
+        isCopied: boolean;
+        setCopied: (val: boolean) => void;
+        isLeftSide: boolean
+    }) : JSX.Element {
+        return (
+            <div className={`flex-1 flex flex-col justify-center h-[5rem] px-6 py-3
+                ${isLeftSide ? "rounded-2xl lg:rounded-r-none" : "rounded-2xl lg:rounded-l-none"}
+                bg-grey-300 group-hover:bg-yellow-100`}>
+                <div className="text-center font-bold">
+                <span
+                    className="pr-2 cursor-pointer hover:underline"
+                    onClick={() => navigateFn(`/entity/${encodeURIComponent(id)}`)}
+                >
+                  {id}
+                </span>
+                    <i
+                        title="Copy"
+                        className={`icon icon-common icon-copy icon-spacer ${isCopied ? "cursor-wait" : "cursor-pointer"}`}
+                        onClick={() => copyText(id, setCopied)}
+                    />
+                    <a
+                        href={`http://www.ebi.ac.uk/ols4?termId=${encodeURIComponent(id)}`}
+                        title={`View ${id} in OLS`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <img
+                            src={urlJoin(import.meta.env.PUBLIC_URL || "", "/logo.svg")}
+                            alt="OLS"
+                            className="h-6 w-6 inline-block icon-spacer"
+                        />
+                    </a>
+                </div>
+                <div title={label} className="text-center truncate">{label}</div>
+            </div>
+        );
+    };
+
+    return (
+        <div className="group mb-6 text-neutral-black flex flex-col items-stretch items-center lg:flex-row w-full
+            hover:shadow-lg hover:rounded-2xl transition-all duration-200">
+            <div className="w-full lg:w-1/3">
+                <EntityBox
+                    id={mapping.subjectId}
+                    label={mapping.subjectLabel}
+                    isCopied={isSubjectCopied}
+                    setCopied={setIsSubjectCopied}
+                    isLeftSide={true}
+                />
+            </div>
+
+            <div className="flex-none flex flex-col justify-center h-[5rem] px-6 py-3 my-2 lg:my-0 w-full lg:w-1/3 rounded-2xl lg:rounded-none
+                bg-neutral-light group-hover:bg-yellow-50">
+                <div title={mapping.predicateId} className="text-center font-bold">{mapping.predicateId}</div>
+                <div title={mapping.predicateLabel} className="text-center truncate">{mapping.predicateLabel}</div>
+            </div>
+
+            <div className="w-full lg:w-1/3">
+                <EntityBox
+                    id={mapping.objectId}
+                    label={mapping.objectLabel}
+                    isCopied={isObjectCopied}
+                    setCopied={setIsObjectCopied}
+                    isLeftSide={false}
+                />
+            </div>
+
+            <div
+                className="link-default text-center cursor-pointer self-center my-2 mx-4"
+                onClick={() => navigateFn(`/mapping/${encodeURIComponent(mapping.mappingId)}`)}
+                title="View mapping details"
+            >
+                <EyeIcon className="h-5 w-5" />
+            </div>
+        </div>
+    );
+}
 
 function MappingResults(searchInput: SearchInput) {
     const navigate = useNavigate();
-    const [isSubjectCopied, setIsSubjectCopied] = useState(false);
-    const [isObjectCopied, setIsObjectCopied] = useState(false);
-    const [focusMappingId, setFocusMappingId] = useState<string|undefined>(undefined);
 
     const { data, isLoading, error } = useQuery({
-        queryKey: ["fetchMappings"],
+        queryKey: ["fetchMappings", searchInput.sanitizedSearchInput],
         queryFn: () => fetchMappings(searchInput.sanitizedSearchInput)
     });
 
-    if (isLoading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error.message}</div>;
-    const mappingResponse: FacetedMapping = fromJson(data);
-    if (!focusMappingId && mappingResponse.mappings.length > 0) {
-        setFocusMappingId(mappingResponse.mappings[0].mappingId);
-    }
+    // Process data
+    const mappingResponse: FacetedMapping = data ? fromJson(data) : emptyFacetedMapping;
 
     return (
         <div>
-            <Search
-                searchInput = {searchInput}
-            />
+            <Search searchInput={searchInput} />
 
+            {isLoading && (
+                <div className="flex justify-center p-8">
+                    <div className="spinner-border text-primary" role="status">
+                        Loading...
+                    </div>
+                </div>
+            )}
+
+            {error &&
+                <ErrorInfo task={"fetching mappings"} message={error.message}/>
+            }
+
+            {!isLoading && !error && mappingResponse.mappings.length === 0 && (
+                <div className="bg-blue-100 text-blue-700 p-4 rounded-lg my-4">
+                    No mapping results found for your search.
+                </div>
+            )}
+
+            {!isLoading && !error && mappingResponse.mappings.length > 0 && (
                 <ul>
-
-                    {   mappingResponse.mappings &&
-                        mappingResponse.mappings.map((mapping) => (
-                            <div
-                                key={mapping.mappingId}
-                                className="mb-6 text-neutral-black flex flex-col items-stretch items-center lg:flex-row"
-                            >
-                                <div
-                                    className={`flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-l-2xl lg:rounded-r-none ${
-                                        mapping.subjectId === focusMappingId
-                                            ? "bg-yellow-300"
-                                            : "bg-grey-300"
-                                    }`}
-                                >
-                                    <div className="text-center font-bold">
-                                        <span
-                                            className={`pr-2 ${
-                                                mapping.subjectId === focusMappingId
-                                                    ? ""
-                                                    : "cursor-pointer hover:underline"
-                                            }`}
-                                            onClick={() => {
-                                                navigate(
-                                                    `/entity/${encodeURIComponent(
-                                                        mapping.subjectId || ""
-                                                    )}`
-                                                );
-                                            }}
-                                        >
-                                          {mapping.subjectId}
-                                        </span>
-                                        <i
-                                            title="Copy"
-                                            className={`icon icon-common icon-copy icon-spacer ${
-                                                isSubjectCopied ? "cursor-wait" : "cursor-pointer"
-                                            }`}
-                                            onClick={() => {
-                                                copyText(mapping.subjectId, setIsSubjectCopied);
-                                            }}
-                                        />
-                                        <a
-                                            href={mapping.subjectId}
-                                            title={mapping.subjectId}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            <i className="icon icon-common icon-external-link-alt icon-spacer" />
-                                        </a>
-                                    </div>
-                                    <div
-                                        title={mapping.subjectLabel}
-                                        className="text-center truncate"
-                                    >
-                                        {mapping.subjectLabel || ""}
-                                    </div>
-                                </div>
-                                <div
-                                    className={`w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[2.5rem] lg:border-l-[1rem] lg:border-y-neutral-light ${
-                                        mapping.subjectLabel === focusMappingId
-                                            ? "lg:border-l-yellow-300"
-                                            : "lg:border-l-grey-300"
-                                    }`}
-                                ></div>
-                                <div className="flex-none flex flex-col justify-center lg:min-w-0 lg:h-[5rem] bg-neutral-light px-6 py-3 rounded-2xl lg:rounded-none">
-                                    <div
-                                        title={mapping.predicateId}
-                                        className="text-center font-bold"
-                                    >
-                                        {mapping.predicateId}
-                                    </div>
-                                    <div
-                                        title={mapping.predicateLabel}
-                                        className="text-center truncate"
-                                    >
-                                        {mapping.predicateLabel || ""}
-                                    </div>
-                                </div>
-                                <div
-                                    className={`w-0 icon icon-common icon-arrow-down self-center lg:h-0 lg:text-transparent lg:flex-none lg:border-y-[2.5rem] lg:border-l-[1rem] lg:border-l-neutral-light ${
-                                        mapping.objectId === focusMappingId
-                                            ? "lg:border-y-yellow-300"
-                                            : "lg:border-y-grey-300"
-                                    }`}
-                                ></div>
-                                <div
-                                    className={`flex-1 flex flex-col justify-center lg:min-w-0 h-[5rem] px-6 py-3 rounded-2xl lg:rounded-r-2xl lg:rounded-l-none ${
-                                        mapping.objectId === focusMappingId
-                                            ? "bg-yellow-300"
-                                            : "bg-grey-300"
-                                    }`}
-                                >
-                                    <div className="text-center font-bold">
-                                        <span
-                                            className={`pr-2 ${
-                                                mapping.objectId === focusMappingId
-                                                    ? ""
-                                                    : "cursor-pointer hover:underline"
-                                            }`}
-                                            onClick={() => {
-                                                navigate(
-                                                    `/entity/${encodeURIComponent(
-                                                        mapping.objectId || ""
-                                                    )}`
-                                                );
-                                            }}
-                                        >
-                                          {mapping.objectId}
-                                        </span>
-                                        <i
-                                            title="Copy"
-                                            className={`icon icon-common icon-copy icon-spacer ${
-                                                isObjectCopied ? "cursor-wait" : "cursor-pointer"
-                                            }`}
-                                            onClick={() => {
-                                                copyText(mapping.objectId, setIsObjectCopied);
-                                            }}
-                                        />
-                                        <a
-                                            href={mapping.objectId}
-                                            title={mapping.objectId}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            <i className="icon icon-common icon-external-link-alt icon-spacer" />
-                                        </a>
-                                    </div>
-                                    <div
-                                        title={mapping.objectLabel}
-                                        className="text-center truncate"
-                                    >
-                                        {mapping.objectLabel || ""}
-                                    </div>
-                                </div>
-                                <div
-                                    className="link-default text-sm font-bold text-center cursor-pointer self-center my-2 mx-4"
-                                    onClick={() => {
-                                        navigate(
-                                            `/mapping/${encodeURIComponent(mapping.mappingId)}`
-                                        );
-                                    }}
-                                >
-                                    View
-                                </div>
-                            </div>
-
-                    ))
-                    }
+                    {mappingResponse.mappings.map((mapping) => (
+                        <MappingItem
+                            key={mapping.mappingId}
+                            mapping={mapping}
+                            navigateFn={navigate}
+                        />
+                    ))}
                 </ul>
+            )}
         </div>
     );
-};
+}
+
 
 export async function copyToClipboard(text: string) {
     if ("clipboard" in navigator) {
@@ -194,7 +169,6 @@ function copyText(text: string, setToggle: (toggle: boolean) => void) {
     copyToClipboard(text)
         .then(() => {
             setToggle(true);
-            // revert after a few seconds
             setTimeout(() => {
                 setToggle(false);
             }, 500);
@@ -203,4 +177,5 @@ function copyText(text: string, setToggle: (toggle: boolean) => void) {
             console.log(err);
         });
 }
+
 export default MappingResults;

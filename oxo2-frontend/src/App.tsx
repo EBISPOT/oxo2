@@ -2,8 +2,8 @@ import { Route, Routes } from "react-router";
 
 import About from "./pages/about";
 import Documentation from "./pages/documentation";
-import Footer from "./common/Footer";
-import Header from "./common/Header";
+import Footer from "./components/common/Footer";
+import Header from "./components/common/Header";
 import Home from "./pages/home/Home";
 import MappingResults from "./pages/results/MappingResults";
 import { useLocation } from "react-router-dom";
