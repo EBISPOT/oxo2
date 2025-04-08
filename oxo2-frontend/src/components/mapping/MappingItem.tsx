@@ -4,12 +4,11 @@ import { Mapping } from "../../model/Mapping";
 import { EyeIcon } from "@heroicons/react/24/solid";
 import olsLogo from "/public/logo.svg";
 
-export async function copyToClipboard(text: string) {
-    if ("clipboard" in navigator) {
-        return await navigator.clipboard.writeText(text);
-    } else {
-        return document.execCommand("copy", true, text);
+export async function copyToClipboard(text: string): Promise<void> {
+    if (!navigator.clipboard) {
+        throw new Error('Clipboard API not available');
     }
+    return navigator.clipboard.writeText(text);
 }
 
 function copyText(text: string, setToggle: (toggle: boolean) => void) {
@@ -54,11 +53,11 @@ export function MappingItem({
     }): JSX.Element {
         return (
             <div
-                className={`flex-1 flex flex-col justify-center h-[5rem] px-6 py-3
+                className={`flex-1 flex flex-col justify-center h-[4rem] px-6 py-1
                 ${
                     isLeftSide
-                        ? "rounded-2xl lg:rounded-r-none"
-                        : "rounded-2xl lg:rounded-l-none"
+                        ? "rounded-lg md:rounded-r-none"
+                        : "rounded-lg md:rounded-l-none"
                 }
                 ${alwaysHighlighted ? "bg-yellow-100" : "bg-grey-300 group-hover:bg-yellow-100"}`}
             >
@@ -98,8 +97,8 @@ export function MappingItem({
 
     return (
         <div
-            className={`group mb-6 text-neutral-black flex flex-col items-stretch items-center lg:flex-row w-full
-            ${alwaysHighlighted ? "shadow-lg rounded-2xl" : "hover:shadow-lg hover:rounded-2xl transition-all duration-200"}`}
+            className={`group mb-2 text-neutral-black flex flex-col items-stretch items-center lg:flex-row w-full
+            ${alwaysHighlighted ? "shadow-lg rounded-lg" : "hover:shadow-lg hover:rounded-lg transition-all duration-200"}`}
         >
             <div className="w-full lg:w-1/3">
                 <EntityBox
@@ -112,7 +111,8 @@ export function MappingItem({
             </div>
 
             <div
-                className={`flex-none flex flex-col justify-center h-[5rem] px-6 py-3 my-2 lg:my-0 w-full lg:w-1/3 rounded-2xl lg:rounded-none
+                className={`flex-none flex flex-col justify-center h-[4rem] px-6 py-1 my-2 lg:my-0 w-full lg:w-1/3 
+                    rounded-2xl lg:rounded-none
                 ${alwaysHighlighted ? "bg-yellow-50" : "bg-neutral-light group-hover:bg-yellow-50"}`}
             >
                 <div title={mapping.predicateId} className="text-center font-bold">

@@ -127,11 +127,11 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
     }
 }
 
-export function fetchMappings(queries: string[]): Promise<FacetedMappingResponse> {
+export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10): Promise<FacetedMappingResponse> {
     const requestBody: SearchRequest = {
         queries: queries,
-        page: 0,
-        size: 10,
+        page: page,
+        size: pageSize,
         queryFields: ['subject_id', 'object_id'],
         fieldList: ['mapping_set_id', 'subject_id', 'subject_label', 'subject_id_prefix', 'predicate_id', 'predicate_label', 'predicate_modifier', 'object_id', 'object_label', 'object_id_prefix', 'mapping_justification'],
         facets: ['object_id_prefix', 'subject_id_prefix'],
