@@ -1,8 +1,7 @@
 import { MappingResponse, Mapping/*, MappingFields*/ } from '../../model/Mapping';
-// import { SearchInput/*, initialSearchState*/ } from '../../model/Search';
 import { post } from '../../app/api';
 
-interface FacetedMappingResponse {
+export interface FacetedMappingResponse {
     mappings: {
         content: MappingResponse[];
         totalElements: number;
@@ -13,9 +12,33 @@ interface FacetedMappingResponse {
     facets: Record<string, Record<string, number>>;
 }
 
+export const emptyFacetedMappingResponse: FacetedMappingResponse = {
+    mappings: {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
+        number: 0,
+        size: 0
+    },
+    facets: {}
+}
+
 export interface FacetedMapping {
     mappings: Mapping[];
     facets: Record<string, Record<string, number>>;
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
+}
+
+export const emptyFacetedMapping: FacetedMapping = {
+    mappings: [],
+    facets: {},
+    totalElements: 0,
+    totalPages: 0,
+    number: 0,
+    size: 0
 }
 
 interface SearchRequest {
@@ -34,26 +57,6 @@ export enum SearchStatus {
     Failed = 'failed'
 }
 
-
-// interface SearchState {
-//     searchInput: SearchInput;
-//     mappingResponse: FacetedMapping;
-//     status: SearchStatus;
-//     error: string;
-// }
-
-
-export const emptyFacetedMapping: FacetedMapping = {
-    mappings: [],
-    facets: {},
-}
-
-// const initialState: SearchState = {
-//     searchInput: initialSearchState,
-//     mappingResponse: emptyFacetedMapping,
-//     status: SearchStatus.Idle,
-//     error: '',
-// };
 
 
 export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping {
@@ -116,13 +119,13 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
                 subjectIdPrefix: item.subject_id_prefix
             };
         }),
+        totalElements: json.mappings.totalElements,
+        totalPages: json.mappings.totalPages,
+        number: json.mappings.number,
+        size: json.mappings.size,
         facets: json.facets
     }
 }
-
-// function parseString(input: string): string[] {
-//     return input.trim().split('\n').map(item => item.trim());
-// }
 
 export function fetchMappings(queries: string[]): Promise<FacetedMappingResponse> {
     const requestBody: SearchRequest = {
@@ -137,5 +140,6 @@ export function fetchMappings(queries: string[]): Promise<FacetedMappingResponse
     const searchResponse = post<SearchRequest, FacetedMappingResponse>(
         '/api/v2/mappings/search',
         requestBody);
+
     return searchResponse;
 }

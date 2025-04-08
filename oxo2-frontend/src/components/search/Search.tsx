@@ -12,14 +12,22 @@ export function Search({searchInput = initialSearchState, showWelcome = false }:
 
     const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         const userSearchInput = event.target.value;
-        const sanitizedSearchInput = userSearchInput.split('\n');
+        const sanitizedSearchInput = userSearchInput.split(/[\n,]+/).filter(item => item.trim() !== '');
         setSearchState({ userSearchInput, sanitizedSearchInput });
     };
 
     const handleSearch = () => {
-        navigate("/search", { state: { searchState } });
+        if (searchState.userSearchInput && searchState.userSearchInput.trim() !== "") {
+            navigate("/search", {state: {searchState}});
+        }
     };
 
+    const handleClear = () => {
+        setSearchState({
+            userSearchInput: "",
+            sanitizedSearchInput: []
+        });
+    };
 
     return  (
         <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg my-8 p-8">
@@ -49,19 +57,27 @@ export function Search({searchInput = initialSearchState, showWelcome = false }:
                     <textarea
                         id="home-search"
                         rows={2}
-                        style={{ resize: "vertical", minHeight: "5rem" }}
+                        style={{ resize: "vertical", minHeight: "6rem" }}
                         placeholder={"Search OxO..."}
                         className="input-default text-lg"
                         value={ searchState.userSearchInput }
                         onChange={ handleInputChange }
                     />
                 </div>
-                <button
-                    className="button-primary text-lg font-bold self-end md:self-center"
-                    onClick={ handleSearch }
-                >
-                    Search
-                </button>
+                <div className="flex flex-col gap-2 md:mt-10">
+                    <button
+                        className="button-primary text-base font-bold px-4 py-1"
+                        onClick={ handleSearch }
+                    >
+                        Search
+                    </button>
+                    <button
+                        className="button-primary text-base font-bold px-4 py-1"
+                        onClick={ handleClear }
+                    >
+                        Clear
+                    </button>
+                </div>
             </div>
         </div>
     )

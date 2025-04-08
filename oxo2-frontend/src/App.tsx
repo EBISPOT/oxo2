@@ -6,6 +6,7 @@ import Footer from "./components/common/Footer";
 import Header from "./components/common/Header";
 import Home from "./pages/home/Home";
 import MappingResults from "./pages/results/MappingResults";
+import MappingDetails from "./pages/results/MappingDetails";
 import { useLocation } from "react-router-dom";
 import { SearchInput, initialSearchState } from "./model/Search";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -19,6 +20,13 @@ function SearchResultsWrapper() {
     return <MappingResults {...searchInput} />;
 }
 
+function MappingDetailsWrapper() {
+    const location = useLocation();
+    const mapping = location.state?.mapping;
+
+    return <MappingDetails mapping = {mapping} />;
+}
+
 function App() {
 
   return (
@@ -26,11 +34,12 @@ function App() {
           <div>
             <Header />
             <Routes>
-              <Route path="/" element={<Home/>} />
-              <Route path="/home" element={<Home/>} />
-              <Route path="/docs" element={<Documentation />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/search" element={<SearchResultsWrapper /> } />
+                <Route path="/" element={<Home/>} />
+                <Route path="/home" element={<Home/>} />
+                <Route path="/docs" element={<Documentation />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/search" element={<SearchResultsWrapper /> } />
+                <Route path="/mapping/:id" element={<MappingDetailsWrapper /> } />
             </Routes>
             <Footer />
           </div>
