@@ -30,7 +30,7 @@ export function Search({searchInput = initialSearchState, showWelcome = false }:
     };
 
     return  (
-        <div className="bg-gradient-to-r from-neutral-light to-white rounded-lg my-8 p-8">
+        <div className="search-container">
             { showWelcome && (
                 <div className="text-primary">
                     Welcome to the EMBL-EBI OxO Mapping Service
@@ -57,9 +57,8 @@ export function Search({searchInput = initialSearchState, showWelcome = false }:
                     <textarea
                         id="home-search"
                         rows={2}
-                        style={{ resize: "vertical", minHeight: "6rem" }}
+                        className="input-default text-lg resize-y min-h-24"
                         placeholder={"Search OxO..."}
-                        className="input-default text-lg"
                         value={ searchState.userSearchInput }
                         onChange={ handleInputChange }
                     />

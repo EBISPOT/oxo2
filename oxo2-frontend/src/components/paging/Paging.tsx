@@ -55,8 +55,7 @@ export function Paging({
                     <button
                         onClick={() => onPageChange(currentPage - 1)}
                         disabled={currentPage === 0}
-                        className={`px-3 py-1 rounded-md text-sm ${currentPage === 0 ? 'text-gray-400 cursor-not-allowed' :
-                            'text-orange-600 hover:bg-orange-100'}`}
+                        className="button-secondary"
                         aria-label="Previous page"
                     >
                         Previous
@@ -87,8 +86,7 @@ export function Paging({
                     <button
                         onClick={() => onPageChange(currentPage + 1)}
                         disabled={currentPage === totalPages - 1}
-                        className={`px-3 py-1 rounded-md ${currentPage === totalPages - 1 ?
-                            'text-gray-400 cursor-not-allowed' : 'text-orange-600 hover:bg-orange-100'}`}
+                        className="button-secondary"
                         aria-label="Next page"
                     >
                         Next
@@ -116,6 +114,4 @@ export function Paging({
             </div>
         </div>
     );
-
-
 }

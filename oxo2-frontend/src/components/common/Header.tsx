@@ -5,14 +5,10 @@ export default function Header() {
   const location = useLocation();
   const page = location.pathname.split("/", 2)[1];
 
+  const bgImageUrl = urlJoin(import.meta.env.PUBLIC_URL || "", "/embl-ebi-background.jpg");
+
   return (
-      <header
-          className="bg-black bg-right bg-cover"
-          style={{
-            backgroundImage:
-                "url('" + urlJoin(import.meta.env.PUBLIC_URL || "", "/embl-ebi-background.jpg") + "')"
-          }}
-      >
+      <header className="bg-black bg-right bg-cover bg-[url('/embl-ebi-background.jpg')]">
         <div className="container mx-auto flex flex-col md:flex-row md:gap-10">
           <div className="py-6 self-center">
             <a href={urlJoin(import.meta.env.PUBLIC_URL || "", "/")}>

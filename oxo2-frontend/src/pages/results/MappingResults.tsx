@@ -43,8 +43,8 @@ function MappingResults(searchInput: SearchInput) {
 
             {isLoading && (
                 <div className="flex justify-center p-8">
-                    <div className="spinner-border text-primary" role="status">
-                        Loading...
+                    <div className="spinner-default w-10 h-10 animate-spin" role="status">
+                        <span className="sr-only">Loading...</span>
                     </div>
                 </div>
             )}
@@ -54,7 +54,7 @@ function MappingResults(searchInput: SearchInput) {
             }
 
             {!isLoading && !error && mappingResults.mappings.length === 0 && (
-                <div className="bg-orange-100 text-orange-700 p-4 rounded-lg my-4">
+                <div className="alert-warning">
                     No mapping results found for your search.
                 </div>
             )}

@@ -43,8 +43,8 @@ function Section({
 
     return (
         <div className="mb-8">
-            <div className="flex items-center mb-4">
-                <h2 className="text-xl font-bold pb-2 flex-grow">{title}</h2>
+            <div className="section-title">
+                <h2 className="section-heading">{title}</h2>
                 {useHideShow && (
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
@@ -58,7 +58,7 @@ function Section({
                 )}
             </div>
             {(!useHideShow || isExpanded) && (
-                <div className={`p-4 rounded-lg ${showBackground ? 'bg-gradient-to-r from-gray-100 to-transparent' : ''}`}>
+                <div className={`section-content ${showBackground ? 'card' : ''}`}>
                     {children}
                 </div>
             )}
@@ -71,7 +71,7 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
 
     if (!mapping) {
         return (
-            <div className="bg-blue-100 text-blue-700 p-4 rounded-lg my-4">
+            <div className="alert-info">
                 No mapping details available.
             </div>
         );

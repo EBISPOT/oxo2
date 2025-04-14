@@ -1,4 +1,3 @@
-
 import { useState, JSX } from "react";
 import { Mapping } from "../../model/Mapping";
 import { EyeIcon } from "@heroicons/react/24/solid";
@@ -51,16 +50,12 @@ export function MappingItem({
         setCopied: (val: boolean) => void;
         isLeftSide: boolean;
     }): JSX.Element {
+        const entityClasses = `mapping-entity 
+                              ${isLeftSide ? 'mapping-entity-left' : 'mapping-entity-right'} 
+                              ${alwaysHighlighted ? 'mapping-entity-highlighted' : 'mapping-entity-normal'}`;
+        
         return (
-            <div
-                className={`flex-1 flex flex-col justify-center h-[4rem] px-6 py-1
-                ${
-                    isLeftSide
-                        ? "rounded-lg md:rounded-r-none"
-                        : "rounded-lg md:rounded-l-none"
-                }
-                ${alwaysHighlighted ? "bg-yellow-100" : "bg-grey-300 group-hover:bg-yellow-100"}`}
-            >
+            <div className={entityClasses}>
                 <div className="text-center font-bold">
                     <span
                         className="pr-2 cursor-pointer hover:underline"
@@ -88,18 +83,18 @@ export function MappingItem({
                         />
                     </a>
                 </div>
-                <div title={label} className="text-center truncate">
+                <div title={label} className="text-center truncate-text">
                     {label}
                 </div>
             </div>
         );
     }
 
+    const mappingItemClasses = `group ${alwaysHighlighted ? 'mapping-item mapping-item-highlighted' : 'mapping-item mapping-item-hover'}`;
+    const predicateClasses = `mapping-predicate ${alwaysHighlighted ? 'mapping-predicate-highlighted' : 'mapping-predicate-normal'}`;
+
     return (
-        <div
-            className={`group mb-2 text-neutral-black flex flex-col items-stretch items-center lg:flex-row w-full
-            ${alwaysHighlighted ? "shadow-lg rounded-lg" : "hover:shadow-lg hover:rounded-lg transition-all duration-200"}`}
-        >
+        <div className={mappingItemClasses}>
             <div className="w-full lg:w-1/3">
                 <EntityBox
                     id={mapping.subjectId}
@@ -110,15 +105,11 @@ export function MappingItem({
                 />
             </div>
 
-            <div
-                className={`flex-none flex flex-col justify-center h-[4rem] px-6 py-1 my-2 lg:my-0 w-full lg:w-1/3 
-                    rounded-2xl lg:rounded-none
-                ${alwaysHighlighted ? "bg-yellow-50" : "bg-neutral-light group-hover:bg-yellow-50"}`}
-            >
+            <div className={predicateClasses}>
                 <div title={mapping.predicateId} className="text-center font-bold">
                     {mapping.predicateId}
                 </div>
-                <div title={mapping.predicateLabel} className="text-center truncate">
+                <div title={mapping.predicateLabel} className="text-center truncate-text">
                     {mapping.predicateLabel}
                 </div>
             </div>

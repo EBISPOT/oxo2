@@ -8,8 +8,6 @@ import {
 import { JSX } from "react";
 import { initialSearchState } from "../../model/Search";
 
-
-
 export default function Home(): JSX.Element {
     const iconClass = "w-6 h-6 text-yellow-default";
 
