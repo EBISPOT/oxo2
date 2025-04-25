@@ -18,7 +18,8 @@ export function Search({searchInput = initialSearchState, showWelcome = false }:
 
     const handleSearch = () => {
         if (searchState.userSearchInput && searchState.userSearchInput.trim() !== "") {
-            navigate("/search", {state: {searchState}});
+            const curies = searchState.sanitizedSearchInput.join(",");
+            navigate(`/search/${curies}`);
         }
     };
 

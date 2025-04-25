@@ -52,6 +52,8 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(CURATION_RULE)
         SortedSet<EntityReference> curationRule,
+        @JsonProperty(DISTANCE)
+        int distance,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(ISSUE_TRACKER_ITEM)
         Optional<EntityReference> issueTrackerItem,
@@ -174,6 +176,7 @@ public record Mapping (
         return this.mappingId.compareTo(o.mappingId);
     }
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -202,6 +205,7 @@ public record Mapping (
         private SortedSet<EntityReference> creatorId = new TreeSet<>();
         private SortedSet<String> creatorLabel = new TreeSet<>();
         private SortedSet<EntityReference> curationRule = new TreeSet<>();
+        private int distance = 1;
         private Optional<EntityReference> issueTrackerItem = Optional.empty();
         private Optional<Uri> license = Optional.empty();
         private Optional<MappingCardinalityEnum> mappingCardinality = Optional.empty();
@@ -407,6 +411,12 @@ public record Mapping (
 
         public Builder curationRule(String curationRule) {
             this.curationRule = StringUtils.splitStringToSortedSet(curationRule, "\\|", EntityReference::new);
+            return this;
+        }
+
+        @Field(DISTANCE)
+        public Builder distance(int distance) {
+            this.distance = distance;
             return this;
         }
 
@@ -880,6 +890,7 @@ public record Mapping (
                     creatorId,
                     creatorLabel,
                     curationRule,
+                    distance,
                     issueTrackerItem,
                     license,
                     mappingCardinality,
@@ -947,4 +958,5 @@ public record Mapping (
             return mappingId;
         }
     }
+
 }

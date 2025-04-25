@@ -12,6 +12,10 @@ public class MappingSearchRequest {
     private List<MappingEnum> queryFields;
     private List<MappingEnum> fieldList;
 
+    private List<SortedField> sortedFields;
+
+    private int distance;
+
     private Set<MappingFacetEnum> facets;
     private int page = 1;
     private int size = 10;
@@ -39,6 +43,22 @@ public class MappingSearchRequest {
 
     public void setFieldList(List<MappingEnum> fieldList) {
         this.fieldList = fieldList;
+    }
+
+    public List<SortedField> getSortedFields() {
+        return sortedFields;
+    }
+
+    public void setSortedFields(List<SortedField> sortedFields) {
+        this.sortedFields = sortedFields;
+    }
+
+    public int getDistance() {
+        return distance;
+    }
+
+    public void setDistance(int distance) {
+        this.distance = distance;
     }
 
     public Set<MappingFacetEnum> getFacets() {

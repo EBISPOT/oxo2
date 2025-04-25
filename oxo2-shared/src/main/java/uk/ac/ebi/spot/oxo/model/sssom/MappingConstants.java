@@ -9,6 +9,7 @@ public class MappingConstants {
     public static final String CREATOR_LABEL = "creator_label";
     public static final String CURATION_RULE = "curation_rule";
     public static final String CURIE_MAP = "curie_map";
+    public static final String DISTANCE = "distance";
     public static final String EXTENSION_DEFINITIONS = "extension_definitions";
 
     public static final String ISSUE_TRACKER = "issue_tracker";

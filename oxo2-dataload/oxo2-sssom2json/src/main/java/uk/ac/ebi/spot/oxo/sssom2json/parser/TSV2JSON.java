@@ -111,10 +111,11 @@ public class TSV2JSON {
             }
             CSVParser parser = CSVParser.parse(file, java.nio.charset.StandardCharsets.UTF_8,
                     CSVFormat.TDF.builder().setCommentMarker('#').setHeader().build());
-            Mapping.Builder mappingBuilder = Mapping.builder();
+
 
             for (CSVRecord record : parser) {
                 logger.debug("Processing record {}", record);
+                Mapping.Builder mappingBuilder = Mapping.builder();
                 mappingBuilder
                         .authorId(record.isSet(AUTHOR_ID) ? record.get(AUTHOR_ID) : "")
                         .authorLabel(record.isSet(AUTHOR_LABEL) ? record.get(AUTHOR_LABEL) : "")
@@ -123,6 +124,7 @@ public class TSV2JSON {
                         .creatorId(record.isSet(CREATOR_ID) ? record.get(CREATOR_ID) : "")
                         .creatorLabel(record.isSet(CREATOR_LABEL) ? record.get(CREATOR_LABEL) : "")
                         .curationRule(record.isSet(CURATION_RULE) ? record.get(CURATION_RULE) : "")
+                        .distance(1)
                         .issueTrackerItem(record.isSet(ISSUE_TRACKER_ITEM) ? record.get(ISSUE_TRACKER_ITEM) : "")
                         .license(record.isSet(LICENSE) ? record.get(LICENSE) : "")
                         .mappingCardinality(record.isSet(MAPPING_CARDINALITY) ? record.get(MAPPING_CARDINALITY) : "")

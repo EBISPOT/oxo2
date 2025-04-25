@@ -1,5 +1,12 @@
 #!/bin/bash
 
+
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $0 <inputDir> <solrUrl> where <solrUrl> has the form <solr_server_url>:<port>/<solr_core>"
+  echo "i.e. http://localhost:8983/oxo2_mappings"
+  exit 1
+fi
+
 # Directory to traverse
 DIRECTORY=$1
 echo "Traversing directory $DIRECTORY..."
@@ -12,8 +19,8 @@ echo "Solr URL: $SOLR_URL"
 post_to_solr() {
   local file=$1
   local solr_url=$2
-  echo "Posting $file to Solr... $solr_url"
-  curl -X POST -H "Content-Type: application/json" --data-binary @$file $solr_url
+  echo "Posting $file to Solr... $solr_url/update?commit=true"
+  curl -X POST -H "Content-Type: application/json" --data-binary @$file $solr_url/update?commit=true
   if [ $? -eq 0 ]; then
     echo "Successfully posted $file to Solr."
   else

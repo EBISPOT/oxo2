@@ -6,6 +6,8 @@ import org.apache.solr.client.solrj.util.ClientUtils;
 import org.springframework.data.domain.Pageable;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingFacetEnum;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortOrderEnum;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.HashSet;
@@ -13,26 +15,11 @@ import java.util.List;
 import java.util.Set;
 
 import static org.apache.solr.common.params.DisMaxParams.QF;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingEnum.MINIMAL_LIST_OF_FIELDS;
 
 public class SolrQueryBuilder {
 
-    private static final String[] MINIMAL_LIST_OF_FIELDS = new String[]{
-            MappingEnum.MAPPING_ID.getField(),
-            MappingEnum.MAPPING_SET_ID.getField(),
-            MappingEnum.SUBJECT_ID.getField(),
-            MappingEnum.SUBJECT_LABEL.getField(),
-            MappingEnum.SUBJECT_ID_PREFIX.getField(),
-            MappingEnum.PREDICATE_ID.getField(),
-            MappingEnum.PREDICATE_LABEL.getField(),
-            MappingEnum.PREDICATE_MODIFIER.getField(),
-            MappingEnum.OBJECT_ID.getField(),
-            MappingEnum.OBJECT_LABEL.getField(),
-            MappingEnum.OBJECT_ID_PREFIX.getField(),
-            MappingEnum.MAPPING_JUSTIFICATION.getField()};
-
     public static SolrQuery buildSolrQuery(MappingSearchRequest mappingSearchRequest, Pageable pageable) {
-
-
 
         SolrQuery solrQuery = new SolrQuery();
 
@@ -44,7 +31,20 @@ public class SolrQueryBuilder {
         solrQuery.set(QF, constructQueryFields(mappingSearchRequest.getQueryFields()));
         solrQuery.setFields(constructFieldList(mappingSearchRequest.getFieldList()));
         solrQuery = configureFacets(solrQuery, mappingSearchRequest.getFacets());
+        solrQuery = constructSortedFields(solrQuery, mappingSearchRequest);
 
+        return solrQuery;
+    }
+
+    private static SolrQuery constructSortedFields(SolrQuery solrQuery, MappingSearchRequest mappingSearchRequest) {
+        if (mappingSearchRequest.getSortedFields() != null) {
+            for (SortedField sortedField : mappingSearchRequest.getSortedFields()) {
+                solrQuery.addSort(
+                        sortedField.getField().getField(),
+                        sortedField.getOrder() == SortOrderEnum.DESC ? SolrQuery.ORDER.desc : SolrQuery.ORDER.asc
+                );
+            }
+        }
         return solrQuery;
     }
 

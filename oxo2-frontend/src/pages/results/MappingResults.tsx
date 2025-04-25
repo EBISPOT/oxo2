@@ -1,41 +1,88 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import { Search } from "../../components/search/Search";
 import { SearchInput } from "../../model/Search";
 import { FacetedMapping, fetchMappings, fromJson, emptyFacetedMapping } from "./MappingResultsSlice";
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { MappingItem } from "../../components/mapping/MappingItem";
-import { ErrorInfo } from "../../components/error/ErrorInfo";
-import { Paging } from "../../components/paging/Paging";
+import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef, MRT_PaginationState } from 'material-react-table';
+import { Mapping } from "../../model/Mapping.ts";
 
-function MappingResults(searchInput: SearchInput) {
+
+
+function MappingResults() {
     const navigate = useNavigate();
-    const [currentPage, setCurrentPage] = useState(0);
-    const [pageSize, setPageSize] = useState(10); // Add page size state
 
-    // Reset page when search input changes
-    useEffect(() => {
-        setCurrentPage(0);
-    }, [searchInput.sanitizedSearchInput]);
-
-    const { data, isLoading, error } = useQuery({
-        queryKey: ["fetchMappings", searchInput.sanitizedSearchInput, currentPage, pageSize],
-        queryFn: () => fetchMappings(searchInput.sanitizedSearchInput, currentPage, pageSize), // Update API call
-        staleTime: Infinity
+    const [pagination, setPagination] = useState<MRT_PaginationState>({
+        pageIndex: 0,
+        pageSize: 10,
     });
-
-    const handlePageSizeChange = (newPageSize: number) => {
-        setPageSize(newPageSize);
-        setCurrentPage(0); // Reset to first page when changing page size
+    const { curies } = useParams<{ curies: string }>();
+    const searchInput: SearchInput = {
+        userSearchInput: curies || "",
+        sanitizedSearchInput: curies
+            ? curies.split(/[\n,]+/).filter((item) => item.trim() !== "")
+            : [],
     };
+
+
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ["fetchMappings", searchInput.sanitizedSearchInput, pagination.pageIndex, pagination.pageSize],
+        queryFn: () => fetchMappings(
+            searchInput.sanitizedSearchInput, pagination.pageIndex, pagination.pageSize),
+        staleTime: Infinity,
+    });
 
     const mappingResults: FacetedMapping = data ? fromJson(data) : emptyFacetedMapping;
 
-    const handlePageChange = (newPage: number) => {
-        if (newPage >= 0 && newPage < mappingResults.totalPages) {
-            setCurrentPage(newPage);
+    const columns = useMemo<MRT_ColumnDef<Mapping>[]>(
+        () => [
+            {
+                accessorKey: "subjectId",
+                header: "Subject Id",
+            },
+            {
+                accessorKey: "predicateId",
+                header: "Predicate Id",
+            },
+            {
+                accessorKey: "objectId",
+                header: "Object Id",
+            },
+            {
+                accessorKey: "mappingJustification",
+                header: "Mapping Justification",
+            },
+        ],
+        []
+    );
+
+    const table = useMaterialReactTable({
+        columns,
+        data: mappingResults.mappings,
+        manualPagination: true, //turn off built-in client-side pagination
+        //give loading spinner somewhere to go while loading
+        muiTableBodyProps: {
+            children: isLoading ? (
+                <tr style={{ height: '200px' }}>
+                    <td />
+                </tr>
+            ) : undefined,
+        },
+        muiToolbarAlertBannerProps: isError
+            ? {
+                color: 'error',
+                children: 'Error loading data',
+            }
+            : undefined,
+        onPaginationChange: setPagination,
+        rowCount: (mappingResults?.totalElements) ?? 0,
+        state: {
+            isLoading,
+            pagination,
+            showAlertBanner: isError
         }
-    };
+    });
 
     return (
         <div>
@@ -49,46 +96,8 @@ function MappingResults(searchInput: SearchInput) {
                 </div>
             )}
 
-            {error &&
-                <ErrorInfo task={"fetching mappings"} message={error.message}/>
-            }
+            <MaterialReactTable table={table}/>
 
-            {!isLoading && !error && mappingResults.mappings.length === 0 && (
-                <div className="alert-warning">
-                    No mapping results found for your search.
-                </div>
-            )}
-
-            {!isLoading && !error && mappingResults.mappings.length > 0 && (
-                <div>
-                    <Paging
-                        currentPage={mappingResults.number}
-                        totalPages={mappingResults.totalPages}
-                        totalElements={mappingResults.totalElements}
-                        pageSize={pageSize}
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                    />
-                    <ul>
-                        {mappingResults.mappings.map((mapping) => (
-                            <MappingItem
-                                key={mapping.mappingId}
-                                mapping={mapping}
-                                navigateFn={navigate}
-                            />
-                        ))}
-                    </ul>
-
-                    <Paging
-                        currentPage={mappingResults.number}
-                        totalPages={mappingResults.totalPages}
-                        totalElements={mappingResults.totalElements}
-                        pageSize={pageSize}
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                    />
-                </div>
-            )}
         </div>
     );
 }

@@ -15,6 +15,7 @@ public enum MappingEnum {
     CREATOR_ID(MappingConstants.CREATOR_ID),
     CREATOR_LABEL(MappingConstants.CREATOR_LABEL),
     CURATION_RULE(MappingConstants.CURATION_RULE),
+    DISTANCE(MappingConstants.DISTANCE),
     ISSUE_TRACKER_ITEM(MappingConstants.ISSUE_TRACKER_ITEM),
     LICENSE(MappingConstants.LICENSE),
     MAPPING_CARDINALITY(MappingConstants.MAPPING_CARDINALITY),
@@ -61,6 +62,22 @@ public enum MappingEnum {
     SUBJECT_TYPE(MappingConstants.SUBJECT_TYPE);
 
     private final String field;
+
+    public static final String[] MINIMAL_LIST_OF_FIELDS = new String[]{
+            MappingEnum.MAPPING_ID.getField(),
+            MappingEnum.MAPPING_SET_ID.getField(),
+            MappingEnum.SUBJECT_ID.getField(),
+            MappingEnum.SUBJECT_LABEL.getField(),
+            MappingEnum.SUBJECT_ID_PREFIX.getField(),
+            MappingEnum.PREDICATE_ID.getField(),
+            MappingEnum.PREDICATE_LABEL.getField(),
+            MappingEnum.PREDICATE_MODIFIER.getField(),
+            MappingEnum.OBJECT_ID.getField(),
+            MappingEnum.OBJECT_LABEL.getField(),
+            MappingEnum.OBJECT_ID_PREFIX.getField(),
+            MappingEnum.MAPPING_JUSTIFICATION.getField(),
+            MappingEnum.DISTANCE.getField()
+    };
 
     MappingEnum(String field) {
         this.field = field;

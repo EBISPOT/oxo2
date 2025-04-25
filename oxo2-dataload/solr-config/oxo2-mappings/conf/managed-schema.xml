@@ -465,6 +465,7 @@
   <field name="comment" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="confidence" type="pdoubles" multiValued="false" indexed="true" stored="true"/>
   <field name="curation_rule" type="strings" multiValued="true" indexed="true" stored="true"/>
+  <field name="distance" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="issue_tracker_item" type="string" multiValued="false" indexed="false" stored="true"/>
   <field name="license" type="string" multiValued="false" indexed="true" stored="true"/>

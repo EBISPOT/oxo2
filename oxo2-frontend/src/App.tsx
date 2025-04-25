@@ -8,17 +8,11 @@ import Home from "./pages/home/Home";
 import MappingResults from "./pages/results/MappingResults";
 import MappingDetails from "./pages/results/MappingDetails";
 import { useLocation } from "react-router-dom";
-import { SearchInput, initialSearchState } from "./model/Search";
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
 
-function SearchResultsWrapper() {
-    const location = useLocation();
-    const searchInput: SearchInput = location.state?.searchState ?? initialSearchState ;
-
-    return <MappingResults {...searchInput} />;
-}
 
 function MappingDetailsWrapper() {
     const location = useLocation();
@@ -38,7 +32,7 @@ function App() {
                 <Route path="/home" element={<Home/>} />
                 <Route path="/docs" element={<Documentation />} />
                 <Route path="/about" element={<About />} />
-                <Route path="/search" element={<SearchResultsWrapper /> } />
+                <Route path="/search/:curies" element={<MappingResults /> } />
                 <Route path="/mapping/:id" element={<MappingDetailsWrapper /> } />
             </Routes>
             <Footer />
