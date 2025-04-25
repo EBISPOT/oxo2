@@ -3,10 +3,7 @@ package uk.ac.ebi.spot.oxo.model.sssom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CurieMap extends SSSOMDataType<Map<String, String>> {
@@ -24,7 +21,6 @@ public class CurieMap extends SSSOMDataType<Map<String, String>> {
         }
         return Optional.empty();
     }
-
 
 
     @Override
@@ -52,5 +48,27 @@ public class CurieMap extends SSSOMDataType<Map<String, String>> {
             }
         }
         return map;
+    }
+
+    public static Optional<CurieMap> merge(CurieMap thisCurieMap, CurieMap thatCurieMap) {
+        if ((thisCurieMap == null || thisCurieMap.dataRepresentation.isEmpty())) {
+            logger.warn("thisCurieMap is null or empty. No merge performed.");
+            if (thatCurieMap != null) {
+                return Optional.of(thatCurieMap);
+            }
+            return Optional.empty();
+        }
+        if ((thatCurieMap == null || thatCurieMap.dataRepresentation.isEmpty())) {
+            logger.warn("thatCurieMap is null or empty. No merge performed.");
+            if (thisCurieMap != null) {
+                return Optional.of(thisCurieMap);
+            }
+            return Optional.empty();
+        }
+
+        Map<String, String> mergedMap = thisCurieMap.dataRepresentation.get();
+        mergedMap.putAll(thatCurieMap.dataRepresentation.get());
+
+        return Optional.of(new CurieMap(convertMapToString(mergedMap)));
     }
 }

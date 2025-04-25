@@ -12,6 +12,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.spot.oxo.model.sssom.CurieMap;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingSet;
@@ -74,9 +75,7 @@ public class TSV2JSON {
         objectMapper.registerModule(new Jdk8Module());
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        objectMapper.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
 
@@ -112,6 +111,8 @@ public class TSV2JSON {
             CSVParser parser = CSVParser.parse(file, java.nio.charset.StandardCharsets.UTF_8,
                     CSVFormat.TDF.builder().setCommentMarker('#').setHeader().build());
 
+            Optional<CurieMap> optionalCurieMap = mergeCurieMaps(externalMappingSetBuilderOptional, embeddedMappingSetBuilderOptional);
+
 
             for (CSVRecord record : parser) {
                 logger.debug("Processing record {}", record);
@@ -136,7 +137,7 @@ public class TSV2JSON {
                         .mappingToolVersion(record.isSet(MAPPING_TOOL_VERSION) ? record.get(MAPPING_TOOL_VERSION) : "")
                         .matchString(record.isSet(MATCH_STRING) ? record.get(MATCH_STRING) : "")
                         .objectCategory(record.isSet(OBJECT_CATEGORY) ? record.get(OBJECT_CATEGORY) : "")
-                        .objectId(record.isSet(OBJECT_ID) ? record.get(OBJECT_ID) : "")
+                        .objectId(record.isSet(OBJECT_ID) ? record.get(OBJECT_ID) : "", optionalCurieMap)
                         .objectLabel(record.isSet(OBJECT_LABEL) ? record.get(OBJECT_LABEL) : "")
                         .objectMatchField(record.isSet(OBJECT_MATCH_FIELD) ? record.get(OBJECT_MATCH_FIELD) : "")
                         .objectPreprocessing(record.isSet(OBJECT_PREPROCESSING) ? record.get(OBJECT_PREPROCESSING) : "")
@@ -144,7 +145,7 @@ public class TSV2JSON {
                         .objectSourceVersion(record.isSet(OBJECT_SOURCE_VERSION) ? record.get(OBJECT_SOURCE_VERSION) : "")
                         .objectType(record.isSet(OBJECT_TYPE) ? record.get(OBJECT_TYPE) : "")
                         .other(record.isSet(OTHER) ? record.get(OTHER) : "")
-                        .predicateId(record.isSet(PREDICATE_ID) ? record.get(PREDICATE_ID) : "")
+                        .predicateId(record.isSet(PREDICATE_ID) ? record.get(PREDICATE_ID) : "", optionalCurieMap)
                         .predicateLabel(record.isSet(PREDICATE_LABEL) ? record.get(PREDICATE_LABEL) : "")
                         .predicateModifier(record.isSet(PREDICATE_MODIFIER) ? record.get(PREDICATE_MODIFIER) : "")
                         .publicationDate(record.isSet(PUBLICATION_DATE) ? record.get(PUBLICATION_DATE) : "")
@@ -154,7 +155,7 @@ public class TSV2JSON {
                         .similarityMeasure(record.isSet(SIMILARITY_MEASURE) ? record.get(SIMILARITY_MEASURE) : "")
                         .similarityScore(record.isSet(SIMILARITY_SCORE) ? record.get(SIMILARITY_SCORE) : "")
                         .subjectCategory(record.isSet(SUBJECT_CATEGORY) ? record.get(SUBJECT_CATEGORY) : "")
-                        .subjectId(record.isSet(SUBJECT_ID) ? record.get(SUBJECT_ID) : "")
+                        .subjectId(record.isSet(SUBJECT_ID) ? record.get(SUBJECT_ID) : "", optionalCurieMap)
                         .subjectLabel(record.isSet(SUBJECT_LABEL) ? record.get(SUBJECT_LABEL) : "")
                         .subjectMatchField(record.isSet(SUBJECT_MATCH_FIELD) ? record.get(SUBJECT_MATCH_FIELD) : "")
                         .subjectPreprocessing(record.isSet(SUBJECT_PREPROCESSING) ? record.get(SUBJECT_PREPROCESSING) : "")
@@ -192,6 +193,21 @@ public class TSV2JSON {
         return mappingSetOptional;
     }
 
+    private static Optional<CurieMap> mergeCurieMaps(Optional<MappingSet.Builder> externalMappingSetBuilderOptional, Optional<MappingSet.Builder> embeddedMappingSetBuilderOptional) {
+        Optional<MappingSet> tempOptionalExternalMappingSet = externalMappingSetBuilderOptional.isPresent() ?
+                Optional.of(externalMappingSetBuilderOptional.get().build()) : Optional.empty();
+        Optional<MappingSet> tempOptionalEmbeddedMappingSet = embeddedMappingSetBuilderOptional.isPresent() ?
+                Optional.of(embeddedMappingSetBuilderOptional.get().build()) : Optional.empty();
+        Optional<CurieMap> mergedCurieMap =
+                (tempOptionalExternalMappingSet.isPresent() && tempOptionalEmbeddedMappingSet.isEmpty()) ?
+                    Optional.of(tempOptionalExternalMappingSet.get().curieMap()) :
+                        (tempOptionalEmbeddedMappingSet.isPresent() && tempOptionalExternalMappingSet.isEmpty()) ?
+                            Optional.of(tempOptionalEmbeddedMappingSet.get().curieMap()) :
+                                CurieMap.merge(tempOptionalEmbeddedMappingSet.get().curieMap(),
+                                    tempOptionalExternalMappingSet.get().curieMap());
+        return mergedCurieMap;
+    }
+
     /**
      * Some values from mapping sets are propagated to mappings. For the list of propagated values see
      * <a href="https://mapping-commons.github.io/sssom/spec-model/#propagation-of-mapping-set-slots">.
@@ -212,6 +228,7 @@ public class TSV2JSON {
         mappingBuilder.mappingProvider(record.isSet(MAPPING_PROVIDER) ? record.get(MAPPING_PROVIDER) : "", tempMappingSet.mappingProvider());
         mappingBuilder.mappingTool(record.isSet(MAPPING_TOOL) ? record.get(MAPPING_TOOL) : "", tempMappingSet.mappingTool());
         mappingBuilder.mappingToolVersion(record.isSet(MAPPING_TOOL_VERSION) ? record.get(MAPPING_TOOL_VERSION) : "", tempMappingSet.mappingToolVersion());
+
         mappingBuilder.objectMatchField(record.isSet(OBJECT_MATCH_FIELD) ? record.get(OBJECT_MATCH_FIELD) : "", tempMappingSet.objectMatchField());
         mappingBuilder.objectPreprocessing(record.isSet(OBJECT_PREPROCESSING) ? record.get(OBJECT_PREPROCESSING) : "", tempMappingSet.objectPreprocessing());
         mappingBuilder.objectSource(record.isSet(OBJECT_SOURCE) ? record.get(OBJECT_SOURCE) : "", tempMappingSet.objectSource());

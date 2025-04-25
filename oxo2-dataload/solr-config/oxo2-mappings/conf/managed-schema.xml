@@ -484,6 +484,7 @@
   <field name="match_string" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="object_category" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="object_id" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="object_iri" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="object_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="object_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>
@@ -492,6 +493,7 @@
   <field name="object_type" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="other" type="json" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_id" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="predicate_iri" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_modifier" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="publication_date" type="pdates" multiValued="false" indexed="true" stored="true"/>
@@ -502,6 +504,7 @@
   <field name="similarity_score" type="pdoubles" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_category" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_id" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="subject_iri" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>

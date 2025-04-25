@@ -11,7 +11,11 @@
 
     <artifactId>oxo2-dataload</artifactId>
     <packaging>pom</packaging>
-
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
     <modules>
         <module>oxo2-downloader</module>
         <module>oxo2-sssom2json</module>

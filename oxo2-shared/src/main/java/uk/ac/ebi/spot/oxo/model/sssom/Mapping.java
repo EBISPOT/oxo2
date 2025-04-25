@@ -97,6 +97,8 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_ID)
         Optional<EntityReference> objectId,
+        @JsonProperty(OBJECT_IRI)
+        Optional<Uri> objectIRI,
         @JsonProperty(OBJECT_LABEL)
         Optional<String> objectLabel,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
@@ -118,6 +120,8 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(PREDICATE_ID)
         Optional<EntityReference> predicateId,
+        @JsonProperty(PREDICATE_IRI)
+        Optional<Uri> predicateIRI,
         @JsonProperty(PREDICATE_LABEL)
         Optional<String> predicateLabel,
         @JsonProperty(PREDICATE_MODIFIER)
@@ -142,6 +146,8 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SUBJECT_ID)
         Optional<EntityReference> subjectId,
+        @JsonProperty(SUBJECT_IRI)
+        Optional<Uri> subjectIRI,
         @JsonProperty(SUBJECT_LABEL)
         Optional<String> subjectLabel,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
@@ -218,6 +224,7 @@ public record Mapping (
         private SortedSet<String> matchString = new TreeSet<>();
         private Optional<String> objectCategory = Optional.empty();
         private Optional<EntityReference> objectId = Optional.empty();
+        private Optional<Uri> objectIRI = Optional.empty();
         private Optional<String> objectLabel = Optional.empty();
         private SortedSet<EntityReference> objectMatchField = new TreeSet<>();
         private List<EntityReference> objectPreprocessing = new ArrayList<>();
@@ -226,6 +233,7 @@ public record Mapping (
         private Optional<EntityTypeEnum> objectType = Optional.empty();
         private Optional<KeyValuePairsAsString> other = Optional.empty();
         private Optional<EntityReference> predicateId = Optional.empty();
+        private Optional<Uri> predicateIRI = Optional.empty();
         private Optional<String> predicateLabel = Optional.empty();
         private Optional<PredicateModifierEnum> predicateModifier = Optional.empty();
         private Optional<Date> publicationDate = Optional.empty();
@@ -236,6 +244,7 @@ public record Mapping (
         private Optional<Double> similarityScore = Optional.empty();
         private Optional<String> subjectCategory = Optional.empty();
         private Optional<EntityReference> subjectId = Optional.empty();
+        private Optional<Uri> subjectIRI = Optional.empty();
         private Optional<String> subjectLabel = Optional.empty();
         private SortedSet<EntityReference> subjectMatchField = new TreeSet<>();
         private List<EntityReference> subjectPreprocessing = new ArrayList<>();
@@ -546,8 +555,38 @@ public record Mapping (
         public Builder objectId(String objectId) {
             if (objectId != null && !objectId.isBlank())
                 this.objectId = Optional.of(new EntityReference(objectId));
-            if (this.objectId.isPresent())
+            if (this.objectId.isPresent()) {
                 this.objectIdPrefix = StringUtils.extractPrefix(objectId);
+            }
+            return this;
+        }
+
+        public Builder objectId(String objectId, Optional<CurieMap> optionalCurieMap) {
+            if (objectId != null && !objectId.isBlank())
+                this.objectId = Optional.of(new EntityReference(objectId));
+            if (this.objectId.isPresent()) {
+                this.objectIdPrefix = StringUtils.extractPrefix(objectId);
+                if (optionalCurieMap.isPresent()) {
+                    this.objectIRI = this.objectId.get().toUri(optionalCurieMap.get());
+                }
+            }
+            return this;
+        }
+
+        public Builder objectIRI(String objectId, Map<String, String> prefixMap) {
+            if (objectId != null && !objectId.isBlank())
+                this.objectId = Optional.of(new EntityReference(objectId));
+            if (this.objectId.isPresent()) {
+                this.objectIdPrefix = StringUtils.extractPrefix(objectId);
+            }
+            return this;
+        }
+
+        @Field(OBJECT_IRI)
+        public Builder objectIRI(String objectIRI) {
+            if (objectIRI != null && !objectIRI.isBlank()) {
+                this.objectIRI = Optional.of(new Uri(objectIRI));
+            }
             return this;
         }
 
@@ -670,6 +709,25 @@ public record Mapping (
             return this;
         }
 
+        public Builder predicateId(String predicateId, Optional<CurieMap> optionalCurieMap) {
+            if (predicateId != null && !predicateId.isBlank())
+                this.predicateId = Optional.of(new EntityReference(predicateId));
+            if (this.predicateId.isPresent()) {
+                if (optionalCurieMap.isPresent()) {
+                    this.predicateIRI = this.predicateId.get().toUri(optionalCurieMap.get());
+                }
+            }
+            return this;
+        }
+
+        @Field(PREDICATE_IRI)
+        public Builder predicateIRI(String predicateIRI) {
+            if (predicateIRI != null && !predicateIRI.isBlank()) {
+                this.predicateIRI = Optional.of(new Uri(predicateIRI));
+            }
+            return this;
+        }
+
         @Field(PREDICATE_LABEL)
         public Builder predicateLabel(String predicateLabel) {
             if (predicateLabel != null && !predicateLabel.isBlank())
@@ -768,6 +826,26 @@ public record Mapping (
             this.subjectId = Optional.of(new EntityReference(subjectId));
             if (this.subjectId.isPresent())
                 this.subjectIdPrefix = StringUtils.extractPrefix(subjectId);
+            return this;
+        }
+
+        public Builder subjectId(String subjectId, Optional<CurieMap> optionalCurieMap) {
+            if (subjectId != null && !subjectId.isBlank())
+                this.subjectId = Optional.of(new EntityReference(subjectId));
+            if (this.subjectId.isPresent()) {
+                this.subjectIdPrefix = StringUtils.extractPrefix(subjectId);
+                if (optionalCurieMap.isPresent()) {
+                    this.subjectIRI = this.subjectId.get().toUri(optionalCurieMap.get());
+                }
+            }
+            return this;
+        }
+
+        @Field(SUBJECT_IRI)
+        public Builder subjectIRI(String subjectIRI) {
+            if (subjectIRI != null && !subjectIRI.isBlank()) {
+                this.subjectIRI = Optional.of(new Uri(subjectIRI));
+            }
             return this;
         }
 
@@ -908,6 +986,7 @@ public record Mapping (
                     matchString,
                     objectCategory,
                     objectId,
+                    objectIRI,
                     objectLabel,
                     objectMatchField,
                     objectPreprocessing,
@@ -916,6 +995,7 @@ public record Mapping (
                     objectType,
                     other,
                     predicateId,
+                    predicateIRI,
                     predicateLabel,
                     predicateModifier,
                     publicationDate,
@@ -926,6 +1006,7 @@ public record Mapping (
                     similarityScore,
                     subjectCategory,
                     subjectId,
+                    subjectIRI,
                     subjectLabel,
                     subjectMatchField,
                     subjectPreprocessing,

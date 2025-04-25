@@ -31,6 +31,7 @@ public class MappingConstants {
 
     public static final String OBJECT_CATEGORY = "object_category";
     public static final String OBJECT_ID = "object_id";
+    public static final String OBJECT_IRI = "object_iri";
     public static final String OBJECT_LABEL = "object_label";
     public static final String OBJECT_MATCH_FIELD = "object_match_field";
     public static final String OBJECT_PREPROCESSING = "object_preprocessing";
@@ -40,6 +41,7 @@ public class MappingConstants {
     public static final String OTHER = "other";
     public static final String PREDICATE = "predicate";
     public static final String PREDICATE_ID = "predicate_id";
+    public static final String PREDICATE_IRI = "predicate_iri";
     public static final String PREDICATE_LABEL = "predicate_label";
     public static final String PREDICATE_MODIFIER = "predicate_modifier";
     public static final String PREPROCESSING = "preprocessing";
@@ -51,6 +53,7 @@ public class MappingConstants {
     public static final String SIMILARITY_SCORE = "similarity_score";
     public static final String SUBJECT_CATEGORY = "subject_category";
     public static final String SUBJECT_ID = "subject_id";
+    public static final String SUBJECT_IRI = "subject_iri";
     public static final String SUBJECT_LABEL = "subject_label";
     public static final String SUBJECT_MATCH_FIELD = "subject_match_field";
     public static final String SUBJECT_PREPROCESSING = "subject_preprocessing";
