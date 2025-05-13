@@ -12,8 +12,8 @@ import java.util.Optional;
  * EntityReference</a>.
  *
  *  According to <a href="https://mapping-commons.github.io/sssom/spec-model/#identifiers"/> can represent a full length
- *  IRI or a curie. This is the difference between this class and Uri. The Uri class always aims to represent a URI, where
- *  as this class could represent a curie.
+ *  IRI or a curie. This is the difference between this class and Uri. The Uri class always aims to represent a URI,
+ *  whereas this class could represent a curie.
  *
  *  This class is implemented as a subclass of SSSOMDataType, which is strictly speaking not necessary because there is no
  *  difference between the dataAsString and the dataRepresentation. However, it is implemented this way to avoid

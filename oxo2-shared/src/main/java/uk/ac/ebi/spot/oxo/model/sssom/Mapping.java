@@ -52,8 +52,6 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(CURATION_RULE)
         SortedSet<EntityReference> curationRule,
-        @JsonProperty(DISTANCE)
-        int distance,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(ISSUE_TRACKER_ITEM)
         Optional<EntityReference> issueTrackerItem,
@@ -97,8 +95,6 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(OBJECT_ID)
         Optional<EntityReference> objectId,
-        @JsonProperty(OBJECT_IRI)
-        Optional<Uri> objectIRI,
         @JsonProperty(OBJECT_LABEL)
         Optional<String> objectLabel,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
@@ -120,8 +116,6 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(PREDICATE_ID)
         Optional<EntityReference> predicateId,
-        @JsonProperty(PREDICATE_IRI)
-        Optional<Uri> predicateIRI,
         @JsonProperty(PREDICATE_LABEL)
         Optional<String> predicateLabel,
         @JsonProperty(PREDICATE_MODIFIER)
@@ -146,8 +140,6 @@ public record Mapping (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(SUBJECT_ID)
         Optional<EntityReference> subjectId,
-        @JsonProperty(SUBJECT_IRI)
-        Optional<Uri> subjectIRI,
         @JsonProperty(SUBJECT_LABEL)
         Optional<String> subjectLabel,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
@@ -165,13 +157,27 @@ public record Mapping (
         Optional<EntityTypeEnum> subjectType,
 
 
-        // Additional fields for facets
+        // Extension
+        @JsonProperty(CHAIN_RULE)
+        ChainRulesEnum chainRule,
+        @JsonProperty(DISTANCE)
+        int distance,
+        @JsonProperty(EXPLANATION)
+        Optional<InferredMapping> explanation,
+        @JsonProperty(MAPPING_ID)
+        UUID mappingId,
         @JsonProperty(OBJECT_ID_PREFIX)
         Optional<String> objectIdPrefix,
+        @JsonProperty(OBJECT_IRI)
+        Optional<Uri> objectIRI,
+        @JsonProperty(PREDICATE_ID_PREFIX)
+        Optional<String> predicateIdPrefix,
+        @JsonProperty(PREDICATE_IRI)
+        Optional<Uri> predicateIRI,
         @JsonProperty(SUBJECT_ID_PREFIX)
         Optional<String> subjectIdPrefix,
-        @JsonProperty(MAPPING_ID)
-        UUID mappingId) implements Comparable<Mapping> {
+        @JsonProperty(SUBJECT_IRI)
+        Optional<Uri> subjectIRI) implements Comparable<Mapping> {
 
     public static Builder builder() {
         return new Builder();
@@ -199,7 +205,6 @@ public record Mapping (
 
     @JsonPOJOBuilder(withPrefix = "")
     public static class Builder {
-        private Uri mappingSetId;
         private Optional<String> mappingSetVersion = Optional.empty();
         private SortedSet<Uri> mappingSetSource = new TreeSet<>();
         private Optional<String> mappingSetTitle = Optional.empty();
@@ -211,20 +216,19 @@ public record Mapping (
         private SortedSet<EntityReference> creatorId = new TreeSet<>();
         private SortedSet<String> creatorLabel = new TreeSet<>();
         private SortedSet<EntityReference> curationRule = new TreeSet<>();
-        private int distance = 1;
         private Optional<EntityReference> issueTrackerItem = Optional.empty();
         private Optional<Uri> license = Optional.empty();
         private Optional<MappingCardinalityEnum> mappingCardinality = Optional.empty();
         private Optional<Date> mappingDate = Optional.empty();
         private Optional<EntityReference> mappingJustification = Optional.empty();
         private Optional<Uri> mappingProvider = Optional.empty();
+        private Uri mappingSetId;
         private Optional<EntityReference> mappingSource = Optional.empty();
         private Optional<String> mappingTool = Optional.empty();
         private Optional<String> mappingToolVersion = Optional.empty();
         private SortedSet<String> matchString = new TreeSet<>();
         private Optional<String> objectCategory = Optional.empty();
         private Optional<EntityReference> objectId = Optional.empty();
-        private Optional<Uri> objectIRI = Optional.empty();
         private Optional<String> objectLabel = Optional.empty();
         private SortedSet<EntityReference> objectMatchField = new TreeSet<>();
         private List<EntityReference> objectPreprocessing = new ArrayList<>();
@@ -233,7 +237,6 @@ public record Mapping (
         private Optional<EntityTypeEnum> objectType = Optional.empty();
         private Optional<KeyValuePairsAsString> other = Optional.empty();
         private Optional<EntityReference> predicateId = Optional.empty();
-        private Optional<Uri> predicateIRI = Optional.empty();
         private Optional<String> predicateLabel = Optional.empty();
         private Optional<PredicateModifierEnum> predicateModifier = Optional.empty();
         private Optional<Date> publicationDate = Optional.empty();
@@ -244,7 +247,6 @@ public record Mapping (
         private Optional<Double> similarityScore = Optional.empty();
         private Optional<String> subjectCategory = Optional.empty();
         private Optional<EntityReference> subjectId = Optional.empty();
-        private Optional<Uri> subjectIRI = Optional.empty();
         private Optional<String> subjectLabel = Optional.empty();
         private SortedSet<EntityReference> subjectMatchField = new TreeSet<>();
         private List<EntityReference> subjectPreprocessing = new ArrayList<>();
@@ -252,11 +254,18 @@ public record Mapping (
         private Optional<String> subjectSourceVersion = Optional.empty();
         private Optional<EntityTypeEnum> subjectType = Optional.empty();
 
-
+        // Extension
+        private int distance = 1;
+        private ChainRulesEnum chainRule = ChainRulesEnum.ASSERTED;
+        private Optional<InferredMapping> explanation = Optional.empty();
         private Optional<String> objectIdPrefix = Optional.empty();
+        private Optional<Uri> objectIRI = Optional.empty();
+        private Optional<String> predicateIdPrefix = Optional.empty();
+        private Optional<Uri> predicateIRI = Optional.empty();
         private Optional<String> subjectIdPrefix = Optional.empty();
+        private Optional<Uri> subjectIRI = Optional.empty();
 
-        private UUID mappingId = UUID.randomUUID();
+        private UUID mappingId = null;
 
         private static Logger logger = LoggerFactory.getLogger(Builder.class);
 
@@ -968,7 +977,6 @@ public record Mapping (
                     creatorId,
                     creatorLabel,
                     curationRule,
-                    distance,
                     issueTrackerItem,
                     license,
                     mappingCardinality,
@@ -986,7 +994,6 @@ public record Mapping (
                     matchString,
                     objectCategory,
                     objectId,
-                    objectIRI,
                     objectLabel,
                     objectMatchField,
                     objectPreprocessing,
@@ -995,7 +1002,6 @@ public record Mapping (
                     objectType,
                     other,
                     predicateId,
-                    predicateIRI,
                     predicateLabel,
                     predicateModifier,
                     publicationDate,
@@ -1006,16 +1012,23 @@ public record Mapping (
                     similarityScore,
                     subjectCategory,
                     subjectId,
-                    subjectIRI,
                     subjectLabel,
                     subjectMatchField,
                     subjectPreprocessing,
                     subjectSource,
                     subjectSourceVersion,
                     subjectType,
+
+                    chainRule,
+                    distance,
+                    explanation,
+                    mappingId,
                     objectIdPrefix,
+                    objectIRI,
+                    predicateIdPrefix,
+                    predicateIRI,
                     subjectIdPrefix,
-                    mappingId
+                    subjectIRI
             );
         }
 

@@ -15,7 +15,6 @@ public enum MappingEnum {
     CREATOR_ID(MappingConstants.CREATOR_ID),
     CREATOR_LABEL(MappingConstants.CREATOR_LABEL),
     CURATION_RULE(MappingConstants.CURATION_RULE),
-    DISTANCE(MappingConstants.DISTANCE),
     ISSUE_TRACKER_ITEM(MappingConstants.ISSUE_TRACKER_ITEM),
     LICENSE(MappingConstants.LICENSE),
     MAPPING_CARDINALITY(MappingConstants.MAPPING_CARDINALITY),
@@ -34,7 +33,6 @@ public enum MappingEnum {
     MATCH_STRING(MappingConstants.MATCH_STRING),
     OBJECT_CATEGORY(MappingConstants.OBJECT_CATEGORY),
     OBJECT_ID(MappingConstants.OBJECT_ID),
-    OBJECT_ID_PREFIX(MappingConstants.OBJECT_ID_PREFIX),
     OBJECT_LABEL(MappingConstants.OBJECT_LABEL),
     OBJECT_MATCH_FIELD(MappingConstants.OBJECT_MATCH_FIELD),
     OBJECT_PREPROCESSING(MappingConstants.OBJECT_PREPROCESSING),
@@ -53,17 +51,30 @@ public enum MappingEnum {
     SIMILARITY_SCORE(MappingConstants.SIMILARITY_SCORE),
     SUBJECT_CATEGORY(MappingConstants.SUBJECT_CATEGORY),
     SUBJECT_ID(MappingConstants.SUBJECT_ID),
-    SUBJECT_ID_PREFIX(MappingConstants.SUBJECT_ID_PREFIX),
     SUBJECT_LABEL(MappingConstants.SUBJECT_LABEL),
     SUBJECT_MATCH_FIELD(MappingConstants.SUBJECT_MATCH_FIELD),
     SUBJECT_PREPROCESSING(MappingConstants.SUBJECT_PREPROCESSING),
     SUBJECT_SOURCE(MappingConstants.SUBJECT_SOURCE),
     SUBJECT_SOURCE_VERSION(MappingConstants.SUBJECT_SOURCE_VERSION),
-    SUBJECT_TYPE(MappingConstants.SUBJECT_TYPE);
+    SUBJECT_TYPE(MappingConstants.SUBJECT_TYPE),
 
+    // Extensions to SSSOM
+    CHAIN_RULE(MappingConstants.CHAIN_RULE),
+    DISTANCE(MappingConstants.DISTANCE),
+    EXPLANATION(MappingConstants.EXPLANATION),
+    OBJECT_ID_PREFIX(MappingConstants.OBJECT_ID_PREFIX),
+    OBJECT_IRI(MappingConstants.OBJECT_IRI),
+    PREDICATE_ID_PREFIX(MappingConstants.PREDICATE_ID_PREFIX),
+    PREDICATE_IRI(MappingConstants.PREDICATE_IRI),
+    SUBJECT_ID_PREFIX(MappingConstants.SUBJECT_ID_PREFIX),
+    SUBJECT_IRI(MappingConstants.SUBJECT_IRI);
+
+
+    private static final MappingEnum mappingEnum = MappingEnum.CONFIDENCE;
     private final String field;
 
     public static final String[] MINIMAL_LIST_OF_FIELDS = new String[]{
+            mappingEnum.CONFIDENCE.getField(),
             MappingEnum.MAPPING_ID.getField(),
             MappingEnum.MAPPING_SET_ID.getField(),
             MappingEnum.SUBJECT_ID.getField(),
@@ -76,7 +87,14 @@ public enum MappingEnum {
             MappingEnum.OBJECT_LABEL.getField(),
             MappingEnum.OBJECT_ID_PREFIX.getField(),
             MappingEnum.MAPPING_JUSTIFICATION.getField(),
-            MappingEnum.DISTANCE.getField()
+            MappingEnum.MAPPING_TOOL.getField(),
+
+            // Extension
+            MappingEnum.DISTANCE.getField(),
+            MappingEnum.EXPLANATION.getField(),
+            MappingEnum.OBJECT_IRI.getField(),
+            MappingEnum.PREDICATE_IRI.getField(),
+            MappingEnum.SUBJECT_IRI.getField()
     };
 
     MappingEnum(String field) {

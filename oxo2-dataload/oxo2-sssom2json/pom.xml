@@ -82,7 +82,7 @@
           <archive>
             <manifest>
               <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <mainClass>uk.ac.ebi.spot.oxo.downloader.DownloadMappings</mainClass>
+              <mainClass>uk.ac.ebi.spot.oxo.sssom2json.SSSOM2JSON</mainClass>
             </manifest>
           </archive>
         </configuration>

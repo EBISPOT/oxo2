@@ -9,9 +9,7 @@ public class MappingConstants {
     public static final String CREATOR_LABEL = "creator_label";
     public static final String CURATION_RULE = "curation_rule";
     public static final String CURIE_MAP = "curie_map";
-    public static final String DISTANCE = "distance";
     public static final String EXTENSION_DEFINITIONS = "extension_definitions";
-
     public static final String ISSUE_TRACKER = "issue_tracker";
     public static final String ISSUE_TRACKER_ITEM = "issue_tracker_item";
     public static final String LICENSE = "license";
@@ -28,10 +26,8 @@ public class MappingConstants {
     public static final String MAPPING_TOOL = "mapping_tool";
     public static final String MAPPING_TOOL_VERSION = "mapping_tool_version";
     public static final String MATCH_STRING = "match_string";
-
     public static final String OBJECT_CATEGORY = "object_category";
     public static final String OBJECT_ID = "object_id";
-    public static final String OBJECT_IRI = "object_iri";
     public static final String OBJECT_LABEL = "object_label";
     public static final String OBJECT_MATCH_FIELD = "object_match_field";
     public static final String OBJECT_PREPROCESSING = "object_preprocessing";
@@ -41,7 +37,6 @@ public class MappingConstants {
     public static final String OTHER = "other";
     public static final String PREDICATE = "predicate";
     public static final String PREDICATE_ID = "predicate_id";
-    public static final String PREDICATE_IRI = "predicate_iri";
     public static final String PREDICATE_LABEL = "predicate_label";
     public static final String PREDICATE_MODIFIER = "predicate_modifier";
     public static final String PREPROCESSING = "preprocessing";
@@ -53,7 +48,6 @@ public class MappingConstants {
     public static final String SIMILARITY_SCORE = "similarity_score";
     public static final String SUBJECT_CATEGORY = "subject_category";
     public static final String SUBJECT_ID = "subject_id";
-    public static final String SUBJECT_IRI = "subject_iri";
     public static final String SUBJECT_LABEL = "subject_label";
     public static final String SUBJECT_MATCH_FIELD = "subject_match_field";
     public static final String SUBJECT_PREPROCESSING = "subject_preprocessing";
@@ -61,9 +55,15 @@ public class MappingConstants {
     public static final String SUBJECT_SOURCE_VERSION = "subject_source_version";
     public static final String SUBJECT_TYPE = "subject_type";
 
-
-    // Auxilary fields
+    // Extensions
+    public static final String CHAIN_RULE = "chain_rule";
+    public static final String DISTANCE = "distance";
+    public static final String EXPLANATION = "explanation";
     public static final String MAPPING_ID = "mapping_id";
     public static final String OBJECT_ID_PREFIX = "object_id_prefix";
+    public static final String OBJECT_IRI = "object_iri";
+    public static final String PREDICATE_ID_PREFIX = "predicate_id_prefix";
+    public static final String PREDICATE_IRI = "predicate_iri";
     public static final String SUBJECT_ID_PREFIX = "subject_id_prefix";
+    public static final String SUBJECT_IRI = "subject_iri";
 }
