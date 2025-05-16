@@ -55,6 +55,26 @@ abstract public class SSSOMDataType<T> {
                 '}';
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SSSOMDataType<?> that = (SSSOMDataType<?>) o;
+
+        if (!dataAsString.equals(that.dataAsString)) return false;
+        if (!dataRepresentation.equals(that.dataRepresentation)) return false;
+        return type == that.type;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = dataAsString.hashCode();
+        result = 31 * result + dataRepresentation.hashCode();
+        result = 31 * result + type.hashCode();
+        return result;
+    }
+
     public enum SSSOMDataTypesEnum {
         CURIE_MAP,
         DATE,
@@ -170,4 +190,7 @@ abstract public class SSSOMDataType<T> {
             return filterOut;
         }
     }
+
+
 }
+

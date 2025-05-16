@@ -5,12 +5,12 @@ set -e
 
 # Check if the required arguments are provided
 if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <input_directory> <output_file>"
+  echo "Usage: $0 <input_file> <output_file>"
   exit 1
 fi
 
 # Assign arguments to variables
-INPUT_DIR=$1
+INPUT_FILE=$1
 OUTPUT_FILE=$2
 
 # Define the path to the JAR file
@@ -23,4 +23,4 @@ if [ ! -f "$JAR_FILE" ]; then
 fi
 
 # Run the JSON2CSV class
-java -cp "$JAR_FILE" uk.ac.ebi.spot.oxo.json2rules.JSON2Turtle -i "$INPUT_DIR" -o "$OUTPUT_FILE"
+java -cp "$JAR_FILE" uk.ac.ebi.spot.oxo.inferences.ExplainInferredMappings -i "$INPUT_FILE" -o "$OUTPUT_FILE"

@@ -30,7 +30,7 @@ public class JSON2Turtle {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             logger.error("Error parsing command line arguments", e);
-            formatter.printHelp("JSON2CSV", options);
+            formatter.printHelp("JSON2Turtle", options);
             System.exit(1);
             return;
         }
@@ -41,14 +41,19 @@ public class JSON2Turtle {
         logger.info("Input Directory: {}", inputDirectory);
         logger.info("Output File: {}", outputFile);
 
+        long startTime = System.currentTimeMillis();
         try {
             processMappings(inputDirectory, outputFile);
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("Error processing mappings", e);
         }
+        long endTime = System.currentTimeMillis();
+        logger.info("Processing took {} s", (endTime - startTime)/1000);
     }
 
     private static void processMappings(String inputDirectory, String outputFile) throws IOException {
+
+
         ObjectMapper objectMapper = new ObjectMapper();
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(outputFile))) {
 
@@ -76,6 +81,8 @@ public class JSON2Turtle {
                         logger.error("Error processing file: {}", jsonFile, e);
                     }
                 }
+            } catch (Throwable t) {
+                logger.error("Error processing file: {}", outputFile, t);
             }
         }
     }

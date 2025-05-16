@@ -1,9 +1,6 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * InferredMappings are considered to be unique based on their conclusion.
@@ -13,120 +10,45 @@ import java.util.UUID;
 
 public class InferredMapping {
 
-    private Optional<uk.ac.ebi.spot.oxo.model.sssom.Double> confidence = Optional.empty();
-    private Optional<EntityReference> mappingJustification = Optional.empty();
-    private Optional<String> mappingTool = Optional.empty();
-    private Optional<EntityReference> objectId = Optional.empty();
-    private Optional<String> objectLabel = Optional.empty();
-    private Optional<EntityReference> predicateId = Optional.empty();
-    private Optional<String> predicateLabel = Optional.empty();
+    private EntityReference mappingJustification;
+    private String mappingTool;
     private Optional<PredicateModifierEnum> predicateModifier = Optional.empty();
-    private Optional<EntityReference> subjectId = Optional.empty();
-    private Optional<String> subjectLabel = Optional.empty();
-    private UUID mappingId;
-    private Optional<String> objectIdPrefix = Optional.empty();
-    private Optional<Uri> objectIRI = Optional.empty();
-    private Optional<String> predicateIdPrefix = Optional.empty();
-    private Optional<Uri> predicateIRI = Optional.empty();
-    private Optional<String> subjectIdPrefix = Optional.empty();
-    private Optional<Uri> subjectIRI = Optional.empty();
+    private Uri objectIRI;
+    private Uri predicateIRI;
+    private Uri subjectIRI;
 
     private Optional<ChainRuleApplications> chainRuleApplications = Optional.empty();
 
-    public Optional<Double> getConfidence() {
-        return confidence;
-    }
-
-    public void setConfidence(Optional<Double> confidence) {
-        this.confidence = confidence;
-    }
-
-    public UUID getMappingId() {
-        return mappingId;
-    }
-
-    public void setMappingId(UUID mappingId) {
-        this.mappingId = mappingId;
-    }
-
-    public Optional<EntityReference> getMappingJustification() {
+    public EntityReference getMappingJustification() {
         return mappingJustification;
     }
 
-    public void setMappingJustification(Optional<EntityReference> mappingJustification) {
+    public void setMappingJustification(EntityReference mappingJustification) {
         this.mappingJustification = mappingJustification;
     }
 
-    public Optional<String> getMappingTool() {
+    public String getMappingTool() {
         return mappingTool;
     }
 
-    public void setMappingTool(Optional<String> mappingTool) {
+    public void setMappingTool(String mappingTool) {
         this.mappingTool = mappingTool;
     }
 
-    public Optional<EntityReference> getObjectId() {
-        return objectId;
-    }
-
-    public void setObjectId(Optional<EntityReference> objectId) {
-        this.objectId = objectId;
-    }
-
-    public Optional<String> getObjectIdPrefix() {
-        return objectIdPrefix;
-    }
-
-    public void setObjectIdPrefix(Optional<String> objectIdPrefix) {
-        this.objectIdPrefix = objectIdPrefix;
-    }
-
-    public Optional<Uri> getObjectIRI() {
+    public Uri getObjectIRI() {
         return objectIRI;
     }
 
-    public void setObjectIRI(Optional<Uri> objectIRI) {
+    public void setObjectIRI(Uri objectIRI) {
         this.objectIRI = objectIRI;
     }
 
-    public Optional<String> getObjectLabel() {
-        return objectLabel;
-    }
-
-    public void setObjectLabel(Optional<String> objectLabel) {
-        this.objectLabel = objectLabel;
-    }
-
-    public Optional<EntityReference> getPredicateId() {
-        return predicateId;
-    }
-
-    public void setPredicateId(Optional<EntityReference> predicateId) {
-        this.predicateId = predicateId;
-    }
-
-    public Optional<String> getPredicateIdPrefix() {
-        return predicateIdPrefix;
-    }
-
-    public void setPredicateIdPrefix(Optional<String> predicateIdPrefix) {
-        this.predicateIdPrefix = predicateIdPrefix;
-    }
-
-    public Optional<Uri> getPredicateIRI() {
+    public Uri getPredicateIRI() {
         return predicateIRI;
     }
 
-    public void setPredicateIRI(Optional<Uri> predicateIRI) {
+    public void setPredicateIRI(Uri predicateIRI) {
         this.predicateIRI = predicateIRI;
-    }
-
-    public Optional<String> getPredicateLabel() {
-        return predicateLabel;
-    }
-
-    public void setPredicateLabel(Optional<String> predicateLabel) {
-        this.predicateLabel = predicateLabel;
     }
 
     public Optional<PredicateModifierEnum> getPredicateModifier() {
@@ -137,37 +59,12 @@ public class InferredMapping {
         this.predicateModifier = predicateModifier;
     }
 
-
-    public Optional<EntityReference> getSubjectId() {
-        return subjectId;
-    }
-
-    public void setSubjectId(Optional<EntityReference> subjectId) {
-        this.subjectId = subjectId;
-    }
-
-    public Optional<String> getSubjectIdPrefix() {
-        return subjectIdPrefix;
-    }
-
-    public void setSubjectIdPrefix(Optional<String> subjectIdPrefix) {
-        this.subjectIdPrefix = subjectIdPrefix;
-    }
-
-    public Optional<Uri> getSubjectIRI() {
+    public Uri getSubjectIRI() {
         return subjectIRI;
     }
 
-    public void setSubjectIRI(Optional<Uri> subjectIRI) {
+    public void setSubjectIRI(Uri subjectIRI) {
         this.subjectIRI = subjectIRI;
-    }
-
-    public Optional<String> getSubjectLabel() {
-        return subjectLabel;
-    }
-
-    public void setSubjectLabel(Optional<String> subjectLabel) {
-        this.subjectLabel = subjectLabel;
     }
 
     public Optional<ChainRuleApplications> getChainRuleApplications() {
@@ -180,11 +77,22 @@ public class InferredMapping {
 
     public boolean isMappingToSelf() {
         boolean result = false;
-        if (subjectIRI.isPresent() && objectIRI.isPresent() && objectIRI.get().compareTo(subjectIRI.get())==0) {
+        if (objectIRI.compareTo(subjectIRI) == 0) {
             result = true;
         }
         return result;
     }
+
+    public String getAsConclusion() {
+        StringBuilder conclusion = new StringBuilder();
+        conclusion.append("(");
+        conclusion.append(subjectIRI.asStringIRI()).append(", ");
+        conclusion.append(predicateIRI.asStringIRI()).append(", ");
+        conclusion.append(objectIRI.asStringIRI());
+        conclusion.append(")");
+        return conclusion.toString();
+    }
+
 
     @Override
     public boolean equals(Object o) {
@@ -204,7 +112,9 @@ public class InferredMapping {
     @Override
     public String toString() {
         return "InferredMapping{" +
-                "chainRuleApplications=" + chainRuleApplications +
+                "objectIRI=" + objectIRI +
+                ", predicateIRI=" + predicateIRI +
+                ", subjectIRI=" + subjectIRI +
                 '}';
     }
 
@@ -234,8 +144,12 @@ public class InferredMapping {
             this.premises = premises;
         }
 
-        public String getConclusion() {
-            return conclusion;
+        public List<String> getAsPremises() {
+            List<String> asPremises = new ArrayList<>();
+            for (InferredMapping premise : premises) {
+                asPremises.add(premise.getAsConclusion());
+            }
+            return asPremises;
         }
 
         @Override

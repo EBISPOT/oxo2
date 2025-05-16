@@ -2,6 +2,7 @@ package uk.ac.ebi.spot.oxo.model.sssom;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
 import java.net.URI;
 import java.util.Map;
@@ -28,18 +29,22 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
     }
 
     @Override
-    protected Optional<String> parseData(String uri) {
-        if (uri == null || uri.isBlank())
+    protected Optional<String> parseData(String uriOrCurie) {
+        if (uriOrCurie == null || uriOrCurie.isBlank())
             return Optional.empty();
-        int index = uri.indexOf(':');
+        int index = uriOrCurie.indexOf(':');
         if (index != -1) {
-            String prefix = uri.substring(0, index).toUpperCase();
-            String suffix = uri.substring(index);
+            String suffix = uriOrCurie.substring(index);
+            String prefix = StringUtils.isUriNotCurie(suffix) ? uriOrCurie.substring(0, index) :
+                    uriOrCurie.substring(0, index).toUpperCase();
+
             return Optional.of(prefix + suffix);
         } else
-            logger.warn("EntityReference uri is null or does not contain a colon, uri: {}", uri);
-        return Optional.of(uri.toUpperCase());
+            logger.warn("EntityReference uri is null or does not contain a colon, uri: {}", uriOrCurie);
+        return Optional.of(uriOrCurie.toUpperCase());
     }
+
+
 
     @Override
     protected SSSOMDataTypesEnum getType() {

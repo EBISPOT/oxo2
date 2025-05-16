@@ -2,7 +2,7 @@
 % Rule syntax: https://knowsys.github.io/nemo-doc/intro/tour/
 
 %Todo: Appropriate path to be determined based on Nemo install directory
-@import mapping :- turtle{resource="data/mapping.ttl"} .
+@import mapping :- turtle{resource="../../data/asserted_mappings.ttl"} .
 
 
 

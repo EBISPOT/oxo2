@@ -14,10 +14,10 @@ public enum NemoChainRulesEnum {
             "mapping(?a, ?p, ?c) :- mapping(?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b), mapping(?b, ?p, ?c) ."),
     RCE2_1(
             "RCE2-1", 
-            "mapping(?a, ?p, ?c) :- mapping(?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b), mapping(?b, ?p, ?c) ."),
+            "mapping(?a, ?p, ?c) :- mapping(?a, ?p, ?b), mapping(?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?c) ."),
     RCE2_2(
             "RCE2-2", 
-            "mapping(?a, ?p, ?c) :- mapping(?a, <http://www.w3.org/2004/02/skos/core#narrowMatch>, ?b), mapping(?b, ?p, ?c) ."),
+            "mapping(?a, ?p, ?c) :- mapping(?a, ?p, ?b), mapping(?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c) ."),
     T1(
             "T1", 
             "mapping(?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?c) :- mapping(?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b), mapping(?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?c) ."),
@@ -68,10 +68,10 @@ public enum NemoChainRulesEnum {
             "mapping(?b, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?a) :- mapping(?a, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, ?b) ."),
     RG1(
             "RG1", 
-            "mapping(?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b) :- mapping(?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?c) ."),
+            "mapping(?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b) :- mapping(?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b) ."),
     RG2(
             "RG2", 
-            "mapping(?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b) :- mapping(?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) ."),
+            "mapping(?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b) :- mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?b) ."),
     RCE_N1(
             "RCE-N1", 
             "mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) :- mapping(?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b), mapping(?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) ."),

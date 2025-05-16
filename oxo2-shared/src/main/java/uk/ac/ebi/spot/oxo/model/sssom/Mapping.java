@@ -158,12 +158,10 @@ public record Mapping (
 
 
         // Extension
-        @JsonProperty(CHAIN_RULE)
-        ChainRulesEnum chainRule,
         @JsonProperty(DISTANCE)
         int distance,
         @JsonProperty(EXPLANATION)
-        Optional<InferredMapping> explanation,
+        List<Explanation> explanation,
         @JsonProperty(MAPPING_ID)
         UUID mappingId,
         @JsonProperty(OBJECT_ID_PREFIX)
@@ -256,8 +254,7 @@ public record Mapping (
 
         // Extension
         private int distance = 1;
-        private ChainRulesEnum chainRule = ChainRulesEnum.ASSERTED;
-        private Optional<InferredMapping> explanation = Optional.empty();
+        private List<Explanation> explanation = new ArrayList<>();
         private Optional<String> objectIdPrefix = Optional.empty();
         private Optional<Uri> objectIRI = Optional.empty();
         private Optional<String> predicateIdPrefix = Optional.empty();
@@ -485,6 +482,11 @@ public record Mapping (
         public Builder mappingJustification(String mappingJustification) {
             if (mappingJustification != null && !mappingJustification.isBlank())
                 this.mappingJustification = Optional.of(new EntityReference(mappingJustification));
+            return this;
+        }
+
+        public Builder mappingJustification(EntityReference mappingJustification) {
+            this.mappingJustification = Optional.of(mappingJustification);
             return this;
         }
 
@@ -965,6 +967,13 @@ public record Mapping (
             return this;
         }
 
+        @Field(EXPLANATION)
+        public Builder explanation(List<Explanation> explanation) {
+            this.explanation = explanation;
+            return this;
+        }
+
+
         public Mapping build() {
             if (this.mappingId == null)
                 this.mappingId = generateMappingUuid();
@@ -1019,7 +1028,6 @@ public record Mapping (
                     subjectSourceVersion,
                     subjectType,
 
-                    chainRule,
                     distance,
                     explanation,
                     mappingId,

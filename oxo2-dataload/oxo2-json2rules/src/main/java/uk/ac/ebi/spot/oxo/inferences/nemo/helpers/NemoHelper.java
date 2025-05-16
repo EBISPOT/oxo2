@@ -2,6 +2,7 @@ package uk.ac.ebi.spot.oxo.inferences.nemo.helpers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
 import uk.ac.ebi.spot.oxo.model.sssom.InferredMapping;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.NemoChainRulesEnum;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.NemoInferences;
@@ -13,18 +14,23 @@ import java.util.*;
 public class NemoHelper {
     private static final Logger logger = LoggerFactory.getLogger(NemoHelper.class);
 
-
+    /**
+     * @Todo: The same conclusion can appear multiple times. Currently we will loose different explanations for the same
+     * conclusion. See: https://github.com/knowsys/nemo/issues/677.
+     *
+     * @param nemoInferences
+     * @return
+     */
     public static Set<InferredMapping> fromNemoInferencesToInferredMappings(NemoInferences nemoInferences) {
         long timeBegin = System.currentTimeMillis();
         Set<InferredMapping> inferredMappings = new HashSet<>();
         Set<NemoInferences.NemoInference> conclusionsWithPremisesAndRules = nemoInferences.getInferencesSet();
-        Map<String, InferredMapping.ChainRuleApplications> conclusionToChainRuleApplication = new HashMap<>();
         Map<String, InferredMapping> premiseToInferredMapping = new HashMap<>();
         Map<String, InferredMapping> conclusionToInferredMapping = new HashMap<>();
         for (NemoInferences.NemoInference nemoInference  : conclusionsWithPremisesAndRules) {
 
             if (nemoInference.getPremises() != null && nemoInference.getPremises().size() > 0)  {
-                InferredMapping inferredMapping = null;
+                InferredMapping inferredMapping;
                 if (premiseToInferredMapping.containsKey(nemoInference.getConclusion())) {
                     inferredMapping = premiseToInferredMapping.get(nemoInference.getConclusion());
                 } else {
@@ -34,18 +40,14 @@ public class NemoHelper {
                 if (inferredMapping.isMappingToSelf()) {
                     continue;
                 }
-                InferredMapping.ChainRuleApplications chainRuleApplication = null;
-                if (conclusionToChainRuleApplication.containsKey(nemoInference.getConclusion())) {
-                    chainRuleApplication = conclusionToChainRuleApplication.get(nemoInference.getConclusion());
-                } else {
-                    Optional<NemoChainRulesEnum> nemoChainRulesEnum =
-                            NemoChainRulesEnum.getChainRuleFromNemoRuleName(nemoInference.getRuleName());
-                    Optional<ChainRulesEnum> chainRulesEnum = nemoChainRulesEnum.map(
-                            nemoRule -> ChainRulesEnum.valueOf(nemoRule.name()));
 
-                    chainRuleApplication = new InferredMapping.ChainRuleApplications(
+                Optional<NemoChainRulesEnum> nemoChainRulesEnum =
+                        NemoChainRulesEnum.getChainRuleFromNemoRuleName(nemoInference.getRuleName());
+                Optional<ChainRulesEnum> chainRulesEnum = nemoChainRulesEnum.map(
+                        nemoRule -> ChainRulesEnum.valueOf(nemoRule.name()));
+
+                InferredMapping.ChainRuleApplications chainRuleApplication = new InferredMapping.ChainRuleApplications(
                             nemoInference.getConclusion(), chainRulesEnum);
-                }
                 List<InferredMapping> premises = new ArrayList<>();
                 for (String premise : nemoInference.getPremises()) {
                     InferredMapping inferredMappingForPremise;
@@ -58,12 +60,18 @@ public class NemoHelper {
                     }
 
                     premises.add(inferredMappingForPremise);
-                    inferredMappings.add(inferredMappingForPremise);
+                    if (premiseToInferredMapping.containsKey(premise)) {
+                        InferredMapping existingPremise = premiseToInferredMapping.get(premise);
+                        if (!existingPremise.equals(inferredMappingForPremise)) {
+                        logger.error("Premise {} already exists in premiseToInferredMapping. Existing related inferred mappping is {}" +
+                                " and the new one is {}. ", premise, existingPremise, inferredMappingForPremise);
+                        }
+                    }
                     premiseToInferredMapping.put(premise, inferredMappingForPremise);
                 }
                 chainRuleApplication.setPremises(premises);
+
                 inferredMapping.setChainRuleApplications(Optional.of(chainRuleApplication));
-                conclusionToChainRuleApplication.put(nemoInference.getConclusion(), chainRuleApplication);
                 conclusionToInferredMapping.put(nemoInference.getConclusion(), inferredMapping);
                 inferredMappings.add(inferredMapping);
             }
@@ -95,9 +103,12 @@ public class NemoHelper {
             throw new IllegalArgumentException("Conclusion string must contain exactly three URIs: " + mapping);
         }
 
-        inferredMapping.setSubjectIRI(Optional.of(new Uri(parts[0])));
-        inferredMapping.setPredicateIRI(Optional.of(new Uri(parts[1])));
-        inferredMapping.setObjectIRI(Optional.of(new Uri(parts[2])));
+        inferredMapping.setSubjectIRI(new Uri(parts[0]));
+        inferredMapping.setPredicateIRI(new Uri(parts[1]));
+        inferredMapping.setObjectIRI(new Uri(parts[2]));
+
+        inferredMapping.setMappingTool("OxO2 inference");
+        inferredMapping.setMappingJustification(new EntityReference("SEMAPV:MappingChaining"));
 
         return inferredMapping;
     }

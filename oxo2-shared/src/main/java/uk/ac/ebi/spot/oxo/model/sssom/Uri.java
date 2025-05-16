@@ -79,4 +79,8 @@ public class Uri extends SSSOMDataType<URI> implements Comparable<Uri> {
         return dataAsString;
     }
 
+    public String asStringIRI(){
+        return dataAsString;
+    }
+
 }

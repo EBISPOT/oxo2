@@ -15,7 +15,7 @@ INPUT_FILE_2=$2
 OUTPUT_FILE=$3
 
 # Define the path to the JAR file
-JAR_FILE="./target/oxo2-json2rules-1.0.0-SNAPSHOT-jar-with-dependencies.jar"
+JAR_FILE="./oxo2-json2rules/target/oxo2-json2rules-1.0.0-SNAPSHOT-jar-with-dependencies.jar"
 
 # Check if the JAR file exists
 if [ ! -f "$JAR_FILE" ]; then
