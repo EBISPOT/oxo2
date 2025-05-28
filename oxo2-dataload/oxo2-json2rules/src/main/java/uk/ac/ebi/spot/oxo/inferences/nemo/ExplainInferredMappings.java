@@ -81,7 +81,7 @@ public class ExplainInferredMappings {
                     .mappingJustification(inferredMapping.getMappingJustification())
                     .mappingTool(inferredMapping.getMappingTool())
                     .explanation(explanations)
-                    .distance(explanations.size())
+//                    .distance(explanations.size()+1)
                     .mappingSetId("https://www.ebi.ac.uk/spot/oxo/inferences/")
                     .build();
             mappings.add(mapping);

@@ -29,7 +29,7 @@ public class NemoHelper {
         Map<String, InferredMapping> conclusionToInferredMapping = new HashMap<>();
         for (NemoInferences.NemoInference nemoInference  : conclusionsWithPremisesAndRules) {
 
-            if (nemoInference.getPremises() != null && nemoInference.getPremises().size() > 0)  {
+//            if (nemoInference.getPremises() != null && nemoInference.getPremises().size() > 0)  {
                 InferredMapping inferredMapping;
                 if (premiseToInferredMapping.containsKey(nemoInference.getConclusion())) {
                     inferredMapping = premiseToInferredMapping.get(nemoInference.getConclusion());
@@ -75,7 +75,7 @@ public class NemoHelper {
                 conclusionToInferredMapping.put(nemoInference.getConclusion(), inferredMapping);
                 inferredMappings.add(inferredMapping);
             }
-        }
+//        }
 
         long timeEnd = System.currentTimeMillis();
         logger.info("Time taken: {} s", (timeEnd - timeBegin)/1000);

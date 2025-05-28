@@ -33,12 +33,12 @@ class NemoNemoInferenceReaderTest {
 
 
         List<Mapping> mappings = createMappings(inferredMappings);
-        List<Mapping> mappingsWithNullChainRuleInExplanation = mappings.stream()
-                .filter(m -> m.explanation().stream()
-                        .anyMatch(e -> e.getChainRules().isEmpty()))
+        List<Mapping> mappingsToWrite = mappings.stream()
+                .filter(m -> m.distance() > 3)
+//                .filter(m -> m.subjectId().get().)
                 .collect(Collectors.toList());
 
-        writeMappingsAsJson(mappings, "/home/henriette007/ebi-dev/oxo2/data/sssom_as_json/inferred-mappings.json");
+        writeMappingsAsJson(mappingsToWrite, "/home/henriette007/ebi-dev/oxo2/data/sssom_as_json/inferred-mappings-distance-equal-2.json");
 
     }
 }
