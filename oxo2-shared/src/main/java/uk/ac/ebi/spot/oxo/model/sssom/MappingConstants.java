@@ -58,6 +58,7 @@ public class MappingConstants {
     // Extensions
     public static final String CHAIN_RULE = "chain_rule";
     public static final String DISTANCE = "distance";
+    public static final String EXPLANATION_LENGTH = "explanation_length";
     public static final String EXPLANATION = "explanation";
     public static final String MAPPING_ID = "mapping_id";
     public static final String OBJECT_ID_PREFIX = "object_id_prefix";

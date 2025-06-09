@@ -19,7 +19,7 @@
     <modules>
         <module>oxo2-downloader</module>
         <module>oxo2-sssom2json</module>
-        <module>oxo2-json2rules</module>
+        <module>oxo2-json2inferences</module>
     </modules>
 
 </project>

@@ -160,6 +160,8 @@ public record Mapping (
         // Extension
         @JsonProperty(DISTANCE)
         int distance,
+        @JsonProperty(EXPLANATION_LENGTH)
+        int explanationLength,
         @JsonProperty(EXPLANATION)
         List<Explanation> explanation,
         @JsonProperty(MAPPING_ID)
@@ -254,6 +256,7 @@ public record Mapping (
 
         // Extension
         private int distance = 1;
+        private int explanationLength = 0;
         private List<Explanation> explanation = new ArrayList<>();
         private Optional<String> objectIdPrefix = Optional.empty();
         private Optional<Uri> objectIRI = Optional.empty();
@@ -432,6 +435,12 @@ public record Mapping (
         @Field(DISTANCE)
         public Builder distance(int distance) {
             this.distance = distance;
+            return this;
+        }
+
+        @Field(EXPLANATION_LENGTH)
+        public Builder explanationLength(int explanationLength) {
+            this.explanationLength = explanationLength;
             return this;
         }
 
@@ -1029,6 +1038,7 @@ public record Mapping (
                     subjectType,
 
                     distance,
+                    explanationLength,
                     explanation,
                     mappingId,
                     objectIdPrefix,

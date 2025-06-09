@@ -1,15 +1,19 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
 public enum ChainRulesEnum {
-    ASSERTED("Asserted", "Asserted","Asserted"),
+    ASSERTED("Asserted", "Asserted","Asserted", false),
     RCE1_1("RCE1-1", "(?a, ?p, ?c) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b), (?b, ?p, ?c)",
-            "(?a, ?p, ?c) <- (?a, <OWL:equivalentClass>, ?b), (?b, ?p, ?c)"),
+            "(?a, ?p, ?c) <- (?a, <OWL:equivalentClass>, ?b), (?b, ?p, ?c)",
+            false),
     RCE1_2("RCE1-2", "(?a, ?p, ?c) <- (?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b), (?b, ?p, ?c)",
-            "(?a, ?p, ?c) <- (?a, <SKOS:exactMatch>, ?b), (?b, ?p, ?c)"),
+            "(?a, ?p, ?c) <- (?a, <SKOS:exactMatch>, ?b), (?b, ?p, ?c)",
+            false),
     RCE2_1("RCE2-1", "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?c)",
-            "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <OWL:equivalentClass>, ?c)"),
+            "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <OWL:equivalentClass>, ?c)",
+            false),
     RCE2_2("RCE2-2", "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c)",
-            "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <SKOS:exactMatch>, ?c)"),
+            "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <SKOS:exactMatch>, ?c)",
+            false),
     T1("T1",
             "(?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?c) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b), (?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?c)",
             "(?a, <OWL:equivalentClass>, ?c) <- (?a, <OWL:equivalentClass>, ?b), (?b, <OWL:equivalentClass>, ?c)"),
@@ -71,12 +75,20 @@ public enum ChainRulesEnum {
     private final String name;
     private final String rule;
     private final String abbreviatedRule;
+    private final boolean increasesDistance;
 
+    ChainRulesEnum(String name, String rule, String abbreviatedRule, boolean increasesDistance) {
+        this.name = name;
+        this.rule = rule;
+        this.abbreviatedRule = abbreviatedRule;
+        this.increasesDistance = increasesDistance;
+    }
 
     ChainRulesEnum(String name, String rule, String abbreviatedRule) {
         this.name = name;
         this.rule = rule;
         this.abbreviatedRule = abbreviatedRule;
+        this.increasesDistance = true;
     }
 
     public String getName() {
@@ -89,5 +101,9 @@ public enum ChainRulesEnum {
 
     public String getAbbreviatedRule() {
         return abbreviatedRule;
+    }
+
+    public boolean increasesDistance() {
+        return increasesDistance;
     }
 }

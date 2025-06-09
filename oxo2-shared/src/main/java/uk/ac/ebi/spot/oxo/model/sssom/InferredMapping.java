@@ -5,7 +5,9 @@ import java.util.*;
 /**
  * InferredMappings are considered to be unique based on their conclusion.
  *
- *
+ * @Todo: Store asserted mappings in a separate field for easy access. This may be valuable for users as it can help to determine the
+ * veracity of inferred mappings.
+ * Also include mapping_set_id to allow inclusion/exclusion of inferred mappings the are derived from specific mappings sets.
  */
 
 public class InferredMapping {
@@ -16,8 +18,11 @@ public class InferredMapping {
     private Uri objectIRI;
     private Uri predicateIRI;
     private Uri subjectIRI;
+    private int distance = 1;
 
     private Optional<ChainRuleApplications> chainRuleApplications = Optional.empty();
+
+
 
     public EntityReference getMappingJustification() {
         return mappingJustification;
@@ -116,6 +121,14 @@ public class InferredMapping {
                 ", predicateIRI=" + predicateIRI +
                 ", subjectIRI=" + subjectIRI +
                 '}';
+    }
+
+    public int getDistance() {
+        return distance;
+    }
+
+    public void setDistance(int distance) {
+        this.distance = distance;
     }
 
     /**

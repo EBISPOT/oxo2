@@ -8,6 +8,7 @@ public class Explanation {
     private List<String> premises;
     private Optional<ChainRulesEnum> chainRules;
     private Optional<String> chainRuleAsString;
+//    private int distance;
 
     public Explanation(String conclusion, List<String> premises, Optional<ChainRulesEnum> chainRules) {
         this.conclusion = conclusion;
@@ -16,6 +17,16 @@ public class Explanation {
         if (chainRules.isPresent()) {
             chainRuleAsString = Optional.of(chainRules.get().getAbbreviatedRule());
         }
+//        this.distance = 1;
+    }
+
+    public static boolean doesConclusionExistAlready(List<Explanation> explanations, Explanation explanation) {
+        for (Explanation existingExplanation : explanations) {
+            if (existingExplanation.getConclusion().equals(explanation.getConclusion())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Optional<ChainRulesEnum> getChainRules() {
@@ -50,5 +61,11 @@ public class Explanation {
         this.premises = premises;
     }
 
-
+//    public int getDistance() {
+//        return distance;
+//    }
+//
+//    public void setDistance(int distance) {
+//        this.distance = distance;
+//    }
 }
