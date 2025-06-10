@@ -17,8 +17,8 @@ public class MainDispatcher {
         String command = args[0];
         String[] remainingArgs = new String[args.length - 1];
         System.arraycopy(args, 1, remainingArgs, 0, args.length - 1);
-        logger.debug("command: " + command);
-        logger.debug("remainingArgs: " + Arrays.toString(remainingArgs));
+        logger.debug("command: {}", command);
+        logger.debug("remainingArgs: {}", Arrays.toString(remainingArgs));
 
         switch (command) {
             case "json2ttl":

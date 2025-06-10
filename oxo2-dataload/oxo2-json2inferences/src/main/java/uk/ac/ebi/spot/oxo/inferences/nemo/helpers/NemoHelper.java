@@ -28,55 +28,52 @@ public class NemoHelper {
         Map<String, InferredMapping> premiseToInferredMapping = new HashMap<>();
         Map<String, InferredMapping> conclusionToInferredMapping = new HashMap<>();
         for (NemoInferences.NemoInference nemoInference  : conclusionsWithPremisesAndRules) {
-
-//            if (nemoInference.getPremises() != null && nemoInference.getPremises().size() > 0)  {
-                InferredMapping inferredMapping;
-                if (premiseToInferredMapping.containsKey(nemoInference.getConclusion())) {
-                    inferredMapping = premiseToInferredMapping.get(nemoInference.getConclusion());
-                } else {
-                    inferredMapping = new InferredMapping();
-                    inferredMapping = populateInferredMapping(inferredMapping, nemoInference.getConclusion());
-                }
-                if (inferredMapping.isMappingToSelf()) {
-                    continue;
-                }
-
-                Optional<NemoChainRulesEnum> nemoChainRulesEnum =
-                        NemoChainRulesEnum.getChainRuleFromNemoRuleName(nemoInference.getRule());
-                Optional<ChainRulesEnum> chainRulesEnum = nemoChainRulesEnum.map(
-                        nemoRule -> ChainRulesEnum.valueOf(nemoRule.name()));
-
-
-                InferredMapping.ChainRuleApplications chainRuleApplication = new InferredMapping.ChainRuleApplications(
-                            nemoInference.getConclusion(), chainRulesEnum);
-                List<InferredMapping> premises = new ArrayList<>();
-                for (String premise : nemoInference.getPremises()) {
-                    InferredMapping inferredMappingForPremise;
-                    if (conclusionToInferredMapping.containsKey(premise)) {
-                        inferredMappingForPremise = conclusionToInferredMapping.get(premise);
-                    } else {
-                        inferredMappingForPremise = new InferredMapping();
-                        inferredMappingForPremise =
-                                populateInferredMapping(inferredMappingForPremise, premise);
-                    }
-
-                    premises.add(inferredMappingForPremise);
-                    if (premiseToInferredMapping.containsKey(premise)) {
-                        InferredMapping existingPremise = premiseToInferredMapping.get(premise);
-                        if (!existingPremise.equals(inferredMappingForPremise)) {
-                        logger.error("Premise {} already exists in premiseToInferredMapping. Existing related inferred mappping is {}" +
-                                " and the new one is {}. ", premise, existingPremise, inferredMappingForPremise);
-                        }
-                    }
-                    premiseToInferredMapping.put(premise, inferredMappingForPremise);
-                }
-                chainRuleApplication.setPremises(premises);
-
-                inferredMapping.setChainRuleApplications(Optional.of(chainRuleApplication));
-                conclusionToInferredMapping.put(nemoInference.getConclusion(), inferredMapping);
-                inferredMappings.add(inferredMapping);
+            InferredMapping inferredMapping;
+            if (premiseToInferredMapping.containsKey(nemoInference.getConclusion())) {
+                inferredMapping = premiseToInferredMapping.get(nemoInference.getConclusion());
+            } else {
+                inferredMapping = new InferredMapping();
+                inferredMapping = populateInferredMapping(inferredMapping, nemoInference.getConclusion());
             }
-//        }
+            if (inferredMapping.isMappingToSelf()) {
+                continue;
+            }
+
+            Optional<NemoChainRulesEnum> nemoChainRulesEnum =
+                    NemoChainRulesEnum.getChainRuleFromNemoRuleName(nemoInference.getRule());
+            Optional<ChainRulesEnum> chainRulesEnum = nemoChainRulesEnum.map(
+                    nemoRule -> ChainRulesEnum.valueOf(nemoRule.name()));
+
+
+            InferredMapping.ChainRuleApplications chainRuleApplication = new InferredMapping.ChainRuleApplications(
+                        nemoInference.getConclusion(), chainRulesEnum);
+            List<InferredMapping> premises = new ArrayList<>();
+            for (String premise : nemoInference.getPremises()) {
+                InferredMapping inferredMappingForPremise;
+                if (conclusionToInferredMapping.containsKey(premise)) {
+                    inferredMappingForPremise = conclusionToInferredMapping.get(premise);
+                } else {
+                    inferredMappingForPremise = new InferredMapping();
+                    inferredMappingForPremise =
+                            populateInferredMapping(inferredMappingForPremise, premise);
+                }
+
+                premises.add(inferredMappingForPremise);
+                if (premiseToInferredMapping.containsKey(premise)) {
+                    InferredMapping existingPremise = premiseToInferredMapping.get(premise);
+                    if (!existingPremise.equals(inferredMappingForPremise)) {
+                    logger.error("Premise {} already exists in premiseToInferredMapping. Existing related inferred mappping is {}" +
+                            " and the new one is {}. ", premise, existingPremise, inferredMappingForPremise);
+                    }
+                }
+                premiseToInferredMapping.put(premise, inferredMappingForPremise);
+            }
+            chainRuleApplication.setPremises(premises);
+
+            inferredMapping.setChainRuleApplications(Optional.of(chainRuleApplication));
+            conclusionToInferredMapping.put(nemoInference.getConclusion(), inferredMapping);
+            inferredMappings.add(inferredMapping);
+        }
 
         long timeEnd = System.currentTimeMillis();
         logger.info("Time taken: {} s", (timeEnd - timeBegin)/1000);

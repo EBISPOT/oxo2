@@ -3,6 +3,9 @@
 
 %Todo: Appropriate path to be determined based on Nemo install directory
 
+% Design decision: We intentionally keep the definition of mappings simple here to ensure rule definitions are as simple
+% as possible. I.e., for this reason we do not include additional useful mapping information such as mappingSetId,
+% subjectLabel etc. Hence, a mapping only has subject, predicate and object information, where these are all URIs.
 @import assertedMapping :- turtle{resource="../../data/assertedMapping.ttl"} .
 
 
