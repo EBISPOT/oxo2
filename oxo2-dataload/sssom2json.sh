@@ -20,7 +20,7 @@ fi
 SCRIPT_PATH=$(dirname $(readlink -f $0))
 
 # Run the SSSOM2JSON
-java -Xms1024m -Xms2048m -jar $SCRIPT_PATH/oxo2-sssom2json/target/oxo2-sssom2json-1.0-SNAPSHOT-jar-with-dependencies.jar -i $INPUT_DIR -o $OUTPUT_DIR
+java -Xms1024m -Xms8192m -jar $SCRIPT_PATH/oxo2-sssom2json/target/oxo2-sssom2json-1.0-SNAPSHOT.jar -i $INPUT_DIR -o $OUTPUT_DIR
 
 # Check if the command was successful
 if [ $? -eq 0 ]; then

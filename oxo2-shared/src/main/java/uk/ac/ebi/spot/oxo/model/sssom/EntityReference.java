@@ -45,7 +45,6 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
     }
 
 
-
     @Override
     protected SSSOMDataTypesEnum getType() {
         return SSSOMDataTypesEnum.ENTITY_REFERENCE;

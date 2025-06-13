@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.spot.oxo.inferences.nemo.helpers.NemoHelper;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.NemoInferences;
-import uk.ac.ebi.spot.oxo.model.sssom.Explanation;
 import uk.ac.ebi.spot.oxo.model.sssom.InferredMapping;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 
@@ -108,7 +107,7 @@ public class ExplainInferredMappings {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new Jdk8Module());
         objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         
@@ -139,11 +138,11 @@ public class ExplainInferredMappings {
                     continue;
                 }
                 
-                List<Explanation> explanations = getExplanations(inferredMapping);
+                List<InferredMapping> explanations = getExplanations(inferredMapping);
                 Mapping mapping = new Mapping.Builder()
-                        .subjectId(inferredMapping.getSubjectIRI().asStringIRI())
-                        .predicateId(inferredMapping.getPredicateIRI().asStringIRI())
-                        .objectId(inferredMapping.getObjectIRI().asStringIRI())
+                        .subjectIRI(inferredMapping.getSubjectIRI().asStringIRI())
+                        .predicateIRI(inferredMapping.getPredicateIRI().asStringIRI())
+                        .objectIRI(inferredMapping.getObjectIRI().asStringIRI())
                         .mappingJustification(inferredMapping.getMappingJustification())
                         .mappingTool(inferredMapping.getMappingTool())
                         .explanation(explanations)
@@ -165,16 +164,18 @@ public class ExplainInferredMappings {
         return mappings;
     }
 
-    private static int calculateMappingDistance(List<Explanation> explanations) {
+    private static int calculateMappingDistance(List<InferredMapping> explanations) {
         Set<String> extractedParts = new HashSet<>();
 
         explanations.forEach(explanation -> {
-            String conclusion = explanation.getConclusion();
-            extractParts(conclusion, extractedParts);
+            extractParts(explanation.getSubjectIRI().asStringIRI(), extractedParts);
+            extractParts(explanation.getObjectIRI().asStringIRI(), extractedParts);
 
-            explanation.getPremises().forEach(premise -> {
-                extractParts(premise, extractedParts);
-            });
+            explanation.getChainRuleApplications().ifPresent(chainRuleApplication ->
+                    chainRuleApplication.getPremises().forEach(premise -> {
+                        extractParts(premise.getSubjectIRI().asStringIRI(), extractedParts);
+                        extractParts(premise.getObjectIRI().asStringIRI(), extractedParts);
+                    }));
         });
 
         return extractedParts.size() - 1;
@@ -183,16 +184,15 @@ public class ExplainInferredMappings {
     private static void extractParts(String input, Set<String> extractedParts) {
         if (input != null) {
             String[] parts = input.split("/");
-            for (String part : parts) {
-                if (part.contains("_")) {
-                    extractedParts.add(part.split("_")[0]);
-                }
+            String lastPart = parts[parts.length - 1];
+            if (lastPart.contains("_")) {
+                extractedParts.add(lastPart.split("_")[0]);
             }
         }
     }
 
-    private static List<Explanation> getExplanations(InferredMapping inferredMapping) {
-        List<Explanation> explanations = new LinkedList<>();
+    private static List<InferredMapping> getExplanations(InferredMapping inferredMapping) {
+        List<InferredMapping> explanations = new LinkedList<>();
 
         if (inferredMapping == null) {
             logger.warn("Inferred mapping is null, cannot create explanations");
@@ -203,12 +203,9 @@ public class ExplainInferredMappings {
             InferredMapping.ChainRuleApplications chainRuleApplications = inferredMapping.getChainRuleApplications().get();
 
             try {
-                Explanation explanation = new Explanation(
-                    inferredMapping.getAsConclusion(), 
-                    chainRuleApplications.getAsPremises(),
-                    chainRuleApplications.getChainRule());
+                InferredMapping explanation = inferredMapping;
                     
-                if (!Explanation.doesConclusionExistAlready(explanations, explanation))
+                if (!InferredMapping.doesConclusionExistAlready(explanations, explanation))
                     explanations.add(explanation);
 
                 chainRuleApplications.getPremises().stream()

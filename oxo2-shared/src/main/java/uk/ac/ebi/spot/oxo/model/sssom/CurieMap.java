@@ -50,6 +50,17 @@ public class CurieMap extends SSSOMDataType<Map<String, String>> {
         return map;
     }
 
+    public Map<String, String> addCurieMapToMap(Map<String, String> prefixToIRIMap) {
+        if (this.dataRepresentation.isEmpty())
+            return prefixToIRIMap;
+        else {
+            this.dataRepresentation.get().forEach((key, value) -> {
+                prefixToIRIMap.put(key, value);
+            });
+        }
+        return prefixToIRIMap;
+    }
+
     public static Optional<CurieMap> merge(CurieMap thisCurieMap, CurieMap thatCurieMap) {
         if ((thisCurieMap == null || thisCurieMap.dataRepresentation.isEmpty())) {
             logger.warn("thisCurieMap is null or empty. No merge performed.");

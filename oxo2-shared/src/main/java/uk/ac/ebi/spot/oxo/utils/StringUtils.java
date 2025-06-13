@@ -1,10 +1,17 @@
 package uk.ac.ebi.spot.oxo.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.ebi.spot.oxo.model.sssom.CurieMap;
+
+import java.net.URI;
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class StringUtils {
+    private static final Logger logger = LoggerFactory.getLogger(StringUtils.class);
 
     public static <T> SortedSet<T> splitStringToSortedSet(String input, String delimiter, Function<String, T> mapper) {
         if (input==null || input.isBlank()) {
@@ -39,5 +46,20 @@ public class StringUtils {
         if (suffix.contains("//"))
             return true;
         return false;
+    }
+
+    public static boolean isURIValid(String uri) {
+        if (uri == null || uri.isBlank())
+            return false;
+        String invalidCharRegex = "[\\[\\]\\{\\}\\(\\)*@]";
+        Pattern pattern = Pattern.compile(invalidCharRegex);
+        if (pattern.matcher(uri).find())
+            return false;
+        try {
+            URI asURI = new URI(uri);
+        } catch (Throwable t) {
+            logger.warn("Error while parsing URI: {} ", uri, t);
+        }
+        return true;
     }
 }

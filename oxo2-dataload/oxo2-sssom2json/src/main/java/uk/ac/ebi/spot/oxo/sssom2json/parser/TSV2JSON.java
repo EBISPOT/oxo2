@@ -12,10 +12,12 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.spot.oxo.model.sssom.CurieMap;
-import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
+import uk.ac.ebi.spot.oxo.model.sssom.*;
+
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
-import uk.ac.ebi.spot.oxo.model.sssom.MappingSet;
+
+import uk.ac.ebi.spot.oxo.sssom2json.SSSOM2JSON;
+import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,7 +38,9 @@ public class TSV2JSON {
     private static final Logger logger = LoggerFactory.getLogger(TSV2JSON.class);
 
 
-    public static void processDirectory(String directory, String mappingSetOutputDirectory, String mappingsOutputDirectiory) {
+    public static void processDirectory(String directory, String mappingSetOutputDirectory,
+                                        String mappingsOutputDirectory, Map<String, String> prefixToIRIMap,
+                                        Set<SSSOM2JSON.EntityDetails> curieToEntityDetailsMap) {
 
         Map<String, MappingSet.Builder> filenameToExternalMetadataMap = readExternalMetadata(directory);
 
@@ -57,7 +61,15 @@ public class TSV2JSON {
                         logger.info("Time taken to read TSV file: {} s", (endReadTime - startReadTime)/1000);
 
                         if (mappingSetOptional.isPresent() && mappingSetOptional.get().mappings().size() > 0) {
-                            writeJSONFile(mappingSetOptional.get(), mappingSetOutputDirectory, mappingsOutputDirectiory);
+                            MappingSet mappingSet = mappingSetOptional.get();
+                            if (mappingSet.curieMap() != null) {
+                                mappingSet.curieMap().addCurieMapToMap(prefixToIRIMap);
+                            }
+                            if (mappingSet.mappings().size() > 0)
+                                mappingSet.mappings().forEach(m ->
+                                        updateCurieToEntityDetails(curieToEntityDetailsMap, m));
+
+                            writeJSONFile(mappingSet, mappingSetOutputDirectory, mappingsOutputDirectory);
                             long endWriteTime = System.currentTimeMillis();
                             logger.info("Time taken to write JSON file: {} s", (endWriteTime - endReadTime)/1000);
                         }
@@ -67,8 +79,33 @@ public class TSV2JSON {
         }
     }
 
+    private static void updateCurieToEntityDetails(Set<SSSOM2JSON.EntityDetails> curieToEntityDetailsSet,
+                                                   Mapping mapping) {
+       addDetailsForEntity(mapping.subjectId(), mapping.subjectIRI(), mapping.subjectLabel(), curieToEntityDetailsSet);
+       addDetailsForEntity(mapping.predicateId(), mapping.predicateIRI(), mapping.predicateLabel(), curieToEntityDetailsSet);
+       addDetailsForEntity(mapping.objectId(), mapping.objectIRI(), mapping.objectLabel(), curieToEntityDetailsSet);
+    }
+
+    private static void addDetailsForEntity(Optional<EntityReference> entityReference,
+                                                                Optional<Uri> uri, Optional<String> label,
+                                                                Set<SSSOM2JSON.EntityDetails> curieToEntityDetailsSet) {
+        SSSOM2JSON.EntityDetails entityDetails = new SSSOM2JSON.EntityDetails();
+
+        if (uri.isPresent() && StringUtils.isURIValid(uri.get().asStringIRI()))
+            entityDetails.setIri(uri.get().asStringIRI());
+        else
+            return;
+
+        if (entityReference.isPresent())
+            entityDetails.setCurie(entityReference.get().getDataAsString());
+        if (label.isPresent())
+            entityDetails.setLabel(label.get());
+
+        curieToEntityDetailsSet.add(entityDetails);
+    }
+
     private static void writeJSONFile(MappingSet mappingSet, String mappingSetOutputDirectory,
-                                      String mappingsOutputDirectiory) {
+                                      String mappingsOutputDirectory) {
 
         logger.info("Writing JSON file for MappingSet {}", mappingSet.mappingSetId());
         ObjectMapper objectMapper = new ObjectMapper();
@@ -78,10 +115,9 @@ public class TSV2JSON {
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-
         String mappingSetFilename = mappingSetOutputDirectory + File.separator +
                 mappingSet.mappingSetId().extractFragmentOrLastPathSegment() + ".json";
-        String mappingsFilename = mappingsOutputDirectiory + File.separator +
+        String mappingsFilename = mappingsOutputDirectory + File.separator +
                 mappingSet.mappingSetId().extractFragmentOrLastPathSegment() + ".json";
 
         if (!mappingSet.mappings().isEmpty()) {

@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import uk.ac.ebi.spot.oxo.inferences.ApplicablePredicatesEnum;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
+import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
 public class JSON2Turtle {
 
@@ -89,27 +90,10 @@ public class JSON2Turtle {
     }
 
     private static boolean areURIsValid(String subjectIRI, String predicateIRI, String objectIRI) {
-        if (subjectIRI == null || subjectIRI.isEmpty() || predicateIRI == null || predicateIRI.isEmpty() ||
-            objectIRI == null || objectIRI.isEmpty())
+        if (!StringUtils.isURIValid(subjectIRI) || !StringUtils.isURIValid(predicateIRI)
+                || !StringUtils.isURIValid(objectIRI))
             return false;
-        if (!subjectIRI.contains(":") || !predicateIRI.contains(":") || !objectIRI.contains(":"))
-            return false;
-
-        // Regex to check for invalid characters
-        String invalidCharRegex = "[\\[\\]\\{\\}\\(\\)*@]";
-        Pattern pattern = Pattern.compile(invalidCharRegex);
-
-        if (pattern.matcher(subjectIRI).find() || pattern.matcher(predicateIRI).find() ||
-                pattern.matcher(objectIRI).find())
-            return false;
-        try {
-            URI subjectURI = new URI(subjectIRI);
-            URI predicateURI = new URI(predicateIRI);
-            URI objectURI = new URI(objectIRI);
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
+        return true;
     }
 
     private static boolean isApplicablePredicate(String predicateIRI) {

@@ -1,6 +1,12 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.*;
+
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 
 /**
  * InferredMappings are considered to be unique based on their conclusion.
@@ -10,19 +16,55 @@ import java.util.*;
  * Also include mapping_set_id to allow inclusion/exclusion of inferred mappings the are derived from specific mappings sets.
  */
 
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class InferredMapping {
 
+    @JsonProperty(MAPPING_JUSTIFICATION)
     private EntityReference mappingJustification;
+    @JsonProperty(MAPPING_TOOL)
     private String mappingTool;
-    private Optional<PredicateModifierEnum> predicateModifier = Optional.empty();
+    @JsonProperty(OBJECT_IRI)
     private Uri objectIRI;
+    @JsonProperty(OBJECT_ID)
+    private Optional<EntityReference> objectId;
+    @JsonProperty(OBJECT_LABEL)
+    private Optional<String> objectLabel;
+    @JsonProperty(PREDICATE_IRI)
     private Uri predicateIRI;
+    @JsonProperty(PREDICATE_ID)
+    private Optional<EntityReference> predicateId;
+    @JsonProperty(PREDICATE_LABEL)
+    private Optional<String> predicateLabel;
+    @JsonProperty(SUBJECT_IRI)
     private Uri subjectIRI;
+    @JsonProperty(SUBJECT_ID)
+    private Optional<EntityReference> subjectId;
+    @JsonProperty(SUBJECT_LABEL)
+    private Optional<String> subjectLabel;
+    @JsonProperty(DISTANCE)
     private int distance = 1;
 
     private Optional<ChainRuleApplications> chainRuleApplications = Optional.empty();
 
+    public boolean compareConclusion(InferredMapping inferredMapping) {
+        if (!this.objectIRI.equals(inferredMapping.getObjectIRI()) ||
+            !this.predicateIRI.equals(inferredMapping.getPredicateIRI()) ||
+            !this.subjectIRI.equals(inferredMapping.getSubjectIRI())) {
+            return false;
+        }
+        else return true;
+    }
 
+    public static boolean doesConclusionExistAlready(List<InferredMapping> explanations, InferredMapping explanation) {
+        for (InferredMapping existingExplanation : explanations) {
+            if (existingExplanation.getSubjectIRI().equals(explanation.getSubjectIRI()) &&
+                existingExplanation.predicateIRI.equals(explanation.getPredicateIRI()) &&
+                existingExplanation.objectIRI.equals(explanation.getObjectIRI())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public EntityReference getMappingJustification() {
         return mappingJustification;
@@ -56,13 +98,6 @@ public class InferredMapping {
         this.predicateIRI = predicateIRI;
     }
 
-    public Optional<PredicateModifierEnum> getPredicateModifier() {
-        return predicateModifier;
-    }
-
-    public void setPredicateModifier(Optional<PredicateModifierEnum> predicateModifier) {
-        this.predicateModifier = predicateModifier;
-    }
 
     public Uri getSubjectIRI() {
         return subjectIRI;
@@ -80,6 +115,7 @@ public class InferredMapping {
         this.chainRuleApplications = chainRuleApplications;
     }
 
+    @JsonIgnore
     public boolean isMappingToSelf() {
         boolean result = false;
         if (objectIRI.compareTo(subjectIRI) == 0) {
@@ -88,15 +124,15 @@ public class InferredMapping {
         return result;
     }
 
-    public String getAsConclusion() {
-        StringBuilder conclusion = new StringBuilder();
-        conclusion.append("(");
-        conclusion.append(subjectIRI.asStringIRI()).append(", ");
-        conclusion.append(predicateIRI.asStringIRI()).append(", ");
-        conclusion.append(objectIRI.asStringIRI());
-        conclusion.append(")");
-        return conclusion.toString();
-    }
+//    public String getAsConclusion() {
+//        StringBuilder conclusion = new StringBuilder();
+//        conclusion.append("(");
+//        conclusion.append(subjectIRI.asStringIRI()).append(", ");
+//        conclusion.append(predicateIRI.asStringIRI()).append(", ");
+//        conclusion.append(objectIRI.asStringIRI());
+//        conclusion.append(")");
+//        return conclusion.toString();
+//    }
 
 
     @Override
@@ -135,9 +171,12 @@ public class InferredMapping {
      * Represents a hierarchical list of 1 or more chain rule applications.
      * @Todo: Remove spaces and . from conclusions and premises.
      */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ChainRuleApplications {
         private String conclusion;
+        @JsonProperty(CHAIN_RULE)
         private Optional<ChainRulesEnum> chainRule;
+        @JsonProperty(PREMISES)
         private List<InferredMapping> premises;
 
         public ChainRuleApplications(String conclusion, Optional<ChainRulesEnum> chainRule) {
@@ -157,13 +196,14 @@ public class InferredMapping {
             this.premises = premises;
         }
 
-        public List<String> getAsPremises() {
-            List<String> asPremises = new ArrayList<>();
-            for (InferredMapping premise : premises) {
-                asPremises.add(premise.getAsConclusion());
-            }
-            return asPremises;
-        }
+//        @JsonIgnore
+//        public List<String> getAsPremises() {
+//            List<String> asPremises = new ArrayList<>();
+//            for (InferredMapping premise : premises) {
+//                asPremises.add(premise.getAsConclusion());
+//            }
+//            return asPremises;
+//        }
 
         @Override
         public String toString() {

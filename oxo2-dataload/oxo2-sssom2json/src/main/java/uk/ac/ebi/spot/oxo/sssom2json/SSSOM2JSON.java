@@ -3,20 +3,90 @@ package uk.ac.ebi.spot.oxo.sssom2json;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static uk.ac.ebi.spot.oxo.sssom2json.parser.TSV2JSON.processDirectory;
 
+/**
+ * @Todo:
+ * 1. Parallelize SSSOM2JSON
+ */
 public class SSSOM2JSON {
 
     private static final Logger logger = LoggerFactory.getLogger(SSSOM2JSON.class);
+
+    private static Map<String, String> prefixToIRIMap = new HashMap<String, String>();
+
+    private static Set<EntityDetails> curieToEntityDetailsSet = new HashSet<>();
+
+    public static class EntityDetails implements Comparable<EntityDetails> {
+        private String curie;
+        private String iri;
+        private String label;
+
+        public String getCurie() {
+            return curie;
+        }
+
+        public void setCurie(String curie) {
+            this.curie = curie;
+        }
+
+        public String getIri() {
+            return iri;
+        }
+
+        public void setIri(String iri) {
+            this.iri = iri;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public void setLabel(String label) {
+            this.label = label;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            EntityDetails that = (EntityDetails) o;
+            return compareTo(that) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(getCurie(), getIri(), getLabel());
+        }
+
+        @Override
+        public int compareTo(EntityDetails other) {
+            int compare = nullSafeStringCompare(this.curie, other.curie);
+            if (compare != 0) return compare;
+            compare = nullSafeStringCompare(this.iri, other.iri);
+            if (compare != 0) return compare;
+            return nullSafeStringCompare(this.label, other.label);
+        }
+
+        private static int nullSafeStringCompare(String s1, String s2) {
+            if (s1 == null && s2 == null) return 0;
+            if (s1 == null) return -1;
+            if (s2 == null) return 1;
+            return s1.compareTo(s2);
+        }
+    }
 
     public static void main(String[] args) throws IOException {
         Options options = getOptions();
@@ -60,7 +130,72 @@ public class SSSOM2JSON {
             throw new IOException("Error creating output directories", e);
         }
 
-        directoriesOfMappingSets.forEach(path -> processDirectory(path.toString(), mappingSetDirectory, mappingDirectory));
+        directoriesOfMappingSets.forEach(path -> processDirectory(path.toString(), mappingSetDirectory, mappingDirectory,
+                prefixToIRIMap, curieToEntityDetailsSet));
+
+        long usedMemoryBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        double usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0);
+        logger.info("Memory used: {} MB", usedMemoryMB);
+        writePrefixesToTSV(outputDirectory);
+        writeEntitiesToTSV(outputDirectory);
+        usedMemoryBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0);
+        logger.info("Memory used: {} MB", usedMemoryMB);
+    }
+
+    private static void writeEntitiesToTSV(String outputDirectory) throws IOException {
+        Path entitiesPath = Paths.get(outputDirectory, "entities.tsv");
+        try (
+            BufferedWriter writer = Files.newBufferedWriter(entitiesPath);
+            CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
+                    .withDelimiter('\t')
+                    .withHeader("curie", "iri", "label"))
+        ) {
+            logger.info("Write entities.tsv to {}", entitiesPath);
+            for (EntityDetails entity : curieToEntityDetailsSet) {
+                csvPrinter.printRecord(
+                    entity.getCurie() != null ? entity.getCurie() : "",
+                    entity.getIri() != null ? entity.getIri() : "",
+                    entity.getLabel() != null ? entity.getLabel() : ""
+                );
+            }
+            csvPrinter.flush();
+            csvPrinter.close();
+            logger.trace("Done writing entities.tsv to {}", entitiesPath);
+        } catch (IOException e) {
+            long usedMemoryBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+            double usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0);
+            logger.info("Memory used: {} MB", usedMemoryMB);
+            logger.error("Error writing entities.tsv", e);
+            throw new IOException("Error writing entities.tsv", e);
+        }
+    }
+
+    private static void writePrefixesToTSV(String outputDirectory) throws IOException {
+        Path prefixToIRIPath = Paths.get(outputDirectory, "prefixToIRI.tsv");
+        try (
+            BufferedWriter writer = Files.newBufferedWriter(prefixToIRIPath);
+            CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
+                    .withDelimiter('\t')
+                    .withHeader("prefix", "iri"))
+        ) {
+            logger.info("Write prefixToIRI.tsv to {}", prefixToIRIPath);
+            for (Map.Entry<String, String> entry : prefixToIRIMap.entrySet()) {
+                csvPrinter.printRecord(
+                    entry.getKey() != null ? entry.getKey() : "",
+                    entry.getValue() != null ? entry.getValue() : ""
+                );
+            }
+            csvPrinter.flush();
+            csvPrinter.close();
+            logger.trace("Done writing prefixToIRI.tsv to {}", prefixToIRIPath);
+        } catch (IOException e) {
+            long usedMemoryBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+            double usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0);
+            logger.info("Memory used: {} MB", usedMemoryMB);
+            logger.error("Error writing prefixToIRI.tsv", e);
+            throw new IOException("Error writing prefixToIRI.tsv", e);
+        }
     }
 
     private static Stream<Path> getDirectories(String inputDirectory) throws IOException {
