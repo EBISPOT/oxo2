@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>uk.ac.ebi.spot</groupId>
   <artifactId>oxo2-sssom2json</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <properties>
@@ -12,10 +12,11 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
+
     <dependency>
       <groupId>uk.ac.ebi.spot</groupId>
       <artifactId>oxo2-shared</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0.0-SNAPSHOT</version>
     </dependency>
 
     <!-- SLF4J API -->
@@ -53,12 +54,6 @@
       <artifactId>commons-csv</artifactId>
       <version>1.12.0</version>
     </dependency>
-      <dependency>
-          <groupId>uk.ac.ebi.spot</groupId>
-          <artifactId>oxo2-shared</artifactId>
-          <version>1.0-SNAPSHOT</version>
-          <scope>compile</scope>
-      </dependency>
   </dependencies>
   <build>
     <plugins>

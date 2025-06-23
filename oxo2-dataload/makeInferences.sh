@@ -19,5 +19,5 @@
  --trace-output ../../data/inferences-chains.json
 
 ## Write out inferred mappings with their explanations.
-./oxo2-json2inferences/explanations2json.sh ../../data/inferences-chains.json ../../data/sssom_as_json/inferred-mappings.json
+./oxo2-json2inferences/explanations2json.sh ../../data/inferences-chains.json ../../data/sssom_as_json/mapping ../../data/sssom_as_json/inferred-mappings.json
 

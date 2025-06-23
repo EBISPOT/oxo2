@@ -17,12 +17,14 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
  */
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class InferredMapping {
+public class InferredMapping implements Comparable<InferredMapping>{
 
     @JsonProperty(MAPPING_JUSTIFICATION)
     private EntityReference mappingJustification;
     @JsonProperty(MAPPING_TOOL)
     private String mappingTool;
+    @JsonProperty(MAPPING_SET_ID)
+    private String mappingSetId;
     @JsonProperty(OBJECT_IRI)
     private Uri objectIRI;
     @JsonProperty(OBJECT_ID)
@@ -115,6 +117,75 @@ public class InferredMapping {
         this.chainRuleApplications = chainRuleApplications;
     }
 
+    public String getMappingSetId() {
+        return mappingSetId;
+    }
+
+    public void setMappingSetId(String mappingSetId) {
+        this.mappingSetId = mappingSetId;
+    }
+
+    public Optional<EntityReference> getObjectId() {
+        return objectId;
+    }
+
+    public void setObjectId(String strObjectId) {
+        if (strObjectId != null && !strObjectId.isBlank()) {
+            EntityReference objectId = new EntityReference(strObjectId);
+            this.objectId = Optional.of(objectId);
+        }
+    }
+
+    public Optional<String> getObjectLabel() {
+        return objectLabel;
+    }
+
+    public void setObjectLabel(String objectLabel) {
+        if (objectLabel != null && !objectLabel.isBlank()) {
+            this.objectLabel = Optional.of(objectLabel);
+        }
+    }
+
+    public Optional<EntityReference> getPredicateId() {
+        return predicateId;
+    }
+
+    public void setPredicateId(String strPredicateId) {
+        if (strPredicateId != null && !strPredicateId.isBlank()) {
+            EntityReference predicateId = new EntityReference(strPredicateId);
+            this.predicateId = Optional.of(predicateId);
+        }
+    }
+
+    public Optional<String> getPredicateLabel() {
+        return predicateLabel;
+    }
+
+    public void setPredicateLabel(String predicateLabel) {
+        if (predicateLabel != null && !predicateLabel.isBlank())
+            this.predicateLabel = Optional.of(predicateLabel);
+    }
+
+    public Optional<EntityReference> getSubjectId() {
+        return subjectId;
+    }
+
+    public void setSubjectId(String strSubjectId) {
+        if (strSubjectId != null && !strSubjectId.isBlank()) {
+            EntityReference subjectId = new EntityReference(strSubjectId);
+            this.subjectId = Optional.of(subjectId);
+        }
+    }
+
+    public Optional<String> getSubjectLabel() {
+        return subjectLabel;
+    }
+
+    public void setSubjectLabel(String subjectLabel) {
+        if (subjectLabel != null && !subjectLabel.isBlank())
+            this.subjectLabel = Optional.of(subjectLabel);
+    }
+
     @JsonIgnore
     public boolean isMappingToSelf() {
         boolean result = false;
@@ -124,16 +195,27 @@ public class InferredMapping {
         return result;
     }
 
-//    public String getAsConclusion() {
-//        StringBuilder conclusion = new StringBuilder();
-//        conclusion.append("(");
-//        conclusion.append(subjectIRI.asStringIRI()).append(", ");
-//        conclusion.append(predicateIRI.asStringIRI()).append(", ");
-//        conclusion.append(objectIRI.asStringIRI());
-//        conclusion.append(")");
-//        return conclusion.toString();
-//    }
+    public InferredMapping populateFromMapping(Mapping mapping) {
+        mapping.mappingTool().ifPresent(this::setMappingTool);
+        mapping.mappingJustification().ifPresent(this::setMappingJustification);
+        this.setMappingSetId(mapping.mappingSetId().asStringIRI());
+        mapping.subjectId().ifPresent(e -> this.setSubjectId(e.getDataAsString()));
+        mapping.subjectLabel().ifPresent(this::setSubjectLabel);
+        mapping.predicateId().ifPresent(e -> this.setPredicateId(e.getDataAsString()));
+        mapping.predicateLabel().ifPresent(this::setPredicateLabel);
+        mapping.objectId().ifPresent(e -> this.setObjectId(e.getDataAsString()));
+        mapping.objectLabel().ifPresent(this::setObjectLabel);
 
+        return this;
+    }
+
+    public static InferredMapping createFromMapping(Mapping mapping) {
+        InferredMapping inferredMapping = new InferredMapping();
+        mapping.subjectIRI().ifPresent(inferredMapping::setSubjectIRI);
+        mapping.predicateIRI().ifPresent(inferredMapping::setPredicateIRI);
+        mapping.objectIRI().ifPresent(inferredMapping::setObjectIRI);
+        return inferredMapping.populateFromMapping(mapping);
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -167,20 +249,94 @@ public class InferredMapping {
         this.distance = distance;
     }
 
+    @Override
+    public int compareTo(InferredMapping o) {
+        // Compare mappingJustification
+        int compare;
+        if (this.mappingJustification == null && o.mappingJustification != null) return -1;
+        if (this.mappingJustification != null && o.mappingJustification == null) return 1;
+        if (this.mappingJustification != null && o.mappingJustification != null) {
+            compare = this.mappingJustification.compareTo(o.mappingJustification);
+            if (compare != 0) return compare;
+        }
+
+        // Compare mappingTool
+        compare = Objects.compare(this.mappingTool, o.mappingTool, Comparator.nullsFirst(String::compareTo));
+        if (compare != 0) return compare;
+
+        // Compare mappingSetId
+        compare = Objects.compare(this.mappingSetId, o.mappingSetId, Comparator.nullsFirst(String::compareTo));
+        if (compare != 0) return compare;
+
+        // Compare objectIRI
+        compare = Objects.compare(this.objectIRI, o.objectIRI, Comparator.nullsFirst(Uri::compareTo));
+        if (compare != 0) return compare;
+
+        // Compare predicateIRI
+        compare = Objects.compare(this.predicateIRI, o.predicateIRI, Comparator.nullsFirst(Uri::compareTo));
+        if (compare != 0) return compare;
+
+        // Compare subjectIRI
+        compare = Objects.compare(this.subjectIRI, o.subjectIRI, Comparator.nullsFirst(Uri::compareTo));
+        if (compare != 0) return compare;
+
+        // Compare chainRuleApplications
+        compare = compareChainRuleApplications(this.chainRuleApplications, o.chainRuleApplications);
+        if (compare != 0) return compare;
+
+        return 0;
+    }
+
+    private static int compareChainRuleApplications(Optional<ChainRuleApplications> optionalChainRuleApplications1,
+                                                    Optional<ChainRuleApplications> optionalChainRuleApplications2) {
+
+        if (optionalChainRuleApplications1.isEmpty() && optionalChainRuleApplications2.isPresent()) return -1;
+        if (optionalChainRuleApplications1.isPresent() && optionalChainRuleApplications2.isEmpty()) return 1;
+        if (optionalChainRuleApplications1.isEmpty() && optionalChainRuleApplications2.isEmpty()) return 0;
+
+        ChainRuleApplications chainRuleApplication1 = optionalChainRuleApplications1.get();
+        ChainRuleApplications chainRuleApplication2 = optionalChainRuleApplications2.get();
+
+        // Compare chainRule
+        int compare = compareChainRulesEnum(chainRuleApplication1.chainRule, chainRuleApplication2.chainRule);
+        if (compare != 0) return compare;
+
+        // Compare premises
+        List<InferredMapping> premises1 = chainRuleApplication1.premises;
+        List<InferredMapping> premises2 = chainRuleApplication2.premises;
+        if (premises1 == null && premises2 != null) return -1;
+        if (premises1 != null && premises2 == null) return 1;
+        if (premises1 == null && premises2 == null) return 0;
+        compare = Integer.compare(premises1.size(), premises2.size());
+        if (compare != 0) return compare;
+        for (int i = 0; i < premises1.size(); i++) {
+            compare = premises1.get(i).compareTo(premises2.get(i));
+            if (compare != 0) return compare;
+        }
+        return 0;
+    }
+
+    private static int compareChainRulesEnum(Optional<ChainRulesEnum> optionalChainRulesEnum1,
+                                             Optional<ChainRulesEnum> optionalChainRulesEnum2) {
+
+        if (optionalChainRulesEnum1.isEmpty() && optionalChainRulesEnum2.isPresent()) return -1;
+        if (optionalChainRulesEnum1.isPresent() && optionalChainRulesEnum2.isEmpty()) return 1;
+        if (optionalChainRulesEnum1.isEmpty() && optionalChainRulesEnum2.isEmpty()) return 0;
+        return optionalChainRulesEnum1.get().compareTo(optionalChainRulesEnum2.get());
+    }
+
     /**
      * Represents a hierarchical list of 1 or more chain rule applications.
      * @Todo: Remove spaces and . from conclusions and premises.
      */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ChainRuleApplications {
-        private String conclusion;
         @JsonProperty(CHAIN_RULE)
         private Optional<ChainRulesEnum> chainRule;
         @JsonProperty(PREMISES)
         private List<InferredMapping> premises;
 
-        public ChainRuleApplications(String conclusion, Optional<ChainRulesEnum> chainRule) {
-            this.conclusion = conclusion;
+        public ChainRuleApplications(Optional<ChainRulesEnum> chainRule) {
             this.chainRule = chainRule;
         }
 
@@ -196,20 +352,10 @@ public class InferredMapping {
             this.premises = premises;
         }
 
-//        @JsonIgnore
-//        public List<String> getAsPremises() {
-//            List<String> asPremises = new ArrayList<>();
-//            for (InferredMapping premise : premises) {
-//                asPremises.add(premise.getAsConclusion());
-//            }
-//            return asPremises;
-//        }
-
         @Override
         public String toString() {
             return "ChainRuleApplications{" +
                     "chainRule=" + chainRule +
-                    ", conclusion='" + conclusion + '\'' +
                     ", premises=" + premises +
                     '}';
         }

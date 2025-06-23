@@ -164,6 +164,8 @@ public record Mapping (
         int explanationLength,
         @JsonProperty(EXPLANATION)
         List<InferredMapping> explanation,
+        @JsonProperty(ASSERTED_MAPPINGS)
+        List<InferredMapping> assertedMappings,
         @JsonProperty(MAPPING_ID)
         UUID mappingId,
         @JsonProperty(OBJECT_ID_PREFIX)
@@ -258,6 +260,7 @@ public record Mapping (
         private int distance = 1;
         private int explanationLength = 0;
         private List<InferredMapping> explanation = new ArrayList<>();
+        private List<InferredMapping> assertedMappings = new ArrayList<>();
         private Optional<String> objectIdPrefix = Optional.empty();
         private Optional<Uri> objectIRI = Optional.empty();
         private Optional<String> predicateIdPrefix = Optional.empty();
@@ -270,6 +273,7 @@ public record Mapping (
         private static Logger logger = LoggerFactory.getLogger(Builder.class);
 
         @Field(MAPPING_SET_ID)
+        @JsonProperty(MAPPING_SET_ID)
         public Builder mappingSetId(String mappingSetId) {
             this.mappingSetId = new Uri(mappingSetId);
             return this;
@@ -286,6 +290,7 @@ public record Mapping (
         }
 
         @Field(MAPPING_SET_VERSION)
+        @JsonProperty(MAPPING_SET_VERSION)
         public Builder mappingSetVersion(String mappingSetVersion) {
             this.mappingSetVersion = Optional.of(mappingSetVersion);
             return this;
@@ -304,6 +309,7 @@ public record Mapping (
         }
 
         @Field(MAPPING_SET_SOURCE)
+        @JsonProperty(MAPPING_SET_SOURCE)
         public Builder mappingSetSource (List<String> mappingSetSource) {
             if (mappingSetSource != null && !mappingSetSource.isEmpty())
                 this.mappingSetSource = mappingSetSource.stream()
@@ -319,6 +325,7 @@ public record Mapping (
         }
 
         @Field(MAPPING_SET_TITLE)
+        @JsonProperty(MAPPING_SET_TITLE)
         public Builder mappingSetTitle(String mappingSetTitle) {
             if (mappingSetTitle != null && !mappingSetTitle.isBlank())
                 this.mappingSetTitle = Optional.of(mappingSetTitle);
@@ -333,6 +340,7 @@ public record Mapping (
         }
 
         @Field(MAPPING_SET_DESCRIPTION)
+        @JsonProperty(MAPPING_SET_DESCRIPTION)
         public Builder mappingSetDescription(String mappingSetDescription) {
             if (mappingSetDescription != null && !mappingSetDescription.isBlank())
                 this.mappingSetDescription = Optional.of(mappingSetDescription);
@@ -347,6 +355,7 @@ public record Mapping (
         }
 
         @Field(AUTHOR_ID)
+        @JsonProperty(AUTHOR_ID)
         public Builder authorId(List<String> authorId) {
             if (authorId != null && !authorId.isEmpty())
                 this.authorId = new TreeSet<>(authorId.stream()
@@ -361,6 +370,7 @@ public record Mapping (
         }
 
         @Field(AUTHOR_LABEL)
+        @JsonProperty(AUTHOR_LABEL)
         public Builder authorLabel(List<String> authorLabel) {
             if (authorLabel != null && !authorLabel.isEmpty())
                 this.authorLabel = new TreeSet<>(authorLabel);
@@ -373,6 +383,7 @@ public record Mapping (
         }
 
         @Field(COMMENT)
+        @JsonProperty(COMMENT)
         public Builder comment(String comment) {
             if (comment != null && !comment.isBlank())
                 this.comment = Optional.of(comment);
@@ -380,6 +391,7 @@ public record Mapping (
         }
 
         @Field(CONFIDENCE)
+        @JsonProperty(CONFIDENCE)
         public Builder confidence(java.lang.Double confidence) {
             this.confidence = Optional.of(Double.of(confidence));
             return this;
@@ -397,6 +409,7 @@ public record Mapping (
 
 
         @Field(CREATOR_ID)
+        @JsonProperty(CREATOR_ID)
         public Builder creatorId(List<String> creatorId) {
             if (creatorId != null && !creatorId.isEmpty())
                 this.creatorId = new TreeSet<>(creatorId.stream()
@@ -406,6 +419,7 @@ public record Mapping (
         }
 
         @Field(CREATOR_LABEL)
+        @JsonProperty(CREATOR_LABEL)
         public Builder creatorLabel(List<String> creatorLabel) {
             if (creatorLabel != null && !creatorLabel.isEmpty())
                 this.creatorLabel = new TreeSet<>(creatorLabel);
@@ -419,6 +433,7 @@ public record Mapping (
 
 
         @Field(CURATION_RULE)
+        @JsonProperty(CURATION_RULE)
         public Builder curationRule(List<String> curationRule) {
             if (curationRule != null && !curationRule.isEmpty())
                 this.curationRule = new TreeSet<>(curationRule.stream()
@@ -433,18 +448,21 @@ public record Mapping (
         }
 
         @Field(DISTANCE)
+        @JsonProperty(DISTANCE)
         public Builder distance(int distance) {
             this.distance = distance;
             return this;
         }
 
         @Field(EXPLANATION_LENGTH)
+        @JsonProperty(EXPLANATION_LENGTH)
         public Builder explanationLength(int explanationLength) {
             this.explanationLength = explanationLength;
             return this;
         }
 
         @Field(ISSUE_TRACKER_ITEM)
+        @JsonProperty(ISSUE_TRACKER_ITEM)
         public Builder issueTrackerItem(String issueTrackerItem) {
             if (issueTrackerItem != null && !issueTrackerItem.isBlank())
                 this.issueTrackerItem = Optional.of(new EntityReference(issueTrackerItem));
@@ -452,6 +470,7 @@ public record Mapping (
         }
 
         @Field(LICENSE)
+        @JsonProperty(LICENSE)
         public Builder license(String license) {
             if (license != null && !license.isBlank())
                 this.license = Optional.of(new Uri(license));
@@ -459,12 +478,14 @@ public record Mapping (
         }
 
         @Field(MAPPING_CARDINALITY)
+        @JsonProperty(MAPPING_CARDINALITY)
         public Builder mappingCardinality(String mappingCardinality) {
             this.mappingCardinality = MappingCardinalityEnum.fromString(mappingCardinality);
             return this;
         }
 
         @Field(MAPPING_DATE)
+        @JsonProperty(MAPPING_DATE)
         public Builder mappingDate(java.util.Date mappingDate) {
             if (mappingDate != null)
                 this.mappingDate = Optional.of(Date.of(mappingDate));
@@ -488,6 +509,7 @@ public record Mapping (
         }
 
         @Field(MAPPING_JUSTIFICATION)
+        @JsonProperty(MAPPING_JUSTIFICATION)
         public Builder mappingJustification(String mappingJustification) {
             if (mappingJustification != null && !mappingJustification.isBlank())
                 this.mappingJustification = Optional.of(new EntityReference(mappingJustification));
@@ -510,12 +532,14 @@ public record Mapping (
         }
 
         @Field(MAPPING_PROVIDER)
+        @JsonProperty(MAPPING_PROVIDER)
         public Builder mappingProvider(String mappingProvider) {
             this.mappingProvider = Optional.of(new Uri(mappingProvider));
             return this;
         }
 
         @Field(MAPPING_SOURCE)
+        @JsonProperty(MAPPING_SOURCE)
         public Builder mappingSource(String mappingSource) {
             this.mappingSource = Optional.of(new EntityReference(mappingSource));
             return this;
@@ -531,6 +555,7 @@ public record Mapping (
         }
 
         @Field(MAPPING_TOOL)
+        @JsonProperty(MAPPING_TOOL)
         public Builder mappingTool(String mappingTool) {
             if (mappingTool != null && !mappingTool.isBlank())
                 this.mappingTool = Optional.of(mappingTool);
@@ -546,6 +571,7 @@ public record Mapping (
         }
 
         @Field(MAPPING_TOOL_VERSION)
+        @JsonProperty(MAPPING_TOOL_VERSION)
         public Builder mappingToolVersion(String mappingToolVersion) {
             if (mappingToolVersion != null && !mappingToolVersion.isBlank())
                 this.mappingToolVersion = Optional.of(mappingToolVersion);
@@ -553,6 +579,7 @@ public record Mapping (
         }
 
         @Field(MATCH_STRING)
+        @JsonProperty(MATCH_STRING)
         public Builder matchString(List<String> matchString) {
             if (matchString != null)
                 this.matchString = new TreeSet<>(matchString);
@@ -565,6 +592,7 @@ public record Mapping (
         }
 
         @Field(OBJECT_CATEGORY)
+        @JsonProperty(OBJECT_CATEGORY)
         public Builder objectCategory(String objectCategory) {
             if (objectCategory != null && !objectCategory.isBlank())
                 this.objectCategory = Optional.of(objectCategory);
@@ -572,6 +600,7 @@ public record Mapping (
         }
 
         @Field(OBJECT_ID)
+        @JsonProperty(OBJECT_ID)
         public Builder objectId(String objectId) {
             if (objectId != null && !objectId.isBlank())
                 this.objectId = Optional.of(new EntityReference(objectId));
@@ -580,6 +609,7 @@ public record Mapping (
             }
             return this;
         }
+
 
         public Builder objectId(String objectId, Optional<CurieMap> optionalCurieMap) {
             if (objectId != null && !objectId.isBlank())
@@ -593,6 +623,14 @@ public record Mapping (
             return this;
         }
 
+        @JsonProperty(OBJECT_ID_PREFIX)
+        public Builder objectIdPrefix(String objectIdPrefix) {
+            if (objectIdPrefix != null && !objectIdPrefix.isBlank())
+                this.objectIdPrefix = Optional.of(objectIdPrefix);
+            return this;
+        }
+
+
         public Builder objectIRI(String objectId, Map<String, String> prefixMap) {
             if (objectId != null && !objectId.isBlank())
                 this.objectId = Optional.of(new EntityReference(objectId));
@@ -603,6 +641,7 @@ public record Mapping (
         }
 
         @Field(OBJECT_IRI)
+        @JsonProperty(OBJECT_IRI)
         public Builder objectIRI(String objectIRI) {
             if (objectIRI != null && !objectIRI.isBlank()) {
                 this.objectIRI = Optional.of(new Uri(objectIRI));
@@ -611,6 +650,7 @@ public record Mapping (
         }
 
         @Field(OBJECT_LABEL)
+        @JsonProperty(OBJECT_LABEL)
         public Builder objectLabel(String objectLabel) {
             if (objectLabel != null && !objectLabel.isBlank())
                 this.objectLabel = Optional.of(objectLabel);
@@ -627,6 +667,7 @@ public record Mapping (
         }
 
         @Field(OBJECT_MATCH_FIELD)
+        @JsonProperty(OBJECT_MATCH_FIELD)
         public Builder objectMatchField(List<String> objectMatchField) {
             if (objectMatchField != null && !objectMatchField.isEmpty())
                 this.objectMatchField = new TreeSet<>(objectMatchField.stream()
@@ -651,6 +692,7 @@ public record Mapping (
         }
 
         @Field(OBJECT_PREPROCESSING)
+        @JsonProperty(OBJECT_PREPROCESSING)
         public Builder objectPreprocessing(List<String> objectPreprocessing) {
             if (objectPreprocessing != null && !objectPreprocessing.isEmpty())
                 this.objectPreprocessing = objectPreprocessing.stream()
@@ -673,6 +715,7 @@ public record Mapping (
         }
 
         @Field(OBJECT_SOURCE)
+        @JsonProperty(OBJECT_SOURCE)
         public Builder objectSource(String objectSource) {
             this.objectSource = Optional.of(new EntityReference(objectSource));
             return this;
@@ -687,6 +730,7 @@ public record Mapping (
         }
 
         @Field(OBJECT_SOURCE_VERSION)
+        @JsonProperty(OBJECT_SOURCE_VERSION)
         public Builder objectSourceVersion(String objectSourceVersion) {
             if (objectSourceVersion != null && !objectSourceVersion.isBlank())
                 this.objectSourceVersion = Optional.of(objectSourceVersion);
@@ -703,12 +747,14 @@ public record Mapping (
         }
 
         @Field(OBJECT_TYPE)
+        @JsonProperty(OBJECT_TYPE)
         public Builder objectType(String objectType) {
             this.objectType = EntityTypeEnum.fromString(objectType);
             return this;
         }
 
         @Field(OTHER)
+        @JsonProperty(OTHER)
         public Builder other(String other) {
             if (other != null && !other.isBlank()) {
                 ObjectMapper objectMapper = new ObjectMapper();
@@ -724,6 +770,7 @@ public record Mapping (
         }
 
         @Field(PREDICATE_ID)
+        @JsonProperty(PREDICATE_ID)
         public Builder predicateId(String predicateId) {
             this.predicateId = Optional.of(new EntityReference(predicateId));
             return this;
@@ -740,7 +787,14 @@ public record Mapping (
             return this;
         }
 
+        public Builder predicatedIdPrefix(String predicatedIdPrefix) {
+            if (predicatedIdPrefix != null && !predicatedIdPrefix.isBlank())
+                this.predicateIdPrefix = Optional.of(predicatedIdPrefix);
+            return this;
+        }
+
         @Field(PREDICATE_IRI)
+        @JsonProperty(PREDICATE_IRI)
         public Builder predicateIRI(String predicateIRI) {
             if (predicateIRI != null && !predicateIRI.isBlank()) {
                 this.predicateIRI = Optional.of(new Uri(predicateIRI));
@@ -749,6 +803,7 @@ public record Mapping (
         }
 
         @Field(PREDICATE_LABEL)
+        @JsonProperty(PREDICATE_LABEL)
         public Builder predicateLabel(String predicateLabel) {
             if (predicateLabel != null && !predicateLabel.isBlank())
                 this.predicateLabel = Optional.of(predicateLabel);
@@ -756,6 +811,7 @@ public record Mapping (
         }
 
         @Field(PREDICATE_MODIFIER)
+        @JsonProperty(PREDICATE_MODIFIER)
         public Builder predicateModifier(String predicateModifier) {
             logger.debug("predicateModifier = {}", predicateModifier);
             if (predicateModifier != null && !predicateModifier.isBlank())
@@ -771,6 +827,7 @@ public record Mapping (
         }
 
         @Field(PUBLICATION_DATE)
+        @JsonProperty(PUBLICATION_DATE)
         public Builder publicationDate(java.util.Date publicationDate) {
             logger.trace("###### publicationDate = {}", publicationDate);
             if (publicationDate != null)
@@ -784,6 +841,7 @@ public record Mapping (
         }
 
         @Field(REVIEWER_ID)
+        @JsonProperty(REVIEWER_ID)
         public Builder reviewerId(List<String> reviewerId) {
             if (reviewerId != null && !reviewerId.isEmpty())
                 this.reviewerId = new TreeSet<>(reviewerId.stream()
@@ -798,6 +856,7 @@ public record Mapping (
         }
 
         @Field(REVIEWER_LABEL)
+        @JsonProperty(REVIEWER_LABEL)
         public Builder reviewLabel(List<String> reviewerLabel) {
             if (reviewerLabel != null && !reviewerLabel.isEmpty())
                 this.reviewerLabel = new TreeSet<>(reviewerLabel);
@@ -805,6 +864,7 @@ public record Mapping (
         }
 
         @Field(SEE_ALSO)
+        @JsonProperty(SEE_ALSO)
         public Builder seeAlso(List<String> seeAlso) {
             if (seeAlso != null && !seeAlso.isEmpty())
                 this.seeAlso = new TreeSet<>(seeAlso);
@@ -817,6 +877,7 @@ public record Mapping (
         }
 
         @Field(SIMILARITY_MEASURE)
+        @JsonProperty(SIMILARITY_MEASURE)
         public Builder similarityMeasure(String similarityMeasure) {
             if (similarityMeasure != null && !similarityMeasure.isBlank())
                 this.similarityMeasure = Optional.of(similarityMeasure);
@@ -829,12 +890,14 @@ public record Mapping (
         }
 
         @Field(SIMILARITY_SCORE)
+        @JsonProperty(SIMILARITY_SCORE)
         public Builder similarityScore(java.lang.Double similarityScore) {
             this.similarityScore = Optional.of(Double.of(similarityScore));
             return this;
         }
 
         @Field(SUBJECT_CATEGORY)
+        @JsonProperty(SUBJECT_CATEGORY)
         public Builder subjectCategory(String subjectCategory) {
             if (subjectCategory != null && !subjectCategory.isBlank())
                 this.subjectCategory = Optional.of(subjectCategory);
@@ -842,6 +905,7 @@ public record Mapping (
         }
 
         @Field(SUBJECT_ID)
+        @JsonProperty(SUBJECT_ID)
         public Builder subjectId(String subjectId) {
             this.subjectId = Optional.of(new EntityReference(subjectId));
             if (this.subjectId.isPresent())
@@ -861,7 +925,15 @@ public record Mapping (
             return this;
         }
 
+        @JsonProperty(SUBJECT_ID_PREFIX)
+        public Builder subjectIdPrefix(String subjectIdPrefix) {
+            if (subjectIdPrefix != null && !subjectIdPrefix.isBlank())
+                this.subjectIdPrefix = Optional.of(subjectIdPrefix);
+            return this;
+        }
+
         @Field(SUBJECT_IRI)
+        @JsonProperty(SUBJECT_IRI)
         public Builder subjectIRI(String subjectIRI) {
             if (subjectIRI != null && !subjectIRI.isBlank()) {
                 this.subjectIRI = Optional.of(new Uri(subjectIRI));
@@ -870,6 +942,7 @@ public record Mapping (
         }
 
         @Field(SUBJECT_LABEL)
+        @JsonProperty(SUBJECT_LABEL)
         public Builder subjectLabel(String subjectLabel) {
             if (subjectLabel != null && !subjectLabel.isBlank())
                 this.subjectLabel = Optional.of(subjectLabel);
@@ -895,6 +968,7 @@ public record Mapping (
         }
 
         @Field(SUBJECT_MATCH_FIELD)
+        @JsonProperty(SUBJECT_MATCH_FIELD)
         public Builder subjectMatchField(List<String> subjectMatchField) {
             if (subjectMatchField != null && !subjectMatchField.isEmpty())
                 this.subjectMatchField = new TreeSet<>(subjectMatchField.stream()
@@ -914,6 +988,7 @@ public record Mapping (
         }
 
         @Field(SUBJECT_PREPROCESSING)
+        @JsonProperty(SUBJECT_PREPROCESSING)
         public Builder subjectProcessing(List<String> subjectPreprocessing) {
             if (subjectPreprocessing != null && !subjectPreprocessing.isEmpty())
                 this.subjectPreprocessing = subjectPreprocessing.stream()
@@ -936,6 +1011,7 @@ public record Mapping (
         }
 
         @Field(SUBJECT_SOURCE)
+        @JsonProperty(SUBJECT_SOURCE)
         public Builder subjectSource(String subjectSource) {
             this.subjectSource = Optional.of(new EntityReference(subjectSource));
             return this;
@@ -950,6 +1026,7 @@ public record Mapping (
         }
 
         @Field(SUBJECT_SOURCE_VERSION)
+        @JsonProperty(SUBJECT_SOURCE_VERSION)
         public Builder subjectSourceVersion(String subjectSourceVersion) {
             if (subjectSourceVersion != null && !subjectSourceVersion.isBlank())
                 this.subjectSourceVersion = Optional.of(subjectSourceVersion);
@@ -965,23 +1042,32 @@ public record Mapping (
         }
 
         @Field(SUBJECT_TYPE)
+        @JsonProperty(SUBJECT_TYPE)
         public Builder subjectType(String subjectType) {
             this.subjectType = EntityTypeEnum.fromString(subjectType);
             return this;
         }
 
         @Field(MAPPING_ID)
+        @JsonProperty(MAPPING_ID)
         public Builder mappingId(String mappingId) {
             this.mappingId = UUID.fromString(mappingId);
             return this;
         }
 
         @Field(EXPLANATION)
+        @JsonProperty(EXPLANATION)
         public Builder explanation(List<InferredMapping> explanation) {
             this.explanation = explanation;
             return this;
         }
 
+        @Field(ASSERTED_MAPPINGS)
+        @JsonProperty(ASSERTED_MAPPINGS)
+        public Builder assertedMappings(List<InferredMapping> assertedMappings) {
+            this.assertedMappings = assertedMappings;
+            return this;
+        }
 
         public Mapping build() {
             if (this.mappingId == null)
@@ -1040,6 +1126,7 @@ public record Mapping (
                     distance,
                     explanationLength,
                     explanation,
+                    assertedMappings,
                     mappingId,
                     objectIdPrefix,
                     objectIRI,

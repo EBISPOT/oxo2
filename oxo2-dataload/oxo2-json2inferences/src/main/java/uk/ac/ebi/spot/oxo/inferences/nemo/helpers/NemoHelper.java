@@ -2,12 +2,10 @@ package uk.ac.ebi.spot.oxo.inferences.nemo.helpers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
-import uk.ac.ebi.spot.oxo.model.sssom.InferredMapping;
+import uk.ac.ebi.spot.oxo.inferences.nemo.ExplainInferredMappings;
+import uk.ac.ebi.spot.oxo.model.sssom.*;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.NemoChainRulesEnum;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.NemoInferences;
-import uk.ac.ebi.spot.oxo.model.sssom.ChainRulesEnum;
-import uk.ac.ebi.spot.oxo.model.sssom.Uri;
 
 import java.util.*;
 
@@ -21,7 +19,11 @@ public class NemoHelper {
      * @param nemoInferences
      * @return
      */
-    public static Set<InferredMapping> fromNemoInferencesToInferredMappings(NemoInferences nemoInferences) {
+    public static Set<InferredMapping> fromNemoInferencesToInferredMappings(
+            NemoInferences nemoInferences,
+            Map<ExplainInferredMappings.MinimalMapping, List<Mapping>> assertedMappings,
+            Map<String, ExplainInferredMappings.EntityDetails> iriToEntityDetails) {
+
         long timeBegin = System.currentTimeMillis();
         Set<InferredMapping> inferredMappings = new HashSet<>();
         Set<NemoInferences.NemoInference> conclusionsWithPremisesAndRules = nemoInferences.getInferencesSet();
@@ -32,8 +34,7 @@ public class NemoHelper {
             if (premiseToInferredMapping.containsKey(nemoInference.getConclusion())) {
                 inferredMapping = premiseToInferredMapping.get(nemoInference.getConclusion());
             } else {
-                inferredMapping = new InferredMapping();
-                inferredMapping = populateInferredMapping(inferredMapping, nemoInference.getConclusion());
+                inferredMapping = createInferredMapping(nemoInference.getConclusion(), assertedMappings, iriToEntityDetails);
             }
             if (inferredMapping.isMappingToSelf()) {
                 continue;
@@ -44,25 +45,23 @@ public class NemoHelper {
             Optional<ChainRulesEnum> chainRulesEnum = nemoChainRulesEnum.map(
                     nemoRule -> ChainRulesEnum.valueOf(nemoRule.name()));
 
+            InferredMapping.ChainRuleApplications chainRuleApplication =
+                    new InferredMapping.ChainRuleApplications(chainRulesEnum);
 
-            InferredMapping.ChainRuleApplications chainRuleApplication = new InferredMapping.ChainRuleApplications(
-                        nemoInference.getConclusion(), chainRulesEnum);
             List<InferredMapping> premises = new ArrayList<>();
             for (String premise : nemoInference.getPremises()) {
                 InferredMapping inferredMappingForPremise;
                 if (conclusionToInferredMapping.containsKey(premise)) {
                     inferredMappingForPremise = conclusionToInferredMapping.get(premise);
                 } else {
-                    inferredMappingForPremise = new InferredMapping();
-                    inferredMappingForPremise =
-                            populateInferredMapping(inferredMappingForPremise, premise);
+                    inferredMappingForPremise = createInferredMapping(premise, assertedMappings, iriToEntityDetails);
                 }
 
                 premises.add(inferredMappingForPremise);
                 if (premiseToInferredMapping.containsKey(premise)) {
                     InferredMapping existingPremise = premiseToInferredMapping.get(premise);
                     if (!existingPremise.equals(inferredMappingForPremise)) {
-                    logger.error("Premise {} already exists in premiseToInferredMapping. Existing related inferred mappping is {}" +
+                    logger.error("Premise {} already exists in premiseToInferredMapping. Existing related inferred mapping is {}" +
                             " and the new one is {}. ", premise, existingPremise, inferredMappingForPremise);
                     }
                 }
@@ -91,8 +90,12 @@ public class NemoHelper {
         return result;
     }
 
-    private static InferredMapping populateInferredMapping(InferredMapping inferredMapping, String mapping) {
-        logger.trace("populateInferredMapping where inferredMapping = {} and mapping = {}", inferredMapping, mapping);
+    private static InferredMapping createInferredMapping(
+            String mapping,
+            Map<ExplainInferredMappings.MinimalMapping, List<Mapping>> assertedMappings,
+            Map<String, ExplainInferredMappings.EntityDetails> iriToEntityDetails) {
+
+        InferredMapping inferredMapping = new InferredMapping();
         if (!isValidMappingString(mapping)) {
             throw new IllegalArgumentException("Invalid mapping string: " + mapping);
         }
@@ -106,12 +109,63 @@ public class NemoHelper {
         inferredMapping.setPredicateIRI(new Uri(parts[1]));
         inferredMapping.setObjectIRI(new Uri(parts[2]));
 
-        inferredMapping.setMappingTool("OxO2 inference");
-        inferredMapping.setMappingJustification(new EntityReference("SEMAPV:MappingChaining"));
+        ExplainInferredMappings.MinimalMapping minimalMapping = new ExplainInferredMappings.MinimalMapping(
+                parts[0], parts[1], parts[2]);
+        List<Mapping> assertedMappingsList = assertedMappings.get(minimalMapping);
+
+        if (assertedMappingsList != null) {
+            Mapping firstAssertedMapping = assertedMappingsList.get(0);
+            inferredMapping = inferredMapping.populateFromMapping(firstAssertedMapping);
+        }
+
+        inferredMapping = updateSubject(inferredMapping, iriToEntityDetails);
+        inferredMapping = updatePredicate(inferredMapping, iriToEntityDetails);
+        inferredMapping = updateObject(inferredMapping, iriToEntityDetails);
 
         return inferredMapping;
     }
 
+    private static InferredMapping updateSubject(InferredMapping inferredMapping,
+                                          Map<String, ExplainInferredMappings.EntityDetails> iriToEntityDetails) {
+
+        ExplainInferredMappings.EntityDetails details =  iriToEntityDetails.get(inferredMapping.getSubjectIRI().asStringIRI());
+        if (details != null) {
+            if (details.isCuriePresent())
+                inferredMapping.setSubjectId(details.getCurie());
+            if (details.isLabelPresent())
+                inferredMapping.setSubjectLabel(details.getLabel());
+        }
+
+        return inferredMapping;
+    }
+
+    private static InferredMapping updatePredicate(InferredMapping inferredMapping,
+                                          Map<String, ExplainInferredMappings.EntityDetails> iriToEntityDetails) {
+
+        ExplainInferredMappings.EntityDetails details =  iriToEntityDetails.get(inferredMapping.getPredicateIRI().asStringIRI());
+        if (details != null) {
+            if (details.isCuriePresent())
+                inferredMapping.setPredicateId(details.getCurie());
+            if (details.isLabelPresent())
+                inferredMapping.setPredicateLabel(details.getLabel());
+        }
+
+        return inferredMapping;
+    }
+
+    private static InferredMapping updateObject(InferredMapping inferredMapping,
+                                         Map<String, ExplainInferredMappings.EntityDetails> iriToEntityDetails) {
+
+        ExplainInferredMappings.EntityDetails details =  iriToEntityDetails.get(inferredMapping.getObjectIRI().asStringIRI());
+        if (details != null) {
+            if (details.isCuriePresent())
+                inferredMapping.setObjectId(details.getCurie());
+            if (details.isLabelPresent())
+                inferredMapping.setObjectLabel(details.getLabel());
+        }
+
+        return inferredMapping;
+    }
 
 }
 
