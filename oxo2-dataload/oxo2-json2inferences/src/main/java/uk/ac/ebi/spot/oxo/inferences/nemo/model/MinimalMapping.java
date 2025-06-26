@@ -1,6 +1,6 @@
 package uk.ac.ebi.spot.oxo.inferences.nemo.model;
 
-public class MinimalMapping implements  Comparable<MinimalMapping>{
+public class MinimalMapping {
 
     private String subjectIRI;
     private String predicateIRI;
@@ -40,14 +40,5 @@ public class MinimalMapping implements  Comparable<MinimalMapping>{
         result = 31 * result + predicateIRI.hashCode();
         result = 31 * result + objectIRI.hashCode();
         return result;
-    }
-
-    @Override
-    public int compareTo(MinimalMapping o) {
-        int compare = this.subjectIRI.compareTo(o.subjectIRI);
-        if (compare != 0) return compare;
-        compare = this.predicateIRI.compareTo(o.predicateIRI);
-        if (compare != 0) return compare;
-        return this.objectIRI.compareTo(o.objectIRI);
     }
 }
