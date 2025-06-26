@@ -55,7 +55,6 @@ public class JSON2Turtle {
 
     private static void processMappings(String inputDirectory, String outputFile) throws IOException {
 
-
         ObjectMapper objectMapper = new ObjectMapper();
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(outputFile))) {
 

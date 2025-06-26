@@ -1,0 +1,12 @@
+# mapping_set_id: https://fois2025.com/example.mappings.tsv
+# curie_map :
+#   DOID: http://purl.obolibrary.org/obo/DOID_
+#   HP: http://purl.obolibrary.org/obo/HP_
+#   MONDO: http://purl.obolibrary.org/obo/MONDO_
+#   NCIT: http://purl.obolibrary.org/obo/NCIT_
+#   OWL: http://www.w3.org/2002/07/owl#
+#   SKOS: http://www.w3.org/2004/02/skos/core#
+subject_id	subject_label	predicate_id	object_id	object_label
+DOID:8567	Hodgkin’s lymphoma	SKOS:exactMatch	NCIT:C9357	Hodgkin Lymphoma
+HP:0012189	Hodgkin lymphoma	OWL:equivalentClass	DOID:8567	Hodgkin’s lymphoma
+MONDO:0009348	classic Hodgkin lymphoma	SKOS:closeMatch	HP:0012189	Hodgkin lymphoma

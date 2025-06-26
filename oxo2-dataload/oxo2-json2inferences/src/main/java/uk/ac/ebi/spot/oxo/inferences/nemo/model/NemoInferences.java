@@ -33,6 +33,14 @@ public class NemoInferences {
         return new HashSet<>(inferences);
     }
 
+    public Optional<NemoInference> findNemoInferenceForConclusion(String conclusion) {
+        for (NemoInference inference : inferences) {
+            if (inference.getConclusion().equals(conclusion))
+                return Optional.of(inference);
+        }
+        return Optional.empty();
+    }
+
 
     /**
      * Nemo conclusions can be considered to be unique even though it is possible that the same conclusion can be derived

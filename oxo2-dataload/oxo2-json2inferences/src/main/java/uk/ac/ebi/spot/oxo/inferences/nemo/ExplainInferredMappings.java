@@ -10,7 +10,10 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.spot.oxo.inferences.nemo.helpers.NemoHelper;
+import uk.ac.ebi.spot.oxo.inferences.nemo.model.EntityDetails;
+import uk.ac.ebi.spot.oxo.inferences.nemo.model.MinimalMapping;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.NemoInferences;
+import uk.ac.ebi.spot.oxo.inferences.nemo.model.OXOInferenceConstants;
 import uk.ac.ebi.spot.oxo.model.sssom.ChainRulesEnum;
 import uk.ac.ebi.spot.oxo.model.sssom.InferredMapping;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
@@ -193,8 +196,15 @@ public class ExplainInferredMappings {
         }
     }
 
+    private static MinimalMapping getMinimalMapping(InferredMapping inferredMapping) {
+        return new MinimalMapping(
+                inferredMapping.getSubjectIRI().asStringIRI(),
+                inferredMapping.getPredicateIRI().asStringIRI(),
+                inferredMapping.getObjectIRI().asStringIRI());
+    }
+
     public static List<Mapping> createMappings(Set<InferredMapping> inferredMappings,
-                                               Map<ExplainInferredMappings.MinimalMapping, List<Mapping>> assertedMappingsMap,
+                                               Map<MinimalMapping, List<Mapping>> assertedMappingsMap,
                                                Map<String, EntityDetails> iriToEntityDetails) {
         if (inferredMappings == null || inferredMappings.isEmpty()) {
             logger.warn("No inferred mappings to process");
@@ -212,21 +222,18 @@ public class ExplainInferredMappings {
                     continue;
                 }
                 
-                List<InferredMapping> explanations = getExplanations(inferredMapping, assertedMappingsMap, iriToEntityDetails);
-                List<InferredMapping> assertedMappings = determineAssertedMappingsForExplanations(explanations, assertedMappingsMap);
-
                 Mapping mapping = new Mapping.Builder()
-                        .subjectIRI(inferredMapping.getSubjectIRI().asStringIRI())
-                        .predicateIRI(inferredMapping.getPredicateIRI().asStringIRI())
-                        .objectIRI(inferredMapping.getObjectIRI().asStringIRI())
-                        .mappingJustification("SEMAPV:MappingChaining")
-                        .mappingTool("OxO2 Inference")
-                        .explanation(explanations)
-                        .assertedMappings(assertedMappings)
-                        .explanationLength(explanations.size() + 1)
-                        .distance(calculateMappingDistance(explanations))
-                        .mappingSetId("https://www.ebi.ac.uk/spot/oxo/inferences/")
-                        .build();
+                    .subjectIRI(inferredMapping.getSubjectIRI().asStringIRI())
+                    .predicateIRI(inferredMapping.getPredicateIRI().asStringIRI())
+                    .objectIRI(inferredMapping.getObjectIRI().asStringIRI())
+                    .mappingJustification(OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION)
+                    .mappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL)
+                    .explanation(inferredMapping)
+                    .assertedMappings(determineAssertedMappingsForExplanation(inferredMapping))
+                    .explanationLength(determineExplanationLength(inferredMapping, 0))
+                    .distance(calculateMappingDistance(inferredMapping))
+                    .mappingSetId(OXOInferenceConstants.OXO_MAPPING_SET_ID)
+                    .build();
                 mappings.add(mapping);
                 
                 count++;
@@ -249,56 +256,55 @@ public class ExplainInferredMappings {
      * @param explanation
      * @return
      */
-    private static List<InferredMapping> determineAssertedMappingsForExplanations(
-            List<InferredMapping> explanation,
-            Map<ExplainInferredMappings.MinimalMapping, List<Mapping>> assertedMappingsMap) {
+    private static List<InferredMapping> determineAssertedMappingsForExplanation(
+            InferredMapping explanation) {
 
-        List<InferredMapping> assertedMappings = new ArrayList<>(explanation.size());
-        List<InferredMapping> assertedMappingsToAdd = new ArrayList<>(explanation.size());
+        List<InferredMapping> assertedMappings = new ArrayList<>();
 
-        explanation.stream()
-                .filter(e -> e.getChainRuleApplications()
-                        .flatMap(cra -> cra.getChainRule()
-                                .map(cr -> cr.equals(ChainRulesEnum.ASSERTED)))
-                        .orElse(false))
-                .forEach(assertedMappings::add);
+        if (explanation.getChainRuleApplications().isEmpty())
+            return assertedMappings;
 
-        assertedMappings.forEach(im -> {
-            MinimalMapping minimalMapping = new MinimalMapping(im.getSubjectIRI().asStringIRI(),
-                    im.getPredicateIRI().asStringIRI(), im.getObjectIRI().asStringIRI());
+        InferredMapping.ChainRuleApplications chainRuleApplications = explanation.getChainRuleApplications().get();
 
-            List<Mapping> mappings = assertedMappingsMap.get(minimalMapping);
-            if (mappings != null) {
-                mappings.forEach(m -> {
-                    InferredMapping inferredMapping = InferredMapping.createFromMapping(m);
-                    InferredMapping.ChainRuleApplications chainRuleApplications =
-                            new InferredMapping.ChainRuleApplications(Optional.of(ChainRulesEnum.ASSERTED));
-                    inferredMapping.setChainRuleApplications(Optional.of(chainRuleApplications));
+        if (chainRuleApplications.getChainRule().isPresent() &&
+                chainRuleApplications.getChainRule().get().equals(ChainRulesEnum.ASSERTED))
+            assertedMappings.add(explanation);
 
-                    if (!assertedMappings.contains(inferredMapping)) {
-                        assertedMappingsToAdd.add(inferredMapping);
-                    }
-                });
-            }
+        explanation.getChainRuleApplications().get().getPremises().forEach(premise -> {
+            List<InferredMapping> assertedMappingsToAdd = determineAssertedMappingsForExplanation(premise);
+            assertedMappings.addAll(assertedMappingsToAdd);
         });
 
-        assertedMappings.addAll(assertedMappingsToAdd);
         return assertedMappings;
     }
 
-    private static int calculateMappingDistance(List<InferredMapping> explanations) {
+    private static int determineExplanationLength(InferredMapping explanation, int startExplanationLength) {
+        int explanationLength = startExplanationLength;
+
+        if (explanation.getChainRuleApplications().isEmpty())
+            return explanationLength;
+        explanationLength++;
+        for (InferredMapping premise: explanation.getChainRuleApplications().get().getPremises()) {
+            explanationLength = determineExplanationLength(premise, explanationLength);
+        }
+
+        return explanationLength;
+    }
+
+    private static int calculateMappingDistance(InferredMapping explanation) {
         Set<String> extractedParts = new HashSet<>();
 
-        explanations.forEach(explanation -> {
-            extractParts(explanation.getSubjectIRI().asStringIRI(), extractedParts);
-            extractParts(explanation.getObjectIRI().asStringIRI(), extractedParts);
+        extractParts(explanation.getSubjectIRI().asStringIRI(), extractedParts);
+        extractParts(explanation.getObjectIRI().asStringIRI(), extractedParts);
 
-            explanation.getChainRuleApplications().ifPresent(chainRuleApplication ->
-                    chainRuleApplication.getPremises().forEach(premise -> {
-                        extractParts(premise.getSubjectIRI().asStringIRI(), extractedParts);
-                        extractParts(premise.getObjectIRI().asStringIRI(), extractedParts);
-                    }));
-        });
+        if (explanation.getChainRuleApplications().isEmpty())
+            return extractedParts.size() - 1;
+
+
+        for (InferredMapping premise: explanation.getChainRuleApplications().get().getPremises()) {
+            extractParts(premise.getSubjectIRI().asStringIRI(), extractedParts);
+            extractParts(premise.getObjectIRI().asStringIRI(), extractedParts);
+        }
 
         return extractedParts.size() - 1;
     }
@@ -339,60 +345,6 @@ public class ExplainInferredMappings {
                 inferredMapping.setObjectLabel(objectDetails.getLabel());
         }
         return inferredMapping;
-    }
-
-    /**
-     * Returns a list InferredMappings which details subject, predicate and object derived via chain rules along
-     * with the chain rule that was applied. For asserted mappings it will only return the first asserted mapping
-     * that matches the premise.
-     *
-     * @param inferredMapping
-     * @param assertedMappings
-     * @param iriToEntityDetails
-     * @return
-     */
-    private static List<InferredMapping> getExplanations(
-            InferredMapping inferredMapping,
-            Map<ExplainInferredMappings.MinimalMapping, List<Mapping>> assertedMappings,
-            Map<String, EntityDetails> iriToEntityDetails) {
-
-        List<InferredMapping> explanations = new LinkedList<>();
-
-        if (inferredMapping == null) {
-            logger.warn("Inferred mapping is null, cannot create explanations");
-            return explanations;
-        }
-
-        if (inferredMapping.getChainRuleApplications().isPresent()) {
-            InferredMapping.ChainRuleApplications chainRuleApplications = inferredMapping.getChainRuleApplications().get();
-
-            try {
-                MinimalMapping minimalMapping = new MinimalMapping(inferredMapping.getSubjectIRI().asStringIRI(),
-                        inferredMapping.getPredicateIRI().asStringIRI(), inferredMapping.getObjectIRI().asStringIRI());
-                List<Mapping> correspondingMappings = assertedMappings.get(minimalMapping);
-
-                if (correspondingMappings != null) {
-                    Mapping firstAssertedMapping = correspondingMappings.get(0);
-                    inferredMapping = inferredMapping.populateFromMapping(firstAssertedMapping);
-                    inferredMapping = populateFromEntities(inferredMapping, iriToEntityDetails);
-                }
-
-                if (!InferredMapping.doesConclusionExistAlready(explanations, inferredMapping))
-                    explanations.add(inferredMapping);
-
-                chainRuleApplications.getPremises().stream()
-                        .filter(p -> p.getChainRuleApplications().isPresent())
-                        .forEach(premise -> {
-                    explanations.addAll(getExplanations(premise, assertedMappings, iriToEntityDetails));
-                });
-            } catch (Exception e) {
-                logger.error("Error creating explanation for mapping: {}", inferredMapping, e);
-            }
-        } else {
-            logger.debug("Chain rule applications not present for mapping: {}", inferredMapping);
-        }
-
-        return explanations;
     }
 
     private static Options getOptions() {
@@ -459,72 +411,5 @@ public class ExplainInferredMappings {
         }
         return mappingMap;
     }
-
-
-   public static class MinimalMapping {
-        private String subjectIRI;
-        private String predicateIRI;
-        private String objectIRI;
-
-       public MinimalMapping(String subjectIRI, String predicateIRI, String objectIRI) {
-           this.objectIRI = objectIRI;
-           this.predicateIRI = predicateIRI;
-           this.subjectIRI = subjectIRI;
-       }
-
-       public String getObjectIRI() {
-           return objectIRI;
-       }
-
-       public String getPredicateIRI() {
-           return predicateIRI;
-       }
-
-       public String getSubjectIRI() {
-           return subjectIRI;
-       }
-   }
-
-   public static class EntityDetails {
-        private String curie;
-        private String iri;
-        private String label;
-
-       public boolean isCuriePresent() {
-           if (curie == null || curie.isBlank())
-               return false;
-           else return true;
-       }
-
-       public boolean isLabelPresent() {
-           if (label == null || label.isBlank())
-               return false;
-           else return true;
-       }
-
-       public String getCurie() {
-           return curie;
-       }
-
-       public void setCurie(String curie) {
-           this.curie = curie;
-       }
-
-       public String getIri() {
-           return iri;
-       }
-
-       public void setIri(String iri) {
-           this.iri = iri;
-       }
-
-       public String getLabel() {
-           return label;
-       }
-
-       public void setLabel(String label) {
-           this.label = label;
-       }
-   }
 
 }

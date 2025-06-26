@@ -163,7 +163,7 @@ public record Mapping (
         @JsonProperty(EXPLANATION_LENGTH)
         int explanationLength,
         @JsonProperty(EXPLANATION)
-        List<InferredMapping> explanation,
+        Optional<InferredMapping> explanation,
         @JsonProperty(ASSERTED_MAPPINGS)
         List<InferredMapping> assertedMappings,
         @JsonProperty(MAPPING_ID)
@@ -259,7 +259,7 @@ public record Mapping (
         // Extension
         private int distance = 1;
         private int explanationLength = 0;
-        private List<InferredMapping> explanation = new ArrayList<>();
+        private Optional<InferredMapping> explanation = Optional.empty();
         private List<InferredMapping> assertedMappings = new ArrayList<>();
         private Optional<String> objectIdPrefix = Optional.empty();
         private Optional<Uri> objectIRI = Optional.empty();
@@ -1057,8 +1057,8 @@ public record Mapping (
 
         @Field(EXPLANATION)
         @JsonProperty(EXPLANATION)
-        public Builder explanation(List<InferredMapping> explanation) {
-            this.explanation = explanation;
+        public Builder explanation(InferredMapping explanation) {
+            this.explanation = Optional.of(explanation);
             return this;
         }
 

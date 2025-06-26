@@ -39,8 +39,7 @@ public class TSV2JSON {
 
 
     public static void processDirectory(String directory, String mappingSetOutputDirectory,
-                                        String mappingsOutputDirectory, Map<String, String> prefixToIRIMap,
-                                        Set<SSSOM2JSON.EntityDetails> curieToEntityDetailsMap) {
+                                        String mappingsOutputDirectory) {
 
         Map<String, MappingSet.Builder> filenameToExternalMetadataMap = readExternalMetadata(directory);
 
@@ -62,12 +61,6 @@ public class TSV2JSON {
 
                         if (mappingSetOptional.isPresent() && mappingSetOptional.get().mappings().size() > 0) {
                             MappingSet mappingSet = mappingSetOptional.get();
-                            if (mappingSet.curieMap() != null) {
-                                mappingSet.curieMap().addCurieMapToMap(prefixToIRIMap);
-                            }
-                            if (mappingSet.mappings().size() > 0)
-                                mappingSet.mappings().forEach(m ->
-                                        updateCurieToEntityDetails(curieToEntityDetailsMap, m));
 
                             writeJSONFile(mappingSet, mappingSetOutputDirectory, mappingsOutputDirectory);
                             long endWriteTime = System.currentTimeMillis();

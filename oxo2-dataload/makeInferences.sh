@@ -15,7 +15,7 @@
 ## Get explanations for facts to trace from nmo.
 ## IDB - Intensional Database Predicates are those that appear in the head of a rule, i.e. (head <- tail)
 ./oxo2-json2inferences/nmo ./oxo2-json2inferences/chain-rules.rls -o -v  -D ./test/results \
- --trace-input-file ../../data/facts2trace.txt \
+ --trace-input-file ../../data/inferencesToTrace.txt \
  --trace-output ../../data/inferences-chains.json
 
 ## Write out inferred mappings with their explanations.

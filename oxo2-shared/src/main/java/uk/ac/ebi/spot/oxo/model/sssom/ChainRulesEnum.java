@@ -1,5 +1,7 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum ChainRulesEnum {
     ASSERTED("Asserted", "Asserted","Asserted", false),
     RCE1_1("RCE1-1", "(?a, ?p, ?c) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b), (?b, ?p, ?c)",
@@ -99,6 +101,7 @@ public enum ChainRulesEnum {
         return rule;
     }
 
+//    @JsonValue
     public String getAbbreviatedRule() {
         return abbreviatedRule;
     }

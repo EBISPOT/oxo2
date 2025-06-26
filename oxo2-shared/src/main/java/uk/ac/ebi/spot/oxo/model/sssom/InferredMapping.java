@@ -4,7 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 
@@ -17,7 +20,7 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
  */
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class InferredMapping implements Comparable<InferredMapping>{
+public class InferredMapping {
 
     @JsonProperty(MAPPING_JUSTIFICATION)
     private EntityReference mappingJustification;
@@ -47,26 +50,6 @@ public class InferredMapping implements Comparable<InferredMapping>{
     private int distance = 1;
 
     private Optional<ChainRuleApplications> chainRuleApplications = Optional.empty();
-
-    public boolean compareConclusion(InferredMapping inferredMapping) {
-        if (!this.objectIRI.equals(inferredMapping.getObjectIRI()) ||
-            !this.predicateIRI.equals(inferredMapping.getPredicateIRI()) ||
-            !this.subjectIRI.equals(inferredMapping.getSubjectIRI())) {
-            return false;
-        }
-        else return true;
-    }
-
-    public static boolean doesConclusionExistAlready(List<InferredMapping> explanations, InferredMapping explanation) {
-        for (InferredMapping existingExplanation : explanations) {
-            if (existingExplanation.getSubjectIRI().equals(explanation.getSubjectIRI()) &&
-                existingExplanation.predicateIRI.equals(explanation.getPredicateIRI()) &&
-                existingExplanation.objectIRI.equals(explanation.getObjectIRI())) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     public EntityReference getMappingJustification() {
         return mappingJustification;
@@ -247,73 +230,6 @@ public class InferredMapping implements Comparable<InferredMapping>{
 
     public void setDistance(int distance) {
         this.distance = distance;
-    }
-
-    @Override
-    public int compareTo(InferredMapping o) {
-        // Compare mappingJustification
-        int compare;
-        if (this.mappingJustification == null && o.mappingJustification != null) return -1;
-        if (this.mappingJustification != null && o.mappingJustification == null) return 1;
-        if (this.mappingJustification != null && o.mappingJustification != null) {
-            compare = this.mappingJustification.compareTo(o.mappingJustification);
-            if (compare != 0) return compare;
-        }
-
-        // Compare mappingTool
-        compare = Objects.compare(this.mappingTool, o.mappingTool, Comparator.nullsFirst(String::compareTo));
-        if (compare != 0) return compare;
-
-        // Compare mappingSetId
-        compare = Objects.compare(this.mappingSetId, o.mappingSetId, Comparator.nullsFirst(String::compareTo));
-        if (compare != 0) return compare;
-
-        // Compare objectIRI
-        compare = Objects.compare(this.objectIRI, o.objectIRI, Comparator.nullsFirst(Uri::compareTo));
-        if (compare != 0) return compare;
-
-        // Compare predicateIRI
-        compare = Objects.compare(this.predicateIRI, o.predicateIRI, Comparator.nullsFirst(Uri::compareTo));
-        if (compare != 0) return compare;
-
-        // Compare subjectIRI
-        compare = Objects.compare(this.subjectIRI, o.subjectIRI, Comparator.nullsFirst(Uri::compareTo));
-        if (compare != 0) return compare;
-
-        // Compare chainRuleApplications
-        compare = compareChainRuleApplications(this.chainRuleApplications, o.chainRuleApplications);
-        if (compare != 0) return compare;
-
-        return 0;
-    }
-
-    private static int compareChainRuleApplications(Optional<ChainRuleApplications> optionalChainRuleApplications1,
-                                                    Optional<ChainRuleApplications> optionalChainRuleApplications2) {
-
-        if (optionalChainRuleApplications1.isEmpty() && optionalChainRuleApplications2.isPresent()) return -1;
-        if (optionalChainRuleApplications1.isPresent() && optionalChainRuleApplications2.isEmpty()) return 1;
-        if (optionalChainRuleApplications1.isEmpty() && optionalChainRuleApplications2.isEmpty()) return 0;
-
-        ChainRuleApplications chainRuleApplication1 = optionalChainRuleApplications1.get();
-        ChainRuleApplications chainRuleApplication2 = optionalChainRuleApplications2.get();
-
-        // Compare chainRule
-        int compare = compareChainRulesEnum(chainRuleApplication1.chainRule, chainRuleApplication2.chainRule);
-        if (compare != 0) return compare;
-
-        // Compare premises
-        List<InferredMapping> premises1 = chainRuleApplication1.premises;
-        List<InferredMapping> premises2 = chainRuleApplication2.premises;
-        if (premises1 == null && premises2 != null) return -1;
-        if (premises1 != null && premises2 == null) return 1;
-        if (premises1 == null && premises2 == null) return 0;
-        compare = Integer.compare(premises1.size(), premises2.size());
-        if (compare != 0) return compare;
-        for (int i = 0; i < premises1.size(); i++) {
-            compare = premises1.get(i).compareTo(premises2.get(i));
-            if (compare != 0) return compare;
-        }
-        return 0;
     }
 
     private static int compareChainRulesEnum(Optional<ChainRulesEnum> optionalChainRulesEnum1,
