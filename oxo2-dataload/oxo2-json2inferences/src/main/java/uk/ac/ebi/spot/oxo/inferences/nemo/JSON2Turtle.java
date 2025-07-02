@@ -1,22 +1,22 @@
 package uk.ac.ebi.spot.oxo.inferences.nemo;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.*;
-import java.net.URI;
-import java.nio.file.*;
-import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import uk.ac.ebi.spot.oxo.inferences.ApplicablePredicatesEnum;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class JSON2Turtle {
 

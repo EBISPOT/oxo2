@@ -1,8 +1,8 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import org.apache.solr.client.solrj.beans.Field;
@@ -158,14 +158,18 @@ public record Mapping (
 
 
         // Extension
+        @JsonIgnore
+        List<InferredMapping> assertedMappings,
+        @JsonProperty(ASSERTED_MAPPINGS)
+        Optional<String> assertedMappingsAsString,
         @JsonProperty(DISTANCE)
         int distance,
         @JsonProperty(EXPLANATION_LENGTH)
         int explanationLength,
-        @JsonProperty(EXPLANATION)
+        @JsonIgnore
         Optional<InferredMapping> explanation,
-        @JsonProperty(ASSERTED_MAPPINGS)
-        List<InferredMapping> assertedMappings,
+        @JsonProperty(EXPLANATION)
+        Optional<String> explanationAsString,
         @JsonProperty(MAPPING_ID)
         UUID mappingId,
         @JsonProperty(OBJECT_ID_PREFIX)
@@ -260,7 +264,9 @@ public record Mapping (
         private int distance = 1;
         private int explanationLength = 0;
         private Optional<InferredMapping> explanation = Optional.empty();
+        private Optional<String> explanationAsString = Optional.empty();
         private List<InferredMapping> assertedMappings = new ArrayList<>();
+        private Optional<String> assertedMappingsAsString = Optional.empty();
         private Optional<String> objectIdPrefix = Optional.empty();
         private Optional<Uri> objectIRI = Optional.empty();
         private Optional<String> predicateIdPrefix = Optional.empty();
@@ -753,19 +759,20 @@ public record Mapping (
             return this;
         }
 
-        @Field(OTHER)
-        @JsonProperty(OTHER)
+//        @Field(OTHER)
+//        @JsonProperty(OTHER)
         public Builder other(String other) {
             if (other != null && !other.isBlank()) {
-                ObjectMapper objectMapper = new ObjectMapper();
-                try {
-                    Map<String, String> otherAsMap = objectMapper.readValue(other, Map.class);
-                    if (otherAsMap != null && !otherAsMap.isEmpty())
-                        this.other = Optional.of(new KeyValuePairsAsString(otherAsMap));
-                } catch (Exception e) {
-                    logger.error("Error while parsing other field: {}", e.getMessage(), e);
-                }
+                this.other = Optional.of(new KeyValuePairsAsString(other));
             }
+            return this;
+        }
+
+
+        @JsonProperty(OTHER)
+        public Mapping.Builder other(Map<String, String> other) {
+            if (other != null && !other.isEmpty())
+                this.other = Optional.of(new KeyValuePairsAsString(other));
             return this;
         }
 
@@ -1055,17 +1062,36 @@ public record Mapping (
             return this;
         }
 
-        @Field(EXPLANATION)
-        @JsonProperty(EXPLANATION)
         public Builder explanation(InferredMapping explanation) {
             this.explanation = Optional.of(explanation);
+            this.explanationAsString = InferredMapping.asJSONString(explanation);
+            return this;
+        }
+
+        @Field(EXPLANATION)
+        @JsonProperty(EXPLANATION)
+        public Builder explanationAsString(String explanationAsString) {
+            if (explanationAsString != null && !explanationAsString.isBlank())
+                this.explanationAsString = Optional.of(explanationAsString);
+
+            this.explanation = InferredMapping.fromStringAsObject(explanationAsString);
+            return this;
+        }
+
+
+        public Builder assertedMappings(List<InferredMapping> assertedMappings) {
+            this.assertedMappings = assertedMappings;
+            this.assertedMappingsAsString = InferredMapping.asJSONString(assertedMappings);
             return this;
         }
 
         @Field(ASSERTED_MAPPINGS)
         @JsonProperty(ASSERTED_MAPPINGS)
-        public Builder assertedMappings(List<InferredMapping> assertedMappings) {
-            this.assertedMappings = assertedMappings;
+        public Builder assertedMappingsAsString(String assertedMappingsAsString) {
+            if (assertedMappingsAsString != null && !assertedMappingsAsString.isBlank())
+                this.assertedMappingsAsString = Optional.of(assertedMappingsAsString);
+
+            this.assertedMappings = InferredMapping.fromStringAsList(assertedMappingsAsString);
             return this;
         }
 
@@ -1123,10 +1149,12 @@ public record Mapping (
                     subjectSourceVersion,
                     subjectType,
 
+                    assertedMappings,
+                    assertedMappingsAsString,
                     distance,
                     explanationLength,
                     explanation,
-                    assertedMappings,
+                    explanationAsString,
                     mappingId,
                     objectIdPrefix,
                     objectIRI,

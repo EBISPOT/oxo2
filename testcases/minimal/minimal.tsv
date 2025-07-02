@@ -1,6 +1,6 @@
 # curie_map:
 #   DOID: http://purl.obolibrary.org/obo/DOID_
-#   skos: http://www.w3.org/2004/02/skos/core#
+#   oboInOwl: http://www.geneontology.org/formats/oboInOwl#
 #   NCI: http://purl.obolibrary.org/obo/NCIT_
 # license: https://github.com/mapping-commons/mapping-commons.github.io/blob/main/docs/original_license_applies.md
 # mapping_date: '2022-02-23'

@@ -464,8 +464,9 @@
   <field name="author_label" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="comment" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="confidence" type="pdoubles" multiValued="false" indexed="true" stored="true"/>
+  <field name="creator_id" type="strings" multiValued="true" indexed="true" stored="true"/>
+  <field name="creator_label" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="curation_rule" type="strings" multiValued="true" indexed="true" stored="true"/>
-  <field name="distance" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="issue_tracker_item" type="string" multiValued="false" indexed="false" stored="true"/>
   <field name="license" type="string" multiValued="false" indexed="true" stored="true"/>
@@ -484,16 +485,14 @@
   <field name="match_string" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="object_category" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="object_id" type="string" multiValued="false" indexed="true" stored="true"/>
-  <field name="object_iri" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="object_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="object_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="object_source" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_source_version" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_type" type="string" multiValued="false" indexed="true" stored="true"/>
-  <field name="other" type="json" multiValued="false" indexed="true" stored="true"/>
+  <field name="other" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_id" type="string" multiValued="false" indexed="true" stored="true"/>
-  <field name="predicate_iri" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_modifier" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="publication_date" type="pdates" multiValued="false" indexed="true" stored="true"/>
@@ -504,7 +503,6 @@
   <field name="similarity_score" type="pdoubles" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_category" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_id" type="string" multiValued="false" indexed="true" stored="true"/>
-  <field name="subject_iri" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>
@@ -516,7 +514,17 @@
 -->
   <field name="mapping_set_id_facet" type="string" multiValued="false" indexed="true" stored="true" docValues="true"/>
   <field name="object_id_prefix" type="string" indexed="false" stored="true" docValues="true"/>
+  <field name="predicated_id_prefix" type="string" indexed="false" stored="true" docValues="true"/>
   <field name="subject_id_prefix" type="string" indexed="false" stored="true" docValues="true"/>
+
+<!-- Extension -->
+  <field name="asserted_mappings" type="text_general" multiValued="true" indexed="true" stored="true"/>
+  <field name="distance" type="pint" multiValued="false" indexed="true" stored="true"/>
+  <field name="explanation_length" type="pint" multiValued="false" indexed="true" stored="true"/>
+  <field name="explanation" type="text_general" multiValued="false" indexed="false" stored="true"/>
+  <field name="object_iri" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="predicate_iri" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="subject_iri" type="string" multiValued="false" indexed="true" stored="true"/>
 
   <dynamicField name="*_txt_en_split_tight" type="text_en_splitting_tight" indexed="true" stored="true"/>
   <dynamicField name="*_descendent_path" type="descendent_path" indexed="true" stored="true"/>
@@ -587,6 +595,8 @@
   <copyField source="author_label" dest="author_label_str" maxChars="256"/>
   <copyField source="comment" dest="comment_str" maxChars="256"/>
   <copyField source="confidence" dest="confidence_str" maxChars="256"/>
+  <copyField source="creator_id" dest="author_id_str" maxChars="256"/>
+  <copyField source="creator_label" dest="author_label_str" maxChars="256"/>
   <copyField source="curation_rule" dest="curation_rule_str" maxChars="256"/>
   <copyField source="issue_tracker_item" dest="issue_tracker_item_str" maxChars="256"/>
   <copyField source="license" dest="license_str" maxChars="256"/>
@@ -629,4 +639,9 @@
   <copyField source="subject_source_version" dest="subject_source_version_str" maxChars="256"/>
   <copyField source="subject_type" dest="subject_type_str" maxChars="256"/>
   <copyField source="mapping_set_id" dest="mapping_set_id_facet" maxChars="256"/>
+
+  <!-- Extensions -->
+  <copyField source="object_iri" dest="object_iri_str" maxChars="256"/>
+  <copyField source="predicate_iri" dest="predicate_iri_str" maxChars="256"/>
+  <copyField source="subject_iri" dest="subject_iri_str" maxChars="256"/>
 </schema>

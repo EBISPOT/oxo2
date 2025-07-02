@@ -61,7 +61,7 @@ public enum MappingEnum {
     // Extensions to SSSOM
     CHAIN_RULE(MappingConstants.CHAIN_RULE),
     DISTANCE(MappingConstants.DISTANCE),
-    EXPLANATION(MappingConstants.EXPLANATION),
+//    EXPLANATION(MappingConstants.EXPLANATION),
     OBJECT_ID_PREFIX(MappingConstants.OBJECT_ID_PREFIX),
     OBJECT_IRI(MappingConstants.OBJECT_IRI),
     PREDICATE_ID_PREFIX(MappingConstants.PREDICATE_ID_PREFIX),
@@ -91,7 +91,7 @@ public enum MappingEnum {
 
             // Extension
             MappingEnum.DISTANCE.getField(),
-            MappingEnum.EXPLANATION.getField(),
+//            MappingEnum.EXPLANATION.getField(),
             MappingEnum.OBJECT_IRI.getField(),
             MappingEnum.PREDICATE_IRI.getField(),
             MappingEnum.SUBJECT_IRI.getField()

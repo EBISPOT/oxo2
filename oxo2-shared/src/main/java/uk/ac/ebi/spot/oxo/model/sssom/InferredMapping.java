@@ -3,11 +3,14 @@ package uk.ac.ebi.spot.oxo.model.sssom;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.io.IOException;
+import java.util.*;
 
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 
@@ -22,10 +25,12 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class InferredMapping {
 
+    private static final Logger logger = LoggerFactory.getLogger(InferredMapping.class);
+
     @JsonProperty(MAPPING_JUSTIFICATION)
-    private EntityReference mappingJustification;
+    private Optional<EntityReference> mappingJustification;
     @JsonProperty(MAPPING_TOOL)
-    private String mappingTool;
+    private Optional<String> mappingTool;
     @JsonProperty(MAPPING_SET_ID)
     private String mappingSetId;
     @JsonProperty(OBJECT_IRI)
@@ -49,22 +54,23 @@ public class InferredMapping {
     @JsonProperty(DISTANCE)
     private int distance = 1;
 
+    @JsonProperty(CHAIN_RULE_APPLICATIONS)
     private Optional<ChainRuleApplications> chainRuleApplications = Optional.empty();
 
-    public EntityReference getMappingJustification() {
+    public Optional<EntityReference> getMappingJustification() {
         return mappingJustification;
     }
 
     public void setMappingJustification(EntityReference mappingJustification) {
-        this.mappingJustification = mappingJustification;
+        this.mappingJustification = Optional.of(mappingJustification);
     }
 
-    public String getMappingTool() {
+    public Optional<String> getMappingTool() {
         return mappingTool;
     }
 
     public void setMappingTool(String mappingTool) {
-        this.mappingTool = mappingTool;
+        this.mappingTool = Optional.of(mappingTool);
     }
 
     public Uri getObjectIRI() {
@@ -192,14 +198,6 @@ public class InferredMapping {
         return this;
     }
 
-    public static InferredMapping createFromMapping(Mapping mapping) {
-        InferredMapping inferredMapping = new InferredMapping();
-        mapping.subjectIRI().ifPresent(inferredMapping::setSubjectIRI);
-        mapping.predicateIRI().ifPresent(inferredMapping::setPredicateIRI);
-        mapping.objectIRI().ifPresent(inferredMapping::setObjectIRI);
-        return inferredMapping.populateFromMapping(mapping);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -230,15 +228,6 @@ public class InferredMapping {
 
     public void setDistance(int distance) {
         this.distance = distance;
-    }
-
-    private static int compareChainRulesEnum(Optional<ChainRulesEnum> optionalChainRulesEnum1,
-                                             Optional<ChainRulesEnum> optionalChainRulesEnum2) {
-
-        if (optionalChainRulesEnum1.isEmpty() && optionalChainRulesEnum2.isPresent()) return -1;
-        if (optionalChainRulesEnum1.isPresent() && optionalChainRulesEnum2.isEmpty()) return 1;
-        if (optionalChainRulesEnum1.isEmpty() && optionalChainRulesEnum2.isEmpty()) return 0;
-        return optionalChainRulesEnum1.get().compareTo(optionalChainRulesEnum2.get());
     }
 
     /**
@@ -274,6 +263,68 @@ public class InferredMapping {
                     "chainRule=" + chainRule +
                     ", premises=" + premises +
                     '}';
+        }
+    }
+
+    /**
+     * Serializes a list of InferredMapping objects to a JSON string.
+     */
+    public static Optional<String> asJSONString(List<InferredMapping> inferredMappings) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new Jdk8Module());
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            return Optional.of(objectMapper.writeValueAsString(inferredMappings));
+        } catch (JsonProcessingException jpe) {
+            logger.error("Error writing to JSON: inferredMappings = {}.", inferredMappings, jpe);
+            return Optional.empty();
+        }
+    }
+
+    public static Optional<String> asJSONString(InferredMapping inferredMapping) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new Jdk8Module());
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            return Optional.of(objectMapper.writeValueAsString(inferredMapping));
+        } catch (JsonProcessingException jpe) {
+            logger.error("Error writing to JSON: inferredMappings = {}.", inferredMapping, jpe);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Deserializes a JSON string to a list of InferredMapping objects.
+     */
+    public static List<InferredMapping> fromStringAsList(String jsonString) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new Jdk8Module());
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            List<InferredMapping> mappings = objectMapper.readValue(
+                jsonString,
+                objectMapper.getTypeFactory().constructCollectionType(List.class, InferredMapping.class)
+            );
+            return mappings;
+        } catch (IOException e) {
+            logger.error("Error reading from JSON: jsonString = {}.", jsonString, e);
+            return new ArrayList<>();
+        }
+    }
+
+    public static Optional<InferredMapping> fromStringAsObject(String jsonString) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new Jdk8Module());
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            InferredMapping mapping = objectMapper.readValue(
+                    jsonString,
+                    objectMapper.getTypeFactory().constructType(InferredMapping.class)
+            );
+            return Optional.of(mapping);
+        } catch (IOException e) {
+            logger.error("Error reading from JSON: jsonString = {}.", jsonString, e);
+            return Optional.empty();
         }
     }
 }

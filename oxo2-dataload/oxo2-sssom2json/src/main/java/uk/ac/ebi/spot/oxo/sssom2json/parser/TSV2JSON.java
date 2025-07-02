@@ -1,6 +1,7 @@
 package uk.ac.ebi.spot.oxo.sssom2json.parser;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -395,6 +396,7 @@ public class TSV2JSON {
                 .objectType(tempMappingSet.objectType())
                 .objectSource(tempMappingSet.objectSource())
                 .objectSourceVersion(tempMappingSet.objectSourceVersion())
+                .other(tempMappingSet.other())
                 .mappingProvider(tempMappingSet.mappingProvider())
                 .mappingTool(tempMappingSet.mappingTool())
                 .mappingToolVersion(tempMappingSet.mappingToolVersion())

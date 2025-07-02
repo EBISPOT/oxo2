@@ -56,11 +56,12 @@ public class MappingConstants {
     public static final String SUBJECT_TYPE = "subject_type";
 
     // Extensions
+    public static final String ASSERTED_MAPPINGS = "asserted_mappings";
     public static final String CHAIN_RULE = "chain_rule";
+    public static final String CHAIN_RULE_APPLICATIONS = "chain_rule_applications";
     public static final String DISTANCE = "distance";
     public static final String EXPLANATION_LENGTH = "explanation_length";
     public static final String EXPLANATION = "explanation";
-    public static final String ASSERTED_MAPPINGS = "asserted_mappings";
     public static final String MAPPING_ID = "mapping_id";
     public static final String OBJECT_ID_PREFIX = "object_id_prefix";
     public static final String OBJECT_IRI = "object_iri";

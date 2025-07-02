@@ -221,11 +221,21 @@ public class ExplainInferredMappings {
                     logger.warn("Skipping mapping with null IRI values: {}", inferredMapping);
                     continue;
                 }
-                
+
+                EntityDetails subjectDetails = iriToEntityDetails.get(inferredMapping.getSubjectIRI().asStringIRI());
+                EntityDetails predicateDetails = iriToEntityDetails.get(inferredMapping.getPredicateIRI().asStringIRI());
+                EntityDetails objectDetails = iriToEntityDetails.get(inferredMapping.getObjectIRI().asStringIRI());
+
                 Mapping mapping = new Mapping.Builder()
                     .subjectIRI(inferredMapping.getSubjectIRI().asStringIRI())
+                    .subjectId(subjectDetails.getCurie())
+                    .subjectLabel(subjectDetails.getLabel())
                     .predicateIRI(inferredMapping.getPredicateIRI().asStringIRI())
+                    .predicateId(predicateDetails.getCurie())
+                    .predicateLabel(predicateDetails.getLabel())
                     .objectIRI(inferredMapping.getObjectIRI().asStringIRI())
+                    .objectId(objectDetails.getCurie())
+                    .objectLabel(objectDetails.getLabel())
                     .mappingJustification(OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION)
                     .mappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL)
                     .explanation(inferredMapping)

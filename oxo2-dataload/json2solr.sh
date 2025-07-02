@@ -3,7 +3,7 @@
 
 if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <inputDir> <solrUrl> where <solrUrl> has the form <solr_server_url>:<port>/<solr_core>"
-  echo "i.e. http://localhost:8983/oxo2_mappings"
+  echo "i.e. http://localhost:8983/solr/oxo2-mappings"
   exit 1
 fi
 

@@ -66,16 +66,13 @@ public class NemoHelper {
                         nemoInferences, premise, assertedMappings, iriToEntityDetails
                 );
                 premises.add(premiseAsInferredMapping);
-            }
-            );
+            });
 
             chainRuleApplication.setPremises(premises);
             inferredMapping.setChainRuleApplications(Optional.of(chainRuleApplication));
         }
         return inferredMapping;
     }
-
-
 
     private static boolean isValidMappingString(String mappingString) {
         if (mappingString == null || mappingString.isEmpty()) {
