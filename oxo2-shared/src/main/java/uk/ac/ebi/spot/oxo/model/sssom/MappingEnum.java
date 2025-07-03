@@ -19,7 +19,6 @@ public enum MappingEnum {
     LICENSE(MappingConstants.LICENSE),
     MAPPING_CARDINALITY(MappingConstants.MAPPING_CARDINALITY),
     MAPPING_DATE(MappingConstants.MAPPING_DATE),
-    MAPPING_ID(MappingConstants.MAPPING_ID),
     MAPPING_JUSTIFICATION(MappingConstants.MAPPING_JUSTIFICATION),
     MAPPING_PROVIDER(MappingConstants.MAPPING_PROVIDER),
     MAPPING_SET_DESCRIPTION(MappingConstants.MAPPING_SET_DESCRIPTION),
@@ -59,16 +58,20 @@ public enum MappingEnum {
     SUBJECT_TYPE(MappingConstants.SUBJECT_TYPE),
 
     // Extensions to SSSOM
+    ASSERTED_MAPPINGS(MappingConstants.ASSERTED_MAPPINGS),
     CHAIN_RULE(MappingConstants.CHAIN_RULE),
+    CHAIN_RULE_APPLICATIONS(MappingConstants.CHAIN_RULE_APPLICATIONS),
     DISTANCE(MappingConstants.DISTANCE),
-//    EXPLANATION(MappingConstants.EXPLANATION),
+    EXPLANATION_LENGTH(MappingConstants.EXPLANATION_LENGTH),
+    EXPLANATION(MappingConstants.EXPLANATION),
+    MAPPING_ID(MappingConstants.MAPPING_PROVIDER),
     OBJECT_ID_PREFIX(MappingConstants.OBJECT_ID_PREFIX),
     OBJECT_IRI(MappingConstants.OBJECT_IRI),
     PREDICATE_ID_PREFIX(MappingConstants.PREDICATE_ID_PREFIX),
     PREDICATE_IRI(MappingConstants.PREDICATE_IRI),
+    PREMISES(MappingConstants.PREMISES),
     SUBJECT_ID_PREFIX(MappingConstants.SUBJECT_ID_PREFIX),
     SUBJECT_IRI(MappingConstants.SUBJECT_IRI);
-
 
     private static final MappingEnum mappingEnum = MappingEnum.CONFIDENCE;
     private final String field;

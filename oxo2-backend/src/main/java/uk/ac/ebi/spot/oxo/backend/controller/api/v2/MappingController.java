@@ -13,11 +13,11 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchReques
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.FacetedMappingResponse;
 import uk.ac.ebi.spot.oxo.backend.service.helper.SolrQueryBuilder;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
+import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
-import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_ID;
 
 @RestController
 @RequestMapping(path="/api/v2/mappings", produces = {MediaType.APPLICATION_JSON_VALUE})
@@ -34,7 +34,7 @@ public class MappingController {
             String decodedSubjectId = URLDecoder.decode(subjectId, StandardCharsets.UTF_8.name());
             Pageable pageable = PageRequest.of(page, size);
             SolrQuery solrQuery = new SolrQuery();
-            solrQuery.setQuery(SUBJECT_ID + ":\"" + decodedSubjectId + "\"");
+            solrQuery.setQuery(MappingEnum.SUBJECT_ID.getField() + ":\"" + decodedSubjectId + "\"");
             solrQuery.setStart((int) pageable.getOffset());
             solrQuery.setRows(pageable.getPageSize());
 
