@@ -1,0 +1,12 @@
+FROM maven:3.9.10-eclipse-temurin-17 as build
+
+RUN getent group 1000 || (addgroup --system --gid 1000 oxo || (echo "Failed to create group oxo with GID 1000" && exit 1)) \
+ && id -u 1000 || (adduser --system --uid 1000 --ingroup oxo oxo || (echo "Failed to create user oxo with UID 1000" && exit 1))
+
+WORKDIR /opt/oxo
+
+COPY . /opt/oxo
+
+RUN --mount=type=cache,target=/root/.m2 mvn clean package install
+
+FROM eclipse-temurin-17

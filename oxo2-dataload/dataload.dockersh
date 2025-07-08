@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo Loading data...
+mkdir /tmp/out/sssom
+mkdir /tmp/out/mappings
+mkdir /tmp/out/sssom_as_json
+./downloadMappings.sh file://$(find /mnt/config -type f) /tmp/out/sssom
+./sssom2json.sh /tmp/out/sssom /tmp/out/sssom_as_json
