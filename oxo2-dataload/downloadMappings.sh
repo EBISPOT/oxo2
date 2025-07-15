@@ -15,7 +15,7 @@ THREADS=$3
 SCRIPT_PATH=$(dirname $(readlink -f $0))
 
 # Build the command
-COMMAND="java -jar $SCRIPT_PATH/oxo2-downloader/target/oxo2-downloader-1.0-SNAPSHOT-jar-with-dependencies.jar --config $CONFIG_FILE --download-dir $DOWNLOAD_DIR"
+COMMAND="java -jar $SCRIPT_PATH/oxo2-downloader/target/oxo2-downloader-1.0.0-SNAPSHOT.jar --config $CONFIG_FILE --download-dir $DOWNLOAD_DIR"
 if [ -n "$THREADS" ]; then
   COMMAND="$COMMAND --threads $THREADS"
 fi

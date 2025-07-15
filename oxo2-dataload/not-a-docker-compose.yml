@@ -23,7 +23,7 @@ services:
       - JAVA_OPTS=${JAVA_OPTS}
     build:
       context: .
-      dockerfile: Dockerfile.dataload
+      dockerfile: dataload.Dockerfile
     user: "1000:1000"
     volumes:
       - oxo-solr-data:/opt/solr/server:rw

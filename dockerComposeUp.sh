@@ -1,8 +1,8 @@
 #!/bin/bash
 
-export USER_ID=$(id -u)
-export GROUP_ID=$(id -g)
+cd "$(dirname "$0")"  # Always run from the script's directory
 
-export OXO_CONFIG=./oxo-config.json
+source ./dockerEnv.sh
 
-docker compose --verbose -f docker-compose.yml -f ./oxo2-dataload/docker-compose.yml up
+#docker compose run --remove-orphans oxo2-maven-build
+docker compose up --remove-orphans

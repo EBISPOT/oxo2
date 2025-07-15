@@ -1,46 +1,20 @@
 services:
-  oxo2-maven-build:
+  maven-build:
     build:
       context: .
-      dockerfile: Dockerfile.maven.build
+      dockerfile: Dockerfile
     volumes:
-      - oxo:/opt/oxo:rw
-      - maven-repo:/root/.m2/repository:rw
-  solr:
+      - build-artefacts:/opt/oxo:rw
+      - ${M2_VOLUME}:/root/.m2/repository:rw
+  dataload:
     build:
       context: .
-      dockerfile: ./oxo2-dataload/Dockerfile.solr
-    volumes:
-      # Mount configsets for both cores
-      - ./solr-config/oxo2-mappings:/opt/solr/server/solr/configsets/oxo2-mappings:ro
-      - ./solr-config/oxo2-mappingsets:/opt/solr/server/solr/configsets/oxo2-mappingsets:ro
-      - oxo-solr-data:/opt/solr/server/solr:rw
-    ports:
-      - 8983:8983
-    command:
-      # Create both cores with their respective configsets
-      - /bin/bash
-      - -c
-      - |
-        solr-precreate oxo2-mappings /opt/solr/server/solr/configsets/oxo2-mappings &
-        solr-precreate oxo2-mappingsets /opt/solr/server/solr/configsets/oxo2-mappingsets &
-        exec solr --user-managed -f
-  oxo2-dataload:
-    environment:
-      - JAVA_OPTS=${JAVA_OPTS}
-    build:
-      context: .
-      dockerfile: Dockerfile.dataload
-    volumes:
-      - oxo-solr-data:/opt/solr/server:rw
-      - oxo:/opt/oxo:ro
-      - ./${OXO_CONFIG:?OXO2 dataload requires a config file}:/mnt/config/${OXO_CONFIG}:ro
+      dockerfile: ./oxo2-dataload/dataload.Dockerfile
     depends_on:
-      oxo2-maven-build:
-        condition: service_completed_successfully
-      solr:
-        condition: service_completed_successfully
+      - maven-build
+    volumes:
+      - build-artefacts:/opt/oxo:rw
+      - ./${OXO_CONFIG:?OXO dataload requires a config file}:/mnt/config/${OXO_CONFIG}:ro
 volumes:
   maven-repo:
-  oxo:
-  oxo-solr-data:
+  build-artefacts:
