@@ -4,8 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
-import java.net.URI;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -56,7 +54,7 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
         return this.getDataAsString().compareTo(o.getDataAsString());
     }
 
-    public Optional<Uri> toUri(CurieMap curieMap) {
+        public Optional<Uri> toUri(CurieMap curieMap) {
 
         int index = this.dataAsString.indexOf(':');
         if (index == -1) {
@@ -73,9 +71,20 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
         }
 
         String baseUri = curieMap.dataRepresentation.get().get(prefix);
-        if (baseUri == null) {
+        String baseUriLower = curieMap.dataRepresentation.get().get(prefix.toLowerCase());
+        String baseUriUpper = curieMap.dataRepresentation.get().get(prefix.toUpperCase());
+
+        if (baseUri == null && baseUriLower == null && baseUriUpper == null) {
             logger.warn("Prefix not found in prefixMap: {}", prefix);
             return Optional.empty();
+        }
+
+        if (baseUri == null) {
+            if (baseUriLower != null) {
+                baseUri = baseUriLower;
+            } else if (baseUriUpper != null) {
+                baseUri = baseUriUpper;
+            }
         }
 
         String fullUri = baseUri + suffix;

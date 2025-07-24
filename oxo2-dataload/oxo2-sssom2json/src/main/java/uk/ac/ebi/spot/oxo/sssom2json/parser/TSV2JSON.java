@@ -300,10 +300,10 @@ public class TSV2JSON {
         try {
             fileInputStream = new FileInputStream(file);
             scanner = new Scanner(fileInputStream, "UTF-8");
-            String line = "# ";
+            String line = startsWith;
             while (scanner.hasNextLine() && line.startsWith(startsWith)) {
-                if (line.length() > 2) {
-                    stringBuilder.append(line.substring(2));
+                if (line.length() > startsWith.length()) {
+                    stringBuilder.append(line.substring(startsWith.length()));
                     stringBuilder.append("\n");
                 }
                 line = scanner.nextLine();

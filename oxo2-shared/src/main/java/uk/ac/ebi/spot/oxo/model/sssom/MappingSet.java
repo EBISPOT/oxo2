@@ -225,11 +225,18 @@ public record MappingSet (
         }
 
         @JsonProperty(CREATOR_ID)
-        public Builder creatorId(String creatorId) {
-            this.creatorId = StringUtils.splitStringToSortedSet(creatorId, "\\|", EntityReference::new);
+        public Builder creatorId(Object creatorId) {
+            if (creatorId instanceof String s) {
+                this.creatorId = new TreeSet<>();
+                this.creatorId.add(new EntityReference(s));
+            } else if (creatorId instanceof Collection<?> c) {
+                this.creatorId = new TreeSet<>();
+                for (Object o : c) {
+                    this.creatorId.add(new EntityReference(o.toString()));
+                }
+            }
             return this;
         }
-
 
         public Builder creatorLabel(SortedSet<String> creatorLabel) {
             this.creatorLabel = creatorLabel;

@@ -2,7 +2,11 @@
 A SSSOM compliant implementation of OxO that is backwards compatible with OxO version 1
 
 ## Running OxO2 using docker
-Coming soon.
+### Environment variables
+The following environment variables must be set:
+1. OXO2_DATA - This where SSSOM files will be downloaded to and where any output of the OxO2 dataload will be written.
+2. OXO_CONFIG - Points to the OxO2 config file. This is how OxO2 knows which SSSOM mappings to load. For an example see the
+
 
 ## Running OxO2 from the commandline. 
 
