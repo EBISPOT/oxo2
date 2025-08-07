@@ -414,7 +414,7 @@ public class ExplainInferredMappings {
                                  mappingMap.put(miniMapping, correspondingMappings);
                              } catch (Throwable t) {
                                 logger.error("Error reading mapping ({}, {}, {})", mapping.subjectIRI(),
-                                        mapping.predicateIRI(), mapping.objectIRI().get(), t);
+                                        mapping.predicateIRI(), mapping.objectIRI(), t);
                              }
                          });
                      } catch (Exception e) {

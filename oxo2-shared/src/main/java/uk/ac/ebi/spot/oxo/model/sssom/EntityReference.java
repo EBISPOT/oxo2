@@ -54,7 +54,7 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
         return this.getDataAsString().compareTo(o.getDataAsString());
     }
 
-        public Optional<Uri> toUri(CurieMap curieMap) {
+    public Optional<Uri> toUri(CurieMap curieMap) {
 
         int index = this.dataAsString.indexOf(':');
         if (index == -1) {
@@ -64,6 +64,10 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
 
         String prefix = this.dataAsString.substring(0, index).toUpperCase();
         String suffix = this.dataAsString.substring(index + 1);
+
+        if (prefix.toLowerCase().startsWith("http")) {
+            return Optional.of(new Uri(dataAsString));
+        }
 
         if ( curieMap.dataRepresentation.isEmpty()) {
             logger.warn("curieMap data representation is empty for: {} ", curieMap.dataAsString );
