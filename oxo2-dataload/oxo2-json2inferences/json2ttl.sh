@@ -3,6 +3,8 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
+echo Running json2ttl.sh
+
 # Check if the required arguments are provided
 if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <input_directory> <output_file>"

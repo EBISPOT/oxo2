@@ -20,20 +20,33 @@ public class MainDispatcher {
         logger.debug("command: {}", command);
         logger.debug("remainingArgs: {}", Arrays.toString(remainingArgs));
 
-        switch (command) {
-            case "json2ttl":
-                JSON2Turtle.main(remainingArgs);
-                break;
-            case "inferences2trace":
-                uk.ac.ebi.spot.oxo.inferences.nemo.Inferences2Trace.main(remainingArgs);
-                break;
-            case "explanations2json":
-                uk.ac.ebi.spot.oxo.inferences.nemo.ExplainInferredMappings.main(remainingArgs);
-                break;
-            default:
-                logger.error("Unknown command: {}", command);
-                printUsage();
-                System.exit(1);
+        try {
+            switch (command) {
+                case "json2ttl":
+                    JSON2Turtle.main(remainingArgs);
+                    break;
+                case "inferences2trace":
+                    uk.ac.ebi.spot.oxo.inferences.nemo.Inferences2Trace.main(remainingArgs);
+                    break;
+                case "explanations2json":
+                    uk.ac.ebi.spot.oxo.inferences.nemo.ExplainInferredMappings.main(remainingArgs);
+                    break;
+                default:
+                    logger.error("Unknown command: {}", command);
+                    printUsage();
+                    System.exit(1);
+            }
+        } catch (Throwable t) {
+            logger.error("Error while processing command: {}", command, t);
+            long freeMemory = Runtime.getRuntime().freeMemory();
+            long totalMemory = Runtime.getRuntime().totalMemory();
+            long maxMemory = Runtime.getRuntime().maxMemory();
+            long availableMemory = maxMemory - (totalMemory - freeMemory);
+
+            logger.error("Free memory: {}", freeMemory);
+            logger.error("Total memory: {}", totalMemory);
+            logger.error("Max memory: {}", maxMemory);
+            logger.error("Available memory: {} ", availableMemory);
         }
     }
 

@@ -1,6 +1,10 @@
 {
   "mapping_registries" : [
     {
+      "id": "evora",
+      "url": "https://ftp.ebi.ac.uk/pub/databases/spot/evora/ictv_ncbitaxon_exact.sssom.tsv"
+    },
+    {
       "id": "mondo_diseases",
       "github_repository": "https://github.com/mapping-commons/disease-mappings"
     },

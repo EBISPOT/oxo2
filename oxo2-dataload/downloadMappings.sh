@@ -12,10 +12,10 @@ DOWNLOAD_DIR=$2
 THREADS=$3
 
 # Root directory for scripts
-SCRIPT_PATH=$(dirname $(readlink -f $0))
+SCRIPT_DIR=$(dirname $(readlink -f $0))
 
 # Build the command
-COMMAND="java -jar $SCRIPT_PATH/oxo2-downloader/target/oxo2-downloader-1.0.0-SNAPSHOT.jar --config $CONFIG_FILE --download-dir $DOWNLOAD_DIR"
+COMMAND="java -jar $SCRIPT_DIR/oxo2-downloader/target/oxo2-downloader-1.0.0-SNAPSHOT.jar --config $CONFIG_FILE --download-dir $DOWNLOAD_DIR"
 if [ -n "$THREADS" ]; then
   COMMAND="$COMMAND --threads $THREADS"
 fi

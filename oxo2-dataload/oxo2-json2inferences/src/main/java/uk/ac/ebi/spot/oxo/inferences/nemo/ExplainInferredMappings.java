@@ -228,14 +228,14 @@ public class ExplainInferredMappings {
 
                 Mapping mapping = new Mapping.Builder()
                     .subjectIRI(inferredMapping.getSubjectIRI().asStringIRI())
-                    .subjectId(subjectDetails.getCurie())
-                    .subjectLabel(subjectDetails.getLabel())
+                    .subjectId((subjectDetails != null) ? subjectDetails.getCurie() : "")
+                    .subjectLabel((subjectDetails != null) ? subjectDetails.getLabel() : "")
                     .predicateIRI(inferredMapping.getPredicateIRI().asStringIRI())
-                    .predicateId(predicateDetails.getCurie())
-                    .predicateLabel(predicateDetails.getLabel())
+                    .predicateId((predicateDetails != null) ? predicateDetails.getCurie() : "")
+                    .predicateLabel((predicateDetails != null) ? predicateDetails.getLabel() : "")
                     .objectIRI(inferredMapping.getObjectIRI().asStringIRI())
-                    .objectId(objectDetails.getCurie())
-                    .objectLabel(objectDetails.getLabel())
+                    .objectId((objectDetails != null) ? objectDetails.getCurie() : "")
+                    .objectLabel((objectDetails != null) ? objectDetails.getLabel() : "")
                     .mappingJustification(OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION)
                     .mappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL)
                     .explanation(inferredMapping)
@@ -401,16 +401,21 @@ public class ExplainInferredMappings {
                                  new com.fasterxml.jackson.core.type.TypeReference<List<Mapping>>() {});
 
                          mappings.forEach(mapping -> {
-                             MinimalMapping miniMapping = new MinimalMapping(mapping.subjectIRI().get().getDataAsString(),
-                                     mapping.predicateIRI().get().getDataAsString(), mapping.objectIRI().get().getDataAsString());
+                             MinimalMapping miniMapping;
+                             try {
+                                 miniMapping = new MinimalMapping(mapping.subjectIRI().get().getDataAsString(),
+                                         mapping.predicateIRI().get().getDataAsString(), mapping.objectIRI().get().getDataAsString());
+                                 List correspondingMappings = mappingMap.get(miniMapping);
 
-                             List correspondingMappings = mappingMap.get(miniMapping);
-
-                             if (correspondingMappings == null) {
-                                 correspondingMappings = new ArrayList();
+                                 if (correspondingMappings == null) {
+                                     correspondingMappings = new ArrayList();
+                                 }
+                                 correspondingMappings.add(mapping);
+                                 mappingMap.put(miniMapping, correspondingMappings);
+                             } catch (Throwable t) {
+                                logger.error("Error reading mapping ({}, {}, {})", mapping.subjectIRI(),
+                                        mapping.predicateIRI(), mapping.objectIRI().get(), t);
                              }
-                             correspondingMappings.add(mapping);
-                             mappingMap.put(miniMapping, correspondingMappings);
                          });
                      } catch (Exception e) {
                          logger.error("Failed to read Mapping from file: {}", path, e);

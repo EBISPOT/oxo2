@@ -1,5 +1,5 @@
 services:
-  maven-build:
+  build:
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,11 +10,17 @@ services:
     build:
       context: .
       dockerfile: ./oxo2-dataload/dataload.Dockerfile
-    depends_on:
-      - maven-build
+      additional_contexts:
+        oxo2-build: "service:build"
+    environment:
+      - OXO2_CONFIG=/mnt/config/${OXO2_CONFIG}
     volumes:
       - build-artefacts:/opt/oxo:rw
-      - ./${OXO_CONFIG:?OXO dataload requires a config file}:/mnt/config/${OXO_CONFIG}:ro
+      - ./${OXO2_CONFIG:?OXO dataload requires a config file}:/mnt/config/${OXO2_CONFIG}:ro
+      - data:/tmp/data:rw
+      - solr-data:/opt/solr/server/solr/configsets:rw
 volumes:
-  maven-repo:
   build-artefacts:
+  data:
+  solr-data:
+

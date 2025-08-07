@@ -116,7 +116,7 @@ public class TSV2JSON {
 
         if (!mappingSet.mappings().isEmpty()) {
             try {
-                objectMapper.writeValue(new File(mappingSetFilename), mappingSet);
+                objectMapper.writeValue(new File(mappingSetFilename), List.of(mappingSet));
                 List<Mapping> mappingsForMappingSet = new ArrayList<>(mappingSet.mappings());
 
                 objectMapper.writeValue(new File(mappingsFilename), mappingsForMappingSet);

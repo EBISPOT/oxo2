@@ -83,7 +83,7 @@ public class JSON2Turtle {
                     }
                 }
             } catch (Throwable t) {
-                logger.error("Error processing file: {}", outputFile, t);
+                logger.error("Error processing directory: {}", inputDirectory, t);
             }
         }
     }

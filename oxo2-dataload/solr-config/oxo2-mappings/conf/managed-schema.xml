@@ -595,8 +595,8 @@
   <copyField source="author_label" dest="author_label_str" maxChars="256"/>
   <copyField source="comment" dest="comment_str" maxChars="256"/>
   <copyField source="confidence" dest="confidence_str" maxChars="256"/>
-  <copyField source="creator_id" dest="author_id_str" maxChars="256"/>
-  <copyField source="creator_label" dest="author_label_str" maxChars="256"/>
+  <copyField source="creator_id" dest="creator_id_str" maxChars="256"/>
+  <copyField source="creator_label" dest="creator_label_str" maxChars="256"/>
   <copyField source="curation_rule" dest="curation_rule_str" maxChars="256"/>
   <copyField source="issue_tracker_item" dest="issue_tracker_item_str" maxChars="256"/>
   <copyField source="license" dest="license_str" maxChars="256"/>
