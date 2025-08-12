@@ -200,7 +200,8 @@ public record Mapping (
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Mapping mapping = (Mapping) o;
-        return mappingId == mapping.mappingId;
+        // Use value equality for UUID
+        return Objects.equals(mappingId, mapping.mappingId);
     }
 
     @Override
@@ -1171,11 +1172,14 @@ public record Mapping (
             mappingIdAsString.append(this.mappingSetId.getDataAsString());
             this.subjectId.ifPresent(subjectId -> mappingIdAsString.append(subjectId.getDataAsString()));
             this.subjectLabel.ifPresent(subjectLabel -> mappingIdAsString.append(subjectLabel));
+            this.subjectIRI.ifPresent(subjectIRI -> mappingIdAsString.append(subjectIRI));
             this.predicateId.ifPresent(predicateId -> mappingIdAsString.append(predicateId.getDataAsString()));
             this.predicateLabel.ifPresent(predicateLabel -> mappingIdAsString.append(predicateLabel));
+            this.predicateIRI.ifPresent(predicateIRI -> mappingIdAsString.append(predicateIRI));
             this.predicateModifier.ifPresent(predicateModifier -> mappingIdAsString.append(predicateModifier.value()));
             this.objectId.ifPresent(objectId -> mappingIdAsString.append(objectId.getDataAsString()));
             this.objectLabel.ifPresent(objectLabel -> mappingIdAsString.append(objectLabel));
+            this.objectIRI.ifPresent(objectIRI -> mappingIdAsString.append(objectIRI));
             this.mappingJustification.ifPresent(mappingJustification ->
                     mappingIdAsString.append(mappingJustification.getDataAsString()));
 

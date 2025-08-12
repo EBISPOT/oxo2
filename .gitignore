@@ -25,6 +25,7 @@ replay_pid*
 
 # Maven target directory
 target/
+dependency-reduced-pom.xml
 
 # IntelliJ IDEA project files
 .idea/
@@ -32,6 +33,6 @@ target/
 # Mappings
 mappings/
 output/
-data/
+data*/
 
 oxo2-frontend/dist/

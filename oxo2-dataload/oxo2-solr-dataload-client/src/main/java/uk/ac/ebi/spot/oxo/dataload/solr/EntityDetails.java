@@ -1,4 +1,4 @@
-package uk.ac.ebi.spot.oxo.inferences.nemo.model;
+package uk.ac.ebi.spot.oxo.dataload.solr;
 
 public class EntityDetails {
     private String curie;
@@ -11,10 +11,20 @@ public class EntityDetails {
         else return true;
     }
 
+    public boolean isIRIPresent() {
+        if (iri == null || iri.isBlank())
+            return false;
+        else return true;
+    }
+
     public boolean isLabelPresent() {
         if (label == null || label.isBlank())
             return false;
         else return true;
+    }
+
+    public boolean areAllFieldsPresent() {
+        return isCuriePresent() && isIRIPresent() && isLabelPresent();
     }
 
     public String getCurie() {

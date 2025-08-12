@@ -645,3 +645,4 @@
   <copyField source="predicate_iri" dest="predicate_iri_str" maxChars="256"/>
   <copyField source="subject_iri" dest="subject_iri_str" maxChars="256"/>
 </schema>
+

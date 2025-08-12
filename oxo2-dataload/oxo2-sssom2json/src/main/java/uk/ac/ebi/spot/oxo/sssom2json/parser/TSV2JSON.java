@@ -73,30 +73,30 @@ public class TSV2JSON {
         }
     }
 
-    private static void updateCurieToEntityDetails(Set<SSSOM2JSON.EntityDetails> curieToEntityDetailsSet,
-                                                   Mapping mapping) {
-       addDetailsForEntity(mapping.subjectId(), mapping.subjectIRI(), mapping.subjectLabel(), curieToEntityDetailsSet);
-       addDetailsForEntity(mapping.predicateId(), mapping.predicateIRI(), mapping.predicateLabel(), curieToEntityDetailsSet);
-       addDetailsForEntity(mapping.objectId(), mapping.objectIRI(), mapping.objectLabel(), curieToEntityDetailsSet);
-    }
+//    private static void updateCurieToEntityDetails(Set<SSSOM2JSON.EntityDetails> curieToEntityDetailsSet,
+//                                                   Mapping mapping) {
+//       addDetailsForEntity(mapping.subjectId(), mapping.subjectIRI(), mapping.subjectLabel(), curieToEntityDetailsSet);
+//       addDetailsForEntity(mapping.predicateId(), mapping.predicateIRI(), mapping.predicateLabel(), curieToEntityDetailsSet);
+//       addDetailsForEntity(mapping.objectId(), mapping.objectIRI(), mapping.objectLabel(), curieToEntityDetailsSet);
+//    }
 
-    private static void addDetailsForEntity(Optional<EntityReference> entityReference,
-                                                                Optional<Uri> uri, Optional<String> label,
-                                                                Set<SSSOM2JSON.EntityDetails> curieToEntityDetailsSet) {
-        SSSOM2JSON.EntityDetails entityDetails = new SSSOM2JSON.EntityDetails();
-
-        if (uri.isPresent() && StringUtils.isURIValid(uri.get().asStringIRI()))
-            entityDetails.setIri(uri.get().asStringIRI());
-        else
-            return;
-
-        if (entityReference.isPresent())
-            entityDetails.setCurie(entityReference.get().getDataAsString());
-        if (label.isPresent())
-            entityDetails.setLabel(label.get());
-
-        curieToEntityDetailsSet.add(entityDetails);
-    }
+//    private static void addDetailsForEntity(Optional<EntityReference> entityReference,
+//                                                                Optional<Uri> uri, Optional<String> label,
+//                                                                Set<SSSOM2JSON.EntityDetails> curieToEntityDetailsSet) {
+//        SSSOM2JSON.EntityDetails entityDetails = new SSSOM2JSON.EntityDetails();
+//
+//        if (uri.isPresent() && StringUtils.isURIValid(uri.get().asStringIRI()))
+//            entityDetails.setIri(uri.get().asStringIRI());
+//        else
+//            return;
+//
+//        if (entityReference.isPresent())
+//            entityDetails.setCurie(entityReference.get().getDataAsString());
+//        if (label.isPresent())
+//            entityDetails.setLabel(label.get());
+//
+//        curieToEntityDetailsSet.add(entityDetails);
+//    }
 
     private static void writeJSONFile(MappingSet mappingSet, String mappingSetOutputDirectory,
                                       String mappingsOutputDirectory) {
@@ -126,7 +126,7 @@ public class TSV2JSON {
         }
     }
 
-    private static Optional<MappingSet> readTSVFile(File file, Optional<MappingSet.Builder> externalMappingSetBuilderOptional) {
+    public static Optional<MappingSet> readTSVFile(File file, Optional<MappingSet.Builder> externalMappingSetBuilderOptional) {
         logger.info("Reading TSV file {}", file);
         SortedSet<Mapping> mappings = new TreeSet<>();
         Optional<MappingSet> mappingSetOptional = Optional.empty();

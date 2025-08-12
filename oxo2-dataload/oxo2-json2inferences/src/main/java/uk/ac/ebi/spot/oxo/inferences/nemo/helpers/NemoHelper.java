@@ -2,24 +2,26 @@ package uk.ac.ebi.spot.oxo.inferences.nemo.helpers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.spot.oxo.dataload.solr.DataloadSolr;
+import uk.ac.ebi.spot.oxo.dataload.solr.EntityDetails;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.*;
 import uk.ac.ebi.spot.oxo.model.sssom.*;
 
 import java.util.*;
 
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
+
 public class NemoHelper {
     private static final Logger logger = LoggerFactory.getLogger(NemoHelper.class);
 
     public static Set<InferredMapping> fromNemoInferencesToInferredMappings(
-            NemoInferences nemoInferences,
-            Map<MinimalMapping, List<Mapping>> assertedMappings,
-            Map<String, EntityDetails> iriToEntityDetails) {
+            NemoInferences nemoInferences, DataloadSolr solrClient) {
 
         Set<InferredMapping> inferredMappings = new HashSet<>();
 
         nemoInferences.getFinalConclusion().forEach(finalConclusion -> {
             InferredMapping inferredMapping = determineInferencesLeadingToConclusion(nemoInferences,
-                    finalConclusion, assertedMappings, iriToEntityDetails);
+                    finalConclusion, solrClient);
             inferredMappings.add(inferredMapping);
         });
 
@@ -28,11 +30,9 @@ public class NemoHelper {
 
     private static InferredMapping determineInferencesLeadingToConclusion(
             NemoInferences nemoInferences,
-            String conclusion,
-            Map<MinimalMapping, List<Mapping>> assertedMappings,
-            Map<String, EntityDetails> iriToEntityDetails) {
+            String conclusion, DataloadSolr solrClient) {
 
-        InferredMapping inferredMapping = createInferredMapping(conclusion, assertedMappings, iriToEntityDetails);
+        InferredMapping inferredMapping = createInferredMapping(conclusion, solrClient);
 
         Optional<NemoInferences.NemoInference> optionalNemoInference =
                 nemoInferences.findNemoInferenceForConclusion(conclusion);
@@ -63,7 +63,7 @@ public class NemoHelper {
 
             nemoInference.getPremises().forEach(premise -> {
                 InferredMapping premiseAsInferredMapping = determineInferencesLeadingToConclusion(
-                        nemoInferences, premise, assertedMappings, iriToEntityDetails
+                        nemoInferences, premise, solrClient
                 );
                 premises.add(premiseAsInferredMapping);
             });
@@ -84,10 +84,9 @@ public class NemoHelper {
         return result;
     }
 
+
     private static InferredMapping createInferredMapping(
-            String mapping,
-            Map<MinimalMapping, List<Mapping>> assertedMappings,
-            Map<String, EntityDetails> iriToEntityDetails) {
+            String mapping, DataloadSolr solrClient) {
 
         InferredMapping inferredMapping = new InferredMapping();
         if (!isValidMappingString(mapping)) {
@@ -99,14 +98,17 @@ public class NemoHelper {
             throw new IllegalArgumentException("Conclusion string must contain exactly three URIs: " + mapping);
         }
 
-        inferredMapping.setSubjectIRI(new Uri(parts[0]));
-        inferredMapping.setPredicateIRI(new Uri(parts[1]));
-        inferredMapping.setObjectIRI(new Uri(parts[2]));
+        String subjectIRI = parts[0];
+        String predicateIRI = parts[1];
+        String objectIRI = parts[2];
+        inferredMapping.setSubjectIRI(new Uri(subjectIRI));
+        inferredMapping.setPredicateIRI(new Uri(predicateIRI));
+        inferredMapping.setObjectIRI(new Uri(objectIRI));
 
-        MinimalMapping minimalMapping = new MinimalMapping(parts[0], parts[1], parts[2]);
-        List<Mapping> assertedMappingsList = assertedMappings.get(minimalMapping);
+        List<Mapping> assertedMappingsList =
+                solrClient.querySubjectPredicateObjectIRI(subjectIRI, predicateIRI, objectIRI);
 
-        if (assertedMappingsList != null) {
+        if (assertedMappingsList != null && assertedMappingsList.size() > 0) {
             Mapping firstAssertedMapping = assertedMappingsList.get(0);
             inferredMapping = inferredMapping.populateFromMapping(firstAssertedMapping);
             InferredMapping.ChainRuleApplications chainRuleApplications = new InferredMapping.ChainRuleApplications(
@@ -114,12 +116,13 @@ public class NemoHelper {
             inferredMapping.setChainRuleApplications(Optional.of(chainRuleApplications));
         }
 
-        inferredMapping = updateSubject(inferredMapping, iriToEntityDetails);
-        inferredMapping = updatePredicate(inferredMapping, iriToEntityDetails);
-        inferredMapping = updateObject(inferredMapping, iriToEntityDetails);
+        inferredMapping = updateSubject(inferredMapping, solrClient);
+        inferredMapping = updatePredicate(inferredMapping, solrClient);
+        inferredMapping = updateObject(inferredMapping, solrClient);
 
         return inferredMapping;
     }
+
 
     private static InferredMapping updateSubject(InferredMapping inferredMapping,
                                           Map<String, EntityDetails> iriToEntityDetails) {
@@ -135,10 +138,31 @@ public class NemoHelper {
         return inferredMapping;
     }
 
-    private static InferredMapping updatePredicate(InferredMapping inferredMapping,
-                                          Map<String, EntityDetails> iriToEntityDetails) {
+    private static InferredMapping updateSubject(InferredMapping inferredMapping, DataloadSolr solrClient) {
 
-        EntityDetails details =  iriToEntityDetails.get(inferredMapping.getPredicateIRI().asStringIRI());
+        EntityDetails details = solrClient.queryEntityDetailsForIRI(
+                SUBJECT_IRI,
+                inferredMapping.getSubjectIRI().asStringIRI(),
+                SUBJECT_ID,
+                SUBJECT_LABEL);
+        if (details != null) {
+            if (details.isCuriePresent())
+                inferredMapping.setSubjectId(details.getCurie());
+            if (details.isLabelPresent())
+                inferredMapping.setSubjectLabel(details.getLabel());
+        }
+
+        return inferredMapping;
+    }
+
+    private static InferredMapping updatePredicate(InferredMapping inferredMapping,
+                                          DataloadSolr solrClient) {
+
+        EntityDetails details = solrClient.queryEntityDetailsForIRI(
+                PREDICATE_IRI,
+                inferredMapping.getPredicateIRI().asStringIRI(),
+                PREDICATE_ID,
+                PREDICATE_LABEL);
         if (details != null) {
             if (details.isCuriePresent())
                 inferredMapping.setPredicateId(details.getCurie());
@@ -150,9 +174,13 @@ public class NemoHelper {
     }
 
     private static InferredMapping updateObject(InferredMapping inferredMapping,
-                                         Map<String, EntityDetails> iriToEntityDetails) {
+                                                DataloadSolr solrClient) {
 
-        EntityDetails details =  iriToEntityDetails.get(inferredMapping.getObjectIRI().asStringIRI());
+        EntityDetails details = solrClient.queryEntityDetailsForIRI(
+                OBJECT_IRI,
+                inferredMapping.getObjectIRI().asStringIRI(),
+                OBJECT_ID,
+                OBJECT_LABEL);
         if (details != null) {
             if (details.isCuriePresent())
                 inferredMapping.setObjectId(details.getCurie());

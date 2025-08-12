@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -13,6 +15,7 @@ public class Uri extends SSSOMDataType<URI> implements Comparable<Uri> {
 
     private static final Logger logger = LoggerFactory.getLogger(Uri.class);
 
+    private static Map<String, URI> stringToUriMap = new HashMap();
 
     public Uri(String uri) {
         super(uri);
@@ -25,6 +28,9 @@ public class Uri extends SSSOMDataType<URI> implements Comparable<Uri> {
             return tempUri;
         }
         if (!uri.isBlank()) {
+            if (stringToUriMap.containsKey(uri)) {
+                return Optional.of(stringToUriMap.get(uri));
+            }
             if (!uri.contains(":")) {
                 logger.warn("URI is null or does not contain a colon, uri: {}", uri);
             }
@@ -32,10 +38,12 @@ public class Uri extends SSSOMDataType<URI> implements Comparable<Uri> {
                 URI uriAsUri = URI.create(uri);
                 tempUri = Optional.of(uriAsUri);
                 logger.debug("URI created: {}", uriAsUri);
+                stringToUriMap.put(uri, uriAsUri);
             } catch (Exception e) {
                 tempUri = Optional.empty();
             }
         }
+
         return tempUri;
     }
 

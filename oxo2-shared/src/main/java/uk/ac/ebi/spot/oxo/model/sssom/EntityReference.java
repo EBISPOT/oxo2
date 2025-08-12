@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -26,19 +28,26 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
         super(uri);
     }
 
+    private static Map<String, String> uriOrCurieToStringMap = new HashMap();
+
     @Override
     protected Optional<String> parseData(String uriOrCurie) {
         if (uriOrCurie == null || uriOrCurie.isBlank())
             return Optional.empty();
+
+        if (uriOrCurieToStringMap.containsKey(uriOrCurie))
+            return Optional.of(uriOrCurieToStringMap.get(uriOrCurie));
         int index = uriOrCurie.indexOf(':');
         if (index != -1) {
             String suffix = uriOrCurie.substring(index);
             String prefix = StringUtils.isUriNotCurie(suffix) ? uriOrCurie.substring(0, index) :
                     uriOrCurie.substring(0, index).toUpperCase();
-
+            uriOrCurieToStringMap.put(uriOrCurie, prefix + suffix);
             return Optional.of(prefix + suffix);
-        } else
+        } else {
             logger.warn("EntityReference uri is null or does not contain a colon, uri: {}", uriOrCurie);
+        }
+        uriOrCurieToStringMap.put(uriOrCurie, uriOrCurie.toUpperCase());
         return Optional.of(uriOrCurie.toUpperCase());
     }
 

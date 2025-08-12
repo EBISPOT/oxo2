@@ -2,7 +2,7 @@ curl -X POST "http://localhost:8080/api/v2/mappings/search" \
      -H "Content-Type: application/json;charset=UTF-8" \
      -H "Mode: cors" \
      -d '{
-          "queries":["EFO:0003777", "UBERON:0002107", "heart"],
+          "queries":["EFO:0802299"],
           "page":0,
           "size":1000,
           "distance":4,
