@@ -6,22 +6,22 @@ echo SCRIPT_DIR=$SCRIPT_DIR
 echo OXO2_DATA=$OXO2_DATA
 echo OXO2_CONFIG=$OXO2_CONFIG
 
-#rm -R $OXO2_DATA/*
-#
-#start_time=$(date +%s)
-#echo downloadMappings...
-#$SCRIPT_DIR/downloadMappings.sh $OXO2_CONFIG $OXO2_DATA/sssom
-#end_time=$(date +%s)
-#elapsed=$((end_time - start_time))
-#echo "Download took: ${elapsed} seconds"
+rm -R $OXO2_DATA/*
 
-#start_time=$(date +%s)
-#echo sssom2json...
-#$SCRIPT_DIR/sssom2json.sh $OXO2_DATA/sssom $OXO2_DATA/sssom-as-json
-#end_time=$(date +%s)
-#elapsed=$((end_time - start_time))
-#echo "SSSOM2JSON took: ${elapsed} seconds"
-#
+start_time=$(date +%s)
+echo downloadMappings...
+$SCRIPT_DIR/downloadMappings.sh $OXO2_CONFIG $OXO2_DATA/sssom
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+echo "Download took: ${elapsed} seconds"
+
+start_time=$(date +%s)
+echo sssom2json...
+$SCRIPT_DIR/sssom2json.sh $OXO2_DATA/sssom $OXO2_DATA/sssom-as-json
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+echo "SSSOM2JSON took: ${elapsed} seconds"
+
 start_time=$(date +%s)
 echo makeInferences...
 $SCRIPT_DIR/makeInferences.sh
@@ -49,17 +49,17 @@ sleep 10
 OXO2_INFERENCES=$OXO2_DATA/inferences
 mkdir -p $OXO2_INFERENCES/solr
 
-## Write out inferred mappings with their explanations.
-#start_time=$(date +%s)
-#$SCRIPT_DIR/oxo2-json2inferences/explanations2json.sh $OXO2_INFERENCES/inferences-chains.json \
-#$OXO2_INFERENCES/solr/inferred-mappings.json
-#end_time=$(date +%s)
-#elapsed=$((end_time - start_time))
-#echo "Interpreting explanations took: ${elapsed} seconds"
-#
-#echo json2solr inferred mappings ...
-#$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
-#
-#$SOLR_HOME/bin/solr stop
+# Write out inferred mappings with their explanations.
+start_time=$(date +%s)
+$SCRIPT_DIR/oxo2-json2inferences/explanations2json.sh $OXO2_INFERENCES/inferences-chains.json \
+$OXO2_INFERENCES/solr/inferred-mappings.json
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+echo "Interpreting explanations took: ${elapsed} seconds"
+
+echo json2solr inferred mappings ...
+$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
+
+$SOLR_HOME/bin/solr stop
 
 cd ..

@@ -22,5 +22,5 @@ if [ ! -f "$JAR_FILE" ]; then
   exit 1
 fi
 
-java JAVA_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=explanations-heapdump.hprof -cp "$JAR_FILE" \
+java $JAVA_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=explanations-heapdump.hprof -cp "$JAR_FILE" \
      uk.ac.ebi.spot.oxo.inferences.nemo.MainDispatcher explanations2json -n "$NEMO_INFERENCES" -o "$OUTPUT_FILE"
