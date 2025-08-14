@@ -35,12 +35,21 @@ public class SolrQueryBuilder {
         solrQuery.setQuery(constructQuery(mappingSearchRequest.getQueries()));
         solrQuery.set(QF, constructQueryFields(mappingSearchRequest.getQueryFields()));
         solrQuery.setFields(constructFieldList(mappingSearchRequest.getFieldList()));
+        solrQuery.setFilterQueries(constructFilterQueries(mappingSearchRequest.getColumnFilters()));
         solrQuery = configureFacets(solrQuery, mappingSearchRequest.getFacets());
         solrQuery = constructSortedFields(solrQuery, mappingSearchRequest);
 
         return solrQuery;
     }
 
+
+    private static String[] constructFilterQueries(List<MappingSearchRequest.ColumnFilter> queryFilters) {
+        List<String> filterQueriesList = queryFilters.stream()
+                .map(f -> MappingEnum.fromString(f.getId()).getField() + ":"
+                        + ClientUtils.escapeQueryChars(f.getValue()) + "*")
+                .collect(Collectors.toList());
+        return filterQueriesList.toArray(new String[filterQueriesList.size()]);
+    }
 
     private static SolrQuery constructSortedFields(SolrQuery solrQuery, MappingSearchRequest mappingSearchRequest) {
         if (mappingSearchRequest.getSortedFields() != null) {

@@ -20,6 +20,8 @@ public class MappingSearchRequest {
     private int page = 1;
     private int size = 10;
 
+    private List<ColumnFilter> columnFilters;
+
 
     public List<String> getQueries() {
         return queries;
@@ -85,17 +87,60 @@ public class MappingSearchRequest {
         this.size = size;
     }
 
+    public List<ColumnFilter> getColumnFilters() {
+        return columnFilters;
+    }
+
+    public void setColumnFilters(List<ColumnFilter> columnFilters) {
+        this.columnFilters = columnFilters;
+    }
+
     @Override
     public String toString() {
         return "MappingSearchRequest{" +
-                "distance=" + distance +
+                "columnFilters=" + columnFilters +
                 ", queries=" + queries +
                 ", queryFields=" + queryFields +
                 ", fieldList=" + fieldList +
                 ", sortedFields=" + sortedFields +
+                ", distance=" + distance +
                 ", facets=" + facets +
                 ", page=" + page +
                 ", size=" + size +
                 '}';
+    }
+
+    public static class ColumnFilter {
+        private String id;
+        private String value;
+
+        public ColumnFilter(String id, String value) {
+            this.id = id;
+            this.value = value;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return "ColumnFilter{" +
+                    "id='" + id + '\'' +
+                    ", value='" + value + '\'' +
+                    '}';
+        }
     }
 }

@@ -25,11 +25,30 @@ function MappingResults() {
             : [],
     };
 
+    // Add state for column filters
+    const [columnFilters, setColumnFilters] = useState<any[]>([]);
+
+    // Example value for columnFilters:
+    // [
+    //   { id: "subjectId", value: "CHEBI:1234" },
+    //   { id: "objectId", value: "MONDO:0005148" }
+    // ]
 
     const { data, isLoading, isError } = useQuery({
-        queryKey: ["fetchMappings", searchInput.sanitizedSearchInput, pagination.pageIndex, pagination.pageSize],
-        queryFn: () => fetchMappings(
-            searchInput.sanitizedSearchInput, pagination.pageIndex, pagination.pageSize),
+        queryKey: [
+            "fetchMappings",
+            searchInput.sanitizedSearchInput,
+            pagination.pageIndex,
+            pagination.pageSize,
+            columnFilters // Add filters to query key
+        ],
+        queryFn: () =>
+            fetchMappings(
+                searchInput.sanitizedSearchInput,
+                pagination.pageIndex,
+                pagination.pageSize,
+                columnFilters // Pass filters to fetchMappings
+            ),
         staleTime: Infinity,
     });
 
@@ -61,6 +80,7 @@ function MappingResults() {
         columns,
         data: mappingResults.mappings,
         manualPagination: true, //turn off built-in client-side pagination
+        manualFiltering: true, // Enable manual filtering
         //give loading spinner somewhere to go while loading
         muiTableBodyProps: {
             children: isLoading ? (
@@ -76,12 +96,20 @@ function MappingResults() {
             }
             : undefined,
         onPaginationChange: setPagination,
+        onColumnFiltersChange: setColumnFilters, // Track filter changes
         rowCount: (mappingResults?.totalElements) ?? 0,
         state: {
             isLoading,
             pagination,
+            columnFilters, // Pass filter state to table
             showAlertBanner: isError
-        }
+        },
+        enableFilterMatchHighlighting: true,
+        enableGlobalFilter: false,
+        enableFullScreenToggle: false,
+        enableDensityToggle: false,
+        enableHiding: false,
+        enableTopToolbar: false
     });
 
     return (

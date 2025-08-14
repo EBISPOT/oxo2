@@ -77,6 +77,7 @@ public enum MappingEnum {
 
     private static final MappingEnum mappingEnum = MappingEnum.CONFIDENCE;
     private final String field;
+    private final String property;
 
     public static final String[] MINIMAL_LIST_OF_FIELDS = new String[]{
             mappingEnum.CONFIDENCE.getField(),
@@ -104,11 +105,17 @@ public enum MappingEnum {
 
     MappingEnum(String field) {
         this.field = field;
+        this.property = toCamelCase(field);
     }
 
     @JsonValue
     public String getField() {
         return field;
+    }
+
+    @JsonValue
+    public String getProperty() {
+        return property;
     }
 
     @JsonCreator
@@ -117,7 +124,28 @@ public enum MappingEnum {
             if (mappingEnum.field.equalsIgnoreCase(text)) {
                 return mappingEnum;
             }
+            if (mappingEnum.property.equals(text)) {
+                return mappingEnum;
+            }
         }
         return null;
+    }
+
+    private static String toCamelCase(String input) {
+        StringBuilder result = new StringBuilder();
+        boolean nextUpper = false;
+        for (char c : input.toCharArray()) {
+            if (c == '_') {
+                nextUpper = true;
+            } else {
+                if (nextUpper) {
+                    result.append(Character.toUpperCase(c));
+                    nextUpper = false;
+                } else {
+                    result.append(Character.toLowerCase(c));
+                }
+            }
+        }
+        return result.toString();
     }
 }
