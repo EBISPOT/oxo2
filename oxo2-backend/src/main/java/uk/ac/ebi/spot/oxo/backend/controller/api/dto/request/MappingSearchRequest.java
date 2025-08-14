@@ -85,4 +85,17 @@ public class MappingSearchRequest {
         this.size = size;
     }
 
+    @Override
+    public String toString() {
+        return "MappingSearchRequest{" +
+                "distance=" + distance +
+                ", queries=" + queries +
+                ", queryFields=" + queryFields +
+                ", fieldList=" + fieldList +
+                ", sortedFields=" + sortedFields +
+                ", facets=" + facets +
+                ", page=" + page +
+                ", size=" + size +
+                '}';
+    }
 }

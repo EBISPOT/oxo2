@@ -50,6 +50,8 @@ public class MappingController {
             /*consumes = {MediaType.APPLICATION_JSON_VALUE},*/ produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<FacetedMappingResponse> getMappings(@RequestBody MappingSearchRequest mappingSearchRequest) {
 
+        logger.info("Mapping search request: {}", mappingSearchRequest);
+
         Pageable pageable = PageRequest.of(mappingSearchRequest.getPage(), mappingSearchRequest.getSize());
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(mappingSearchRequest, pageable);
 

@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * Enum for mapping fields
- * @Todo: Change Mapping class to use this enum
+ * @Todo:
+ * 1. Change Mapping class to use this enum
+ * 2. Add includeInTextQuery member to be used in SolrQueryBuilder.constructQuery to only do text queries against text fields
  */
 public enum MappingEnum {
     AUTHOR_ID(MappingConstants.AUTHOR_ID),

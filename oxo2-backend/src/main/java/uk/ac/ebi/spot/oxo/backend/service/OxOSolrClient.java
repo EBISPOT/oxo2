@@ -62,6 +62,16 @@ public class OxOSolrClient {
         return new FacetedMappingResponse(mappingPage, facetFieldToCounts);
     }
 
+    public List<Mapping> query(SolrParams params) throws Exception {
+        QueryResponse response = solrMappingClient.query(params);
+
+        List<Mapping.Builder> mappingBuilders = response.getBeans(Mapping.Builder.class);
+        List<Mapping> mappings = mappingBuilders.stream()
+                .map(Mapping.Builder::build)
+                .collect(Collectors.toList());
+        return mappings;
+    }
+
     private static Map<String, Map<String, Long>> getFacetFieldToCounts(QueryResponse response) {
         Map<String, Map<String, Long>> facetFieldToCounts = new LinkedHashMap<>();
         if (response.getFacetFields() != null) {

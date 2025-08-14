@@ -80,6 +80,7 @@ export interface MappingResponse {
     match_string?: string;
     object_category?: string;
     object_id?: string;
+    object_iri?: string;
     object_label?: string;
     object_match_field?: string[];
     object_preprocessing?: string[];
@@ -89,6 +90,7 @@ export interface MappingResponse {
     object_id_prefix?: string;
     other?: Record<string, string>;
     predicate_id?: string;
+    predicate_iri?: string;
     predicate_label?: string;
     predicate_modifier?: string;
     publication_date?: string;
@@ -99,6 +101,7 @@ export interface MappingResponse {
     similarity_score?: number;
     subject_category?: string;
     subject_id?: string;
+    subject_iri?: string;
     subject_label?: string;
     subject_match_field?: string[];
     subject_preprocessing?: string[];
@@ -135,6 +138,7 @@ export interface Mapping {
     matchString?: string;
     objectCategory?: string;
     objectId: string;
+    objectIri: string;
     objectLabel: string;
     objectMatchField?: string[];
     objectPreprocessing?: string[];
@@ -144,6 +148,7 @@ export interface Mapping {
     objectIdPrefix?: string;
     other?: Record<string, string>;
     predicateId: string;
+    predicateIri: string;
     predicateLabel: string;
     predicateModifier?: string;
     publicationDate?: string;
@@ -154,6 +159,7 @@ export interface Mapping {
     similarityScore?: number;
     subjectCategory?: string;
     subjectId: string;
+    subjectIri: string;
     subjectLabel: string;
     subjectMatchField?: string[];
     subjectPreprocessing?: string[];
