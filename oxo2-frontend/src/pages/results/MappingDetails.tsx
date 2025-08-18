@@ -1,10 +1,11 @@
-import React, { ReactNode, useState } from "react";
-import {Mapping, MappingFields} from "../../model/Mapping";
-import { useNavigate } from "react-router-dom";
-import { MappingItem } from "../../components/mapping/MappingItem";
-import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
+import React, {ReactNode, useState} from "react";
+import {AssertedMapping, Mapping, MappingFields} from "../../model/Mapping";
+import {useNavigate} from "react-router-dom";
+import {MappingItem} from "../../components/mapping/MappingItem";
+import {ChevronDownIcon, ChevronUpIcon} from "@heroicons/react/24/solid";
+import AssertedMappings from "./AssertedMappings.tsx";
 
-const hasValue = (value?: string | number | string[] | Record<string, string>): boolean => {
+const hasValue = (value?: string | number | string[] | Record<string, string> | AssertedMapping[]): boolean => {
     if (value === undefined) return false;
     if (Array.isArray(value)) return value.length > 0;
     if (typeof value === 'object') return Object.keys(value).length > 0;
@@ -44,7 +45,7 @@ function Section({
     return (
         <div className="mb-8">
             <div className="section-title">
-                <h2 className="section-heading">{title}</h2>
+                <h1 className="section-heading">{title}</h1>
                 {useHideShow && (
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
@@ -92,6 +93,7 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                 </button>
             </div>
 
+
             <Section title="Mapping" useHideShow={false} showBackground={false}>
                 <MappingItem
                     mapping={mapping}
@@ -99,6 +101,16 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                     showDetailsLink={false}
                     alwaysHighlighted={true}
                 />
+            </Section>
+
+            <Section
+                title="Inference Details"
+                renderComponent={hasAnyValue([
+                    MappingFields.assertedMappings
+                ])}
+            >
+                <AssertedMappings
+                    mapping={mapping}/>
             </Section>
 
             <Section
@@ -199,6 +211,7 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                 <LabeledValue label="Object Source" value={mapping.objectSource} />
                 <LabeledValue label="Object Source Version" value={mapping.objectSourceVersion} />
             </Section>
+
         </div>
     );
 }

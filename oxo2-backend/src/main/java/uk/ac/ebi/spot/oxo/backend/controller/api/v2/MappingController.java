@@ -59,6 +59,7 @@ public class MappingController {
 
         try {
             FacetedMappingResponse facetedMappingResponse = solrClient.query(solrQuery, pageable);
+            logger.trace("facetedMappingResponse={}", facetedMappingResponse);
             return ResponseEntity.ok(facetedMappingResponse);
         } catch (Exception e) {
             logger.error("Error while fetching mappings for subjectId: {}", mappingSearchRequest, e);

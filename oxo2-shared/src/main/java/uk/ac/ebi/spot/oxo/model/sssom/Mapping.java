@@ -1086,14 +1086,33 @@ public record Mapping (
             return this;
         }
 
-        @Field(ASSERTED_MAPPINGS)
+//        @Field(ASSERTED_MAPPINGS)
         @JsonProperty(ASSERTED_MAPPINGS)
         public Builder assertedMappingsAsString(String assertedMappingsAsString) {
-            if (assertedMappingsAsString != null && !assertedMappingsAsString.isBlank())
+            logger.debug("Setting assertedMappingsAsString: '{}'", assertedMappingsAsString);
+            if (assertedMappingsAsString != null && !assertedMappingsAsString.isBlank()) {
                 this.assertedMappingsAsString = Optional.of(assertedMappingsAsString);
-
-            this.assertedMappings = InferredMapping.fromStringAsList(assertedMappingsAsString);
+                this.assertedMappings = InferredMapping.fromStringAsList(assertedMappingsAsString);
+                logger.debug("Parsed assertedMappings: {}", this.assertedMappings);
+            } else {
+                this.assertedMappingsAsString = Optional.empty();
+                this.assertedMappings = new ArrayList<>();
+                logger.debug("assertedMappingsAsString is null or blank, set assertedMappings to empty list.");
+            }
             return this;
+        }
+
+        // Add this method to handle List<String> input from SolrJ
+        @Field(ASSERTED_MAPPINGS)
+        @JsonProperty(ASSERTED_MAPPINGS)
+        public Builder assertedMappingsAsString(List<String> assertedMappingsAsStringList) {
+            if (assertedMappingsAsStringList != null && !assertedMappingsAsStringList.isEmpty()) {
+                // If SolrJ gives a list, join it into a single string (assuming it's a single JSON array as string)
+                String joined = String.join("", assertedMappingsAsStringList);
+                return assertedMappingsAsString(joined);
+            } else {
+                return assertedMappingsAsString((String) null);
+            }
         }
 
         public Mapping build() {

@@ -241,6 +241,9 @@ public class InferredMapping {
         @JsonProperty(PREMISES)
         private List<InferredMapping> premises;
 
+        public ChainRuleApplications() {
+        }
+
         public ChainRuleApplications(Optional<ChainRulesEnum> chainRule) {
             this.chainRule = chainRule;
         }

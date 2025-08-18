@@ -1,4 +1,3 @@
-
 export enum MappingFields {
     authorId = "authorId",
     authorLabel = "authorLabel",
@@ -50,9 +49,47 @@ export enum MappingFields {
     subjectSource = "subjectSource",
     subjectSourceVersion = "subjectSourceVersion",
     subjectType = "subjectType",
-    subjectIdPrefix = "subjectIdPrefix"
+    subjectIdPrefix = "subjectIdPrefix",
+
+    assertedMappings = "assertedMappings"
+
 }
 
+export interface AssertedMappingResponse {
+    mapping_justification?: string;
+    mapping_tool?: string;
+    mapping_set_id?: string;
+    object_iri?: string;
+    object_id?: string;
+    object_label?: string;
+    predicate_iri?: string;
+    predicate_id?: string;
+    subject_iri?: string;
+    subject_id?: string;
+    subject_label?: string;
+    distance?: number;
+    chain_rule_applications?: {
+        chain_rule?: string;
+    };
+}
+
+export interface AssertedMapping {
+    mappingJustification?: string;
+    mappingTool?: string;
+    mappingSetId?: string;
+    objectIri?: string;
+    objectId?: string;
+    objectLabel?: string;
+    predicateIri?: string;
+    predicateId?: string;
+    subjectIri?: string;
+    subjectId?: string;
+    subjectLabel?: string;
+    distance?: number;
+    chainRuleApplications?: {
+        chainRule?: string;
+    };
+}
 
 export interface MappingResponse {
     author_id?: string;
@@ -109,6 +146,8 @@ export interface MappingResponse {
     subject_source_version?: string;
     subject_type?: string;
     subject_id_prefix?: string;
+
+    asserted_mappings?: string;
 }
 
 
@@ -167,4 +206,5 @@ export interface Mapping {
     subjectSourceVersion?: string;
     subjectType?: string;
     subjectIdPrefix?: string;
+    assertedMappings?: AssertedMapping[];
 }

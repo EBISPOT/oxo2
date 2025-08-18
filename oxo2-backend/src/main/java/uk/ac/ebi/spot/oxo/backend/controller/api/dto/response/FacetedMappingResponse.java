@@ -20,4 +20,25 @@ public class FacetedMappingResponse {
     public Map<String, Map<String, Long>> getFacets() {
         return facets;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder mappingsStr = new StringBuilder();
+        if (mappings != null && mappings.getContent() != null) {
+            mappingsStr.append("[");
+            for (Mapping mapping : mappings.getContent()) {
+                mappingsStr.append(mapping.toString()).append(", ");
+            }
+            if (!mappings.getContent().isEmpty()) {
+                mappingsStr.setLength(mappingsStr.length() - 2); // remove last comma and space
+            }
+            mappingsStr.append("]");
+        } else {
+            mappingsStr.append("null");
+        }
+        return "FacetedMappingResponse{" +
+                "facets=" + facets +
+                ", mappings=" + mappingsStr +
+                '}';
+    }
 }

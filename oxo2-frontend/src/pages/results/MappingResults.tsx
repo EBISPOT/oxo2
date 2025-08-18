@@ -1,13 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
-import { Search } from "../../components/search/Search";
-import { SearchInput } from "../../model/Search";
-import { FacetedMapping, fetchMappings, fromJson, emptyFacetedMapping } from "./MappingResultsSlice";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef, MRT_PaginationState } from 'material-react-table';
-import { Mapping } from "../../model/Mapping.ts";
-
+import {useMemo, useState} from "react";
+import {useNavigate, useParams} from "react-router-dom";
+import {Search} from "../../components/search/Search";
+import {SearchInput} from "../../model/Search";
+import {emptyFacetedMapping, FacetedMapping, fetchMappings, fromJson} from "./MappingResultsSlice";
+import {useQuery} from "@tanstack/react-query";
+import {MaterialReactTable, type MRT_ColumnDef, MRT_PaginationState, useMaterialReactTable} from 'material-react-table';
+import {Mapping} from "../../model/Mapping.ts";
 
 
 function MappingResults() {
@@ -25,14 +23,7 @@ function MappingResults() {
             : [],
     };
 
-    // Add state for column filters
     const [columnFilters, setColumnFilters] = useState<any[]>([]);
-
-    // Example value for columnFilters:
-    // [
-    //   { id: "subjectId", value: "CHEBI:1234" },
-    //   { id: "objectId", value: "MONDO:0005148" }
-    // ]
 
     const { data, isLoading, isError } = useQuery({
         queryKey: [
@@ -40,7 +31,7 @@ function MappingResults() {
             searchInput.sanitizedSearchInput,
             pagination.pageIndex,
             pagination.pageSize,
-            columnFilters // Add filters to query key
+            columnFilters
         ],
         queryFn: () =>
             fetchMappings(
@@ -56,6 +47,10 @@ function MappingResults() {
 
     const columns = useMemo<MRT_ColumnDef<Mapping>[]>(
         () => [
+            {
+               accessorKey: "mappingId",
+               header: "Mapping Id"
+            },
             {
                 accessorKey: "subjectId",
                 header: "Subject Id",
@@ -76,6 +71,8 @@ function MappingResults() {
         []
     );
 
+    const [columnVisibility, setColumnVisibility] = useState({ mappingId: false })
+
     const table = useMaterialReactTable({
         columns,
         data: mappingResults.mappings,
@@ -88,6 +85,12 @@ function MappingResults() {
                     <td />
                 </tr>
             ) : undefined,
+            sx: {
+                //stripe the rows, make odd rows a darker color
+                '& tr:nth-of-type(even) > td': {
+                    backgroundColor: '#F3F4F6',
+                },
+            },
         },
         muiToolbarAlertBannerProps: isError
             ? {
@@ -95,21 +98,32 @@ function MappingResults() {
                 children: 'Error loading data',
             }
             : undefined,
+        muiPaginationProps: {
+            sx: { justifyContent: 'center', display: 'flex' }
+        },
         onPaginationChange: setPagination,
-        onColumnFiltersChange: setColumnFilters, // Track filter changes
+        onColumnFiltersChange: setColumnFilters,
         rowCount: (mappingResults?.totalElements) ?? 0,
         state: {
             isLoading,
             pagination,
             columnFilters, // Pass filter state to table
-            showAlertBanner: isError
+            showAlertBanner: isError,
+            columnVisibility
         },
         enableFilterMatchHighlighting: true,
         enableGlobalFilter: false,
         enableFullScreenToggle: false,
         enableDensityToggle: false,
         enableHiding: false,
-        enableTopToolbar: false
+        enableTopToolbar: false,
+        muiTableBodyRowProps: ({ row }) => ({
+            onClick: () => {
+                const mapping = row.original;
+                navigate(`/mapping/${mapping.mappingId}`, { state: { mapping } });
+            },
+            style: { cursor: 'pointer' }
+        }),
     });
 
     return (

@@ -260,6 +260,9 @@ code {
   .section-heading {
     @apply text-xl font-bold pb-2 flex-grow;
   }
+  .section-subheading {
+    @apply text-xl pb-2 flex-grow;
+  }
   .section-content {
     @apply p-4 rounded-lg;
   }
