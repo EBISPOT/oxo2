@@ -33,18 +33,25 @@ public class HTTPDowloader {
         @Override
         public void run() {
             String fileWithExtension = null;
-            try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-                HttpGet request = new HttpGet(url);
-
-
+            try {
+                boolean isLocalFile = url.startsWith("file://") || new File(url).exists();
                 if (extension.isPresent()) {
                     fileWithExtension = destination + "." + extension.get();
                 } else {
                     fileWithExtension = destination;
                 }
-                downloadFile(httpClient, request, fileWithExtension);
 
-                if (extension.isPresent() && extension.get().equals("tgz") || extension.get().equals("tar.gz")) {
+                if (isLocalFile) {
+                    String localPath = url.startsWith("file://") ? url.substring(7) : url;
+                    copyLocalFile(localPath, fileWithExtension);
+                } else {
+                    try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+                        HttpGet request = new HttpGet(url);
+                        downloadFile(httpClient, request, fileWithExtension);
+                    }
+                }
+
+                if (extension.isPresent() && (extension.get().equals("tgz") || extension.get().equals("tar.gz"))) {
                     extractTgz(fileWithExtension, destination);
                 }
             } catch (Exception e) {
@@ -97,6 +104,17 @@ public class HTTPDowloader {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        private static void copyLocalFile(String sourcePath, String destinationPath) throws IOException {
+            try (InputStream in = new FileInputStream(sourcePath);
+                 OutputStream out = new FileOutputStream(destinationPath)) {
+                byte[] buffer = new byte[2048];
+                int count;
+                while ((count = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, count);
                 }
             }
         }

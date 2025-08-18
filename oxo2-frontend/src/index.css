@@ -285,9 +285,4 @@ code {
   .truncate-text {
     @apply overflow-hidden text-ellipsis whitespace-nowrap;
   }
-  .wrap-slash {
-    word-break: break-all;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
 }

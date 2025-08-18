@@ -56,12 +56,20 @@ function MappingResults() {
                 header: "Subject Id",
             },
             {
+                accessorKey: "subjectLabel",
+                header: "Subject Label",
+            },
+            {
                 accessorKey: "predicateId",
                 header: "Predicate Id",
             },
             {
                 accessorKey: "objectId",
                 header: "Object Id",
+            },
+            {
+                accessorKey: "objectLabel",
+                header: "Object Label",
             },
             {
                 accessorKey: "mappingJustification",

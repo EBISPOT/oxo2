@@ -13,10 +13,10 @@ echo "Making inferences: Writing ttl took: ${elapsed} seconds"
 
 
 # Run nmo to get initial inferences
- -o: overwrites existing files
- -e idb: trace idb inferences. See https://github.com/knowsys/nemo/issues/670
- -v: show progress of inferencing. See https://github.com/knowsys/nemo/issues/676
- See https://github.com/knowsys/nemo-examples/tree/main/examples/rdf-conversion as example externalizing import/export
+# -o: overwrites existing files
+# -e idb: trace idb inferences. See https://github.com/knowsys/nemo/issues/670
+# -v: show progress of inferencing. See https://github.com/knowsys/nemo/issues/676
+# See https://github.com/knowsys/nemo-examples/tree/main/examples/rdf-conversion as example externalizing import/export
 start_time=$(date +%s)
 nmo $SCRIPT_DIR/oxo2-json2inferences/chain-rules.rls --param importfile=\"$OXO2_DATA/assertedMapping.ttl\" \
  --param exportfile=\"inferredMapping.ttl\" -o -v -D $OXO2_INFERENCES --report all
