@@ -58,7 +58,7 @@ export function MappingItem({
             <div className={entityClasses}>
                 <div className="text-center font-bold">
                     <span
-                        className="pr-2 cursor-pointer hover:underline"
+                        className="pr-2 cursor-pointer hover:underline wrap-slash"
                         onClick={() => navigateFn(`/entity/${encodeURIComponent(id)}`)}
                     >
                     {id}
