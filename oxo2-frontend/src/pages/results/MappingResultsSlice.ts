@@ -1,8 +1,8 @@
 import {
     MappingResponse,
     Mapping,
-    AssertedMappingResponse,
-    AssertedMapping/*, MappingFields*/
+    InferredMappingResponse,
+    InferredMapping/*, MappingFields*/
 } from '../../model/Mapping';
 import { post } from '../../app/api';
 
@@ -64,7 +64,7 @@ export enum SearchStatus {
 }
 
 
-export function fromAssertedMappingString(assertedMappingsAsString?: string| undefined): AssertedMapping[] {
+export function fromAssertedMappingString(assertedMappingsAsString?: string| undefined): InferredMapping[] {
     if (!assertedMappingsAsString ||
         (typeof assertedMappingsAsString === 'string' && assertedMappingsAsString.trim() === '')){
         return []

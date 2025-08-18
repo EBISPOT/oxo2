@@ -55,7 +55,7 @@ export enum MappingFields {
 
 }
 
-export interface AssertedMappingResponse {
+export interface InferredMappingResponse {
     mapping_justification?: string;
     mapping_tool?: string;
     mapping_set_id?: string;
@@ -73,7 +73,7 @@ export interface AssertedMappingResponse {
     };
 }
 
-export interface AssertedMapping {
+export interface InferredMapping {
     mappingJustification?: string;
     mappingTool?: string;
     mappingSetId?: string;
@@ -206,5 +206,5 @@ export interface Mapping {
     subjectSourceVersion?: string;
     subjectType?: string;
     subjectIdPrefix?: string;
-    assertedMappings?: AssertedMapping[];
+    assertedMappings?: InferredMapping[];
 }

@@ -1,11 +1,11 @@
 import React, {ReactNode, useState} from "react";
-import {AssertedMapping, Mapping, MappingFields} from "../../model/Mapping";
+import {InferredMapping, Mapping, MappingFields} from "../../model/Mapping";
 import {useNavigate} from "react-router-dom";
 import {MappingItem} from "../../components/mapping/MappingItem";
 import {ChevronDownIcon, ChevronUpIcon} from "@heroicons/react/24/solid";
-import AssertedMappings from "./AssertedMappings.tsx";
+import InferredMappings from "./InferredMappings.tsx";
 
-const hasValue = (value?: string | number | string[] | Record<string, string> | AssertedMapping[]): boolean => {
+const hasValue = (value?: string | number | string[] | Record<string, string> | InferredMapping[]): boolean => {
     if (value === undefined) return false;
     if (Array.isArray(value)) return value.length > 0;
     if (typeof value === 'object') return Object.keys(value).length > 0;
@@ -109,7 +109,7 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                     MappingFields.assertedMappings
                 ])}
             >
-                <AssertedMappings
+                <InferredMappings
                     mapping={mapping}/>
             </Section>
 

@@ -1,9 +1,9 @@
 import {useMemo, useState} from "react";
 import {MaterialReactTable, MRT_ColumnDef, useMaterialReactTable} from "material-react-table";
-import {AssertedMapping, Mapping} from "../../model/Mapping.ts";
+import {InferredMapping, Mapping} from "../../model/Mapping.ts";
 
-function AssertedMappings({ mapping }: { mapping: Mapping }) {
-    const assertedMappingColumns = useMemo<MRT_ColumnDef<AssertedMapping>[]>(
+function InferredMappings({ mapping }: { mapping: Mapping }) {
+    const assertedMappingColumns = useMemo<MRT_ColumnDef<InferredMapping>[]>(
         () => [
             {
                 accessorKey: "mappingId",
@@ -64,4 +64,4 @@ function AssertedMappings({ mapping }: { mapping: Mapping }) {
         </div>
     );
 }
-export default AssertedMappings;
+export default InferredMappings;

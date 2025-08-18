@@ -1086,7 +1086,6 @@ public record Mapping (
             return this;
         }
 
-//        @Field(ASSERTED_MAPPINGS)
         @JsonProperty(ASSERTED_MAPPINGS)
         public Builder assertedMappingsAsString(String assertedMappingsAsString) {
             logger.debug("Setting assertedMappingsAsString: '{}'", assertedMappingsAsString);
@@ -1102,7 +1101,6 @@ public record Mapping (
             return this;
         }
 
-        // Add this method to handle List<String> input from SolrJ
         @Field(ASSERTED_MAPPINGS)
         @JsonProperty(ASSERTED_MAPPINGS)
         public Builder assertedMappingsAsString(List<String> assertedMappingsAsStringList) {
