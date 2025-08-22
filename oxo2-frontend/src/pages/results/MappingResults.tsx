@@ -6,7 +6,7 @@ import {emptyFacetedMapping, FacetedMapping, fetchMappings, fromJson} from "./Ma
 import {useQuery} from "@tanstack/react-query";
 import {MaterialReactTable, type MRT_ColumnDef, MRT_PaginationState, useMaterialReactTable} from 'material-react-table';
 import {Mapping} from "../../model/Mapping.ts";
-
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 
 function MappingResults() {
     const navigate = useNavigate();
@@ -24,6 +24,9 @@ function MappingResults() {
     };
 
     const [columnFilters, setColumnFilters] = useState<any[]>([]);
+    const [sorting, setSorting] = useState<any[]>([
+        { id: 'subject_id', desc: false }
+    ]);
 
     const { data, isLoading, isError } = useQuery({
         queryKey: [
@@ -31,14 +34,16 @@ function MappingResults() {
             searchInput.sanitizedSearchInput,
             pagination.pageIndex,
             pagination.pageSize,
-            columnFilters
+            columnFilters,
+            sorting
         ],
         queryFn: () =>
             fetchMappings(
                 searchInput.sanitizedSearchInput,
                 pagination.pageIndex,
                 pagination.pageSize,
-                columnFilters // Pass filters to fetchMappings
+                columnFilters,
+                sorting
             ),
         staleTime: Infinity,
     });
@@ -48,12 +53,9 @@ function MappingResults() {
     const columns = useMemo<MRT_ColumnDef<Mapping>[]>(
         () => [
             {
-               accessorKey: "mappingId",
-               header: "Mapping Id"
-            },
-            {
                 accessorKey: "subjectId",
                 header: "Subject Id",
+                enableHiding: false
             },
             {
                 accessorKey: "subjectLabel",
@@ -62,10 +64,12 @@ function MappingResults() {
             {
                 accessorKey: "predicateId",
                 header: "Predicate Id",
+                enableHiding: false
             },
             {
                 accessorKey: "objectId",
                 header: "Object Id",
+                enableHiding: false
             },
             {
                 accessorKey: "objectLabel",
@@ -74,18 +78,52 @@ function MappingResults() {
             {
                 accessorKey: "mappingJustification",
                 header: "Mapping Justification",
+
             },
+            {
+                accessorKey: "mappingProvider",
+                header: "Mapping Provider"
+            },
+            {
+                accessorKey: "mappingSetId",
+                header: "Mapping Set Id"
+            },
+            {
+                accessorKey: "mappingTool",
+                header: "Mapping Tool",
+            }
         ],
         []
     );
 
-    const [columnVisibility, setColumnVisibility] = useState({ mappingId: false })
+    const [columnVisibility, setColumnVisibility] = useState({
+        mappingProvider: false,
+        mappingSetId: false,
+        mappingTool: false
+        }
+    )
 
     const table = useMaterialReactTable({
         columns,
         data: mappingResults.mappings,
+        enableColumnOrdering: true,
+        enableFilterMatchHighlighting: true,
+        enableGlobalFilter: true,
+        enableFullScreenToggle: false,
+        enableDensityToggle: false,
         manualPagination: true, //turn off built-in client-side pagination
         manualFiltering: true, // Enable manual filtering
+        manualSorting: true,
+        // enableMultiSort: true,
+        muiTablePaperProps: {
+            sx: {
+                '& .MuiBox-root:has(.MuiTablePagination-root)': {
+                    justifyContent: 'center',
+                    width: '100%',
+                    display: 'flex'
+                }
+            },
+        },
         //give loading spinner somewhere to go while loading
         muiTableBodyProps: {
             children: isLoading ? (
@@ -100,38 +138,74 @@ function MappingResults() {
                 },
             },
         },
+        muiTableHeadCellProps: {
+            //simple styling with the `sx` prop, works just like a style prop in this example
+            sx: {
+                fontWeight: 'bold',
+                fontSize: '16px',
+            },
+        },
         muiToolbarAlertBannerProps: isError
             ? {
                 color: 'error',
                 children: 'Error loading data',
             }
             : undefined,
+        paginationDisplayMode: 'pages',
         muiPaginationProps: {
-            sx: { justifyContent: 'center', display: 'flex' }
+            rowsPerPageOptions: [10, 20, 30, 50],
+            boundaryCount: 1,
+            color: 'primary',
+            size: 'medium',
+            siblingCount: 1,
         },
         onPaginationChange: setPagination,
         onColumnFiltersChange: setColumnFilters,
+        onSortingChange: setSorting,
         rowCount: (mappingResults?.totalElements) ?? 0,
         state: {
             isLoading,
             pagination,
             columnFilters, // Pass filter state to table
             showAlertBanner: isError,
-            columnVisibility
+            columnVisibility,
+            sorting
         },
+        // initialState: {
+        //     showColumnFilters: true
+        // },
+        onColumnVisibilityChange: setColumnVisibility,
         enableFilterMatchHighlighting: true,
         enableGlobalFilter: false,
         enableFullScreenToggle: false,
         enableDensityToggle: false,
-        enableHiding: false,
-        enableTopToolbar: false,
+        enableHiding: true,
+        enableTopToolbar: true, // Show toolbar so user can access column visibility menu
         muiTableBodyRowProps: ({ row }) => ({
             onClick: () => {
                 const mapping = row.original;
                 navigate(`/mapping/${mapping.mappingId}`, { state: { mapping } });
             },
             style: { cursor: 'pointer' }
-        }),
+        })
+    });
+
+    const tableTheme = createTheme({
+        palette: {
+            primary: {
+                main: '#d4522c',
+                light: '#b75c00',
+                dark: '#461901',
+                contrastText: '#fff'
+            },
+            secondary: {
+                main: '#525252',
+                light: '#99a1af',
+                dark: '#373a36',
+                contrastText: '#fff'
+            },
+            // You can add more palette customization here
+        },
     });
 
     return (
@@ -145,9 +219,9 @@ function MappingResults() {
                     </div>
                 </div>
             )}
-
-            <MaterialReactTable table={table}/>
-
+            <ThemeProvider theme={tableTheme}>
+                <MaterialReactTable table={table}/>
+            </ThemeProvider>
         </div>
     );
 }

@@ -56,8 +56,8 @@ public class SolrQueryBuilder {
             ClientUtils.escapeQueryChars(solrQuery.getQuery());
             for (SortedField sortedField : mappingSearchRequest.getSortedFields()) {
                 solrQuery.addSort(
-                        sortedField.getField().getField(),
-                        sortedField.getOrder() == SortOrderEnum.DESC ? SolrQuery.ORDER.desc : SolrQuery.ORDER.asc
+                        sortedField.getId().getField(),
+                        sortedField.isDesc() == true ? SolrQuery.ORDER.desc : SolrQuery.ORDER.asc
                 );
             }
         }
@@ -75,7 +75,8 @@ public class SolrQueryBuilder {
         for (String q : queries) {
             query =
                 Arrays.stream(MappingEnum.values())
-                        .map(f -> f.getField() + ":\"" + q + "\"")
+                        .map(f -> "(" + f.getField() + ":\"" + q + "\" OR " + f.getField() + ":\"" +
+                                q.toUpperCase() + "\")")
                         .collect(Collectors.joining(" OR "));
 
         }

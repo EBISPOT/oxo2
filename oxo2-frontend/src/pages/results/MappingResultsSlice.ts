@@ -54,6 +54,7 @@ interface SearchRequest {
     fieldList: string[];
     facets: string[];
     columnFilters: string[];
+    columnSort: string[];
 }
 
 export enum SearchStatus {
@@ -161,15 +162,18 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
     }
 }
 
-export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10, columnFilters: any[]): Promise<FacetedMappingResponse> {
+export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10, columnFilters: any[],
+                              sorting: any[]): Promise<FacetedMappingResponse> {
     const requestBody: SearchRequest = {
         queries: queries,
         page: page,
         size: pageSize,
         queryFields: ['subject_id', 'object_id'],
-        fieldList: ['mapping_set_id', 'subject_id', 'subject_label', 'subject_id_prefix', 'predicate_id', 'predicate_label', 'predicate_modifier', 'object_id', 'object_label', 'object_id_prefix', 'mapping_justification', 'asserted_mappings', 'explanation'],
+        fieldList: ['mapping_set_id', 'subject_id', 'subject_label', 'subject_id_prefix', 'predicate_id', 'predicate_label',
+            'predicate_modifier', 'object_id', 'object_label', 'object_id_prefix', 'mapping_justification', 'asserted_mappings', 'explanation'],
         facets: ['object_id_prefix', 'subject_id_prefix'],
-        columnFilters: columnFilters
+        columnFilters: columnFilters,
+        sortedFields: sorting
     };
 
     const searchResponse = post<SearchRequest, FacetedMappingResponse>(

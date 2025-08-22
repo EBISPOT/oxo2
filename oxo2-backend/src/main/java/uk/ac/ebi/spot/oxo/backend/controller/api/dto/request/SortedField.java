@@ -3,23 +3,30 @@ package uk.ac.ebi.spot.oxo.backend.controller.api.dto.request;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 public class SortedField {
-    private MappingEnum field;
-    private SortOrderEnum order;
+    private MappingEnum id;
+    private boolean desc;
 
-
-    public MappingEnum getField() {
-        return field;
+    public boolean isDesc() {
+        return desc;
     }
 
-    public void setField(MappingEnum field) {
-        this.field = field;
+    public void setDesc(boolean desc) {
+        this.desc = desc;
     }
 
-    public SortOrderEnum getOrder() {
-        return order;
+    public MappingEnum getId() {
+        return id;
     }
 
-    public void setOrder(SortOrderEnum order) {
-        this.order = order;
+    public void setId(MappingEnum id) {
+        this.id = id;
+    }
+
+    @Override
+    public String toString() {
+        return "SortedField{" +
+                "desc=" + desc +
+                ", id=" + id +
+                '}';
     }
 }
