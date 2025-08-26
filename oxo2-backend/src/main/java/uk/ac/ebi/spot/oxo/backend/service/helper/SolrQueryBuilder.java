@@ -7,14 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingFacetEnum;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
-import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortOrderEnum;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.apache.solr.common.params.DisMaxParams.QF;
@@ -23,6 +19,17 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingEnum.MINIMAL_LIST_OF_FIELDS;
 public class SolrQueryBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(SolrQueryBuilder.class);
+
+    private static final Map<MappingEnum, String> textGeneralToDocValues = Map.of(
+        MappingEnum.OBJECT_LABEL, textGeneralFieldAsString(MappingEnum.OBJECT_LABEL),
+        MappingEnum.PREDICATE_LABEL, textGeneralFieldAsString(MappingEnum.PREDICATE_LABEL),
+        MappingEnum.SUBJECT_LABEL, textGeneralFieldAsString(MappingEnum.SUBJECT_LABEL)
+    );
+
+
+    private static String textGeneralFieldAsString(MappingEnum mappingEnum) {
+        return mappingEnum.getField() + "_str";
+    }
 
     public static SolrQuery buildSolrQuery(MappingSearchRequest mappingSearchRequest, Pageable pageable) {
 
@@ -51,12 +58,23 @@ public class SolrQueryBuilder {
         return filterQueriesList.toArray(new String[filterQueriesList.size()]);
     }
 
+    /**
+     * Solr can only sort on docValue fields. Text_general fields (used for labels) are not docValue fields.
+     * To enable sorting these fields are copied to _str fields that are docValue fields.
+     *
+     *
+     * @param solrQuery
+     * @param mappingSearchRequest
+     * @return
+     */
     private static SolrQuery constructSortedFields(SolrQuery solrQuery, MappingSearchRequest mappingSearchRequest) {
         if (mappingSearchRequest.getSortedFields() != null) {
             ClientUtils.escapeQueryChars(solrQuery.getQuery());
             for (SortedField sortedField : mappingSearchRequest.getSortedFields()) {
                 solrQuery.addSort(
-                        sortedField.getId().getField(),
+                        textGeneralToDocValues.containsKey(sortedField.getId()) ?
+                            textGeneralToDocValues.get(sortedField.getId()) :
+                            sortedField.getId().getField(),
                         sortedField.isDesc() == true ? SolrQuery.ORDER.desc : SolrQuery.ORDER.asc
                 );
             }

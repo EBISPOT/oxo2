@@ -24,7 +24,7 @@ echo "SSSOM2JSON took: ${elapsed} seconds"
 
 start_time=$(date +%s)
 echo makeInferences...
-$SCRIPT_DIR/makeInferences.sh
+$SCRIPT_DIR/determineInferencesAndExplanations.sh
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Total inference process took: ${elapsed} seconds"
