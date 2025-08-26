@@ -91,7 +91,12 @@ function MappingResults() {
             {
                 accessorKey: "mappingTool",
                 header: "Mapping Tool",
+            },
+            {
+                accessorKey: "license",
+                header: "License",
             }
+
         ],
         []
     );
