@@ -456,6 +456,15 @@
       <filter class="solr.LowerCaseFilterFactory"/>
     </analyzer>
   </fieldType>
+
+  <fieldType name="text_ngram" class="solr.TextField">
+    <analyzer>
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.NGramFilterFactory" minGramSize="1" maxGramSize="35"/>
+    </analyzer>
+  </fieldType>
+
   <!-- Fields of type text_general do not support docValues and hence cannot be sorted. Also, text_general fields
   can not be with docValues="true" - doing this will result in a "class=solr.TextField does not support doc values" error
   occurring when Solr loads this schema.
@@ -489,7 +498,10 @@
   <field name="match_string" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="object_category" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="object_id" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="object_id_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
   <field name="object_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
+  <field name="object_label_str" type="string" multiValued="false" indexed="true" stored="false"/>
+  <field name="object_label_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
   <field name="object_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="object_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="object_source" type="string" multiValued="false" indexed="true" stored="true"/>
@@ -497,7 +509,10 @@
   <field name="object_type" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="other" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_id" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="predicate_id_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
   <field name="predicate_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
+  <field name="predicate_label_str" type="string" multiValued="false" indexed="true" stored="false"/>
+  <field name="predicate_label_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
   <field name="predicate_modifier" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="publication_date" type="pdates" multiValued="false" indexed="true" stored="true"/>
   <field name="reviewer_id" type="strings" multiValued="true" indexed="true" stored="true"/>
@@ -507,14 +522,17 @@
   <field name="similarity_score" type="pdoubles" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_category" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_id" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="subject_id_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
   <field name="subject_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
+  <field name="subject_label_str" type="string" multiValued="false" indexed="true" stored="false"/>
+  <field name="subject_label_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
   <field name="subject_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_source" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_source_version" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_type" type="string" multiValued="false" indexed="true" stored="true"/>
 
-<!--  Facet fields. See
+<!--  Facet fields.
 -->
   <field name="mapping_set_id_facet" type="string" multiValued="false" indexed="true" stored="true" docValues="true"/>
   <field name="object_id_prefix" type="string" indexed="false" stored="true" docValues="true"/>
@@ -600,8 +618,14 @@
   that looks as follows:
   <dynamicField name="*_str" type="strings" docValues="true" indexed="false" stored="false" useDocValuesAsStored="false"/>
      -->
+  <copyField source="object_id" dest="object_id_ngram" maxChars="256"/>
   <copyField source="object_label" dest="object_label_str" maxChars="256"/>
+  <copyField source="object_label" dest="object_label_ngram" maxChars="256"/>
+  <copyField source="predicate_id" dest="predicate_id_ngram" maxChars="256"/>
   <copyField source="predicate_label" dest="predicate_label_str" maxChars="256"/>
+  <copyField source="predicate_label" dest="predicate_label_ngram" maxChars="256"/>
+  <copyField source="subject_id" dest="subject_id_ngram" maxChars="256"/>
   <copyField source="subject_label" dest="subject_label_str" maxChars="256"/>
+  <copyField source="subject_label" dest="subject_label_ngram" maxChars="256"/>
 </schema>
 

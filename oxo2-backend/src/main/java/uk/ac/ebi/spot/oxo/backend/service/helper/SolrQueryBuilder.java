@@ -26,9 +26,18 @@ public class SolrQueryBuilder {
         MappingEnum.SUBJECT_LABEL, textGeneralFieldAsString(MappingEnum.SUBJECT_LABEL)
     );
 
+    private static final Map<MappingEnum, String> textGeneralToNGram = Map.of(
+        MappingEnum.OBJECT_LABEL, textGeneralFieldAsNGram(MappingEnum.OBJECT_LABEL),
+        MappingEnum.PREDICATE_LABEL, textGeneralFieldAsNGram(MappingEnum.PREDICATE_LABEL),
+        MappingEnum.SUBJECT_LABEL, textGeneralFieldAsNGram(MappingEnum.SUBJECT_LABEL)
+    );
 
     private static String textGeneralFieldAsString(MappingEnum mappingEnum) {
         return mappingEnum.getField() + "_str";
+    }
+
+    private static String textGeneralFieldAsNGram(MappingEnum mappingEnum) {
+        return mappingEnum.getField() + "_ngram";
     }
 
     public static SolrQuery buildSolrQuery(MappingSearchRequest mappingSearchRequest, Pageable pageable) {
@@ -52,8 +61,13 @@ public class SolrQueryBuilder {
 
     private static String[] constructFilterQueries(List<MappingSearchRequest.ColumnFilter> queryFilters) {
         List<String> filterQueriesList = queryFilters.stream()
-                .map(f -> MappingEnum.fromString(f.getId()).getField() + ":"
-                        + ClientUtils.escapeQueryChars(f.getValue()) + "*")
+                .map(f ->
+                        textGeneralToNGram.containsKey(MappingEnum.fromString(f.getId()))
+                                ?
+                        textGeneralToNGram.get(MappingEnum.fromString(f.getId())) + ":*" + f.getValue() + "*"
+                                :
+                        MappingEnum.fromString(f.getId()).getField() + ":*" +
+                                ClientUtils.escapeQueryChars(f.getValue()) + "*")
                 .collect(Collectors.toList());
         return filterQueriesList.toArray(new String[filterQueriesList.size()]);
     }
@@ -92,10 +106,10 @@ public class SolrQueryBuilder {
 
         for (String q : queries) {
             query =
-                Arrays.stream(MappingEnum.values())
-                        .map(f -> "(" + f.getField() + ":\"" + q + "\" OR " + f.getField() + ":\"" +
-                                q.toUpperCase() + "\")")
-                        .collect(Collectors.joining(" OR "));
+                    Arrays.stream(MappingEnum.values())
+                            .map(f -> "(" + f.getField() + ":\"" + q + "\" OR " + f.getField() + ":\"" +
+                                    q.toUpperCase() + "\")")
+                            .collect(Collectors.joining(" OR "));
 
         }
         logger.error("Query string: {}", query);

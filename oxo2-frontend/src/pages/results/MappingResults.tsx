@@ -171,9 +171,9 @@ function MappingResults() {
             columnVisibility,
             sorting
         },
-        // initialState: {
-        //     showColumnFilters: true
-        // },
+        initialState: {
+            showColumnFilters: true
+        },
         onColumnVisibilityChange: setColumnVisibility,
         enableFilterMatchHighlighting: true,
         enableGlobalFilter: false,
