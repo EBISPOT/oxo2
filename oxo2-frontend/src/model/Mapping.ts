@@ -72,13 +72,25 @@ export interface InferredMappingResponse {
     chain_rule_applications?: ChainRuleApplicationsResponse;
 }
 
+export interface ChainRuleResponse {
+    chain_rule_name: string;
+    chain_rule_long_form: string;
+    chain_rule_abbreviated: string;
+}
+
 export interface ChainRuleApplicationsResponse {
-    chain_rule?: string;
+    chain_rule: ChainRuleResponse;
     premises?: string[];
 }
 
+export interface ChainRule {
+    chainRuleName: string;
+    chainRuleLongForm: string;
+    chainRuleAbbreviated: string;
+}
+
 export interface ChainRuleApplications {
-    chainRule?: string;
+    chainRule?: ChainRule;
     premises?:InferredMapping[]
 }
 

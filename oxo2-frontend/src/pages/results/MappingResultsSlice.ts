@@ -2,7 +2,11 @@ import {
     MappingResponse,
     Mapping,
     InferredMappingResponse,
-    InferredMapping, ChainRuleApplications, ChainRuleApplicationsResponse/*, MappingFields*/
+    InferredMapping,
+    ChainRuleApplications,
+    ChainRuleApplicationsResponse,
+    ChainRuleResponse,
+    ChainRule/*, MappingFields*/
 } from '../../model/Mapping';
 import { post } from '../../app/api';
 
@@ -90,8 +94,6 @@ export function fromAssertedMappingString(assertedMappingsAsString?: string| und
     }));
 }
 
-
-
 export function fromExplanationString(explanationAsString?: string| undefined): InferredMapping|undefined {
     if (!explanationAsString ||
         (typeof explanationAsString === 'string' && explanationAsString.trim() === '')) {
@@ -146,9 +148,31 @@ export function fromChainRuleApplicationsResponse(chainRuleApplications?: ChainR
         : [];
 
     return {
-        chainRule: chainRuleApplications.chain_rule,
+        chainRule: fromChainRuleResponse(chainRuleApplications.chain_rule),
         premises
     };
+}
+export function fromChainRuleResponse(chainRule: ChainRuleResponse ): ChainRule | undefined {
+    if (!chainRule) {
+        return undefined;
+    }
+    try {
+        if (
+            typeof chainRule === 'object' &&
+            typeof chainRule.chain_rule_name === 'string' &&
+            typeof chainRule.chain_rule_long_form === 'string' &&
+            typeof chainRule.chain_rule_abbreviated === 'string'
+        ) {
+            return {
+                chainRuleName: chainRule.chain_rule_name,
+                chainRuleLongForm: chainRule.chain_rule_long_form,
+                chainRuleAbbreviated: chainRule.chain_rule_abbreviated
+            };
+        }
+    } catch {
+        // Invalid JSON
+    }
+    return undefined;
 }
 
 export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping {

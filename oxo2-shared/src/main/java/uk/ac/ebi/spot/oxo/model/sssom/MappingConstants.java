@@ -70,4 +70,10 @@ public class MappingConstants {
     public static final String PREMISES = "premises";
     public static final String SUBJECT_ID_PREFIX = "subject_id_prefix";
     public static final String SUBJECT_IRI = "subject_iri";
+
+
+    // Rule
+    public static final String CHAIN_RULE_NAME = "chain_rule_name";
+    public static final String CHAIN_RULE_LONG_FORM = "chain_rule_long_form";
+    public static final String CHAIN_RULE_ABBREVIATED = "chain_rule_abbreviated";
 }

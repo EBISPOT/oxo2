@@ -4,6 +4,7 @@ import {useNavigate} from "react-router-dom";
 import {MappingItem} from "../../components/mapping/MappingItem";
 import {ChevronDownIcon, ChevronUpIcon} from "@heroicons/react/24/solid";
 import InferredMappings from "./InferredMappings.tsx";
+import InferredMappingForceGraph from "../../components/mapping/InferredMappingForceGraph";
 
 const hasValue = (value?: string | number | string[] | Record<string, string> | InferredMapping[]): boolean => {
     if (value === undefined) return false;
@@ -111,6 +112,12 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
             >
                 <InferredMappings
                     mapping={mapping}/>
+
+                {mapping.explanation && (
+                    <div className="mt-4">
+                        <InferredMappingForceGraph explanation={mapping.explanation} />
+                    </div>
+                )}
             </Section>
 
             <Section
@@ -217,3 +224,4 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
 }
 
 export default MappingDetails;
+

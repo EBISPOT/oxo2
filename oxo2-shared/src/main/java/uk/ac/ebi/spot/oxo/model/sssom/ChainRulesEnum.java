@@ -1,7 +1,11 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
+
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum ChainRulesEnum {
     ASSERTED("Asserted", "Asserted","Asserted", false),
     RCE1_1("RCE1-1", "(?a, ?p, ?c) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b), (?b, ?p, ?c)",
@@ -74,21 +78,25 @@ public enum ChainRulesEnum {
             "mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) <- (?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, b), (?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?c)",
             "mapping(?a, <RDFS:subPropertyOf>, ?c) <- (?a, <RDFS:subPropertyOf>, b), (?a, <OWL:equivalentProperty>, ?c)");
 
+
+    @JsonProperty(CHAIN_RULE_NAME)
     private final String name;
-    private final String rule;
+    @JsonProperty(CHAIN_RULE_LONG_FORM)
+    private final String longFormRule;
+    @JsonProperty(CHAIN_RULE_ABBREVIATED)
     private final String abbreviatedRule;
     private final boolean increasesDistance;
 
-    ChainRulesEnum(String name, String rule, String abbreviatedRule, boolean increasesDistance) {
+    ChainRulesEnum(String name, String longFormRule, String abbreviatedRule, boolean increasesDistance) {
         this.name = name;
-        this.rule = rule;
+        this.longFormRule = longFormRule;
         this.abbreviatedRule = abbreviatedRule;
         this.increasesDistance = increasesDistance;
     }
 
-    ChainRulesEnum(String name, String rule, String abbreviatedRule) {
+    ChainRulesEnum(String name, String longFormRule, String abbreviatedRule) {
         this.name = name;
-        this.rule = rule;
+        this.longFormRule = longFormRule;
         this.abbreviatedRule = abbreviatedRule;
         this.increasesDistance = true;
     }
@@ -97,8 +105,8 @@ public enum ChainRulesEnum {
         return name;
     }
 
-    public String getRule() {
-        return rule;
+    public String getLongFormRule() {
+        return longFormRule;
     }
 
 //    @JsonValue
