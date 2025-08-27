@@ -2,7 +2,7 @@ import {
     MappingResponse,
     Mapping,
     InferredMappingResponse,
-    InferredMapping/*, MappingFields*/
+    InferredMapping, ChainRuleApplications, ChainRuleApplicationsResponse/*, MappingFields*/
 } from '../../model/Mapping';
 import { post } from '../../app/api';
 
@@ -54,7 +54,7 @@ interface SearchRequest {
     fieldList: string[];
     facets: string[];
     columnFilters: string[];
-    columnSort: string[];
+    sortedFields: string[];
 }
 
 export enum SearchStatus {
@@ -80,14 +80,75 @@ export function fromAssertedMappingString(assertedMappingsAsString?: string| und
         mappingTool: item.mapping_tool,
         mappingSetId: item.mapping_set_id,
         objectIri: item.object_iri,
-        objectId: item.object_id || item.object_iri || '',
+        objectId: item.object_id || '',
         objectLabel: item.object_label,
         predicateIri: item.predicate_iri,
-        predicateId: item.predicate_id || item.predicate_iri || '',
+        predicateId: item.predicate_id || '',
         subjectIri: item.subject_iri,
-        subjectId: item.subject_id || item.subject_iri || '',
+        subjectId: item.subject_id || '',
         subjectLabel: item.subject_label
     }));
+}
+
+
+
+export function fromExplanationString(explanationAsString?: string| undefined): InferredMapping|undefined {
+    if (!explanationAsString ||
+        (typeof explanationAsString === 'string' && explanationAsString.trim() === '')) {
+        return undefined;
+    }
+    const explanationAsJson: InferredMappingResponse = JSON.parse(explanationAsString);
+
+    if (!explanationAsJson || typeof explanationAsJson !== 'object') {
+        return undefined;
+    }
+
+    return {
+        mappingJustification: explanationAsJson.mapping_justification,
+        mappingTool: explanationAsJson.mapping_tool,
+        mappingSetId: explanationAsJson.mapping_set_id,
+        objectIri: explanationAsJson.object_iri,
+        objectId: explanationAsJson.object_id ||  '',
+        objectLabel: explanationAsJson.object_label,
+        predicateIri: explanationAsJson.predicate_iri,
+        predicateId: explanationAsJson.predicate_id || '',
+        subjectIri: explanationAsJson.subject_iri,
+        subjectId: explanationAsJson.subject_id || '',
+        subjectLabel: explanationAsJson.subject_label,
+        distance: explanationAsJson.distance,
+        chainRuleApplications: fromChainRuleApplicationsResponse(explanationAsJson.chain_rule_applications)
+    };
+}
+
+export function fromChainRuleApplicationsResponse(chainRuleApplications?: ChainRuleApplicationsResponse| undefined):
+    ChainRuleApplications|undefined {
+
+    if (!chainRuleApplications) {
+        return undefined;
+    }
+
+    const premises: InferredMapping[] = Array.isArray(chainRuleApplications.premises)
+        ? chainRuleApplications.premises.map((item: any) => ({
+            mappingJustification: item.mapping_justification,
+            mappingTool: item.mapping_tool,
+            mappingSetId: item.mapping_set_id,
+            objectIri: item.object_iri,
+            objectId: item.object_id || item.object_iri || '',
+            objectLabel: item.object_label,
+            predicateIri: item.predicate_iri,
+            predicateId: item.predicate_id || item.predicate_iri || '',
+            subjectIri: item.subject_iri,
+            subjectId: item.subject_id || item.subject_iri || '',
+            subjectLabel: item.subject_label,
+            distance: item.distance,
+            chainRuleApplications: fromChainRuleApplicationsResponse(item.chain_rule_applications)
+        }))
+        : [];
+
+    return {
+        chainRule: chainRuleApplications.chain_rule,
+        premises
+    };
 }
 
 export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping {
@@ -97,31 +158,31 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
     return {
         mappings: json.mappings.content.map(item => {
             return {
-                authorId: item.author_id,
-                authorLabel: item.author_label,
-                comment: item.comment,
-                confidence: item.confidence,
-                creatorId: item.creator_id,
-                creatorLabel: item.creator_label,
-                curationRule: item.curation_rule,
-                issueTrackerItem: item.issue_tracker_item,
-                license: item.license,
-                mappingCardinality: item.mapping_cardinality,
-                mappingDate: item.mapping_date,
-                mappingId: item.mapping_id,
+                authorId: item.author_id || '',
+                authorLabel: item.author_label || '',
+                comment: item.comment || '',
+                confidence: item.confidence || 1,
+                creatorId: item.creator_id || '',
+                creatorLabel: item.creator_label || '',
+                curationRule: item.curation_rule || '',
+                issueTrackerItem: item.issue_tracker_item || '',
+                license: item.license || '',
+                mappingCardinality: item.mapping_cardinality || '',
+                mappingDate: item.mapping_date || '',
+                mappingId: item.mapping_id || '',
                 mappingJustification: item.mapping_justification || '',
-                mappingProvider: item.mapping_provider,
-                mappingSetDescription: item.mapping_set_description,
-                mappingSetId: item.mapping_set_id,
-                mappingSetSource: item.mapping_set_source,
-                mappingSetTitle: item.mapping_set_title,
-                mappingSetVersion: item.mapping_set_version,
-                mappingSource: item.mapping_source,
-                mappingTool: item.mapping_tool,
-                mappingToolVersion: item.mapping_tool_version,
-                matchString: item.match_string,
-                objectCategory: item.object_category,
-                objectId: item.object_id || item.object_iri || '',
+                mappingProvider: item.mapping_provider || '',
+                mappingSetDescription: item.mapping_set_description || '',
+                mappingSetId: item.mapping_set_id || '',
+                mappingSetSource: item.mapping_set_source || '',
+                mappingSetTitle: item.mapping_set_title || '',
+                mappingSetVersion: item.mapping_set_version || '',
+                mappingSource: item.mapping_source || '',
+                mappingTool: item.mapping_tool || '',
+                mappingToolVersion: item.mapping_tool_version || '',
+                matchString: item.match_string || '',
+                objectCategory: item.object_category || '',
+                objectId: item.object_id || '',
                 objectIri: item.object_iri || '',
                 objectLabel: item.object_label || '',
                 objectMatchField: item.object_match_field,
@@ -130,8 +191,8 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
                 objectSourceVersion: item.object_source_version,
                 objectType: item.object_type,
                 objectIdPrefix: item.object_id_prefix,
-                other: item.other ?? [],
-                predicateId: item.predicate_id || item.predicate_iri || '',
+                // other: item.other ?? [],
+                predicateId: item.predicate_id || '',
                 predicateIri: item.predicate_iri || '',
                 predicateLabel: item.predicate_label || '',
                 predicateModifier: item.predicate_modifier,
@@ -142,7 +203,7 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
                 similarityMeasure: item.similarity_measure,
                 similarityScore: item.similarity_score,
                 subjectCategory: item.subject_category,
-                subjectId: item.subject_id || item.subject_iri || '',
+                subjectId: item.subject_id || '',
                 subjectIri: item. subject_iri || '',
                 subjectLabel: item.subject_label || '',
                 subjectMatchField: item.subject_match_field,
@@ -152,6 +213,7 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
                 subjectType: item.subject_type,
                 subjectIdPrefix: item.subject_id_prefix,
                 assertedMappings: fromAssertedMappingString(item.asserted_mappings),
+                explanation: fromExplanationString(item.explanation),
             };
         }),
         totalElements: json.mappings.totalElements,

@@ -51,7 +51,8 @@ export enum MappingFields {
     subjectType = "subjectType",
     subjectIdPrefix = "subjectIdPrefix",
 
-    assertedMappings = "assertedMappings"
+    assertedMappings = "assertedMappings",
+    explanation = "explanation"
 
 }
 
@@ -68,9 +69,17 @@ export interface InferredMappingResponse {
     subject_id?: string;
     subject_label?: string;
     distance?: number;
-    chain_rule_applications?: {
-        chain_rule?: string;
-    };
+    chain_rule_applications?: ChainRuleApplicationsResponse;
+}
+
+export interface ChainRuleApplicationsResponse {
+    chain_rule?: string;
+    premises?: string[];
+}
+
+export interface ChainRuleApplications {
+    chainRule?: string;
+    premises?:InferredMapping[]
 }
 
 export interface InferredMapping {
@@ -86,9 +95,7 @@ export interface InferredMapping {
     subjectId?: string;
     subjectLabel?: string;
     distance?: number;
-    chainRuleApplications?: {
-        chainRule?: string;
-    };
+    chainRuleApplications?: ChainRuleApplications;
 }
 
 export interface MappingResponse {
@@ -148,6 +155,7 @@ export interface MappingResponse {
     subject_id_prefix?: string;
 
     asserted_mappings?: string;
+    explanation?: string
 }
 
 
@@ -207,4 +215,5 @@ export interface Mapping {
     subjectType?: string;
     subjectIdPrefix?: string;
     assertedMappings?: InferredMapping[];
+    explanation?: InferredMapping | undefined
 }
