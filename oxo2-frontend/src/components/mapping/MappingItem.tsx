@@ -50,7 +50,7 @@ export function MappingItem({
         setCopied: (val: boolean) => void;
         isLeftSide: boolean;
     }): JSX.Element {
-        const entityClasses = `mapping-entity 
+            const entityClasses = `mapping-entity 
                               ${isLeftSide ? 'mapping-entity-left' : 'mapping-entity-right'} 
                               ${alwaysHighlighted ? 'mapping-entity-highlighted' : 'mapping-entity-normal'}`;
         
