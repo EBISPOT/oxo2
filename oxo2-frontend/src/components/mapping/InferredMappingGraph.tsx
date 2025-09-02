@@ -53,8 +53,8 @@ interface GraphData {
     edges: Edge[];
 }
 
-const nodeHeight = 30;
-const nodeWidth = 200
+const nodeHeight = 20;
+const nodeWidth = 150
 
 const layoutElements = (nodes: Node[], edges: Edge[], direction = 'BT') => {
     // Create a new dagre graph instance each time
@@ -119,7 +119,8 @@ function buildGraphData(mapping: InferredMapping): GraphData {
                     current.predicateId ?? "",
                     current.objectId ?? ""
                 ].join("\n"),
-                chainRule: isAsserted ? '' : current.chainRuleApplications?.chainRule?.chainRuleAbbreviated ?? ''
+                chainRule: isAsserted ? ''
+                    : (current.chainRuleApplications?.chainRule?.chainRuleAbbreviated ?? '').replace(/[<>?]/g, '')
             },
             position: {
                 x: 0,
@@ -149,9 +150,9 @@ function buildGraphData(mapping: InferredMapping): GraphData {
     return { nodes, edges };
 }
 
-function CustomNode({ data }) {
+function CustomNodeInferred({ data }) {
     return (
-        <div className="custom-node" style={{ position: "relative" }}>
+        <div className="custom-node-inferred" style={{ position: "relative" }}>
             <div style={{ position: "relative", height: 0 }}>
                 <Handle type="source" position={Position.Top} />
             </div>
@@ -170,9 +171,24 @@ function CustomNode({ data }) {
     );
 }
 
+function CustomNodeAsserted({ data }) {
+    return (
+        <div className="custom-node-asserted" style={{ position: "relative" }}>
+            <div style={{ position: "relative", height: 0 }}>
+                <Handle type="source" position={Position.Top} />
+            </div>
+            <div>
+                {data.label.split('\n').map((line, idx) => (
+                    <div key={idx}>{line}</div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 const nodeTypes = {
-    "asserted": CustomNode,
-    "inferred": CustomNode,
+    "asserted": CustomNodeAsserted,
+    "inferred": CustomNodeInferred,
 };
 
 const InferredMappingGraph = ({ explanation }: { explanation: InferredMapping }) => {
@@ -191,6 +207,7 @@ const InferredMappingGraph = ({ explanation }: { explanation: InferredMapping })
                         nodeTypes={nodeTypes}
                         fitView
                         fitViewOptions={{
+                            // padding: 0.01,
                             minZoom: 0.5,
                             maxZoom: 1.0
                         }}

@@ -304,12 +304,24 @@ code {
   min-height: 0px;
 }
 
-.custom-node {
+.custom-node-inferred {
+  background: #f7e7bc;
+  font-family: sans-serif;
+  font-size: small;
+  border: 1px solid #f2d890;
+  padding: 5px;
+  border-radius: 5px;
+  box-sizing: border-box;
+  text-align: center;
+  pointer-events: none; /* Disable mouse interaction */
+}
+
+.custom-node-asserted {
   background: #f2d890;
   font-family: sans-serif;
-  font-size: x-small;
+  font-size: small;
   border: 1px solid #9f2923;
-  padding: 15px;
+  padding: 5px;
   border-radius: 5px;
   box-sizing: border-box;
   text-align: center;
@@ -320,7 +332,7 @@ code {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.7rem;
+  font-size: small;
   color: #9f2923;
   pointer-events: none;
   user-select: none;
@@ -335,13 +347,3 @@ code {
 .handle-label-bottom {
   bottom: -18px;
 }
-
-/*.react-flow__node:hover {*/
-/*  background: inherit;*/
-/*  border: inherit;*/
-/*  box-shadow: inherit;*/
-/*}*/
-
-/*.react-flow__node {*/
-/*  padding:0px;*/
-/*}*/
