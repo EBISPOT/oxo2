@@ -286,3 +286,62 @@ code {
     @apply overflow-hidden text-ellipsis whitespace-nowrap;
   }
 }
+
+
+
+#app {
+  width: 100vw;
+  height: 100vh;
+}
+
+.react-flow__handle {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  width: 0px;
+  height: 0px;
+  min-width: 0px;
+  min-height: 0px;
+}
+
+.custom-node {
+  background: #f2d890;
+  font-family: sans-serif;
+  font-size: x-small;
+  border: 1px solid #9f2923;
+  padding: 15px;
+  border-radius: 5px;
+  box-sizing: border-box;
+  text-align: center;
+  pointer-events: none; /* Disable mouse interaction */
+}
+
+.handle-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: #9f2923;
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+  width: max-content;
+}
+
+.handle-label-top {
+  top: -18px;
+}
+
+.handle-label-bottom {
+  bottom: -18px;
+}
+
+/*.react-flow__node:hover {*/
+/*  background: inherit;*/
+/*  border: inherit;*/
+/*  box-shadow: inherit;*/
+/*}*/
+
+/*.react-flow__node {*/
+/*  padding:0px;*/
+/*}*/

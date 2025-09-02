@@ -1,188 +1,206 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
-import ForceGraph2D from "react-force-graph-2d";
+import React, { useEffect, useRef, useState } from 'react';
+import {
+    ReactFlow,
+    Handle,
+    Position,
+    MarkerType
+} from '@xyflow/react';
+import dagre from '@dagrejs/dagre';
+import '@xyflow/react/dist/style.css';
 import { InferredMapping } from "../../model/Mapping";
-import { hierarchy, tree} from "d3-hierarchy";
 
-const canvasHeight = 400;
 
-// --- Hierarchical node structure for d3.hierarchy ---
-interface HierarchyNode {
+interface Node {
     id: string;
-    label: string;
+    data: {
+        label: string;
+        chainRule: string;
+    };
+    position: {
+        x: number;
+        y: number;
+    };
     type: string;
-    children?: HierarchyNode[];
 }
+
+/**
+ *  Note that edges do not have labels. ChainRule information is displayed on handles (connectors on nodes).
+ */
+interface Edge {
+    id: string;
+    source: string;
+    target: string;
+    type: string;
+    animated: boolean;
+    markerEnd: {
+        type: MarkerType,
+        width: number,
+        height: number,
+        color: string
+    }
+}
+
+const edgeMarker  = {
+    type: MarkerType.ArrowClosed,
+    width: 20,
+    height: 20,
+    color: '#222'
+}
+const edgeType = 'straight';
+
+interface GraphData {
+    nodes: Node[];
+    edges: Edge[];
+}
+
+const nodeHeight = 30;
+const nodeWidth = 200
+
+const layoutElements = (nodes: Node[], edges: Edge[], direction = 'BT') => {
+    // Create a new dagre graph instance each time
+    const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+    dagreGraph.setGraph({
+        rankdir: direction, // Direction: BT (bottom-top), TB, LR, RL
+        nodesep: 50,        // Space between nodes
+        ranksep: 100,       // Space between ranks
+        marginx: 20,        // Horizontal margin
+        marginy: 20         // Vertical margin
+    });
+
+    nodes.forEach((node) => {
+        dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    });
+
+    edges.forEach((edge) => {
+        dagreGraph.setEdge(edge.source, edge.target);
+    });
+
+    dagre.layout(dagreGraph);
+
+    const newNodes = nodes.map((node) => {
+        const nodeWithPosition = dagreGraph.node(node.id);
+        const newNode = {
+            ...node,
+            position: {
+                x: nodeWithPosition.x - nodeWithPosition.width / 2,
+                y: nodeWithPosition.y - nodeWithPosition.height / 2,
+            },
+        };
+
+        return newNode;
+    });
+
+    return { nodes: newNodes, edges };
+};
+
 
 function createMappingId(mapping: InferredMapping): string {
     const data = `${mapping.objectIri}|${mapping.predicateIri}|${mapping.subjectIri}|${mapping.mappingSetId}`;
     return data;
 }
 
-// Build a hierarchical data structure for d3.hierarchy
-function buildGraphData(mapping: InferredMapping): HierarchyNode {
 
-    function traverse(current: InferredMapping): HierarchyNode {
+function buildGraphData(mapping: InferredMapping): GraphData {
+    const nodes: Node[] = [];
+    const edges: Edge[] = [];
+    const visited = new Set<string>();
+
+    function traverse(current: InferredMapping) {
         const nodeId = createMappingId(current);
-        const isAsserted = current.chainRuleApplications?.chainRule?.chainRuleName === "Asserted";
-        const label = [
-            current.subjectId ?? "",
-            current.predicateId ?? "",
-            current.objectId ?? ""
-        ].join("\n");
+        if (visited.has(nodeId)) return;
+        visited.add(nodeId);
 
-        let children: HierarchyNode[] | undefined = undefined;
+        const isAsserted = current.chainRuleApplications?.chainRule?.chainRuleName === "Asserted";
+        nodes.push({
+            id: nodeId,
+            data: {
+                label: [
+                    current.subjectId ?? "",
+                    current.predicateId ?? "",
+                    current.objectId ?? ""
+                ].join("\n"),
+                chainRule: isAsserted ? '' : current.chainRuleApplications?.chainRule?.chainRuleAbbreviated ?? ''
+            },
+            position: {
+                x: 0,
+                y: 0,
+            },
+            type: isAsserted ? "asserted" : "inferred"
+        });
+
         const premises = current.chainRuleApplications?.premises;
         if (premises && premises.length > 0) {
-            children = premises.map(premise => traverse(premise));
-        }
+            premises.forEach(premise => {
+                const premiseId = createMappingId(premise);
+                traverse(premise);
 
-        return {
-            id: nodeId,
-            label,
-            type: isAsserted ? "asserted" : "inferred",
-            ...(children ? { children } : {})
-        };
-    }
-
-    return traverse(mapping);
-}
-
-// Convert d3.hierarchy to flat nodes/links for ForceGraph2D
-function hierarchyToGraphData(root: HierarchyNode<HierarchyNode> | null) {
-    const nodes: any[] = [];
-    const links: any[] = [];
-
-    if (root) {
-        root.each((d: any) => {
-            nodes.push({
-                id: d.data.id,
-                label: d.data.label,
-                type: d.data.type
-            });
-            if (d.parent) {
-                links.push({
-                    source: d.parent.data.id,
-                    target: d.data.id
+                edges.push({
+                    id: `${premiseId}-${nodeId}`,
+                    source: premiseId,
+                    target: nodeId,
+                    type: edgeType,
+                    animated: false,
+                    markerEnd: edgeMarker
                 });
-            }
-        });
-    }
-
-    return { nodes, links };
-}
-
-const InferredMappingForceGraph = ({ explanation }: { explanation: InferredMapping }) => {
-    // Responsive width
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [width, setWidth] = useState<number>(800);
-
-    useEffect(() => {
-        function updateWidth() {
-            if (containerRef.current) {
-                setWidth(containerRef.current.offsetWidth);
-            }
-        }
-        updateWidth();
-        window.addEventListener("resize", updateWidth);
-        return () => window.removeEventListener("resize", updateWidth);
-    }, []);
-
-    // Build hierarchical data and layout, update when width changes
-    const { graphData } = useMemo(() => {
-        const hierarchyData = buildGraphData(explanation);
-        const root = hierarchyData ? hierarchy(hierarchyData) : null;
-
-        if (root) {
-            const treeLayout = tree<HierarchyNode>().size([width, canvasHeight - 40]);
-            treeLayout(root);
-        }
-
-        const graphData = hierarchyToGraphData(root);
-
-        if (root) {
-            graphData.nodes.forEach(node => {
-                const hNode = root.descendants().find(d => d.data.id === node.id);
-                if (hNode) {
-                    node.x = hNode.x;
-                    node.y = hNode.y;
-                    node.fx = hNode.x; // <-- fix x position
-                    node.fy = hNode.y; // <-- fix y position
-                }
             });
         }
+    }
+    traverse(mapping);
+    return { nodes, edges };
+}
 
-        return { graphData };
-    }, [explanation, width]);
-
-    // Rectangle node renderer
-    const nodeCanvasObject = (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-        ctx.save();
-        ctx.font = `${12 / globalScale}px Sans-Serif`;
-
-        // Split label into lines and measure the longest line
-        const lines = node.label.split("\n");
-        const lineHeight = 14 / globalScale;
-        const totalHeight = lineHeight * lines.length;
-        const padding = 10;
-        let maxWidth = 0;
-        lines.forEach((line: string) => {
-            const width = ctx.measureText(line).width;
-            if (width > maxWidth) maxWidth = width;
-        });
-        const rectWidth = maxWidth + padding * 2;
-        const rectHeight = totalHeight + padding;
-
-        // Draw rectangle
-        ctx.beginPath();
-        ctx.rect(node.x - rectWidth / 2, node.y - rectHeight / 2, rectWidth, rectHeight);
-        ctx.fillStyle = "#f7e7bc"; // Node color
-        ctx.fill();
-        ctx.strokeStyle = "#f2d890"; // Node border color
-        ctx.stroke();
-        ctx.closePath();
-
-        // Draw each line of the label
-        ctx.fillStyle = "#000";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        lines.forEach((line: string, i: number) => {
-            ctx.fillText(
-                line,
-                node.x,
-                node.y - totalHeight / 2 + i * lineHeight + lineHeight / 2
-            );
-        });
-        ctx.restore();
-    };
-
-    const fgRef = useRef<any>(null);
-
+function CustomNode({ data }) {
     return (
-        <div ref={containerRef} style={{ width: "100%", height: "400px" }}>
-            <h1 className="section-subheading">Explanation of inferred mapping</h1>
-            <ForceGraph2D
-                ref={fgRef}
-                graphData={{
-                    nodes: Array.isArray(graphData.nodes) ? graphData.nodes : [],
-                    links: Array.isArray(graphData.links) ? graphData.links : []
-                }}
-                nodeLabel="label"
-                linkDirectionalArrowLength={6}
-                linkDirectionalArrowRelPos={1}
-                linkLabel="label"
-                width={width}
-                height={canvasHeight}
-                nodeCanvasObject={nodeCanvasObject}
-                linkColor={() => "#000"}
-                linkWidth={() => 2}
-                enableNodeDrag={false}
-                d3AlphaMin={0.001}
-                onEngineStop={() => {
-                    fgRef.current && fgRef.current.zoomToFit(400, 40);
-                }}
-            />
+        <div className="custom-node" style={{ position: "relative" }}>
+            <div style={{ position: "relative", height: 0 }}>
+                <Handle type="source" position={Position.Top} />
+            </div>
+            <div>
+                {data.label.split('\n').map((line, idx) => (
+                    <div key={idx}>{line}</div>
+                ))}
+            </div>
+            <div className="handle-label handle-label-bottom" >
+                <Handle type="target" position={Position.Bottom}/>
+                {data.chainRule && (
+                    <div>{data.chainRule}</div>
+                )}
+            </div>
         </div>
     );
+}
+
+const nodeTypes = {
+    "asserted": CustomNode,
+    "inferred": CustomNode,
 };
 
-export default InferredMappingForceGraph;
+const InferredMappingGraph = ({ explanation }: { explanation: InferredMapping }) => {
+
+    const graphData = buildGraphData(explanation);
+    const layoutGraph = layoutElements(graphData.nodes, graphData.edges);
+    const canvasHeight = '400px';
+
+    return (
+        <div style={{ width: "100%", height: canvasHeight }}>
+            <h1 className="section-subheading">Explanation of inferred mapping</h1>
+            {layoutGraph && (
+                    <ReactFlow
+                        nodes={layoutGraph.nodes}
+                        edges={layoutGraph.edges}
+                        nodeTypes={nodeTypes}
+                        fitView
+                        fitViewOptions={{
+                            minZoom: 0.5,
+                            maxZoom: 1.0
+                        }}
+                        panOnDrag={true}
+                        panOnScroll={true}
+                    >
+                    </ReactFlow>
+                )}
+        </div>
+    );
+}
+
+export default InferredMappingGraph;
