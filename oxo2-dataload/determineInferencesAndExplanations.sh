@@ -37,7 +37,7 @@ start_time=$(date +%s)
 nmo $SCRIPT_DIR/oxo2-json2inferences/chain-rules.rls --param importfile=\"$OXO2_DATA/assertedMapping.ttl\" \
 --param exportfile=\"inferredMapping.ttl\"  -o -v  -D $OXO2_INFERENCES \
 --trace-input-file $OXO2_INFERENCES/inferencesToTrace.txt \
---trace-output $OXO2_INFERENCES/inferences-chains.json --report all
+--trace-output $OXO2_INFERENCES/inferences-chains.json
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Making inferences: Nemo trace took: ${elapsed} seconds"

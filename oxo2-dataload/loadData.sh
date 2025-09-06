@@ -51,6 +51,7 @@ mkdir -p $OXO2_INFERENCES/solr
 
 # Write out inferred mappings with their explanations.
 start_time=$(date +%s)
+echo Create inferred mappings with their explanations ...
 $SCRIPT_DIR/oxo2-json2inferences/explanations2json.sh $OXO2_INFERENCES/inferences-chains.json \
 $OXO2_INFERENCES/solr/inferred-mappings.json
 end_time=$(date +%s)

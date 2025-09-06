@@ -58,6 +58,10 @@ function MappingResults() {
                 enableHiding: false
             },
             {
+                accessorKey: "subjectIri",
+                header: "Subject IRI",
+            },
+            {
                 accessorKey: "subjectLabel",
                 header: "Subject Label",
             },
@@ -67,9 +71,17 @@ function MappingResults() {
                 enableHiding: false
             },
             {
+                accessorKey: "predicateIri",
+                header: "Predicate IRI",
+            },
+            {
                 accessorKey: "objectId",
                 header: "Object Id",
                 enableHiding: false
+            },
+            {
+                accessorKey: "objectIri",
+                header: "Object IRI",
             },
             {
                 accessorKey: "objectLabel",
@@ -102,9 +114,15 @@ function MappingResults() {
     );
 
     const [columnVisibility, setColumnVisibility] = useState({
+
+        license: false,
+        mappingJustification: false,
         mappingProvider: false,
         mappingSetId: false,
-        mappingTool: false
+        mappingTool: false,
+        objectIri: false,
+        predicateIri: false,
+        subjectIri: false
         }
     )
 
