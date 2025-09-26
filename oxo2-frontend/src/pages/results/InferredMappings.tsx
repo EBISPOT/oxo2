@@ -14,6 +14,15 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 header: "Subject Id",
             },
             {
+                accessorKey: "subjectIri",
+                header: "Subject IRI",
+                Cell: ({ cell }) => (
+                    <div style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
+                        {cell.getValue<string>()}
+                    </div>
+                ),
+            },
+            {
                 accessorKey: "subjectLabel",
                 header: "Subject Label",
             },
@@ -22,17 +31,35 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 header: "Predicate Id",
             },
             {
+                accessorKey: "predicateIri",
+                header: "Predicate IRI",
+                Cell: ({ cell }) => (
+                    <div style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
+                        {cell.getValue<string>()}
+                    </div>
+                ),
+            },
+            {
                 accessorKey: "objectId",
                 header: "Object Id",
+            },
+            {
+                accessorKey: "objectIri",
+                header: "Object IRI",
+                Cell: ({ cell }) => (
+                    <div style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
+                        {cell.getValue<string>()}
+                    </div>
+                ),
             },
             {
                 accessorKey: "objectLabel",
                 header: "Object Label",
             },
-            {
-                accessorKey: "mappingJustification",
-                header: "Mapping Justification",
-            },
+            // {
+            //     accessorKey: "mappingJustification",
+            //     header: "Mapping Justification",
+            // },
         ],
         []
     );

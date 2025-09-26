@@ -58,8 +58,7 @@ export function MappingItem({
             <div className={entityClasses}>
                 <div className="text-center font-bold">
                     <span
-                        className="pr-2 cursor-pointer hover:underline wrap-slash"
-                        onClick={() => navigateFn(`/entity/${encodeURIComponent(id)}`)}
+                        className="pr-2 cursor-pointer wrap-slash break-words"
                     >
                     {id}
                     </span>
@@ -97,7 +96,7 @@ export function MappingItem({
         <div className={mappingItemClasses}>
             <div className="w-full lg:w-1/3">
                 <EntityBox
-                    id={mapping.subjectId}
+                    id={mapping.subjectId ? mapping.subjectId : mapping.subjectIri}
                     label={mapping.subjectLabel}
                     isCopied={isSubjectCopied}
                     setCopied={setIsSubjectCopied}
@@ -107,7 +106,7 @@ export function MappingItem({
 
             <div className={predicateClasses}>
                 <div title={mapping.predicateId} className="text-center font-bold">
-                    {mapping.predicateId}
+                    {mapping.predicateId ? mapping.predicateId : mapping.predicateIri }
                 </div>
                 <div title={mapping.predicateLabel} className="text-center truncate-text">
                     {mapping.predicateLabel}
@@ -116,7 +115,7 @@ export function MappingItem({
 
             <div className="w-full lg:w-1/3">
                 <EntityBox
-                    id={mapping.objectId}
+                    id={mapping.objectId ? mapping.objectId : mapping.objectIri}
                     label={mapping.objectLabel}
                     isCopied={isObjectCopied}
                     setCopied={setIsObjectCopied}

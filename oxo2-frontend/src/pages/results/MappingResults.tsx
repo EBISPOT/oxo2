@@ -55,11 +55,16 @@ function MappingResults() {
             {
                 accessorKey: "subjectId",
                 header: "Subject Id",
-                enableHiding: false
+                // enableHiding: false
             },
             {
                 accessorKey: "subjectIri",
                 header: "Subject IRI",
+                Cell: ({ cell }) => (
+                    <div style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
+                        {cell.getValue<string>()}
+                    </div>
+                ),
             },
             {
                 accessorKey: "subjectLabel",
@@ -68,20 +73,30 @@ function MappingResults() {
             {
                 accessorKey: "predicateId",
                 header: "Predicate Id",
-                enableHiding: false
+                // enableHiding: false
             },
             {
                 accessorKey: "predicateIri",
                 header: "Predicate IRI",
+                Cell: ({ cell }) => (
+                    <div style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
+                        {cell.getValue<string>()}
+                    </div>
+                ),
             },
             {
                 accessorKey: "objectId",
                 header: "Object Id",
-                enableHiding: false
+                // enableHiding: false
             },
             {
                 accessorKey: "objectIri",
                 header: "Object IRI",
+                Cell: ({ cell }) => (
+                    <div style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
+                        {cell.getValue<string>()}
+                    </div>
+                ),
             },
             {
                 accessorKey: "objectLabel",
@@ -120,9 +135,9 @@ function MappingResults() {
         mappingProvider: false,
         mappingSetId: false,
         mappingTool: false,
-        objectIri: false,
-        predicateIri: false,
-        subjectIri: false
+        objectIri: true,
+        predicateIri: true,
+        subjectIri: true
         }
     )
 

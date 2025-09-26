@@ -185,9 +185,9 @@ public class DownloadMappings {
             logger.debug("Download directory: {}", downloadDirectory);
             int tmpNumberOfThreads = 0;
             try {
-                tmpNumberOfThreads = Integer.parseInt(commandLine.getOptionValue(Arguments.NUMBER_OF_THREADS.argument));
+                    tmpNumberOfThreads = Integer.parseInt(commandLine.getOptionValue(Arguments.NUMBER_OF_THREADS.argument));
                 } catch (NumberFormatException e) {
-                tmpNumberOfThreads = Runtime.getRuntime().availableProcessors();
+                    tmpNumberOfThreads = Runtime.getRuntime().availableProcessors();
             }
             numberOfThreads = tmpNumberOfThreads;
             logger.debug("Number of threads: {}", numberOfThreads);
