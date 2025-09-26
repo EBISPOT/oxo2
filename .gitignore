@@ -33,6 +33,6 @@ dependency-reduced-pom.xml
 # Mappings
 mappings/
 output/
-data*/
+/data/
 
 oxo2-frontend/dist/
