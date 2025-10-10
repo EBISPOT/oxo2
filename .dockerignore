@@ -1,4 +1,5 @@
 **/target/
 **/dockerCompose*.sh
-**/solr
-oxo2-frontend/
+**/node_modules
+/data
+.*

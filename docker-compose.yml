@@ -1,26 +1,36 @@
 services:
-  build:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - build-artefacts:/opt/oxo:rw
-      - ${M2_VOLUME}:/root/.m2/repository:rw
   dataload:
     build:
       context: .
       dockerfile: ./oxo2-dataload/dataload.Dockerfile
-      additional_contexts:
-        oxo2-build: "service:build"
+      args:
+        OXO2_CONFIG: ${OXO2_CONFIG}
     environment:
-      - OXO2_CONFIG=/mnt/config/${OXO2_CONFIG}
+      - ${OXO2_CONFIG}=/opt/oxo/config.json
+      - SOLR_HOME=/opt/solr/server/solr
+      - SOLR_SCRIPT=/opt/solr/bin
     volumes:
-      - build-artefacts:/opt/oxo:rw
-      - ./${OXO2_CONFIG:?OXO dataload requires a config file}:/mnt/config/${OXO2_CONFIG}:ro
+      - build:/opt/oxo:rw
       - data:/tmp/data:rw
-      - solr-data:/opt/solr/server/solr/configsets:rw
+      - solr-data:/opt/solr/server/solr:rw
+      - logs:/tmp/logs:rw
+  solr:
+    image: solr:9.9.0
+    environment:
+      - SOLR_HOME=/mnt/solr-data
+    ports:
+      - 8983:8983
+    volumes:
+      - solr-data:/mnt/solr-data
+#      - logs:/tmp/logs
+#      - data:/tmp/data
+    command: ["-f"]
+    depends_on:
+      dataload:
+        condition: service_completed_successfully
 volumes:
-  build-artefacts:
+  build:
   data:
   solr-data:
+  logs:
 

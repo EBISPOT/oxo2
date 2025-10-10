@@ -33,7 +33,7 @@ echo copySolrConfig...
 $SCRIPT_DIR/copySolrConfig.sh
 sleep 2
 echo Start solr ...
-$SOLR_HOME/bin/solr start --user-managed
+$SOLR_SCRIPT/solr start --user-managed
 
 sleep 10
 start_time=$(date +%s)
@@ -61,6 +61,8 @@ echo "Interpreting explanations took: ${elapsed} seconds"
 echo json2solr inferred mappings ...
 $SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
 
-$SOLR_HOME/bin/solr stop
+$SOLR_SCRIPT/solr stop
 
+#Important to ensure docker does not experience errors related to write.lock.
+chmod -R 777 $SOLR_HOME/*
 cd ..

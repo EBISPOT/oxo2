@@ -3,6 +3,8 @@
 OXO2_INFERENCES=$OXO2_DATA/inferences
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+echo OXO2_INFERENCES=$OXO2_INFERENCES
+echo SCRIPT_DIR=$SCRIPT_DIR
 
 # Generate ttl from json files
 start_time=$(date +%s)
@@ -19,7 +21,7 @@ echo "Making inferences: Writing ttl took: ${elapsed} seconds"
 # See https://github.com/knowsys/nemo-examples/tree/main/examples/rdf-conversion as example externalizing import/export
 start_time=$(date +%s)
 nmo $SCRIPT_DIR/oxo2-json2inferences/chain-rules.rls --param importfile=\"$OXO2_DATA/assertedMapping.ttl\" \
- --param exportfile=\"inferredMapping.ttl\" -o -v -D $OXO2_INFERENCES --report all
+ --param exportfile=\"inferredMapping.ttl\" -o -v -D $OXO2_INFERENCES
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Making inferences: Nemo inferencing took: ${elapsed} seconds"

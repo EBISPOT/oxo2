@@ -3,10 +3,6 @@
     {
       "id": "evora",
       "url": "https://ftp.ebi.ac.uk/pub/databases/spot/evora/ictv_ncbitaxon_exact.sssom.tsv"
-    },
-    {
-      "id": "local_ols_ncbitaxon",
-      "url": "file:///home/henriette007/ebi-dev/oxo2/EVORA-mappings/ncbitaxon.ols.sssom.evora_extract.tsv"
     }
   ]
 }

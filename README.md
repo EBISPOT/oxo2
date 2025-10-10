@@ -15,7 +15,7 @@ Ensure the following software is installed and available on the user path.
 1. Java 17 or later
 2. Maven 3.x
 3. Git
-4. Solr 9.x - Ensure SOLR_HOME is set to point to the root directory of your Solr installation.
+4. Solr 9.x - Ensure SOLR_SCRIPT is set to /bin dir SOLR_HOME is set to /server/solr dir of your Solr installation.
 5. Nemo - download the latest version from [Nemo latest](https://github.com/knowsys/nemo/releases/latest) or build from source
  following instructions [here](https://github.com/knowsys/nemo?tab=readme-ov-file#installation). To check your Nemo installation,
 run `nmo --help`. 
@@ -31,7 +31,7 @@ oxo-config.json in the root of the OxO2 source code directory.
 `git clone git@github.com:EBISPOT/oxo2.git`
 and change to OxO2 source directory.
 2. To build, run: `mvn clean install` 
-3. Copy solr config to solr: `cp ./oxo2-dataload/solr-config/* $SOLR_HOME/server/solr/configsets`
+3. Copy solr config to solr: `cp ./oxo2-dataload/solr-config/* $SOLR_HOME`
 4. Change to dataload directory: `cd ./oxo2-dataload`
 5. Run OxO2 dataload: `./oxo2-dataload/loadData.sh`
 6. Run OxO backend: `./startBackend.sh`

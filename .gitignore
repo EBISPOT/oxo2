@@ -34,5 +34,6 @@ dependency-reduced-pom.xml
 mappings/
 output/
 /data/
+/solr-data/
 
 oxo2-frontend/dist/

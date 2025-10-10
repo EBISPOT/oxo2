@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export OXO2_CONFIG=/oxo-config-test.json
-
 COMPOSE_FILE="docker-compose.yml"
 if [[ -n "$2" ]]; then
   COMPOSE_FILE="$2"
@@ -12,6 +10,7 @@ if [[ "$1" == "build" ]]; then
   docker compose -f "$COMPOSE_FILE" build
   exit 0
 fi
+
 
 if [[ "$1" == "rebuild" ]]; then
   docker compose -f "$COMPOSE_FILE" build --no-cache
@@ -24,9 +23,13 @@ if [[ "$1" == "clean" ]]; then
 fi
 
 
-if [[ "$1" == "term" ]]; then
-  docker compose exec build /bin/bash
+if [[ "$1" == "term-build" ]]; then
+  docker compose exec oxo2-build-1 /bin/bash
   exit 0
 fi
 
+if [[ "$1" == "term-dataload" ]]; then
+  docker compose exec oxo2-dataload-1 /bin/bash
+  exit 0
+fi
 docker compose -f "$COMPOSE_FILE" up --remove-orphans
