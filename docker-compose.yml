@@ -22,12 +22,22 @@ services:
       - 8983:8983
     volumes:
       - solr-data:/mnt/solr-data
-#      - logs:/tmp/logs
-#      - data:/tmp/data
-    command: ["-f"]
+#    command: []
     depends_on:
       dataload:
         condition: service_completed_successfully
+  backend:
+    build:
+      context: .
+      dockerfile: ./oxo2-backend/backend.Dockerfile
+    ports:
+      - 8080:8080
+    environment:
+      - OXO2_SOLR_HOST=http://solr:8983/solr
+    depends_on:
+      - solr
+    links:
+      - solr
 volumes:
   build:
   data:

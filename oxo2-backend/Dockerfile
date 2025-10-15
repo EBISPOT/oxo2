@@ -1,1 +1,0 @@
-FROM oxo2-dataload-build

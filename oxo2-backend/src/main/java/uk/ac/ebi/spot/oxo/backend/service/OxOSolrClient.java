@@ -41,6 +41,7 @@ public class OxOSolrClient {
 
     @PostConstruct
     public void init() {
+        logger.debug("Init solrMappingClient: oxoSolrUrl={}", solrUrl);
         this.solrMappingClient = new  HttpJdkSolrClient.Builder(solrUrl + "/oxo2-mappings")
                 .withConnectionTimeout(connectionTimeoutMillis, MILLISECONDS)
                 .withIdleTimeout(socketTimeoutMillis, MILLISECONDS)
