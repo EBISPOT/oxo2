@@ -1,0 +1,11 @@
+{
+	auto_https off
+}
+
+:8080 {
+    handle_path {$OXO_PUBLIC_URL}* {
+        root * /opt/oxo2-frontend/dist
+        try_files {path} /
+        file_server
+    }
+}

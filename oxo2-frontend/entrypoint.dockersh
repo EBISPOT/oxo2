@@ -1,0 +1,27 @@
+#!/bin/bash
+
+cd /opt/oxo2-frontend
+
+set -e
+cd /opt/oxo2-frontend
+
+# export .env.production (or .env.development) so build sees OXO_PUBLIC_URL / VITE_OXO_PUBLIC_URL
+set -o allexport
+if [ -f /opt/oxo2-frontend/.env.production ]; then
+  # shellcheck disable=SC1090
+  source /opt/oxo2-frontend/.env.production
+fi
+if [ -f /opt/oxo2-frontend/.env.development ]; then
+  # shellcheck disable=SC1090
+  source /opt/oxo2-frontend/.env.development
+fi
+set +o allexport
+
+
+npm run build
+
+echo OXO_PUBLIC_URL=$OXO_PUBLIC_URL
+
+caddy run --config ./Caddyfile
+
+

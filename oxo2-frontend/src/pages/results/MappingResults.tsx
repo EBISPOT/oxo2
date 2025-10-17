@@ -213,10 +213,6 @@ function MappingResults() {
             showColumnFilters: true
         },
         onColumnVisibilityChange: setColumnVisibility,
-        enableFilterMatchHighlighting: true,
-        enableGlobalFilter: false,
-        enableFullScreenToggle: false,
-        enableDensityToggle: false,
         enableHiding: true,
         enableTopToolbar: true, // Show toolbar so user can access column visibility menu
         muiTableBodyRowProps: ({ row }) => ({
