@@ -22,7 +22,6 @@ services:
       - 8983:8983
     volumes:
       - solr-data:/mnt/solr-data
-#    command: []
     depends_on:
       dataload:
         condition: service_completed_successfully
