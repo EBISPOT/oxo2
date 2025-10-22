@@ -22,7 +22,7 @@ ARG OXO2_CONFIG
 RUN addgroup --system oxo && adduser --system --ingroup oxo oxo
 
 RUN mkdir -p /opt/nemo \
-    && curl -L https://github.com/knowsys/nemo/releases/download/v0.8.0/nemo_v0.8.0_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf - \
+    && curl -L https://github.com/knowsys/nemo/releases/download/v0.9.0/nemo_v0.9.0_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf - \
     && chown -R oxo:oxo /opt/nemo
 
 RUN mkdir -p /opt/solr  \

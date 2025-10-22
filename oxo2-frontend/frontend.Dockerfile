@@ -18,7 +18,7 @@ RUN mkdir /opt/oxo2-frontend
 WORKDIR /opt/oxo2-frontend
 
 
-COPY package.json package-lock.json /opt/oxo2-frontend/
+COPY package.json /opt/oxo2-frontend/
 RUN npm install
 
 COPY . /opt/oxo2-frontend/

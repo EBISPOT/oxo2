@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "oxo2.fullname" . }}-solr
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "oxo2.fullname" . }}-solr
+  template:
+    metadata:
+      labels:
+        app: {{ include "oxo2.fullname" . }}-solr
+    spec:
+      containers:
+        - name: solr
+          image: {{ .Values.solr.image | quote }}
+          env:
+            - name: SOLR_HOME
+              value: /mnt/solr-data
+          ports:
+            - containerPort: {{ .Values.solr.port }}
+          volumeMounts:
+            - name: solr-data
+              mountPath: /mnt/solr-data
+      volumes:
+        - name: solr-data
+          persistentVolumeClaim:
+            claimName: {{ include "oxo2.fullname" . }}-solr-pvc

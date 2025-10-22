@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "oxo2.fullname" . }}-frontend
+spec:
+  selector:
+    app: {{ include "oxo2.fullname" . }}-frontend
+  ports:
+    - port: {{ .Values.frontend.service.port }}
+      targetPort: {{ .Values.frontend.containerPort }}
+      nodePort: {{ .Values.frontend.service.nodePort }}
+  type: {{ .Values.frontend.service.type }}

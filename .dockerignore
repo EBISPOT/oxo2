@@ -1,5 +1,3 @@
 **/target/
-**/dockerCompose*.sh
-**/node_modules
 /data
 .*
