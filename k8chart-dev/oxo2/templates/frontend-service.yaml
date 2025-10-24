@@ -8,5 +8,4 @@ spec:
   ports:
     - port: {{ .Values.frontend.service.port }}
       targetPort: {{ .Values.frontend.containerPort }}
-      nodePort: {{ .Values.frontend.service.nodePort }}
   type: {{ .Values.frontend.service.type }}

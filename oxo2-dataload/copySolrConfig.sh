@@ -2,6 +2,14 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Ensure SOLR_HOME is set and exists
+if [ -z "$SOLR_HOME" ]; then
+  echo "SOLR_HOME is not set. Please set the environment variable and retry." >&2
+  exit 1
+fi
+
+mkdir -p $SOLR_HOME
+
 # Delete previous config
 rm -r $SOLR_HOME/oxo2-mappings
 rm -r $SOLR_HOME/oxo2-mappingsets

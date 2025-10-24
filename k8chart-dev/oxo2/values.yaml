@@ -13,8 +13,9 @@ backend:
 
 frontend:
   image: "oxo2/frontend:dev"
-  containerPort: 8080
+  containerPort: 8081
   service:
     type: NodePort
     port: 8081
     nodePort: 30081
+

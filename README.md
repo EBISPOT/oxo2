@@ -3,7 +3,6 @@ A SSSOM compliant implementation of OxO that is backwards compatible with OxO ve
 
 ## Running OxO2 using docker
 ### Environment variables
-The following environment variable must be set:
 1. Set OXO2_CONFIG environment variable - It should point to the OxO2 config file. This is how OxO2 knows which SSSOM 
 mappings to load. For an example config file see the `oxo-config.json` in the root of the OxO2 code base.
 Copy your desired configuration file into the root directory of OXO2. E.g. if your configuration file 
