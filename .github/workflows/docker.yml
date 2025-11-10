@@ -32,20 +32,20 @@ jobs:
 
       - name: Build and push OxO2 dataload Docker image
         run: |
-          docker build -t ghcr.io/ebispot/oxo2-dataload:${{ github.sha }} -f ./oxo2-dataload/Dockerfile .
+          docker build -t ghcr.io/ebispot/oxo2-dataload:${{ github.sha }} -f ./oxo2-dataload/dataload.Dockerfile .
           docker tag ghcr.io/ebispot/oxo2-dataload:${{github.sha}} ghcr.io/ebispot/oxo2-dataload:${{ github.head_ref || github.ref_name }}
           docker push --all-tags ghcr.io/ebispot/oxo2-dataload
 
       - name: Build and push OxO2 backend Docker image
         run: |
-          docker build -t ghcr.io/ebispot/oxo2-backend:${{ github.sha }} -f ./oxo2-backend/Dockerfile .
+          docker build -t ghcr.io/ebispot/oxo2-backend:${{ github.sha }} -f ./oxo2-backend/backend.Dockerfile .
           docker tag ghcr.io/ebispot/oxo2-backend:${{github.sha}} ghcr.io/ebispot/oxo2-backend:${{ github.head_ref || github.ref_name }}
           docker push --all-tags ghcr.io/ebispot/oxo2-backend
 
       - name: Build and push OxO2 frontend Docker image
         run: |
-          cd frontend
-          docker build -t ghcr.io/ebispot/oxo2-frontend:${{ github.sha }} .
+          cd oxo2-frontend
+          docker build -t ghcr.io/ebispot/oxo2-frontend:${{ github.sha }} -f frontend.Dockerfile .
           docker tag ghcr.io/ebispot/oxo2-frontend:${{github.sha}} ghcr.io/ebispot/oxo2-frontend:${{ github.head_ref || github.ref_name }}
           docker push --all-tags ghcr.io/ebispot/oxo2-frontend          
           
