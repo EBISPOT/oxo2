@@ -3,6 +3,9 @@
 }
 
 :8080 {
+    handle /api/* {
+        reverse_proxy {$OXO_BACKEND_URL}
+    }    
     handle_path {$OXO_PUBLIC_URL}* {
         root * /opt/oxo2-frontend/dist
         try_files {path} /
