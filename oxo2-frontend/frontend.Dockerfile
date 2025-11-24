@@ -14,7 +14,6 @@ RUN apt update && apt install -y nodejs caddy
 
 RUN mkdir /opt/oxo2-frontend
 
-
 WORKDIR /opt/oxo2-frontend
 
 

@@ -17,11 +17,10 @@ if [ -f /opt/oxo2-frontend/.env.development ]; then
 fi
 set +o allexport
 
-
-npm run build
-
 echo OXO_PUBLIC_URL=$OXO_PUBLIC_URL
 echo OXO_BACKEND_URL=$OXO_BACKEND_URL
+
+npm run build
 
 caddy run --config ./Caddyfile
 
