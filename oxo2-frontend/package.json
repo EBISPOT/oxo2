@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --logLevel debug",
-    "build": "vite build",
+    "build": "vite build --emptyOutDir",
     "lint": "eslint . --config eslint.config.js",
     "preview": "vite preview"
   },

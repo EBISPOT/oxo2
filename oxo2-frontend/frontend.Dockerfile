@@ -19,7 +19,6 @@ WORKDIR /opt/oxo2-frontend
 
 
 COPY package.json /opt/oxo2-frontend/
-RUN npm install
 
 COPY . /opt/oxo2-frontend/
 
