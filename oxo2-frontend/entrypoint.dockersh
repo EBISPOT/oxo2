@@ -21,6 +21,7 @@ set +o allexport
 npm run build
 
 echo OXO_PUBLIC_URL=$OXO_PUBLIC_URL
+echo OXO_BACKEND_URL=$OXO_BACKEND_URL
 
 caddy run --config ./Caddyfile
 
