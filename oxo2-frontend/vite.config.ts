@@ -9,4 +9,17 @@ export default defineConfig({
         tailwindcss()
     ],
     envPrefix: ['REACT_APP_', 'OXO_'],
+    // To fix the issue of the bundle being too large, we need to split the bundle into smaller chunks.
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    react: ['react', 'react-dom'],
+                    tables: ['material-react-table'],
+                    graphs: ['react-force-graph-2d', '@xyflow/react']
+                }
+            }
+        },
+        chunkSizeWarningLimit: 1024 // optional once you confirm chunks are split
+    }    
 })
