@@ -21,6 +21,10 @@ COPY package.json /opt/oxo2-frontend/
 
 COPY . /opt/oxo2-frontend/
 
+RUN rm -rf ./node_modules
+
+RUN npm install
+
 RUN chmod +x /opt/oxo2-frontend/entrypoint.dockersh
 
 CMD ["/opt/oxo2-frontend/entrypoint.dockersh"]
