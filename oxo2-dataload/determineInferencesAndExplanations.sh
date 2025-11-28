@@ -7,6 +7,10 @@ echo OXO2_INFERENCES=$OXO2_INFERENCES
 echo SCRIPT_DIR=$SCRIPT_DIR
 
 # Generate ttl from json files
+echo "################### OXO2_DATA=$OXO2_DATA"
+echo "################### OXO2_INFERENCES=$OXO2_INFERENCES"
+echo "################### SCRIPT_DIR=$SCRIPT_DIR"
+echo "################### Generating ttl from json files to $OXO2_DATA/assertedMapping.ttl"
 start_time=$(date +%s)
 $SCRIPT_DIR/oxo2-json2inferences/json2ttl.sh $OXO2_DATA/sssom-as-json/mapping $OXO2_DATA/assertedMapping.ttl
 end_time=$(date +%s)
@@ -18,7 +22,9 @@ echo "Making inferences: Writing ttl took: ${elapsed} seconds"
 # -o: overwrites existing files
 # -e idb: trace idb inferences. See https://github.com/knowsys/nemo/issues/670
 # -v: show progress of inferencing. See https://github.com/knowsys/nemo/issues/676
+# -D: directory to export inferences to.
 # See https://github.com/knowsys/nemo-examples/tree/main/examples/rdf-conversion as example externalizing import/export
+echo "################### Running nmo to get initial inferences to $OXO2_INFERENCES/inferredMapping.ttl"
 start_time=$(date +%s)
 nmo $SCRIPT_DIR/oxo2-json2inferences/chain-rules.rls --param importfile=\"$OXO2_DATA/assertedMapping.ttl\" \
  --param exportfile=\"inferredMapping.ttl\" -o -v -D $OXO2_INFERENCES
@@ -27,6 +33,7 @@ elapsed=$((end_time - start_time))
 echo "Making inferences: Nemo inferencing took: ${elapsed} seconds"
 
 # Determine mappings for which we want explanations
+echo "################### Determining mappings for which we want explanations to $OXO2_INFERENCES/inferencesToTrace.txt"
 start_time=$(date +%s)
 $SCRIPT_DIR/oxo2-json2inferences/inferences2trace.sh $OXO2_INFERENCES/inferredMapping.ttl $OXO2_INFERENCES/inferencesToTrace.txt
 end_time=$(date +%s)

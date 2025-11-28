@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-frontend
+  labels:
+    app: {{ .Release.Name }}-frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-frontend
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-frontend
+    spec:
+      initContainers:
+        - name: init-container
+          image: ghcr.io/ebispot/oxo2-frontend:{{.Values.imageTag}}
+          command: [ 'sh', '-c', 'until curl {{ .Release.Name }}-backend:8080; do echo waiting for backend; sleep 5; done;' ]
+      containers:
+        - name: frontend
+          image: ghcr.io/ebispot/oxo2-frontend:{{.Values.imageTag}}
+          imagePullPolicy: Always
+          env:
+            - name: OXO_BACKEND_URL
+              value: http://localhost:8081
+            - name: OXO_PUBLIC_URL
+              value: /              
+          ports:
+            - containerPort: {{ .Values.frontend.service.containerPort }}
+          command: ["/bin/bash", "-c"]
+          args: ["/opt/oxo2-frontend/entrypoint.dockersh"]            

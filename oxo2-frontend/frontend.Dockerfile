@@ -21,7 +21,7 @@ COPY package.json /opt/oxo2-frontend/
 
 COPY . /opt/oxo2-frontend/
 
-RUN rm -rf ./node_modules
+RUN rm -rf ./node_modules && rm -rf ./dist
 
 RUN npm install
 

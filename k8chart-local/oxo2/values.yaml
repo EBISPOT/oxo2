@@ -1,0 +1,39 @@
+imageTag: "dev"
+
+solr:
+  image: "solr:9.9.0"
+  replicaCount: 1
+  service:
+    port: 8983
+    containerPort: 8983
+    targetPort: 8983  
+  persistence:
+    enabled: true
+    size: 5Gi
+    nodeAffinity:
+      host: minikube
+
+backend:
+  image: "oxo2/backend"
+  replicaCount: 1
+  service:
+    port: 8080
+    containerPort: 8080
+    targetPort: 8080
+    
+
+frontend:
+  image: "oxo2/frontend"
+  replicaCount: 1
+  service:
+    port: 8080
+    containerPort: 8080
+    targetPort: 8080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 1Gi
+    limits:
+      cpu: 500m
+      memory: 4Gi
+

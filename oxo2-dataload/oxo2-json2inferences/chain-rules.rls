@@ -104,5 +104,5 @@ mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) :- mapping
 % RCE-N4: (:A)-[rdfs:subPropertyOf]->(:B)-[owl:equivalentProperty]->(:C) -> (:A)-[rdfs:subPropertyOf]->(:C)
 mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) :- mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, b), mapping(?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?c) .
 
-@export inferredMapping :- turtle{resource = $exportfile} .
+@export inferredMapping :- turtle{resource=$exportfile} .
 

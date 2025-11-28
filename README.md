@@ -1,18 +1,57 @@
 # OxO2
 A SSSOM compliant implementation of OxO that is backwards compatible with OxO version 1
 
-## Running OxO2 using docker
+## Running OxO2 using Docker
+
+## Prerequisites
+1. Ensure docker is installed in your environment.
+
 ### Environment variables
 1. Set OXO2_CONFIG environment variable - It should point to the OxO2 config file. This is how OxO2 knows which SSSOM 
 mappings to load. For an example config file see the `oxo-config.json` in the root of the OxO2 code base.
 Copy your desired configuration file into the root directory of OXO2. E.g. if your configuration file 
 is `my_oxo2_config.json`, set OXO2_CONFIG=./my_oxo2_config.json by running `export OXO2_CONFIG=./my_oxo2_config.json`.
-2. To run OxO2 using docker, run `docker compose up`. This will start Solr, the OxO2 backend and OxO2 frontend. The frontend
-will be available at `http://localhost:8081`, the backend at `http://localhost:8080` and Solr at `http://localhost:8983`.
-3. To stop OxO2 run `docker compose down`.
 
-## Running OxO2 from the commandline. 
+### Steps
+1. To run OxO2 using docker, run `docker compose up`. This will start Solr, the OxO2 backend and OxO2 frontend. The frontend
+will be available at `http://localhost:8080`, the backend at `http://localhost:8081` and Solr at `http://localhost:8983`.
+2. To stop OxO2 run `docker compose down`.
+https://cursor.com/
 
+## Running OxO2 locally in Kubernetes using Minikube
+### Prerequisites
+1. Ensure you have a kubernetes cluster available. E.g. for a local k8s cluster using `minikube` run `minikube start --driver=docker`.  
+2. Ensure you have helm installed.
+ 
+### Environment variables
+1. Ensure that you have a data release such that have the complete OxO2 available at a $SOLR_HOME.
+
+### Mount your data into minikube
+1. Mount into minikube: 
+`minikube mount --port=39000 $SOLR_HOME:/mnt/solr-data`.
+
+***Note***: You may need to allow port 39000 through firewall. If so, run: `sudo ufw allow 39000/tcp`.
+
+
+### Deployment
+1. From the root directory run: 
+```
+helm install oxo2 ./k8chart-local/oxo2 -n ontotools --create-namespace
+```    
+
+2. To access locally run: 
+```
+kubectl port-forward deployment/oxo2-frontend 8080:8080 -n ontotools
+kubectl port-forward deployment/oxo2-backend 8081:8080 -n ontotools
+``` 
+and the point your browser to http://localhost:8080. The OxO2 backend will be accessible at http://localhost:8081/
+
+
+### To undeploy
+1. Run: `helm uninstall oxo2 -n ontotools`.
+
+
+## Running OxO2 locally from the commandline. 
 ### Prerequisites 
 Ensure the following software is installed and available on the user path.
 1. Java 17 or later
@@ -49,12 +88,15 @@ and change to OxO2 source directory.
 2. To build, run: `mvn clean install` 
 3. Copy solr config to solr: `cp ./oxo2-dataload/solr-config/* $SOLR_HOME`
 4. Change to dataload directory: `cd ./oxo2-dataload`
-5. Run OxO2 dataload: `./oxo2-dataload/loadData.sh`
-6. Run OxO backend: `./startBackend.sh`
-7. To build and run frontend: 
+5. Run OxO2 dataload: `./loadData.sh`
+6. Return to OxO2 root dir: `cd ..`
+7. Start Solr: `SOLR_SCRIPT/solr start --user-managed`
+8. Run OxO backend: `./startBackend.sh`
+9. To build and run frontend: 
    1. Change directory to frontend: `cd oxo2-frontend`
    2. Build frontend: `npm install`
    3. Start frontend: `npm run dev`
-   4. Access from browser at: `http://localhost:5173/`
+   4. Access frontend from browser at: `http://localhost:5173/`
+   5. Backend is accessible at: `http://localhost:8080`.
  
 

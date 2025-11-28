@@ -1,0 +1,14 @@
+{
+	auto_https off
+}
+
+:8081 {
+    handle /api/* {
+        reverse_proxy {$OXO_BACKEND_URL}
+    }    
+    handle_path {$OXO_PUBLIC_URL}* {
+        root * ./dist
+        try_files {path} /
+        file_server
+    }
+}
