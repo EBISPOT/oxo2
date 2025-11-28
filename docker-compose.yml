@@ -30,7 +30,7 @@ services:
       context: .
       dockerfile: ./oxo2-backend/backend.Dockerfile
     ports:
-      - 8080:8080
+      - 8081:8080
     environment:
       - OXO2_SOLR_HOST=http://solr:8983/solr
     depends_on:
@@ -42,14 +42,17 @@ services:
       context: ./oxo2-frontend
       dockerfile: ./frontend.Dockerfile
       args:
-        BACKEND_API_URL: http://backend:8080
+        BACKEND_API_URL: http://localhost:8081
     env_file: ./oxo2-frontend/.env.production
+    environment:
+      - OXO_BACKEND_URL=http://localhost:8081
+      - OXO_PUBLIC_URL=/
     ports:
-      - 8081:8080
+      - 8080:8080
     depends_on:
       - backend
     links:
-      - backend
+      - backend  
 volumes:
   build:
   data:
