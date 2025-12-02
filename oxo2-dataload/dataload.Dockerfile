@@ -17,8 +17,6 @@ RUN cd oxo2-dataload \
 
 FROM eclipse-temurin:17
 
-ARG OXO2_CONFIG
-
 RUN addgroup --system oxo && adduser --system --ingroup oxo oxo
 
 RUN mkdir -p /opt/nemo \
@@ -41,7 +39,7 @@ ENV PATH="${PATH}:/opt/nemo:/opt/solr" \
     SOLR_HOME="/opt/solr/server/solr" \
     SOLR_SCRIPT="/opt/solr/bin"
 
-COPY ${OXO2_CONFIG} /opt/oxo/config.json
+RUN mkdir -p /opt/oxo
 
 COPY     ./oxo2-dataload/oxo2-json2inferences/chain-rules.rls \
          ./oxo2-dataload/oxo2-json2inferences/explanations2json.sh \

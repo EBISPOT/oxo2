@@ -3,10 +3,8 @@ services:
     build:
       context: .
       dockerfile: ./oxo2-dataload/dataload.Dockerfile
-      args:
-        OXO2_CONFIG: ${OXO2_CONFIG}
     environment:
-      - ${OXO2_CONFIG}=/opt/oxo/config.json
+      - OXO2_CONFIG=/opt/oxo/config.json
       - SOLR_HOME=/opt/solr/server/solr
       - SOLR_SCRIPT=/opt/solr/bin
     volumes:
@@ -14,6 +12,7 @@ services:
       - data:/tmp/data:rw
       - solr-data:/opt/solr/server/solr:rw
       - logs:/tmp/logs:rw
+      - ${OXO2_CONFIG:-./oxo-config.json}:/opt/oxo/config.json:ro
   solr:
     image: solr:9.9.0
     environment:
