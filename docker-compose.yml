@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: ./oxo2-dataload/dataload.Dockerfile
     environment:
-      - OXO2_CONFIG=/mnt/oxo/config.json
+      - OXO2_CONFIG=/mnt/oxo/configs/config.json
       - SOLR_HOME=/opt/solr/server/solr
       - SOLR_SCRIPT=/opt/solr/bin
     volumes:
