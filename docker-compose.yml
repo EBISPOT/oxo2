@@ -12,7 +12,7 @@ services:
       - data:/mnt/oxo/data:rw
       - solr-data:/opt/solr/server/solr:rw
       - logs:/mnt/oxo/logs:rw
-      - ${OXO2_CONFIG:-./oxo-config.json}:/mnt/oxo/config.json:ro
+      - ${OXO2_CONFIG:-./oxo-config.json}:/mnt/oxo/configs/config.json:ro
   solr:
     image: solr:9.9.0
     environment:
