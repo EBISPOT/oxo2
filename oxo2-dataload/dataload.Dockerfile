@@ -71,7 +71,7 @@ COPY --from=builder \
     /build/oxo2-dataload/oxo2-sssom2json/target/oxo2-sssom2json-1.0.0-SNAPSHOT.jar \
     /opt/oxo/oxo2-dataload/oxo2-sssom2json/target/
 
-ENV OXO2_CONFIG=/mnt/oxo/config.json
+ENV OXO2_CONFIG=/mnt/oxo/configs/config.json
 
 RUN chown -R oxo:oxo /opt/*
 RUN chmod -R 777 /opt/* 
@@ -82,6 +82,5 @@ USER oxo
 
 WORKDIR /opt/oxo/oxo2-dataload
 
-# CMD ["sh", "-c", "sleep infinity"]
 CMD ["sh", "-c", "./loadData.sh > /mnt/oxo/logs/dataload.logs"]
 
