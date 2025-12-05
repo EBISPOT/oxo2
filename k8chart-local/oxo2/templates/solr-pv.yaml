@@ -10,7 +10,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   hostPath:
-    path: /mnt/solr-data
+    path: /mnt/oxo/solr-data
     type: Directory
   {{- if .Values.solr.persistence.nodeAffinity.host }}
   nodeAffinity:

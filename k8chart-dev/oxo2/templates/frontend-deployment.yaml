@@ -17,7 +17,7 @@ spec:
       initContainers:
         - name: init-container
           image: ghcr.io/ebispot/oxo2-frontend:{{.Values.imageTag}}
-          command: [ 'sh', '-c', 'until curl {{ .Release.Name }}-backend:8080; do echo waiting for backend; sleep 5; done;' ]
+          command: [ 'sh', '-c', 'until curl {{ .Release.Name }}-backend:8081; do echo waiting for backend; sleep 5; done;' ]
       containers:
         - name: frontend
           image: ghcr.io/ebispot/oxo2-frontend:{{.Values.imageTag}}

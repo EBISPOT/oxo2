@@ -16,7 +16,6 @@ is `my_oxo2_config.json`, set OXO2_CONFIG=./my_oxo2_config.json by running `expo
 1. To run OxO2 using docker, run `docker compose up`. This will start Solr, the OxO2 backend and OxO2 frontend. The frontend
 will be available at `http://localhost:8080`, the backend at `http://localhost:8081` and Solr at `http://localhost:8983`.
 2. To stop OxO2 run `docker compose down`.
-https://cursor.com/
 
 ## Running OxO2 locally in Kubernetes using Minikube
 ### Prerequisites
@@ -28,7 +27,7 @@ https://cursor.com/
 
 ### Mount your data into minikube
 1. Mount into minikube: 
-`minikube mount --port=39000 $SOLR_HOME:/mnt/solr-data`.
+`minikube mount --port=39000 $SOLR_HOME:/mnt/oxo/solr-data`.
 
 ***Note***: You may need to allow port 39000 through firewall. If so, run: `sudo ufw allow 39000/tcp`.
 
@@ -43,8 +42,9 @@ helm install oxo2 ./k8chart-local/oxo2 -n ontotools --create-namespace
 ```
 kubectl port-forward deployment/oxo2-frontend 8080:8080 -n ontotools
 kubectl port-forward deployment/oxo2-backend 8081:8081 -n ontotools
+kubectl port-forward deployment/oxo2-solr 8983:8983 -n ontotools
 ``` 
-and the point your browser to http://localhost:8080. The OxO2 backend will be accessible at http://localhost:8081/
+and the point your browser to http://localhost:8080. The OxO2 backend will be accessible at http://localhost:8081/ and solr at http://localhost:8983.
 
 
 ### To undeploy
@@ -90,13 +90,13 @@ and change to OxO2 source directory.
 4. Change to dataload directory: `cd ./oxo2-dataload`
 5. Run OxO2 dataload: `./loadData.sh`
 6. Return to OxO2 root dir: `cd ..`
-7. Start Solr: `SOLR_SCRIPT/solr start --user-managed`
+7. Start Solr: `$SOLR_SCRIPT/solr start --user-managed`
 8. Run OxO backend: `./startBackend.sh`
 9. To build and run frontend: 
    1. Change directory to frontend: `cd oxo2-frontend`
    2. Build frontend: `npm install`
    3. Start frontend: `npm run dev`
-   4. Access frontend from browser at: `http://localhost:5173/`
-   5. Backend is accessible at: `http://localhost:8080`.
+   4. Access frontend from browser at: `http://localhost:8080/`
+   5. Backend is accessible at: `http://localhost:8081`.
  
 
