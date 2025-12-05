@@ -2,7 +2,7 @@ export async function doHTTPRequest<T>(
     path: string,
     request?: RequestInit | undefined
 ): Promise<T> {
-    const BASE_URL = import.meta.env.OXO_BACKEND_URL || 'http://localhost:8080';
+    const BASE_URL = import.meta.env.OXO_BACKEND_URL || 'http://localhost:8081';
     const response: Response = await fetch(
         `${BASE_URL}${path}`,
         {

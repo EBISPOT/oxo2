@@ -10,6 +10,7 @@ rm -R $OXO2_DATA/*
 
 start_time=$(date +%s)
 echo "###################" downloadMappings...
+mkdir -p $OXO2_DATA/sssom
 $SCRIPT_DIR/downloadMappings.sh $OXO2_CONFIG $OXO2_DATA/sssom
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
@@ -17,6 +18,7 @@ echo "Download took: ${elapsed} seconds"
 
 start_time=$(date +%s)
 echo  "###################"  sssom2json...
+mkdir -p $OXO2_CONFIG $OXO2_DATA/sssom-as-json
 $SCRIPT_DIR/sssom2json.sh $OXO2_DATA/sssom $OXO2_DATA/sssom-as-json
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
@@ -47,6 +49,7 @@ echo "Writing to Solr took: ${elapsed} seconds"
 sleep 10
 
 OXO2_INFERENCES=$OXO2_DATA/inferences
+mkdir -p $OXO2_INFERENCES
 mkdir -p $OXO2_INFERENCES/solr
 
 # Write out inferred mappings with their explanations.

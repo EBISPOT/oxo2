@@ -42,7 +42,7 @@ helm install oxo2 ./k8chart-local/oxo2 -n ontotools --create-namespace
 2. To access locally run: 
 ```
 kubectl port-forward deployment/oxo2-frontend 8080:8080 -n ontotools
-kubectl port-forward deployment/oxo2-backend 8081:8080 -n ontotools
+kubectl port-forward deployment/oxo2-backend 8081:8081 -n ontotools
 ``` 
 and the point your browser to http://localhost:8080. The OxO2 backend will be accessible at http://localhost:8081/
 

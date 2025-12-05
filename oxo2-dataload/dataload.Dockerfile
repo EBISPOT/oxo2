@@ -29,13 +29,14 @@ RUN mkdir -p /opt/solr  \
     && chown -R oxo:oxo /opt/solr
 
 
-RUN mkdir -p /tmp/data \
-    && mkdir -p /tmp/logs \
-    && chown -R oxo:oxo /tmp/data \
-    && chown -R oxo:oxo /tmp/logs
+RUN mkdir -p /mnt \
+    && mkdir -p /mnt/oxo \
+    && mkdir -p /mnt/oxo/data \
+    && mkdir -p /mnt/oxo/logs \
+    && chown -R oxo:oxo /mnt/oxo
 
 ENV PATH="${PATH}:/opt/nemo:/opt/solr" \
-    OXO2_DATA="/tmp/data" \
+    OXO2_DATA="/mnt/oxo/data" \
     SOLR_HOME="/opt/solr/server/solr" \
     SOLR_SCRIPT="/opt/solr/bin"
 
@@ -70,10 +71,10 @@ COPY --from=builder \
     /build/oxo2-dataload/oxo2-sssom2json/target/oxo2-sssom2json-1.0.0-SNAPSHOT.jar \
     /opt/oxo/oxo2-dataload/oxo2-sssom2json/target/
 
-ENV OXO2_CONFIG=/opt/oxo/config.json
+ENV OXO2_CONFIG=/mnt/oxo/config.json
 
-RUN chown -R oxo:oxo /opt/* /tmp/logs
-RUN chmod -R 777 /opt/* /tmp/logs
+RUN chown -R oxo:oxo /opt/*
+RUN chmod -R 777 /opt/* 
 
 
 USER oxo
@@ -81,5 +82,6 @@ USER oxo
 
 WORKDIR /opt/oxo/oxo2-dataload
 
-CMD ["sh", "-c", "./loadData.sh > /tmp/logs/dataload.logs"]
+# CMD ["sh", "-c", "sleep infinity"]
+CMD ["sh", "-c", "./loadData.sh > /mnt/oxo/logs/dataload.logs"]
 

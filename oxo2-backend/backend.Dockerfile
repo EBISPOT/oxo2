@@ -22,5 +22,5 @@ RUN chmod -R 777 /opt/oxo
 
 USER oxo
 
-EXPOSE 8080
+EXPOSE 8081
 ENTRYPOINT ["/opt/oxo/startBackend.sh"]
