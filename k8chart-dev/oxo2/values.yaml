@@ -16,8 +16,8 @@ backend:
   replicaCount: 1
   service:
     port: 8081
-    containerPort: 8081
-    targetPort: 8081
+    containerPort: 8080
+    targetPort: 8080
     
 
 frontend:

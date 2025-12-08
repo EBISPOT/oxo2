@@ -15,7 +15,7 @@ spec:
       securityContext:
         fsGroup: 1000
         runAsUser: 1000
-        runAsGroup: 999     
+        runAsGroup: 1000     
       containers:
         - name: solr
           image: docker.io/library/solr:9.9.0
