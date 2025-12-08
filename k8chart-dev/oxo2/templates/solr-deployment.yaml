@@ -15,7 +15,16 @@ spec:
       securityContext:
         fsGroup: 1000
         runAsUser: 1000
-        runAsGroup: 1000     
+        runAsGroup: 1000  
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ['sh', '-c', 'chown -R 1000:1000 /var/solr']
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: solr-data
+              mountPath: /var/solr           
       containers:
         - name: solr
           image: docker.io/library/solr:9.9.0
