@@ -15,7 +15,7 @@ backend:
   image: "oxo2/backend"
   replicaCount: 1
   service:
-    port: 8081
+    port: 8080
     containerPort: 8080
     targetPort: 8080
     
