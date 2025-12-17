@@ -13,9 +13,10 @@ spec:
         app: {{ .Release.Name }}-solr
     spec:
       securityContext:
-        fsGroup: 1000
-        runAsUser: 1000
-        runAsGroup: 1000     
+        fsGroup: 8389
+        runAsUser: 8389
+        runAsGroup: 8389
+        runAsNonRoot: true     
       containers:
         - name: solr
           image: docker.io/library/solr:9.9.0

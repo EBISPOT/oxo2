@@ -21,5 +21,7 @@ spec:
           env:
             - name: OXO2_SOLR_HOST
               value: "http://{{ .Release.Name }}-solr:{{ .Values.solr.service.port }}/solr"
+            - name: SERVER_SERVLET_CONTEXT_PATH
+              value: /oxo2              
           ports:
             - containerPort: {{ .Values.backend.service.containerPort }}

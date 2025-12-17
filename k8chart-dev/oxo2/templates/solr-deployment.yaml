@@ -13,18 +13,29 @@ spec:
         app: {{ .Release.Name }}-solr
     spec:
       securityContext:
-        fsGroup: 1000
-        runAsUser: 1000
-        runAsGroup: 1000  
+        fsGroup: 8389
+        runAsUser: 8389
+        runAsGroup: 8389
+        runAsNonRoot: true  
       initContainers:
-        - name: fix-permissions
+        - name: import-solr-data
           image: busybox
-          command: ['sh', '-c', 'chown -R 1000:1000 /var/solr']
-          securityContext:
-            runAsUser: 0
+          command:
+            - sh
+            - -c
+            - |
+              if [ -d /import ] && [ -z "$(ls -A /var/solr 2>/dev/null)" ]; then
+                echo "Copying import volume into Solr data..."
+                cp -a /import/. /var/solr/
+              else
+                echo "Skipping copy (import missing or Solr dir not empty)"
+              fi
           volumeMounts:
             - name: solr-data
-              mountPath: /var/solr           
+              mountPath: /var/solr
+            - name: import-data
+              mountPath: /import
+              readOnly: true              
       containers:
         - name: solr
           image: docker.io/library/solr:9.9.0
@@ -40,4 +51,7 @@ spec:
         - name: solr-data
           persistentVolumeClaim:
             claimName: {{ .Release.Name }}-solr-pvc
+        - name: import-data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-import-pvc
           
