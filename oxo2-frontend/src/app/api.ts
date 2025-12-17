@@ -2,9 +2,25 @@ export async function doHTTPRequest<T>(
     path: string,
     request?: RequestInit | undefined
 ): Promise<T> {
-    const BASE_URL = import.meta.env.OXO_BACKEND_URL || 'http://localhost:8081';
+    // In production (when OXO_PUBLIC_URL is set), always use relative URLs through Caddy proxy
+    // In local development (no OXO_PUBLIC_URL), use OXO_BACKEND_URL directly
+    const backendUrl = import.meta.env.OXO_BACKEND_URL;
+    const publicUrl = import.meta.env.OXO_PUBLIC_URL || '';
+    
+    let requestUrl: string;
+    if (publicUrl && publicUrl !== '/') {
+        // Production: use relative URL through Caddy proxy, prefixed with base path
+        requestUrl = `${publicUrl}${path}`;
+    } else if (backendUrl) {
+        // Local development: use absolute URL directly to backend
+        requestUrl = `${backendUrl}${path}`;
+    } else {
+        // Fallback: use relative URL (shouldn't happen in normal operation)
+        requestUrl = path;
+    }
+    
     const response: Response = await fetch(
-        `${BASE_URL}${path}`,
+        requestUrl,
         {
             ...(request ? request : {}),
         }

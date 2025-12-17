@@ -3,9 +3,11 @@
 }
 
 :8080 {
-    handle /api/* {
+    # Handle API requests under the base path
+    handle_path {$OXO_PUBLIC_URL}api/* {
         reverse_proxy {$OXO_BACKEND_URL}
-    }    
+    }
+    # Handle all other requests under the base path (frontend SPA)
     handle_path {$OXO_PUBLIC_URL}* {
         root * /opt/oxo2-frontend/dist
         try_files {path} {path}/ /index.html
