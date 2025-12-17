@@ -8,7 +8,7 @@
     }    
     handle_path {$OXO_PUBLIC_URL}* {
         root * /opt/oxo2-frontend/dist
-        try_files {path} /
+        try_files {path} {path}/ /index.html
         file_server
     }
 }
