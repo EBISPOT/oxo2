@@ -26,7 +26,7 @@ spec:
             - name: OXO_BACKEND_URL
               value: {{ .Values.frontend.backendUrl }}
             - name: OXO_PUBLIC_URL
-              value: /oxo2/              
+              value: /oxo2              
           ports:
             - containerPort: {{ .Values.frontend.service.containerPort }}
           command: ["/bin/bash", "-c"]
