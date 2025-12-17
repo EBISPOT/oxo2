@@ -20,7 +20,7 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - hh-rke-wp-webadmin-56-worker-1.caas.ebi.ac.uk
+{{ toYaml .Values.solr.persistence.nodeSelectorHostnames | nindent 10 }}
   volumeMode: Filesystem        
   claimRef:
     namespace: {{ .Release.Namespace }}
