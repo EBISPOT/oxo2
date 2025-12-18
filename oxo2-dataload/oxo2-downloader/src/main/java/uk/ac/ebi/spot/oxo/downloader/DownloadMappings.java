@@ -30,7 +30,7 @@ public class DownloadMappings {
         Collection<Future> futures = new LinkedList<>();
 
         oxoConfiguration.getMappingRegistries().forEach(mappingRegistry -> {
-            logger.debug("Downloading registry {} from {}", mappingRegistry.getId(), mappingRegistry.getGithubRepository());
+            logger.debug("Downloading registry {} from {}", mappingRegistry.getId(), mappingRegistry.getPurl());
             try {
                 futures.add(downloadMappings(executorService, mappingRegistry,
                         inputParameters.downloadDirectory + File.separator + mappingRegistry.getId()));

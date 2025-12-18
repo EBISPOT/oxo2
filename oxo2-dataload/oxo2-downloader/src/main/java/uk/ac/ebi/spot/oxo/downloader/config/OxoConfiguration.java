@@ -80,6 +80,18 @@ public class OxoConfiguration {
             return url;
         }
 
+        public String getPurl() {
+            if (getUrl().isPresent()) {
+                return getUrl().get();
+            } else if (getFtpServer().isPresent()) {
+                return "ftp://" + getFtpServer().get() + ":" + getPort().get() + "/" + getDirectory().get();
+            } else if (getGithubRepository().isPresent()) {
+                return "https://github.com/" + getGithubRepository().get();
+            } else {
+                throw new IllegalArgumentException("No URL or FTP server or GitHub repository found for registry " + id);
+            }
+        }
+
         @Override
         public String toString() {
             return "MappingRegistry{" +
