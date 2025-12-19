@@ -1,22 +1,26 @@
 package uk.ac.ebi.spot.oxo.sssom2json;
 
-import org.apache.commons.cli.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
+import static uk.ac.ebi.spot.oxo.sssom2json.parser.TSV2JSON.processDirectory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static uk.ac.ebi.spot.oxo.sssom2json.parser.TSV2JSON.processDirectory;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @Todo:
@@ -113,7 +117,6 @@ public class SSSOM2JSON {
     }
 
     private static void processMappingSets(String inputDirectory, String outputDirectory) throws IOException {
-        Stream<Path> directoriesOfMappingSets = getDirectories(inputDirectory);
 
         String mappingSetDirectory = outputDirectory + File.separator + "mappingSet";
         String mappingDirectory = outputDirectory + File.separator + "mapping";
@@ -126,7 +129,7 @@ public class SSSOM2JSON {
             throw new IOException("Error creating output directories", e);
         }
 
-        directoriesOfMappingSets.forEach(path -> processDirectory(path.toString(), mappingSetDirectory, mappingDirectory));
+        processDirectory(inputDirectory, mappingSetDirectory, mappingDirectory);
 
         long usedMemoryBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         double usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0);

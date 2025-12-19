@@ -1,24 +1,48 @@
 package uk.ac.ebi.spot.oxo.sssom2json.parser;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uk.ac.ebi.spot.oxo.model.sssom.*;
-
-import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
-
-import uk.ac.ebi.spot.oxo.sssom2json.SSSOM2JSON;
-import uk.ac.ebi.spot.oxo.utils.StringUtils;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.AUTHOR_ID;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.AUTHOR_LABEL;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.COMMENT;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.CONFIDENCE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.CREATOR_ID;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.CREATOR_LABEL;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.CURATION_RULE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.ISSUE_TRACKER_ITEM;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.LICENSE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_CARDINALITY;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_DATE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_JUSTIFICATION;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_PROVIDER;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_SOURCE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_TOOL;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_TOOL_VERSION;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MATCH_STRING;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.OBJECT_CATEGORY;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.OBJECT_ID;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.OBJECT_LABEL;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.OBJECT_MATCH_FIELD;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.OBJECT_PREPROCESSING;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.OBJECT_SOURCE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.OBJECT_SOURCE_VERSION;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.OBJECT_TYPE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.OTHER;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.PREDICATE_ID;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.PREDICATE_LABEL;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.PREDICATE_MODIFIER;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.PUBLICATION_DATE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.REVIEWER_ID;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.REVIEWER_LABEL;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SEE_ALSO;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SIMILARITY_MEASURE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SIMILARITY_SCORE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_CATEGORY;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_ID;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_LABEL;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_MATCH_FIELD;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_PREPROCESSING;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_SOURCE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_SOURCE_VERSION;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_TYPE;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,9 +50,35 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Scanner;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import uk.ac.ebi.spot.oxo.model.sssom.CurieMap;
+import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
+import uk.ac.ebi.spot.oxo.model.sssom.MappingSet;
 
 /**
  *  A SSSOM TSV file contains 1 MappingSet object. See structure of TSV discussed
@@ -49,6 +99,7 @@ public class TSV2JSON {
                     .filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".tsv"))
                     .forEach(path -> {
+                        logger.info("Processing file: {}", path);
                         String filename = getFilenameWithoutExtension(path);
                         Optional<MappingSet.Builder> externalMappingSetBuilderOptional = Optional.empty();
                         if (filenameToExternalMetadataMap.containsKey(filename)) {
