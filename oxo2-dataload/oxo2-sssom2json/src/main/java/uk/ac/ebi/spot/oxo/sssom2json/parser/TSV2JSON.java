@@ -85,10 +85,10 @@ public class TSV2JSON {
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-        String mappingSetFilename = mappingSetOutputDirectory + File.separator +
-                mappingSet.mappingSetId().extractFragmentOrLastPathSegment() + ".json";
-        String mappingsFilename = mappingsOutputDirectory + File.separator +
-                mappingSet.mappingSetId().extractFragmentOrLastPathSegment() + ".json";
+        String baseFilename = mappingSet.mappingSetId().extractFragmentOrLastPathSegment();
+        String mappingSetFilename = getUniqueFilename(mappingSetOutputDirectory, baseFilename);
+        String mappingsFilename = getUniqueFilename(mappingsOutputDirectory, baseFilename);
+
 
         if (!mappingSet.mappings().isEmpty()) {
             try {
@@ -100,6 +100,35 @@ public class TSV2JSON {
                 logger.error("Error while writing JSON file for MappingSet {}", mappingSet.mappingSetId(), e);
             }
         }
+    }
+
+    /**
+     * Generates a unique filename by appending a counter if the file already exists.
+     * For example: "mapping.json" -> "mapping.json", "mapping_1.json", "mapping_2.json", etc.
+     *
+     * @param directory The output directory
+     * @param baseFilename The base filename without extension
+     * @return A unique filename with .json extension
+     */    
+    private static String getUniqueFilename(String directory, String baseFilename) {
+        String basePath = directory + File.separator + baseFilename;
+        String filename = basePath + ".json";
+        File file = new File(filename);
+        
+        if (!file.exists()) {
+            return filename;
+        }
+        
+        // File exists, append counter
+        int counter = 1;
+        do {
+            filename = basePath + "_" + counter + ".json";
+            file = new File(filename);
+            counter++;
+        } while (file.exists());
+        
+        logger.warn("File {} already exists, using unique filename: {}", basePath + ".json", filename);
+        return filename;
     }
 
     public static Optional<MappingSet> readTSVFile(File file, Optional<MappingSet.Builder> externalMappingSetBuilderOptional) {
