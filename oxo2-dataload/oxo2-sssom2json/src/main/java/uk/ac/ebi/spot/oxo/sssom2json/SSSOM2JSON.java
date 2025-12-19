@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -117,6 +116,7 @@ public class SSSOM2JSON {
     }
 
     private static void processMappingSets(String inputDirectory, String outputDirectory) throws IOException {
+        Stream<Path> directoriesOfMappingSets = getDirectories(inputDirectory);
 
         String mappingSetDirectory = outputDirectory + File.separator + "mappingSet";
         String mappingDirectory = outputDirectory + File.separator + "mapping";
@@ -129,7 +129,7 @@ public class SSSOM2JSON {
             throw new IOException("Error creating output directories", e);
         }
 
-        processDirectory(inputDirectory, mappingSetDirectory, mappingDirectory);
+        directoriesOfMappingSets.forEach(path -> processDirectory(path.toString(), mappingSetDirectory, mappingDirectory));
 
         long usedMemoryBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         double usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0);
@@ -143,12 +143,13 @@ public class SSSOM2JSON {
     private static Stream<Path> getDirectories(String inputDirectory) throws IOException {
         try (Stream<Path> paths = Files.walk(Paths.get(inputDirectory))) {
             return paths.filter(Files::isDirectory).collect(Collectors.toList()).stream();
+            
         } catch (IOException e) {
             logger.error("Error traversing input directory", e);
             throw new IOException("Error traversing input directory", e);
         }
     }
-
+    
     private static Options getOptions() {
         Options options = new Options();
 
