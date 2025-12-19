@@ -14,7 +14,7 @@ INPUT_FILE=$1
 OUTPUT_FILE=$2
 
 # Define the path to the JAR file
-JAR_FILE="oxo2-json2inferences/target/oxo2-json2inferences-1.0.0-SNAPSHOT.jar"
+JAR_FILE="$SCRIPT_DIR/oxo2-json2inferences/target/oxo2-json2inferences-1.0.0-SNAPSHOT.jar"
 
 # Check if the JAR file exists
 if [ ! -f "$JAR_FILE" ]; then

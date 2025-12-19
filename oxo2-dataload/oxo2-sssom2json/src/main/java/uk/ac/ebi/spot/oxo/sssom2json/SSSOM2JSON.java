@@ -118,8 +118,6 @@ public class SSSOM2JSON {
     private static void processMappingSets(String inputDirectory, String outputDirectory) throws IOException {
         Stream<Path> directoriesOfMappingSets = getDirectories(inputDirectory);
 
-        // List<Path> listOfDirectoriesOfMappingSets = directoriesOfMappingSets.collect(Collectors.toList());
-
         String mappingSetDirectory = outputDirectory + File.separator + "mappingSet";
         String mappingDirectory = outputDirectory + File.separator + "mapping";
 
