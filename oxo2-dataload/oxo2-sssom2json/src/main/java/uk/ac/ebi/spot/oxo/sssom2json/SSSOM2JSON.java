@@ -118,6 +118,8 @@ public class SSSOM2JSON {
     private static void processMappingSets(String inputDirectory, String outputDirectory) throws IOException {
         Stream<Path> directoriesOfMappingSets = getDirectories(inputDirectory);
 
+        // List<Path> listOfDirectoriesOfMappingSets = directoriesOfMappingSets.collect(Collectors.toList());
+
         String mappingSetDirectory = outputDirectory + File.separator + "mappingSet";
         String mappingDirectory = outputDirectory + File.separator + "mapping";
 
@@ -142,14 +144,24 @@ public class SSSOM2JSON {
 
     private static Stream<Path> getDirectories(String inputDirectory) throws IOException {
         try (Stream<Path> paths = Files.walk(Paths.get(inputDirectory))) {
-            return paths.filter(Files::isDirectory).collect(Collectors.toList()).stream();
-            
+            return paths
+                    .filter(Files::isDirectory)
+                    .map(path -> {
+                        try {
+                            return path.toRealPath();
+                        } catch (IOException e) {
+                            return path.toAbsolutePath().normalize();
+                        }
+                    })
+                    .distinct()
+                    .collect(Collectors.toList())
+                    .stream();
         } catch (IOException e) {
             logger.error("Error traversing input directory", e);
             throw new IOException("Error traversing input directory", e);
         }
     }
-    
+
     private static Options getOptions() {
         Options options = new Options();
 

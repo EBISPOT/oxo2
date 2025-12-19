@@ -94,7 +94,7 @@ public class TSV2JSON {
 
         Map<String, MappingSet.Builder> filenameToExternalMetadataMap = readExternalMetadata(directory);
 
-        try (Stream<Path> paths = Files.walk(Paths.get(directory))) {
+        try (Stream<Path> paths = Files.list(Paths.get(directory))) {
             paths
                     .filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".tsv"))
