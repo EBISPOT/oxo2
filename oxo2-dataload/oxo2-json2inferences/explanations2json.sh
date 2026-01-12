@@ -3,6 +3,8 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
+SCRIPT_DIR=$(dirname $(readlink -f $0))
+
 # Check if the required arguments are provided
 if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <nemo_inferences> <output_file>"
@@ -14,7 +16,7 @@ NEMO_INFERENCES=$1
 OUTPUT_FILE=$2
 
 # Define the path to the JAR file
-JAR_FILE="$SCRIPT_DIR/oxo2-json2inferences/target/oxo2-json2inferences-1.0.0-SNAPSHOT.jar"
+JAR_FILE="$SCRIPT_DIR/target/oxo2-json2inferences-1.0.0-SNAPSHOT.jar"
 
 # Check if the JAR file exists
 if [ ! -f "$JAR_FILE" ]; then
