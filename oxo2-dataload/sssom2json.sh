@@ -5,6 +5,7 @@ if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <inputDir> <outputDir>"
   exit 1
 fi
+SCRIPT_DIR=$(dirname $(readlink -f $0))
 
 # Assign input parameters to variables
 INPUT_DIR=$1
