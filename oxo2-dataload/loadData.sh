@@ -49,21 +49,21 @@ elapsed=$((end_time - start_time))
 echo "Writing to Solr took: ${elapsed} seconds"
 sleep 10
 
-OXO2_INFERENCES=$OXO2_DATA/inferences
-mkdir -p $OXO2_INFERENCES
-mkdir -p $OXO2_INFERENCES/solr
+# OXO2_INFERENCES=$OXO2_DATA/inferences
+# mkdir -p $OXO2_INFERENCES
+# mkdir -p $OXO2_INFERENCES/solr
 
-# Write out inferred mappings with their explanations.
-start_time=$(date +%s)
-echo  "###################"  Create inferred mappings with their explanations ...
-$SCRIPT_DIR/oxo2-json2inferences/explanations2json.sh $OXO2_INFERENCES/inferences-chains.json \
-$OXO2_INFERENCES/solr/inferred-mappings.json
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Interpreting explanations took: ${elapsed} seconds"
+# # Write out inferred mappings with their explanations.
+# start_time=$(date +%s)
+# echo  "###################"  Create inferred mappings with their explanations ...
+# $SCRIPT_DIR/oxo2-json2inferences/explanations2json.sh $OXO2_INFERENCES/inferences-chains.json \
+# $OXO2_INFERENCES/solr/inferred-mappings.json
+# end_time=$(date +%s)
+# elapsed=$((end_time - start_time))
+# echo "Interpreting explanations took: ${elapsed} seconds"
 
-echo  "###################"  json2solr inferred mappings ...
-$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
+# echo  "###################"  json2solr inferred mappings ...
+# $SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
 sleep 20
 
 
