@@ -40,6 +40,11 @@ ENV PATH="${PATH}:/opt/nemo:/opt/solr" \
     SOLR_HOME="/opt/solr/server/solr" \
     SOLR_SCRIPT="/opt/solr/bin"
 
+
+RUN apt-get update && \
+    apt-get install -y jq && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p /opt/oxo
 
 COPY     ./oxo2-dataload/oxo2-json2inferences/chain-rules.rls \
@@ -57,6 +62,7 @@ COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/json2solr.sh \
          ./oxo2-dataload/loadData.sh \
          ./oxo2-dataload/sssom2json.sh \
+         ./oxo2-dataload/splitJsonForSolr.sh \
          /opt/oxo/oxo2-dataload/
 
 COPY --from=builder \
