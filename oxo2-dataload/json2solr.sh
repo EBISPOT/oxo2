@@ -20,7 +20,7 @@ post_to_solr() {
   local file=$1
   local solr_url=$2
   echo "Posting $file to Solr... $solr_url/update?commit=true"
-  curl -X POST -H "Content-Type: application/json" --data-binary @$file $solr_url/update?commit=true
+  curl -X POST -H "Content-Type: application/json" -T $file "$solr_url/update?commit=true"
   if [ $? -eq 0 ]; then
     echo "Successfully posted $file to Solr."
   else

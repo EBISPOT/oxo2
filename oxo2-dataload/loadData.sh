@@ -6,15 +6,15 @@ echo SCRIPT_DIR=$SCRIPT_DIR
 echo OXO2_DATA=$OXO2_DATA
 echo OXO2_CONFIG=$OXO2_CONFIG
 
-rm -R $OXO2_DATA/*
+# rm -R $OXO2_DATA/*
 
-start_time=$(date +%s)
-echo "###################" downloadMappings...
-mkdir -p $OXO2_DATA/sssom
-$SCRIPT_DIR/downloadMappings.sh $OXO2_CONFIG $OXO2_DATA/sssom
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Download took: ${elapsed} seconds"
+# start_time=$(date +%s)
+# echo "###################" downloadMappings...
+# mkdir -p $OXO2_DATA/sssom
+# $SCRIPT_DIR/downloadMappings.sh $OXO2_CONFIG $OXO2_DATA/sssom
+# end_time=$(date +%s)
+# elapsed=$((end_time - start_time))
+# echo "Download took: ${elapsed} seconds"
 
 start_time=$(date +%s)
 echo  "###################"  sssom2json...
@@ -63,18 +63,18 @@ elapsed=$((end_time - start_time))
 echo "Interpreting explanations took: ${elapsed} seconds"
 sleep 20
 
-# Split the large JSON file into smaller chunks
-start_time=$(date +%s)
-echo  "###################"  Splitting large JSON file into chunks ...
-mkdir -p $OXO2_INFERENCES/solr/chunks
-# Split the file (default chunk size: 10000, can be adjusted)
-$SCRIPT_DIR/splitJsonForSolr.sh $OXO2_INFERENCES/solr/inferred-mappings.json $OXO2_INFERENCES/solr/chunks 10000
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Splitting JSON file took: ${elapsed} seconds"
+# # Split the large JSON file into smaller chunks
+# start_time=$(date +%s)
+# echo  "###################"  Splitting large JSON file into chunks ...
+# mkdir -p $OXO2_INFERENCES/solr/chunks
+# # Split the file (default chunk size: 10000, can be adjusted)
+# $SCRIPT_DIR/splitJsonForSolr.sh $OXO2_INFERENCES/solr/inferred-mappings.json $OXO2_INFERENCES/solr/chunks 10000
+# end_time=$(date +%s)
+# elapsed=$((end_time - start_time))
+# echo "Splitting JSON file took: ${elapsed} seconds"
 
 echo  "###################"  json2solr inferred mappings ...
-$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr/chunks http://localhost:8983/solr/oxo2-mappings
+$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
 sleep 20
 
 
