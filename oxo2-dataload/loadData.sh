@@ -16,13 +16,13 @@ echo OXO2_CONFIG=$OXO2_CONFIG
 # elapsed=$((end_time - start_time))
 # echo "Download took: ${elapsed} seconds"
 
-# start_time=$(date +%s)
-# echo  "###################"  sssom2json...
-# mkdir -p $OXO2_DATA/sssom-as-json
-# $SCRIPT_DIR/sssom2json.sh $OXO2_DATA/sssom $OXO2_DATA/sssom-as-json
-# end_time=$(date +%s)
-# elapsed=$((end_time - start_time))
-# echo "SSSOM2JSON took: ${elapsed} seconds"
+start_time=$(date +%s)
+echo  "###################"  sssom2json...
+mkdir -p $OXO2_DATA/sssom-as-json
+$SCRIPT_DIR/sssom2json.sh $OXO2_DATA/sssom $OXO2_DATA/sssom-as-json
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+echo "SSSOM2JSON took: ${elapsed} seconds"
 
 
 start_time=$(date +%s)
