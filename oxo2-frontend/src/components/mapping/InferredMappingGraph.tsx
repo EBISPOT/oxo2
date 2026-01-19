@@ -53,12 +53,10 @@ interface GraphData {
     edges: Edge[];
 }
 
-const nodeHeight = 20;
 const nodeWidth = 200
 
 const CHAIN_RULE_LABEL_HEIGHT = 18; // Height of the label extending below node
 const MIN_NODE_HEIGHT = 60; // Minimum height for nodes with 3 lines of text
-const NODE_PADDING = 10; // Account for padding
 
 const layoutElements = (nodes: Node[], edges: Edge[], direction = 'BT') => {
     // Create a new dagre graph instance each time
