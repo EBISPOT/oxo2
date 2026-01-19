@@ -54,21 +54,32 @@ interface GraphData {
 }
 
 const nodeHeight = 20;
-const nodeWidth = 150
+const nodeWidth = 200
+
+const CHAIN_RULE_LABEL_HEIGHT = 18; // Height of the label extending below node
+const MIN_NODE_HEIGHT = 60; // Minimum height for nodes with 3 lines of text
+const NODE_PADDING = 10; // Account for padding
 
 const layoutElements = (nodes: Node[], edges: Edge[], direction = 'BT') => {
     // Create a new dagre graph instance each time
     const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
     dagreGraph.setGraph({
         rankdir: direction, // Direction: BT (bottom-top), TB, LR, RL
-        nodesep: 50,        // Space between nodes
-        ranksep: 100,       // Space between ranks
+        nodesep: 200,        // Space between nodes
+        ranksep: 80,       // Space between ranks
         marginx: 20,        // Horizontal margin
-        marginy: 20         // Vertical margin
+        marginy: 20,         // Vertical margin
+        edgesep: 50 
     });
 
+    
     nodes.forEach((node) => {
-        dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+        const isInferred = node.type === 'inferred';
+        const actualHeight = isInferred 
+            ? MIN_NODE_HEIGHT + CHAIN_RULE_LABEL_HEIGHT 
+            : MIN_NODE_HEIGHT;
+                    
+        dagreGraph.setNode(node.id, { width: nodeWidth, height: actualHeight });
     });
 
     edges.forEach((edge) => {

@@ -102,17 +102,17 @@ public class SolrQueryBuilder {
      * @return
      */
     private static String constructQuery(List<String> queries) {
-        String query = null;
-
-        for (String q : queries) {
-            query =
-                    Arrays.stream(MappingEnum.values())
-                            .map(f -> "(" + f.getField() + ":\"" + q + "\" OR " + f.getField() + ":\"" +
-                                    q.toUpperCase() + "\")")
-                            .collect(Collectors.joining(" OR "));
-
+        if (queries == null || queries.isEmpty()) {
+            return "*:*"; // Return all documents if no query
         }
-        logger.error("Query string: {}", query);
+        
+        // For edismax, we can use a simple query string and let qf handle field selection
+        // Join multiple queries with OR, and escape special characters
+        String query = queries.stream()
+                .map(q -> ClientUtils.escapeQueryChars(q))
+                .collect(Collectors.joining(" OR "));
+        
+        logger.debug("Query string: {}", query);
         return query;
     }
 
