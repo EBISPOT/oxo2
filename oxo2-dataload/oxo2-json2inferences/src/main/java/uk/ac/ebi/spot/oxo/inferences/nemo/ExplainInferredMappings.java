@@ -42,22 +42,21 @@ public class ExplainInferredMappings {
             return;
         }
 
-        String nemoInferencesToParse = cmd.getOptionValue("nemoInferences");
-        String outputFile = cmd.getOptionValue("outputFile");
+        String nemoInferencesToParseDirectory = cmd.getOptionValue("nemoInferencesDirectory");
+        String outputDirectory = cmd.getOptionValue("outputDirectory");
 
-        logger.info("nemoInferences:  {}", nemoInferencesToParse);
-        logger.info("Output File: {}", outputFile);
+        logger.info("nemoInferences:  {}", nemoInferencesToParseDirectory);
+        logger.info("Output File: {}", outputDirectory);
 
-        File inputFile = new File(nemoInferencesToParse);
-        if (!inputFile.exists() || !inputFile.isFile()) {
-            logger.error("Input file does not exist or is not a file: {}", nemoInferencesToParse);
+        File inputDir = new File(nemoInferencesToParseDirectory);
+        if (!inputDir.exists() || !inputDir.isDirectory()) {
+            logger.error("Input directory does not exist or is not a directory: {}", nemoInferencesToParseDirectory);
             System.exit(1);
             return;
         }
 
-        File output = new File(outputFile);
-        File outputDir = output.getParentFile();
-        if (outputDir != null && !outputDir.exists()) {
+        File outputDir = new File(outputDirectory);
+        if (!outputDir.exists()) {
             if (!outputDir.mkdirs()) {
                 logger.error("Failed to create output directory: {}", outputDir.getAbsolutePath());
                 System.exit(1);
@@ -68,32 +67,62 @@ public class ExplainInferredMappings {
         long startTime = System.currentTimeMillis();
         DataloadSolr solrClient = null;
         try {
-            logger.info("Reading inferences from file...");
-            NemoInferences nemoInferences = NemoInferenceReader.readInferences(nemoInferencesToParse);
-            if (nemoInferences == null) {
-                logger.error("Failed to read inferences from file or file is empty");
-                System.exit(1);
+            solrClient = new DataloadSolr();
+            
+            File[] inputFiles = inputDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".json") || name.toLowerCase().endsWith(".ttl"));
+            if (inputFiles == null || inputFiles.length == 0) {
+                logger.warn("No files found in input directory: {}", nemoInferencesToParseDirectory);
+                solrClient.close();
                 return;
             }
+            
+            logger.info("Found {} files to process", inputFiles.length);
+            
+            int processedCount = 0;
+            int failedCount = 0;
+            
+            for (File inputFile : inputFiles) {
+                try {
+                    String inputFilePath = inputFile.getAbsolutePath();
+                    logger.info("Processing file: {}", inputFilePath);
+                    
+                    logger.info("Reading inferences from file...");
+                    NemoInferences nemoInferences = NemoInferenceReader.readInferences(inputFilePath);
+                    if (nemoInferences == null) {
+                        logger.error("Failed to read inferences from file or file is empty: {}", inputFilePath);
+                        failedCount++;
+                        continue;
+                    }
 
-            logger.info("Converting to inferred mappings...");
+                    logger.info("Converting to inferred mappings...");
+                    Set<InferredMapping> inferredMappings = NemoHelper.fromNemoInferencesToInferredMappings(
+                            nemoInferences, solrClient);
+                    if (inferredMappings.isEmpty()) {
+                        logger.warn("No inferred mappings were generated for file: {}", inputFilePath);
+                    } else {
+                        logger.info("Generated {} inferred mappings", inferredMappings.size());
+                    }
+                    
+                    logger.info("Creating mappings...");
+                    List<Mapping> mappings = createMappings(inferredMappings, solrClient);
+                    logger.info("Created {} mappings", mappings.size());
 
-            solrClient = new DataloadSolr();
-            Set<InferredMapping> inferredMappings = NemoHelper.fromNemoInferencesToInferredMappings(
-                    nemoInferences, solrClient);
-            if (inferredMappings.isEmpty()) {
-                logger.warn("No inferred mappings were generated");
-            } else {
-                logger.info("Generated {} inferred mappings", inferredMappings.size());
+                    // Generate output filename based on input filename
+                    String inputFileName = inputFile.getName();
+                    String baseName = inputFileName.substring(0, inputFileName.lastIndexOf('.'));
+                    String outputFilePath = new File(outputDir, baseName + ".json").getAbsolutePath();
+                    
+                    logger.info("Writing mappings to file: {}", outputFilePath);
+                    writeMappingsAsJson(mappings, outputFilePath);
+                    logger.info("Successfully completed processing for file: {}", inputFilePath);
+                    processedCount++;
+                } catch (Exception e) {
+                    logger.error("Error processing file: {}", inputFile.getAbsolutePath(), e);
+                    failedCount++;
+                }
             }
             
-            logger.info("Creating mappings...");
-            List<Mapping> mappings = createMappings(inferredMappings, solrClient);
-            logger.info("Created {} mappings", mappings.size());
-
-            logger.info("Writing mappings to file...");
-            writeMappingsAsJson(mappings, outputFile);
-            logger.info("Successfully completed processing");
+            logger.info("Processing complete. Successfully processed: {}, Failed: {}", processedCount, failedCount);
             solrClient.close();
         } catch (Exception e) {
             if (solrClient != null) {
@@ -107,6 +136,8 @@ public class ExplainInferredMappings {
             System.exit(1);
         }
         long endTime = System.currentTimeMillis();
+
+        logger.info("Total processing took {} s", (endTime - startTime)/1000);       
         logger.info("Processing took {} s", (endTime - startTime)/1000);
     }
 
@@ -271,15 +302,15 @@ public class ExplainInferredMappings {
     private static Options getOptions() {
         Options options = new Options();
 
-        Option nemoInferences = new Option("n", "nemoInferences", true,
-                "The file containing Nemo traces for inferred mappings");
-        nemoInferences.setRequired(true);
-        options.addOption(nemoInferences);
+        Option nemoInferencesDirectory = new Option("n", "nemoInferencesDirectory", true,
+                "The directory containing Nemo traces for inferred mappings");
+        nemoInferencesDirectory.setRequired(true);
+        options.addOption(nemoInferencesDirectory);
 
-        Option outputFile = new Option("o", "outputFile", true,
-                "JSON output file of inferred mappings with explanations for each inferred mapping.");
-        outputFile.setRequired(true);
-        options.addOption(outputFile);
+        Option outputDirectory = new Option("o", "outputDirectory", true,
+                "Output directory of inferred mappings with explanations for each inferred mapping in JSON format.");
+        outputDirectory.setRequired(true);
+        options.addOption(outputDirectory);
 
         return options;
     }
