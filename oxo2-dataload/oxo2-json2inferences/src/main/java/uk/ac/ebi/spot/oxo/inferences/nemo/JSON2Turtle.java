@@ -48,54 +48,105 @@ public class JSON2Turtle {
 
         String inputDirectory = cmd.getOptionValue("inputDir");
         String outputDir = cmd.getOptionValue("outputDir");
+        String inputFile = cmd.getOptionValue("inputFile");
+        String outputFile = cmd.getOptionValue("outputFile");
 
-        logger.info("Input Directory: {}", inputDirectory);
-        logger.info("Output File: {}", outputDir);
+        // Validate that either directory mode or file mode is used, but not both or neither
+        boolean hasDirMode = (inputDirectory != null && outputDir != null);
+        boolean hasFileMode = (inputFile != null && outputFile != null);
+        
+        if (!hasDirMode && !hasFileMode) {
+            logger.error("Either inputDir/outputDir OR inputFile/outputFile must be provided");
+            formatter.printHelp("JSON2Turtle", options);
+            System.exit(1);
+            return;
+        }
+        
+        if (hasDirMode && hasFileMode) {
+            logger.error("Cannot use both directory mode (inputDir/outputDir) and file mode (inputFile/outputFile) simultaneously");
+            formatter.printHelp("JSON2Turtle", options);
+            System.exit(1);
+            return;
+        }
+        
+        if (hasDirMode && (inputDirectory == null || outputDir == null)) {
+            logger.error("Both inputDir and outputDir must be provided for directory mode");
+            formatter.printHelp("JSON2Turtle", options);
+            System.exit(1);
+            return;
+        }
+        
+        if (hasFileMode && (inputFile == null || outputFile == null)) {
+            logger.error("Both inputFile and outputFile must be provided for file mode");
+            formatter.printHelp("JSON2Turtle", options);
+            System.exit(1);
+            return;
+        }
 
         long startTime = System.currentTimeMillis();
         try {
-            processMappings(inputDirectory, outputDir);
+            if (hasDirMode) {
+                logger.info("Input Directory: {}", inputDirectory);
+                logger.info("Output Directory: {}", outputDir);
+                processMappings(inputDirectory, outputDir);
+            } else {
+                logger.info("Input File: {}", inputFile);
+                logger.info("Output File: {}", outputFile);
+                generateTTLfromJSON(Paths.get(inputFile), Paths.get(outputFile));
+            }
         } catch (Exception e) {
             logger.error("Error processing mappings", e);
+            System.exit(0);
         }
         long endTime = System.currentTimeMillis();
         logger.info("Processing took {} s", (endTime - startTime)/1000);
     }
 
-    private static void processMappings(String inputDirectory, String outputDir) throws IOException {
+    /**
+     * Converts a single JSON file to a TTL (Turtle) file.
+     * Reads mappings from the JSON file and writes valid triples to the TTL file.
+     * 
+     * @param jsonFile Path to the input JSON file
+     * @param outputFile Path to the output TTL file
+     * @throws IOException if an I/O error occurs
+     */
+    private static void generateTTLfromJSON(Path jsonFile, Path outputFile) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         
+        logger.info("Processing file: {}", jsonFile);
+        try (BufferedWriter writer = Files.newBufferedWriter(outputFile)) {
+            JsonNode rootNode = objectMapper.readTree(jsonFile.toFile());
+            if (rootNode.isArray()) {
+                for (JsonNode mappingNode : rootNode) {
+                    String predicateIRI = mappingNode.get(MappingEnum.PREDICATE_IRI.getField()).asText();
+                    if (isApplicablePredicate(predicateIRI)) {
+                        String subjectIRI = mappingNode.get(MappingEnum.SUBJECT_IRI.getField()).asText();
+                        String objectIRI = mappingNode.get(MappingEnum.OBJECT_IRI.getField()).asText();
+                        if (areURIsValid(subjectIRI, predicateIRI, objectIRI))
+                            writer.write(String.format("<%s> <%s> <%s> .\n", subjectIRI, predicateIRI, objectIRI));
+                    }
+                }
+            }
+        }
+    }
+
+    private static void processMappings(String inputDirectory, String outputDirectory) throws IOException {
         try (Stream<Path> paths = Files.walk(Paths.get(inputDirectory))) {
             List<Path> jsonFiles = paths.filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".json"))
                     .collect(Collectors.toList());
 
             for (Path jsonFile : jsonFiles) {
-                logger.info("Processing file: {}", jsonFile);
-                String outputFile = outputDir + File.separator + jsonFile.getFileName().toString().replace(".json", ".ttl");
-                try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(outputFile))) {
-                    try {
-                        JsonNode rootNode = objectMapper.readTree(jsonFile.toFile());
-                        if (rootNode.isArray()) {
-                            for (JsonNode mappingNode : rootNode) {
-                                String predicateIRI = mappingNode.get(MappingEnum.PREDICATE_IRI.getField()).asText();
-                                if (isApplicablePredicate(predicateIRI)) {
-                                    String subjectIRI = mappingNode.get(MappingEnum.SUBJECT_IRI.getField()).asText();
-                                    String objectIRI = mappingNode.get(MappingEnum.OBJECT_IRI.getField()).asText();
-                                    if (areURIsValid(subjectIRI, predicateIRI, objectIRI))
-                                        writer.write(String.format("<%s> <%s> <%s> .\n", subjectIRI, predicateIRI, objectIRI));
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        logger.error("Error processing file: {}", jsonFile, e);
-                    }
+                String outputFile = outputDirectory + File.separator + jsonFile.getFileName().toString().replace(".json", ".ttl");
+                try {
+                    generateTTLfromJSON(jsonFile, Paths.get(outputFile));
+                } catch (Exception e) {
+                    logger.error("Error processing file: {}", jsonFile, e);
                 }
             }
         } catch (Throwable t) {
             logger.error("Error processing directory: {}", inputDirectory, t);
         }
-
     }
 
     private static boolean areURIsValid(String subjectIRI, String predicateIRI, String objectIRI) {
@@ -118,12 +169,20 @@ public class JSON2Turtle {
         Options options = new Options();
 
         Option inputDirectory = new Option("i", "inputDir", true, "Input directory containing JSON files");
-        inputDirectory.setRequired(true);
+        inputDirectory.setRequired(false);
         options.addOption(inputDirectory);
 
         Option outputDirectory = new Option("o", "outputDir", true, "Output directory for turtle files");
-        outputDirectory.setRequired(true);
+        outputDirectory.setRequired(false);
         options.addOption(outputDirectory);
+
+        Option inputFile = new Option("f", "inputFile", true, "Input JSON file");
+        inputFile.setRequired(false);
+        options.addOption(inputFile);
+
+        Option outputFile = new Option("p", "outputFile", true, "Output TTL file");
+        outputFile.setRequired(false);
+        options.addOption(outputFile);        
 
         return options;
     }

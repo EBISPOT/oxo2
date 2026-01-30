@@ -1,6 +1,7 @@
 package uk.ac.ebi.spot.oxo.sssom2json;
 
 import static uk.ac.ebi.spot.oxo.sssom2json.parser.TSV2JSON.processDirectory;
+import static uk.ac.ebi.spot.oxo.sssom2json.parser.TSV2JSON.processFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -102,17 +103,65 @@ public class SSSOM2JSON {
             return;
         }
 
+        String inputFile = cmd.getOptionValue("inputFile");
         String inputDirectory = cmd.getOptionValue("inputDir");
         String outputDirectory = cmd.getOptionValue("outputDir");
 
-        logger.info("Input Directory: {}", inputDirectory);
+        if (inputFile != null && inputDirectory != null) {
+            logger.error("Cannot specify both inputFile and inputDir");
+            formatter.printHelp("SSSOM2JSON", options);
+            System.exit(1);
+            return;
+        }
+
+        if (inputFile == null && inputDirectory == null) {
+            logger.error("Must specify either inputFile or inputDir");
+            formatter.printHelp("SSSOM2JSON", options);
+            System.exit(1);
+            return;
+        }
+
         logger.info("Output Directory: {}", outputDirectory);
 
         long startTime = System.currentTimeMillis();
-        processMappingSets(inputDirectory, outputDirectory);
+        if (inputFile != null) {
+            logger.info("Input File: {}", inputFile);
+            processSingleFile(inputFile, outputDirectory);
+        } else {
+            logger.info("Input Directory: {}", inputDirectory);
+            processMappingSets(inputDirectory, outputDirectory);
+        }
         long endTime = System.currentTimeMillis();
 
-        logger.info("Time taken to process SSSOM files: {} s", (endTime - startTime)/1000);
+        logger.info("Time taken to process SSSOM files: {} s", (endTime - startTime) / 1000);
+    }
+
+    private static void processSingleFile(String inputFile, String outputDirectory) throws IOException {
+        File tsvFile = new File(inputFile);
+        if (!tsvFile.exists() || !tsvFile.isFile()) {
+            throw new IOException("Input file does not exist or is not a file: " + inputFile);
+        }
+
+        String mappingSetDirectory = outputDirectory + File.separator + "mappingSet";
+        String mappingDirectory = outputDirectory + File.separator + "mapping";
+
+        try {
+            Files.createDirectories(Paths.get(mappingSetDirectory));
+            Files.createDirectories(Paths.get(mappingDirectory));
+        } catch (IOException e) {
+            logger.error("Error creating output directories {} and {}", mappingSetDirectory, mappingDirectory, e);
+            throw new IOException("Error creating output directories", e);
+        }
+
+        try {
+            processFile(tsvFile, mappingSetDirectory, mappingDirectory);
+        } catch (Throwable t) {
+            logger.error("Error processing file {}", tsvFile, t);
+        }
+
+        long usedMemoryBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        double usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0);
+        logger.info("Memory used: {} MB", usedMemoryMB);
     }
 
     private static void processMappingSets(String inputDirectory, String outputDirectory) throws IOException {
@@ -163,8 +212,12 @@ public class SSSOM2JSON {
     private static Options getOptions() {
         Options options = new Options();
 
+        Option inputFile = new Option("f", "inputFile", true, "Input TSV file to process");
+        inputFile.setRequired(false);
+        options.addOption(inputFile);
+
         Option inputDirectory = new Option("i", "inputDir", true, "Input directory containing SSSOM files");
-        inputDirectory.setRequired(true);
+        inputDirectory.setRequired(false);
         options.addOption(inputDirectory);
 
         Option outputDirectory = new Option("o", "outputDir", true, "Output directory for JSON files");

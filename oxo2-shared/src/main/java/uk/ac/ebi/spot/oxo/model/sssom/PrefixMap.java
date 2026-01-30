@@ -5,9 +5,12 @@ import java.util.Map;
 
 public class PrefixMap {
     private static Map<String, String> prefixMap = new HashMap<>();
-    private static Map<String, String> sssomDefinedPrefixMap = setPredefinedPrefixes();
+    
+    static {
+        setPredefinedPrefixes();
+    }
 
-    public void add(Prefix prefix) {
+    public void add(Prefix prefix) {   
         prefixMap.put(prefix.getName(), prefix.getUrl());
     }
 
@@ -25,6 +28,10 @@ public class PrefixMap {
         prefixMap.put("sssom", "https://w3id.org/sssom/");
         prefixMap.put("semapv", "https://w3id.org/semapv/vocab/");
         prefixMap.put("linkml", "https://w3id.org/linkml/");
+        return prefixMap;
+    }
+
+    public static Map<String, String> getPrefixMap() {
         return prefixMap;
     }
 

@@ -125,6 +125,56 @@ public class TSV2JSON {
     }
 
 
+    /**
+     * Process a single TSV file. The file's directory is used to find external metadata.
+     * 
+     * @param tsvFile The TSV file to process
+     * @param mappingSetOutputDirectory Output directory for mapping set JSON files
+     * @param mappingsOutputDirectory Output directory for mapping JSON files
+     */
+    public static void processFile(File tsvFile, String mappingSetOutputDirectory,
+                                   String mappingsOutputDirectory) {
+        if (!tsvFile.exists() || !tsvFile.isFile()) {
+            logger.error("TSV file does not exist or is not a file: {}", tsvFile);
+            return;
+        }
+
+        if (!tsvFile.toString().endsWith(".tsv")) {
+            logger.error("File is not a TSV file: {}", tsvFile);
+            return;
+        }
+
+        String directory = tsvFile.getParent();
+        if (directory == null) {
+            directory = ".";
+        }
+
+        Map<String, MappingSet.Builder> filenameToExternalMetadataMap = readExternalMetadata(directory);
+
+        logger.info("Processing file: {}", tsvFile);
+        String filename = getFilenameWithoutExtension(tsvFile.toPath());
+        Optional<MappingSet.Builder> externalMappingSetBuilderOptional = Optional.empty();
+        if (filenameToExternalMetadataMap.containsKey(filename)) {
+            MappingSet.Builder externalMappingBuilderSet = filenameToExternalMetadataMap.get(filename);
+            externalMappingSetBuilderOptional = Optional.of(externalMappingBuilderSet);
+        }
+
+        long startReadTime = System.currentTimeMillis();
+        Optional<MappingSet> mappingSetOptional = readTSVFile(tsvFile, externalMappingSetBuilderOptional);
+        long endReadTime = System.currentTimeMillis();
+        logger.info("Time taken to read TSV file: {} s", (endReadTime - startReadTime) / 1000);
+
+        if (mappingSetOptional.isPresent() && mappingSetOptional.get().mappings().size() > 0) {
+            MappingSet mappingSet = mappingSetOptional.get();
+            writeJSONFile(mappingSet, mappingSetOutputDirectory, mappingsOutputDirectory);
+            long endWriteTime = System.currentTimeMillis();
+            logger.info("Time taken to write JSON file: {} s", (endWriteTime - endReadTime) / 1000);
+        } else {
+            logger.warn("No mappings found in file: {}", tsvFile);
+        }
+    }
+    
+
     private static void writeJSONFile(MappingSet mappingSet, String mappingSetOutputDirectory,
                                       String mappingsOutputDirectory) {
 

@@ -12,12 +12,15 @@ public class CurieMap extends SSSOMDataType<Map<String, String>> {
 
     public CurieMap(String curieMapAsString) {
         super(curieMapAsString);
+        addCurieMapToMap(PrefixMap.getPrefixMap());   
     }
 
     @Override
     protected Optional<Map<String, String>> parseData(String data) {
         if (data != null && !data.isBlank()) {
-            return Optional.of(convertStringToMap(data));
+            Map<String, String> map = convertStringToMap(data);
+            map.putAll(PrefixMap.getPrefixMap());
+            return Optional.of(map);
         }
         return Optional.empty();
     }

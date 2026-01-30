@@ -15,7 +15,7 @@ public class Uri extends SSSOMDataType<URI> implements Comparable<Uri> {
 
     private static final Logger logger = LoggerFactory.getLogger(Uri.class);
 
-    private static Map<String, URI> stringToUriMap = new HashMap();
+    private static Map<String, URI> stringToUriMap = new HashMap<String, URI> ();
 
     public Uri(String uri) {
         super(uri);

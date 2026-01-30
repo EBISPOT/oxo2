@@ -16,13 +16,25 @@ echo OXO2_CONFIG=$OXO2_CONFIG
 # elapsed=$((end_time - start_time))
 # echo "Download took: ${elapsed} seconds"
 
-start_time=$(date +%s)
-echo  "###################"  sssom2json...
-mkdir -p $OXO2_DATA/sssom-as-json
-$SCRIPT_DIR/sssom2json.sh $OXO2_DATA/sssom $OXO2_DATA/sssom-as-json
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "SSSOM2JSON took: ${elapsed} seconds"
+mkdir -p $OXO2_DATA/nextflow_work
+
+if command -v nextflow &> /dev/null; then
+    echo "Using Nextflow for parallel processing of SSSOM to JSON conversion"
+
+    start_time=$(date +%s)
+    nextflow -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/sssom2json.nf 
+
+    end_time=$(date +%s)
+    elapsed=$((end_time - start_time))
+    echo "Making inferences using Nextflow Parallel Processing: Writing JSON took: ${elapsed} seconds"
+else
+    echo "Nextflow not found, using Sequential Processing of SSSOM to JSON conversion"
+    start_time=$(date +%s)
+    $SCRIPT_DIR/sssom2json.sh $OXO2_DATA/sssom $OXO2_DATA/sssom-as-json
+    end_time=$(date +%s)
+    elapsed=$((end_time - start_time))
+    echo "Using Sequential Processing: Writing JSON took: ${elapsed} seconds"
+fi
 
 
 start_time=$(date +%s)
@@ -39,43 +51,38 @@ echo Start solr ...
 mkdir -p $OXO2_DATA/tmp
 $SOLR_SCRIPT/solr start --user-managed -Djava.io.tmpdir=$OXO2_DATA/tmp
 
+
 sleep 10
 start_time=$(date +%s)
 echo  "###################"  json2solr mappings ...
 $SCRIPT_DIR/json2solr.sh $OXO2_DATA/sssom-as-json/mapping http://localhost:8983/solr/oxo2-mappings
-echo json2solr mappingSets
+echo  "###################"  json2solr mappingSets ...
 $SCRIPT_DIR/json2solr.sh $OXO2_DATA/sssom-as-json/mappingSet http://localhost:8983/solr/oxo2-mappingsets
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Writing to Solr took: ${elapsed} seconds"
-sleep 10
+sleep 20
 
-OXO2_INFERENCES=$OXO2_DATA/inferences
+
 mkdir -p $OXO2_INFERENCES/solr
 
-# # Write out inferred mappings with their explanations.
-start_time=$(date +%s)
-echo  "###################"  Create inferred mappings with their explanations ...
-$SCRIPT_DIR/oxo2-json2inferences/explanations2json.sh $OXO2_INFERENCES/inferenceChains \
-$OXO2_INFERENCES/solr
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Interpreting explanations took: ${elapsed} seconds"
-sleep 20
+if command -v nextflow &> /dev/null; then                                                                                       
+    echo "Using Nextflow for parallel explanations2json"                                                                        
+    start_time=$(date +%s)                                                                                                      
+    nextflow -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf                  
+    end_time=$(date +%s)                                                                                                        
+    elapsed=$((end_time - start_time))                                                                                          
+    echo "Using Nextflow Parallel Processing: explanations2json took: ${elapsed} seconds"                                       
+else                                                                                                                            
+    echo "Nextflow not found, using sequential processing"                                                                      
+    $SCRIPT_DIR/oxo2-json2inferences/explanations2json.sh "$OXO2_INFERENCES/inferenceChains"                                    
+"$OXO2_INFERENCES/solr"                                                                                           
+fi
 
-# # Split the large JSON file into smaller chunks
-# start_time=$(date +%s)
-# echo  "###################"  Splitting large JSON file into chunks ...
-# mkdir -p $OXO2_INFERENCES/solr/chunks
-# # Split the file (default chunk size: 10000, can be adjusted)
-# $SCRIPT_DIR/splitJsonForSolr.sh $OXO2_INFERENCES/solr/inferred-mappings.json $OXO2_INFERENCES/solr/chunks 10000
-# end_time=$(date +%s)
-# elapsed=$((end_time - start_time))
-# echo "Splitting JSON file took: ${elapsed} seconds"
 
-echo  "###################"  json2solr inferred mappings ...
-$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
-sleep 20
+ echo  "###################"  json2solr inferred mappings ...
+ $SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
+ sleep 20
 
 
 echo  "################### Stopping solr ..."

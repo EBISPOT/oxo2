@@ -60,7 +60,7 @@ Ensure the following software is installed and available on the user path.
 4. Solr 9.x - Ensure SOLR_SCRIPT is set to /bin dir SOLR_HOME is set to /server/solr dir of your Solr installation.
 5. Nemo - download the latest version from [Nemo latest](https://github.com/knowsys/nemo/releases/latest) or build from source
  following instructions [here](https://github.com/knowsys/nemo?tab=readme-ov-file#installation). To check your Nemo installation, run `nmo --help`. Ensure that `nmo` is available on 
-the path.  
+the path. Nemo is the rules engine used in OxO2. 
 
 ### Environment variables
 Define the following environment variables:

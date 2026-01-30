@@ -23,7 +23,7 @@ public class DataloadSolr {
 
     private int connectionTimeoutMillis = 10000;
 
-    private int socketTimeoutMillis = 60000;
+    private int socketTimeoutMillis = 10000;
 
 
     private static final Logger logger = LoggerFactory.getLogger(DataloadSolr.class);
@@ -33,6 +33,7 @@ public class DataloadSolr {
         this.solrMappingClient = new  HttpJdkSolrClient.Builder(solrUrl + "/oxo2-mappings")
                 .withConnectionTimeout(connectionTimeoutMillis, MILLISECONDS)
                 .withIdleTimeout(socketTimeoutMillis, MILLISECONDS)
+                .useHttp1_1(true)
                 .build();
     }
 

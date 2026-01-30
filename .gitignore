@@ -37,3 +37,9 @@ output/
 /solr-data/
 
 oxo2-frontend/dist/
+.metadata/
+logs.txt
+metals*
+.metals/*
+.nextflow*
+
