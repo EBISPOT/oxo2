@@ -1,9 +1,13 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum ChainRulesEnum {
@@ -87,6 +91,8 @@ public enum ChainRulesEnum {
     private final String abbreviatedRule;
     private final boolean increasesDistance;
 
+    private static final Logger logger = LoggerFactory.getLogger(ChainRulesEnum.class);
+
     ChainRulesEnum(String name, String longFormRule, String abbreviatedRule, boolean increasesDistance) {
         this.name = name;
         this.longFormRule = longFormRule;
@@ -116,5 +122,16 @@ public enum ChainRulesEnum {
 
     public boolean increasesDistance() {
         return increasesDistance;
+    }
+
+    @JsonCreator
+    public static ChainRulesEnum fromJson(@JsonProperty(CHAIN_RULE_NAME) String name) {
+        logger.debug("CHAIN_RULE_NAME = {}", name);
+        for (ChainRulesEnum rule : ChainRulesEnum.values()) {
+            if (rule.getName().equals(name)) {
+                return rule;
+            }
+        }
+        throw new IllegalArgumentException("Unknown ChainRulesEnum: " + name);
     }
 }

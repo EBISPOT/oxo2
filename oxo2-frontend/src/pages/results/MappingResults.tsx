@@ -191,7 +191,7 @@ function MappingResults() {
             : undefined,
         paginationDisplayMode: 'pages',
         muiPaginationProps: {
-            rowsPerPageOptions: [10, 20, 30, 50],
+            rowsPerPageOptions: [5, 10, 20, 30, 50],
             boundaryCount: 1,
             color: 'primary',
             size: 'medium',

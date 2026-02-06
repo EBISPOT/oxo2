@@ -51,16 +51,17 @@ public class Inferences2Trace {
         Model inferences = FileManager.get().loadModel(inferredTTL);
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
-            String result = inferences.listStatements()
+                 String result = inferences.listStatements()
                     .toList()
                     .stream()
+                    .filter(statement -> statement.getSubject().toString().compareTo(statement.getObject().toString()) != 0)
                     .map(statement -> {
                         String subject = statement.getSubject().toString();
                         String predicate = statement.getPredicate().toString();
                         String object = statement.getObject().toString();
                         return String.format("mapping(<%s>,<%s>,<%s>)", subject, predicate, object);
                     })
-                    .collect(Collectors.joining(";"));
+                    .collect(Collectors.joining(";"));                    
 
             writer.write(result);
         }

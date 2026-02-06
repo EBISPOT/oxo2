@@ -260,6 +260,15 @@ public class ExplainInferredMappings {
                     logger.warn("Skipping mapping with null IRI values: {}", inferredMapping);
                     continue;
                 }
+                if (inferredMapping.isMappingToSelf()) {
+                    logger.debug("Skipping self-mapping: {}", inferredMapping);
+                    continue;
+                }
+                if (inferredMapping.getChainRuleApplications().isPresent() && 
+                    inferredMapping.getChainRuleApplications().get().getPremises().size() <= 1) {
+                    logger.debug("Skipping mapping with no premises - hence it is an asserted mapping: {}", inferredMapping);
+                    continue;
+                }
 
                 EntityDetails subjectDetails = solrClient.queryEntityDetailsForIRI(SUBJECT_IRI,
                         inferredMapping.getSubjectIRI().asStringIRI(), SUBJECT_ID, SUBJECT_LABEL);

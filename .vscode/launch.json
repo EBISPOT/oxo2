@@ -1,0 +1,98 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "OxO2Backend",
+            "request": "launch",
+            "mainClass": "uk.ac.ebi.spot.oxo.backend.OxO2Backend",
+            "projectName": "oxo2-backend",
+            "cwd": "/home/henriette007/ebi-dev/oxo2/oxo2",
+            "vmArgs": "-Dsolr.url=http://localhost:8983/solr"            
+        },
+        {
+            "type": "java",
+            "name": "DownloadMappings",
+            "request": "launch",
+            "mainClass": "uk.ac.ebi.spot.oxo.downloader.DownloadMappings",
+            "projectName": "oxo2-downloader",
+            "args": [
+                "--config", "/home/henriette007/ebi-dev/oxo2/oxo2/oxo-config.json", 
+                "--download-dir", "/home/henriette007/ebi-dev/oxo2/oxo2/data/sssom",
+                "--threads", "4"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "ExplainInferredMappings",
+            "request": "launch",
+            "mainClass": "uk.ac.ebi.spot.oxo.inferences.nemo.ExplainInferredMappings",
+            "projectName": "oxo2-json2inferences",
+            "args": [ 
+                "-i", "/home/henriette007/ebi-dev/oxo2/oxo2/data/inferences/inferenceChains/matches-all.sssom.tsv-chains.json",
+                "-f", "/home/henriette007/ebi-dev/oxo2/oxo2/data/inferences/solr/matches-all.sssom.tsv-explained.json"
+            ]               
+        },
+        {
+            "type": "java",
+            "name": "Inferences2Trace",
+            "request": "launch",
+            "mainClass": "uk.ac.ebi.spot.oxo.inferences.nemo.Inferences2Trace",
+            "projectName": "oxo2-json2inferences",
+            "args": [ 
+                "-i", "/home/henriette007/ebi-dev/oxo2/oxo2/data/assertedMappings/matches-all.sssom.tsv.ttl",
+                "-o", "/home/henriette007/ebi-dev/oxo2/oxo2/data/inferences/inferencesToTrace/matches-all.sssom.tsv.txt"
+            ]            
+        },
+        {
+            "type": "java",
+            "name": "JSON2Turtle",
+            "request": "launch",
+            "mainClass": "uk.ac.ebi.spot.oxo.inferences.nemo.JSON2Turtle",
+            "projectName": "oxo2-json2inferences",
+            "args": [ 
+                "--inputDir", "/home/henriette007/ebi-dev/oxo2/oxo2/data/sssom-as-json",
+                "--outputDir", "/home/henriette007/ebi-dev/oxo2/oxo2/data/assertedMappings"
+            ]              
+        },
+        {
+            "type": "java",
+            "name": "MainDispatcher",
+            "request": "launch",
+            "mainClass": "uk.ac.ebi.spot.oxo.inferences.nemo.MainDispatcher",
+            "projectName": "oxo2-json2inferences"
+        },
+        {
+            "type": "java",
+            "name": "SSSOM2JSON",
+            "request": "launch",
+            "mainClass": "uk.ac.ebi.spot.oxo.sssom2json.SSSOM2JSON",
+            "projectName": "oxo2-sssom2json",
+            "args": [ 
+                "--inputDir", "/home/henriette007/ebi-dev/oxo2/oxo2/data/sssom",
+                "--outputDir", "/home/henriette007/ebi-dev/oxo2/oxo2/data/sssom-as-json"
+            ]            
+        },
+        {
+            "type": "java",
+            "name": "SSSOM2JSON Single File",
+            "request": "launch",
+            "mainClass": "uk.ac.ebi.spot.oxo.sssom2json.SSSOM2JSON",
+            "projectName": "oxo2-sssom2json",
+            "args": [
+                "--inputFile", "/home/henriette007/ebi-dev/oxo2/oxo2/data/sssom/mondo_diseases/mp_hp_example.sssom.tsv",
+                "--outputDir", "/home/henriette007/ebi-dev/oxo2/oxo2/data/sssom-as-json"
+            ]
+        }
+
+    ]
+}

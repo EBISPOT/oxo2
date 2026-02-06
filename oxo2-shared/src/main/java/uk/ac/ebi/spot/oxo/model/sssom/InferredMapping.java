@@ -184,6 +184,7 @@ public class InferredMapping {
         return result;
     }
 
+ 
     public InferredMapping populateFromMapping(Mapping mapping) {
         mapping.mappingTool().ifPresent(this::setMappingTool);
         mapping.mappingJustification().ifPresent(this::setMappingJustification);
