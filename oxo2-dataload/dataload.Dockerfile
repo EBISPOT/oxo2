@@ -17,7 +17,15 @@ RUN cd oxo2-dataload \
 
 FROM eclipse-temurin:17
 
-RUN addgroup --system oxo && adduser --system --ingroup oxo oxo
+RUN addgroup --system oxo && adduser --system --ingroup oxo --home /home/oxo oxo \
+    && mkdir -p /home/oxo \
+    && chown -R oxo:oxo /home/oxo
+
+RUN mkdir -p /opt/nextflow  \
+    && curl -fsSL https://get.nextflow.io | bash \
+    && mv nextflow /opt/nextflow \
+    && chmod +x /opt/nextflow/nextflow \
+    && chown -R oxo:oxo /opt/nextflow
 
 RUN mkdir -p /opt/nemo \
     && curl -L https://github.com/knowsys/nemo/releases/download/v0.9.1/nemo_v0.9.1_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf - \
@@ -27,7 +35,7 @@ RUN mkdir -p /opt/solr  \
     && curl -L https://archive.apache.org/dist/solr/solr/9.9.0/solr-9.9.0.tgz | tar --strip-components=1 -C /opt/solr -xzf - \
     && rm -rf /opt/solr/server/solr/* \
     && chown -R oxo:oxo /opt/solr
-
+  
 
 RUN mkdir -p /mnt \
     && mkdir -p /mnt/oxo \
@@ -35,34 +43,44 @@ RUN mkdir -p /mnt \
     && mkdir -p /mnt/oxo/logs \
     && chown -R oxo:oxo /mnt/oxo
 
-ENV PATH="${PATH}:/opt/nemo:/opt/solr" \
+ENV PATH="${PATH}:/opt/nextflow:/opt/nemo:/opt/solr" \
+    HOME="/home/oxo" \
     OXO2_DATA="/mnt/oxo/data" \
     SOLR_HOME="/opt/solr/server/solr" \
     SOLR_SCRIPT="/opt/solr/bin"
 
 
-RUN apt-get update && \
-    apt-get install -y jq && \
-    rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt/oxo
 
 COPY     ./oxo2-dataload/oxo2-json2inferences/chain-rules.rls \
          ./oxo2-dataload/oxo2-json2inferences/explanations2json.sh \
+         ./oxo2-dataload/oxo2-json2inferences/explanations2json.nf \
+         ./oxo2-dataload/oxo2-json2inferences/explanations2jsonNextflow.sh \
          ./oxo2-dataload/oxo2-json2inferences/inferences2trace.sh \
+         ./oxo2-dataload/oxo2-json2inferences/inferMappings.nf \
          ./oxo2-dataload/oxo2-json2inferences/json2ttl.sh \
+         ./oxo2-dataload/oxo2-json2inferences/json2ttl.nf \
+         ./oxo2-dataload/oxo2-json2inferences/json2ttlNextflow.sh \
+         ./oxo2-dataload/oxo2-json2inferences/nemoInferMappingsNextflow.sh \
+         ./oxo2-dataload/oxo2-json2inferences/nemoExplainMappingsNextflow.sh \
          /opt/oxo/oxo2-dataload/oxo2-json2inferences/
 
 COPY     ./oxo2-dataload/solr-config/ \
          /opt/oxo/oxo2-dataload/solr-config/
 
+COPY     ./oxo2-dataload/nextflow/nextflow.config \         
+         /opt/oxo/oxo2-dataload/nextflow/
+
 COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/downloadMappings.sh \
          ./oxo2-dataload/determineInferencesAndExplanations.sh \
+         ./oxo2-dataload/determineInferencesAndExplanations.nf \
          ./oxo2-dataload/json2solr.sh \
          ./oxo2-dataload/loadData.sh \
          ./oxo2-dataload/sssom2json.sh \
-         ./oxo2-dataload/splitJsonForSolr.sh \
+         ./oxo2-dataload/sssom2json.nf \
+         ./oxo2-dataload/sssom2jsonNextflow.sh \
          /opt/oxo/oxo2-dataload/
 
 COPY --from=builder \

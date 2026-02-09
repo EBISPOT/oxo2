@@ -6,15 +6,18 @@ echo SCRIPT_DIR=$SCRIPT_DIR
 echo OXO2_DATA=$OXO2_DATA
 echo OXO2_CONFIG=$OXO2_CONFIG
 
-# rm -R $OXO2_DATA/*
+OXO2_INFERENCES=$OXO2_DATA/inferences
+export OXO2_INFERENCES
+rm -R $OXO2_DATA/*
 
-# start_time=$(date +%s)
-# echo "###################" downloadMappings...
-# mkdir -p $OXO2_DATA/sssom
-# $SCRIPT_DIR/downloadMappings.sh $OXO2_CONFIG $OXO2_DATA/sssom
-# end_time=$(date +%s)
-# elapsed=$((end_time - start_time))
-# echo "Download took: ${elapsed} seconds"
+
+start_time=$(date +%s)
+echo "###################" downloadMappings...
+mkdir -p $OXO2_DATA/sssom
+$SCRIPT_DIR/downloadMappings.sh $OXO2_CONFIG $OXO2_DATA/sssom
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+echo "Download took: ${elapsed} seconds"
 
 mkdir -p $OXO2_DATA/nextflow_work
 

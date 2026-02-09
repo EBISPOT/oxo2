@@ -2,6 +2,7 @@
 
 OXO2_INFERENCES=$OXO2_DATA/inferences
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export SCRIPT_DIR
 
 echo OXO2_INFERENCES=$OXO2_INFERENCES
 echo SCRIPT_DIR=$SCRIPT_DIR

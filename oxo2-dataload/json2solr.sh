@@ -11,6 +11,12 @@ fi
 DIRECTORY=$1
 echo "Traversing directory $DIRECTORY..."
 
+# Check if directory exists
+if [ ! -d "$DIRECTORY" ]; then
+    echo "Directory $DIRECTORY does not exist. Skipping."
+    exit 0
+fi
+
 # Solr URL
 SOLR_URL=$2
 echo "Solr URL: $SOLR_URL"
