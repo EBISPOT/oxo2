@@ -47,7 +47,9 @@ ENV PATH="${PATH}:/opt/nextflow:/opt/nemo:/opt/solr" \
     HOME="/home/oxo" \
     OXO2_DATA="/mnt/oxo/data" \
     SOLR_HOME="/opt/solr/server/solr" \
-    SOLR_SCRIPT="/opt/solr/bin"
+    SOLR_SCRIPT="/opt/solr/bin" \
+    NF_PROFILE="standard" \
+    NF_CONTAINER=""
 
 
 

@@ -50,11 +50,9 @@ process INFER_MAPPINGS {
     tag "Infer mappings: ${asserted_ttl.name}"
 
     cpus 1
-    memory '4 GB'
-    time '4h'
 
-    errorStrategy 'retry'
-    maxRetries 2
+//     errorStrategy 'retry'
+//     maxRetries 2
 
     publishDir "${params.inferred_mappings_dir}", pattern: "inferred/*.ttl", mode: 'copy', overwrite: true, saveAs: { filename -> file(filename).name }
 
