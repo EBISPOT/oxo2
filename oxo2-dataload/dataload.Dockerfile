@@ -85,7 +85,6 @@ COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/json2solr.sh \
          ./oxo2-dataload/loadData.sh \
          ./oxo2-dataload/loadData.nextflow \
-         ./oxo2-dataload/splitJsonForSolr.sh \
          ./oxo2-dataload/sssom2json.sh \
          ./oxo2-dataload/sssom2json.nf \
          ./oxo2-dataload/sssom2jsonNextflow.sh \
