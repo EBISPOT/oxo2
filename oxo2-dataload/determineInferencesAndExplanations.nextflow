@@ -1,0 +1,40 @@
+#!/bin/bash
+
+OXO2_INFERENCES=$OXO2_DATA/inferences
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export SCRIPT_DIR
+
+echo OXO2_INFERENCES=$OXO2_INFERENCES
+echo SCRIPT_DIR=$SCRIPT_DIR
+
+# Generate ttl from json files (parallel via Nextflow)
+mkdir -p $OXO2_DATA/assertedMappings
+
+start_time=$(date +%s)
+echo "Using Nextflow for parallel processing of JSON to TTL conversion"
+nextflow -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/oxo2-json2inferences/json2ttl.nf
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+echo "Nextflow Parallel Processing: Writing ttl took: ${elapsed} seconds"
+
+# Run nmo to get inferences for each asserted mapping file (parallel via Nextflow)
+echo "################### Running nmo to get initial inferences for each asserted mapping file"
+mkdir -p $OXO2_INFERENCES/inferredMappings
+
+start_time=$(date +%s)
+echo "Using Nextflow Parallel Processing to infer mappings"
+nextflow -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/oxo2-json2inferences/inferMappings.nf
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+echo "Nextflow Parallel Processing: Nemo inferencing took: ${elapsed} seconds"
+
+# Determine mappings for which we want explanations and get explanations (parallel via Nextflow)
+echo "################### Inferred mappings to inferences to trace and generate explanations as inference chains"
+mkdir -p $OXO2_INFERENCES/inferencesToTrace
+mkdir -p $OXO2_INFERENCES/inferenceChains
+
+start_time=$(date +%s)
+nextflow -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/determineInferencesAndExplanations.nf
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+echo "Nextflow Parallel Processing: Tracing inferences and their explanations: ${elapsed} seconds"

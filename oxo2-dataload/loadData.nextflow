@@ -10,6 +10,7 @@ OXO2_INFERENCES=$OXO2_DATA/inferences
 export OXO2_INFERENCES
 rm -R $OXO2_DATA/*
 
+mkdir -p $OXO2_DATA/nextflow_work
 
 start_time=$(date +%s)
 echo "###################" downloadMappings...
@@ -20,15 +21,16 @@ elapsed=$((end_time - start_time))
 echo "Download took: ${elapsed} seconds"
 
 start_time=$(date +%s)
-$SCRIPT_DIR/sssom2json.sh $OXO2_DATA/sssom $OXO2_DATA/sssom-as-json
+echo "Using Nextflow for parallel processing of SSSOM to JSON conversion"
+nextflow -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/sssom2json.nf
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
-echo "Writing JSON took: ${elapsed} seconds"
+echo "Nextflow Parallel Processing: Writing JSON took: ${elapsed} seconds"
 
 
 start_time=$(date +%s)
 echo  "###################"  makeInferences...
-$SCRIPT_DIR/determineInferencesAndExplanations.sh
+$SCRIPT_DIR/determineInferencesAndExplanations.nextflow
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Total inference process took: ${elapsed} seconds"
@@ -55,8 +57,12 @@ sleep 20
 
 mkdir -p $OXO2_INFERENCES/solr
 
-$SCRIPT_DIR/oxo2-json2inferences/explanations2json.sh "$OXO2_INFERENCES/inferenceChains" \
-    "$OXO2_INFERENCES/solr"
+start_time=$(date +%s)
+echo "Using Nextflow for parallel explanations2json"
+nextflow -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+echo "Nextflow Parallel Processing: explanations2json took: ${elapsed} seconds"
 
 
  echo  "###################"  json2solr inferred mappings ...

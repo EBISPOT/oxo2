@@ -58,26 +58,31 @@ COPY     ./oxo2-dataload/oxo2-json2inferences/chain-rules.rls \
          ./oxo2-dataload/oxo2-json2inferences/explanations2json.nf \
          ./oxo2-dataload/oxo2-json2inferences/explanations2jsonNextflow.sh \
          ./oxo2-dataload/oxo2-json2inferences/inferences2trace.sh \
+         ./oxo2-dataload/oxo2-json2inferences/inferMappings.sh \
          ./oxo2-dataload/oxo2-json2inferences/inferMappings.nf \
          ./oxo2-dataload/oxo2-json2inferences/json2ttl.sh \
          ./oxo2-dataload/oxo2-json2inferences/json2ttl.nf \
          ./oxo2-dataload/oxo2-json2inferences/json2ttlNextflow.sh \
          ./oxo2-dataload/oxo2-json2inferences/nemoInferMappingsNextflow.sh \
          ./oxo2-dataload/oxo2-json2inferences/nemoExplainMappingsNextflow.sh \
+         ./oxo2-dataload/oxo2-json2inferences/traceAndExplainMappings.sh \
          /opt/oxo/oxo2-dataload/oxo2-json2inferences/
 
 COPY     ./oxo2-dataload/solr-config/ \
          /opt/oxo/oxo2-dataload/solr-config/
 
-COPY     ./oxo2-dataload/nextflow/nextflow.config \         
+COPY     ./oxo2-dataload/nextflow/ \
          /opt/oxo/oxo2-dataload/nextflow/
 
 COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/downloadMappings.sh \
          ./oxo2-dataload/determineInferencesAndExplanations.sh \
+         ./oxo2-dataload/determineInferencesAndExplanations.nextflow \
          ./oxo2-dataload/determineInferencesAndExplanations.nf \
          ./oxo2-dataload/json2solr.sh \
          ./oxo2-dataload/loadData.sh \
+         ./oxo2-dataload/loadData.nextflow \
+         ./oxo2-dataload/splitJsonForSolr.sh \
          ./oxo2-dataload/sssom2json.sh \
          ./oxo2-dataload/sssom2json.nf \
          ./oxo2-dataload/sssom2jsonNextflow.sh \
@@ -106,5 +111,5 @@ USER oxo
 
 WORKDIR /opt/oxo/oxo2-dataload
 
-CMD ["sh", "-c", "./loadData.sh > /mnt/oxo/logs/dataload.logs"]
+CMD ["sh", "-c", "./loadData.nextflow > /mnt/oxo/logs/dataload.logs"]
 
