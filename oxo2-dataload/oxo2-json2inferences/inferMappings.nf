@@ -18,6 +18,15 @@ workflow {
 process INFER_MAPPINGS {
     tag "Infer mappings: ${ttl_file.name}"
     
+    // Resource allocation - nmo inference can be memory intensive
+    cpus 1
+    memory '4 GB'
+    time '4h'
+    
+    // Error handling - retry transient failures
+    errorStrategy 'retry'
+    maxRetries 2
+    
     publishDir "${params.output_dir}", mode: 'copy', overwrite: true
     
     input:

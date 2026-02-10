@@ -79,6 +79,7 @@ COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/determineInferencesAndExplanations.sh \
          ./oxo2-dataload/determineInferencesAndExplanations.nextflow \
          ./oxo2-dataload/determineInferencesAndExplanations.nf \
+         ./oxo2-dataload/inferAndExplainMappings.nf \
          ./oxo2-dataload/json2solr.sh \
          ./oxo2-dataload/loadData.sh \
          ./oxo2-dataload/loadData.nextflow \
