@@ -2,20 +2,41 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-NF_PROFILE="${NF_PROFILE:-standard}"
+# Auto-detect Slurm: if SLURM_JOB_ID is set, default to slurm profile
+if [ -n "$SLURM_JOB_ID" ]; then
+    NF_PROFILE="${NF_PROFILE:-slurm}"
+    NF_CONTAINER="${NF_CONTAINER:-docker://ghcr.io/ebispot/oxo2-dataload:dev}"
+else
+    NF_PROFILE="${NF_PROFILE:-standard}"
+fi
 export NF_PROFILE
+export NF_CONTAINER
+
+# Nextflow directories derived from NEXTFLOW_DIR
+: "${NEXTFLOW_DIR:?NEXTFLOW_DIR must be set}"
+NXF_WORK=$NEXTFLOW_DIR/NXF_WORK
+NXF_HOME=$NEXTFLOW_DIR/NXF_HOME
+NXF_TEMP=$NEXTFLOW_DIR/NXF_TEMP
+NXF_CACHE_DIR=$NEXTFLOW_DIR/NXF_CACHE_DIR
+NXF_SINGULARITY_CACHEDIR=${HPS_PATH:-$NEXTFLOW_DIR}/NXF_SINGULARITY_CACHEDIR
+NXF_LOGS=$NEXTFLOW_DIR/logs
+export NXF_WORK NXF_HOME NXF_TEMP NXF_CACHE_DIR NXF_SINGULARITY_CACHEDIR NXF_LOGS
 
 echo SCRIPT_DIR=$SCRIPT_DIR
 echo NF_PROFILE=$NF_PROFILE
+echo NF_CONTAINER=$NF_CONTAINER
 echo OXO2_DATA=$OXO2_DATA
 echo OXO2_CONFIG=$OXO2_CONFIG
+echo NEXTFLOW_DIR=$NEXTFLOW_DIR
+echo NXF_WORK=$NXF_WORK
+echo NXF_HOME=$NXF_HOME
+echo NXF_SINGULARITY_CACHEDIR=$NXF_SINGULARITY_CACHEDIR
 
 OXO2_INFERENCES=$OXO2_DATA/inferences
 export OXO2_INFERENCES
 rm -R $OXO2_DATA/*
 
-mkdir -p $OXO2_DATA/nextflow_work
-mkdir -p $OXO2_DATA/nextflow_logs
+mkdir -p $NXF_WORK $NXF_HOME $NXF_TEMP $NXF_CACHE_DIR $NXF_SINGULARITY_CACHEDIR $NXF_LOGS
 
 start_time=$(date +%s)
 echo "###################" downloadMappings...
@@ -27,7 +48,7 @@ echo "Download took: ${elapsed} seconds"
 
 start_time=$(date +%s)
 echo "Using Nextflow for parallel processing of SSSOM to JSON conversion"
-(cd $OXO2_DATA/nextflow_logs && nextflow -log $OXO2_DATA/nextflow_logs/.nextflow.log -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/sssom2json.nf -profile $NF_PROFILE)
+(cd $NXF_LOGS && nextflow -log $NXF_LOGS/.nextflow.log -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/sssom2json.nf -profile $NF_PROFILE)
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Nextflow Parallel Processing: Writing JSON took: ${elapsed} seconds"
@@ -64,7 +85,7 @@ mkdir -p $OXO2_INFERENCES/solr
 
 start_time=$(date +%s)
 echo "Using Nextflow for parallel explanations2json"
-(cd $OXO2_DATA/nextflow_logs && nextflow -log $OXO2_DATA/nextflow_logs/.nextflow.log -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf -profile $NF_PROFILE)
+(cd $NXF_LOGS && nextflow -log $NXF_LOGS/.nextflow.log -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf -profile $NF_PROFILE)
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Nextflow Parallel Processing: explanations2json took: ${elapsed} seconds"
