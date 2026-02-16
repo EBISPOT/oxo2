@@ -17,7 +17,7 @@ mkdir -p $OXO2_INFERENCES/inferenceChains
 # Per-file pipelining: each file flows through all stages independently.
 start_time=$(date +%s)
 echo "Using Nextflow combined pipeline for JSON→TTL, inference, tracing, and explanation"
-(cd $NXF_LOGS && nextflow -log $NXF_LOGS/.nextflow.log -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/inferAndExplainMappings.nf -profile ${NF_PROFILE:-standard})
+(nextflow -log $NXF_LOGS/.nextflow.log -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/inferAndExplainMappings.nf -profile ${NF_PROFILE:-standard})
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Nextflow Combined Pipeline: Inferences and explanations took: ${elapsed} seconds"

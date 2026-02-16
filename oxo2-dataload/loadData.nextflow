@@ -48,12 +48,12 @@ echo "Download took: ${elapsed} seconds"
 
 start_time=$(date +%s)
 echo "Using Nextflow for parallel processing of SSSOM to JSON conversion"
-(cd $NXF_LOGS && nextflow -log $NXF_LOGS/.nextflow.log -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/sssom2json.nf -profile $NF_PROFILE)
+(nextflow -log $NXF_LOGS/.nextflow.log -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/sssom2json.nf -profile $NF_PROFILE)
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Nextflow Parallel Processing: Writing JSON took: ${elapsed} seconds"
 
-
+#
 start_time=$(date +%s)
 echo  "###################"  makeInferences...
 $SCRIPT_DIR/determineInferencesAndExplanations.nextflow
