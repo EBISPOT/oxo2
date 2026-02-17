@@ -1,0 +1,69 @@
+#!/bin/bash
+# Login-node entry point for OXO2 HPC dataload.
+# Validates environment and submits a single Slurm job — no computation on the login node.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+ NFS_PATH="/nfs/production/parkinso/spot/oxo2/dev"
+ HPS_PATH="/hps/nobackup/parkinso/spot/oxo2/dev"
+ NEXTFLOW_DIR="$HPS_PATH/nextflow"
+ NF_CONTAINER="docker://ghcr.io/ebispot/oxo2-nextflow:dev"
+ OXO2_CONFIG="$NFS_PATH/configs/oxo-config.json"
+ OXO2_DATA="$HPS_PATH/data"
+ SOLR_HOME="$HPS_PATH/solr-data"
+
+# --- Validate required environment variables ---
+missing=()
+for var in OXO2_DATA OXO2_CONFIG NEXTFLOW_DIR SOLR_HOME NF_CONTAINER; do
+    if [ -z "${!var:-}" ]; then
+        missing+=("$var")
+    fi
+done
+
+if [ ${#missing[@]} -gt 0 ]; then
+    echo "ERROR: Required environment variables not set: ${missing[*]}" >&2
+    echo "" >&2
+    echo "Usage:" >&2
+    echo "  export OXO2_DATA=/hpc/shared/oxo2/data" >&2
+    echo "  export OXO2_CONFIG=/hpc/shared/oxo2/config.json" >&2
+    echo "  export NEXTFLOW_DIR=/hpc/shared/oxo2/nextflow" >&2
+    echo "  export SOLR_HOME=/hpc/shared/oxo2/solr" >&2
+    echo "  export NF_CONTAINER=docker://ghcr.io/ebispot/oxo2-nextflow:dev" >&2
+    echo "  $0" >&2
+    exit 1
+fi
+
+# --- Configurable Slurm resources ---
+HPC_TIME="${HPC_TIME:-72:00:00}"
+HPC_MEM="${HPC_MEM:-16G}"
+
+# --- Create log directory ---
+mkdir -p "$NEXTFLOW_DIR/logs"
+
+# --- Build sbatch arguments ---
+SBATCH_ARGS=(
+    --time="$HPC_TIME"
+    --mem="$HPC_MEM"
+    --output="$NEXTFLOW_DIR/logs/oxo2-dataload-%j.out"
+    --error="$NEXTFLOW_DIR/logs/oxo2-dataload-%j.err"
+    --export="OXO2_DATA=$OXO2_DATA,OXO2_CONFIG=$OXO2_CONFIG,NEXTFLOW_DIR=$NEXTFLOW_DIR,SOLR_HOME=$SOLR_HOME,NF_CONTAINER=$NF_CONTAINER${HPC_PATH:+,HPC_PATH=$HPC_PATH}"
+)
+
+if [ -n "${HPC_ACCOUNT:-}" ]; then
+    SBATCH_ARGS+=(--account="$HPC_ACCOUNT")
+fi
+
+# --- Submit the job ---
+echo "Submitting OXO2 dataload job..."
+echo "  Partition: $HPC_PARTITION"
+echo "  Time limit: $HPC_TIME"
+echo "  Memory: $HPC_MEM"
+echo "  Container: $NF_CONTAINER"
+echo "  Data dir: $OXO2_DATA"
+echo "  Config: $OXO2_CONFIG"
+echo "  Nextflow dir: $NEXTFLOW_DIR"
+echo "  Solr home: $SOLR_HOME"
+
+sbatch "${SBATCH_ARGS[@]}" "$SCRIPT_DIR/loadData.slurm"
