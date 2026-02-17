@@ -1,0 +1,15 @@
+#!/bin/bash
+
+ NFS_PATH="/nfs/production/parkinso/spot/oxo2/dev"
+ HPS_PATH="/hps/nobackup/parkinso/spot/oxo2/dev"
+ NEXTFLOW_DIR="$HPS_PATH/nextflow"
+ OXO2_DATA="$HPS_PATH/data"
+ SOLR_HOME="$HPS_PATH/solr-data"
+
+ # Clean up prev run
+ rm -Rf $NEXTFLOW_DIR
+ rm -Rf $OXO2_DATA
+ rm -Rf $SOLR_HOME
+
+
+ srun -t 12:00:00 -J cleanUp --cpus-per-task=48 --mem=8G bash -c " rm -Rf $NEXTFLOW_DIR &&  rm -Rf $OXO2_DATA &&  rm -Rf $SOLR_HOME"
