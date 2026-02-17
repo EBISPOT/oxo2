@@ -5,7 +5,8 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# SCRIPT_DIR is passed via --export from loadData.hpc (BASH_SOURCE unreliable in Slurm)
+: "${SCRIPT_DIR:?SCRIPT_DIR must be set}"
 
 echo "=== OXO2 HPC Dataload ==="
 echo "Job ID: $SLURM_JOB_ID"
@@ -60,9 +61,12 @@ sleep 2
 
 # --- Start Solr as Singularity instance ---
 echo "Starting Solr instance..."
+mkdir -p "$SOLR_HOME/logs" "$SOLR_HOME/pid"
 singularity instance start \
     --bind "$SOLR_HOME:/opt/solr/server/solr" \
+    --bind "$SOLR_HOME/logs:/opt/solr/server/logs" \
     --bind "$OXO2_DATA/tmp:/tmp" \
+    --env "SOLR_PID_DIR=$SOLR_HOME/pid" \
     "$SIF_IMAGE" solr_svc
 
 singularity exec instance://solr_svc \
