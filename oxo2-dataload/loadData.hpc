@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
  HPS_PATH="/hps/nobackup/parkinso/spot/oxo2/dev"
  NEXTFLOW_DIR="$HPS_PATH/nextflow"
  NF_CONTAINER="docker://ghcr.io/ebispot/oxo2-nextflow:dev"
- OXO2_CONFIG="$NFS_PATH/configs/oxo-config.json"
+ OXO2_CONFIG=$OXO2_CONFIG
  OXO2_DATA="$HPS_PATH/data"
  SOLR_HOME="$HPS_PATH/solr-data"
 
@@ -57,7 +57,6 @@ fi
 
 # --- Submit the job ---
 echo "Submitting OXO2 dataload job..."
-echo "  Partition: $HPC_PARTITION"
 echo "  Time limit: $HPC_TIME"
 echo "  Memory: $HPC_MEM"
 echo "  Container: $NF_CONTAINER"

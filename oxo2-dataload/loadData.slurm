@@ -38,15 +38,8 @@ mkdir -p "$OXO2_DATA/sssom" "$OXO2_DATA/sssom-as-json" "$OXO2_DATA/assertedMappi
 mkdir -p "$OXO2_INFERENCES/inferredMappings" "$OXO2_INFERENCES/inferencesToTrace" "$OXO2_INFERENCES/inferenceChains" "$OXO2_INFERENCES/solr"
 mkdir -p "$OXO2_DATA/tmp"
 
-# --- Check Nextflow is available ---
-if ! command -v nextflow &> /dev/null; then
-    echo "Nextflow not found, downloading..."
-    mkdir -p "$NEXTFLOW_DIR/bin"
-    curl -fsSL https://get.nextflow.io | bash
-    mv nextflow "$NEXTFLOW_DIR/bin/"
-    chmod +x "$NEXTFLOW_DIR/bin/nextflow"
-    export PATH="$NEXTFLOW_DIR/bin:$PATH"
-fi
+# --- Load Nextflow module ---
+module load nextflow
 
 echo "Nextflow version: $(nextflow -version 2>&1 | head -3)"
 
