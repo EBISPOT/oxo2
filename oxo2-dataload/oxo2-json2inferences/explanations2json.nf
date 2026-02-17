@@ -6,7 +6,7 @@
 // Parameters (use OXO2_INFERENCES if set, else $OXO2_DATA/inferences)
 params.input_dir = "${System.getenv('OXO2_INFERENCES')}/inferenceChains"
 params.output_dir = "${System.getenv('OXO2_INFERENCES')}/solr"
-params.script_dir = file("${projectDir}")
+params.script_dir = params.script_dir ? "${params.script_dir}/oxo2-json2inferences" : "${projectDir}"
 
 workflow {
     input_files = channel.fromPath("${params.input_dir}/*-chains.json")

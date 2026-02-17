@@ -6,7 +6,7 @@ import groovy.json.JsonOutput
 // Parameters
 params.config_file = "${System.getenv('OXO2_CONFIG')}"
 params.download_dir = "${System.getenv('OXO2_DATA')}/sssom"
-params.script_dir = file("${projectDir}")
+params.script_dir = params.script_dir ?: "${projectDir}"
 
 workflow {
     // Parse config and create a channel with one entry per registry

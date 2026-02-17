@@ -9,7 +9,7 @@ params.inferred_mappings_dir = "${System.getenv('OXO2_DATA')}/inferences/inferre
 params.inferences_to_trace_dir = "${System.getenv('OXO2_DATA')}/inferences/inferencesToTrace"
 params.inference_chains_dir = "${System.getenv('OXO2_DATA')}/inferences/inferenceChains"
 
-params.script_dir = "${System.getenv('SCRIPT_DIR')}"
+params.script_dir = params.script_dir ?: "${projectDir}"
 params.rules_definition = file("${params.script_dir}/oxo2-json2inferences/chain-rules.rls")
 
 

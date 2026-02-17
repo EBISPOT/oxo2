@@ -3,7 +3,7 @@
 // Parameters
 params.input_dir = "${System.getenv('OXO2_DATA')}/sssom"
 params.output_dir = "${System.getenv('OXO2_DATA')}/sssom-as-json"
-params.script_dir = file("${projectDir}")
+params.script_dir = params.script_dir ?: "${projectDir}"
 
 workflow {
     SSSOM2JSON()
