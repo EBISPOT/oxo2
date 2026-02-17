@@ -79,6 +79,8 @@ COPY     ./oxo2-dataload/nextflow/ \
 
 COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/downloadMappings.sh \
+         ./oxo2-dataload/downloadMappings.nextflow \
+         ./oxo2-dataload/downloadMappings.nf \
          ./oxo2-dataload/determineInferencesAndExplanations.sh \
          ./oxo2-dataload/determineInferencesAndExplanations.nextflow \
          ./oxo2-dataload/determineInferencesAndExplanations.nf \
