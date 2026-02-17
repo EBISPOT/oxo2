@@ -24,10 +24,6 @@
       "id": "phenotype",
       "github_repository": "https://github.com/mapping-commons/phenotype",
       "directory": "curation"
-    },    
-    {
-      "id": "evora",
-      "url": "https://ftp.ebi.ac.uk/pub/databases/spot/evora/ictv_ncbitaxon_exact.sssom.tsv"
     }
   ]
 }
