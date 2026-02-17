@@ -5,8 +5,6 @@
 
 set -euo pipefail
 
-mkdir -p "$NEXTFLOW_DIR/logs"
-
 # SCRIPT_DIR is passed via --export from loadData.hpc (BASH_SOURCE unreliable in Slurm)
 : "${SCRIPT_DIR:?SCRIPT_DIR must be set}"
 
@@ -40,7 +38,8 @@ mkdir -p "$NXF_WORK" "$NXF_HOME" "$NXF_TEMP" "$NXF_CACHE_DIR" "$NXF_SINGULARITY_
 mkdir -p "$OXO2_DATA/sssom" "$OXO2_DATA/sssom-as-json" "$OXO2_DATA/assertedMappings"
 mkdir -p "$OXO2_INFERENCES/inferredMappings" "$OXO2_INFERENCES/inferencesToTrace" "$OXO2_INFERENCES/inferenceChains" "$OXO2_INFERENCES/solr"
 mkdir -p "$OXO2_DATA/tmp"
-
+mkdir -p "$NEXTFLOW_DIR/logs"
+mkdir -p "$SOLR_HOME"
 # --- Load Nextflow module ---
 module load nextflow
 
