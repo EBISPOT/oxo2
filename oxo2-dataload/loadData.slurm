@@ -5,6 +5,8 @@
 
 set -euo pipefail
 
+mkdir -p "$NEXTFLOW_DIR/logs"
+
 # SCRIPT_DIR is passed via --export from loadData.hpc (BASH_SOURCE unreliable in Slurm)
 : "${SCRIPT_DIR:?SCRIPT_DIR must be set}"
 
