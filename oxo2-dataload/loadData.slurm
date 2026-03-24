@@ -40,6 +40,24 @@ mkdir -p "$OXO2_INFERENCES/inferredMappings" "$OXO2_INFERENCES/inferencesToTrace
 mkdir -p "$OXO2_DATA/tmp"
 mkdir -p "$NEXTFLOW_DIR/logs"
 mkdir -p "$SOLR_HOME"
+\b
+# --- Clean directories from previous runs ---
+# (NXF_SINGULARITY_CACHEDIR excluded — only updated when a new image is available)
+rm -rf "$NXF_WORK"/*
+rm -rf "$NXF_HOME"/*
+rm -rf "$NXF_TEMP"/*
+rm -rf "$NXF_CACHE_DIR"/*
+rm -rf "$NXF_LOGS"/*
+rm -rf "$OXO2_DATA/sssom"/*
+rm -rf "$OXO2_DATA/sssom-as-json"/*
+rm -rf "$OXO2_DATA/assertedMappings"/*
+rm -rf "$OXO2_INFERENCES/inferredMappings"/*
+rm -rf "$OXO2_INFERENCES/inferencesToTrace"/*
+rm -rf "$OXO2_INFERENCES/inferenceChains"/*
+rm -rf "$OXO2_INFERENCES/solr"/*
+rm -rf "$OXO2_DATA/tmp"/*
+rm -rf "$SOLR_HOME"/*
+
 # --- Load Nextflow module ---
 module load nextflow
 
@@ -80,9 +98,6 @@ if singularity exec instance://solr_svc curl -sf http://localhost:8983/solr/admi
 else
     echo "WARNING: Solr may not be ready yet, continuing..."
 fi
-
-# --- Clean previous data ---
-rm -rf "$OXO2_DATA/sssom/"* "$OXO2_DATA/sssom-as-json/"*
 
 # --- Stage 1: Download mappings ---
 start_time=$(date +%s)
