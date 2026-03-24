@@ -13,7 +13,9 @@ import static java.util.stream.Collectors.toMap;
  * @see <a href="https://mapping-commons.github.io/sssom/PredicateModifierEnum/">PredicateModifierEnum</a>.
  */
 public enum PredicateModifierEnum {
-    NOT ("not");
+    NOT ("not"),
+    INDIRECT ("indirect"),
+    INVERSE ("inverse");
 
     private final String value;
 

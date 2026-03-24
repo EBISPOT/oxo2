@@ -27,6 +27,9 @@ import uk.ac.ebi.spot.oxo.inferences.ApplicablePredicatesEnum;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
+// To do: Skip negation.
+
+
 public class JSON2Turtle {
 
     private static final Logger logger = LoggerFactory.getLogger(JSON2Turtle.class);
@@ -122,12 +125,28 @@ public class JSON2Turtle {
                     if (isApplicablePredicate(predicateIRI)) {
                         String subjectIRI = mappingNode.get(MappingEnum.SUBJECT_IRI.getField()).asText();
                         String objectIRI = mappingNode.get(MappingEnum.OBJECT_IRI.getField()).asText();
-                        if (areURIsValid(subjectIRI, predicateIRI, objectIRI))
+
+                        if (!isSkipOnPredicateModifier(mappingNode) && areURIsValid(subjectIRI, predicateIRI, objectIRI))
                             writer.write(String.format("<%s> <%s> <%s> .\n", subjectIRI, predicateIRI, objectIRI));
                     }
                 }
             }
         }
+    }
+
+    /**
+     * There is no indication from SSSOM that there is an intent to reason on for example negation.
+     * Moreover, SSSOM gives no guidance as to the impact of negation on chain_rules. For this reason we exclude it from
+     * all reasoning tasks.
+     *
+     * @param jsonNode
+     * @return
+     */
+    private static boolean isSkipOnPredicateModifier(JsonNode jsonNode) {
+        JsonNode predicateModifier = jsonNode.get(MappingEnum.PREDICATE_MODIFIER.getField());
+        if (predicateModifier != null)
+            return true;
+        else  return false;
     }
 
     private static void processMappings(String inputDirectory, String outputDirectory) throws IOException {
