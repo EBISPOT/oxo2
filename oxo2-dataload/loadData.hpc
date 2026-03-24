@@ -39,6 +39,9 @@ fi
 HPC_TIME="${HPC_TIME:-72:00:00}"
 HPC_MEM="${HPC_MEM:-16G}"
 
+# --- Create log directory ---
+mkdir -p "$NEXTFLOW_DIR/logs"
+
 # --- Build sbatch arguments ---
 SBATCH_ARGS=(
     --time="$HPC_TIME"
@@ -51,6 +54,7 @@ SBATCH_ARGS=(
 if [ -n "${HPC_ACCOUNT:-}" ]; then
     SBATCH_ARGS+=(--account="$HPC_ACCOUNT")
 fi
+
 
 # --- Submit the job ---
 echo "Submitting OXO2 dataload job..."

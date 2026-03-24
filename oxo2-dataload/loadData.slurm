@@ -40,7 +40,7 @@ mkdir -p "$OXO2_INFERENCES/inferredMappings" "$OXO2_INFERENCES/inferencesToTrace
 mkdir -p "$OXO2_DATA/tmp"
 mkdir -p "$NEXTFLOW_DIR/logs"
 mkdir -p "$SOLR_HOME"
-\b
+
 # --- Clean directories from previous runs ---
 # (NXF_SINGULARITY_CACHEDIR excluded — only updated when a new image is available)
 rm -rf "$NXF_WORK"/*
