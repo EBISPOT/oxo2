@@ -6,7 +6,7 @@
 // Parameters (use OXO2_INFERENCES if set, else $OXO2_DATA/inferences)
 params.input_dir = "${System.getenv('OXO2_INFERENCES')}/inferenceChains"
 params.output_dir = "${System.getenv('OXO2_INFERENCES')}/solr"
-params.script_dir = params.script_dir ? "${params.script_dir}/oxo2-json2inferences" : "${projectDir}"
+def effective_script_dir = params.script_dir ? "${params.script_dir}/oxo2-json2inferences" : "${projectDir}"
 
 workflow {
     input_files = channel.fromPath("${params.input_dir}/*-chains.json")
@@ -29,7 +29,7 @@ process EXPLANATIONS_TO_JSON {
     script:
     def output_file = "${input_file.baseName.replace('-chains', '-explained')}.json"
     """
-    "${params.script_dir}/explanations2jsonNextflow.sh" "${input_file}" "${output_file}"
+    "${effective_script_dir}/explanations2jsonNextflow.sh" "${input_file}" "${output_file}"
 
     # Remove if empty
     if [ ! -s "${output_file}" ]; then
