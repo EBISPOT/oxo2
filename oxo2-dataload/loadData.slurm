@@ -47,7 +47,7 @@ rm -rf "$NXF_WORK"/*
 rm -rf "$NXF_HOME"/*
 rm -rf "$NXF_TEMP"/*
 rm -rf "$NXF_CACHE_DIR"/*
-rm -rf "$NXF_LOGS"/*
+rm -rf "$NXF_LOGS"/* "$NXF_LOGS"/.*[!.]*
 rm -rf "$OXO2_DATA/sssom"/*
 rm -rf "$OXO2_DATA/sssom-as-json"/*
 rm -rf "$OXO2_DATA/assertedMappings"/*
