@@ -49,7 +49,7 @@ SBATCH_ARGS=(
     --time="$HPC_TIME"
     --mem="$HPC_MEM"
     --output="$SLURM_LOGS/oxo2-dataload-%j.out"
-    --error="$SLURM_LOGS/logs/oxo2-dataload-%j.err"
+    --error="$SLURM_LOGS/oxo2-dataload-%j.err"
     --export="SCRIPT_DIR=$SCRIPT_DIR,OXO2_DATA=$OXO2_DATA,OXO2_CONFIG=$OXO2_CONFIG,NEXTFLOW_DIR=$NEXTFLOW_DIR,SOLR_HOME=$SOLR_HOME,NF_CONTAINER=$NF_CONTAINER${HPC_PATH:+,HPC_PATH=$HPC_PATH}"
 )
 
