@@ -141,6 +141,20 @@ end_time=$(date +%s)
 echo "Writing to Solr took: $((end_time - start_time)) seconds"
 sleep 20
 
+# --- Verify Stage 4: Check documents were indexed ---
+echo "Verifying Solr indexing..."
+for core in oxo2-mappings oxo2-mappingsets; do
+    count=$(singularity exec instance://solr_svc \
+        curl -sf "http://localhost:8983/solr/$core/select?q=*:*&rows=0" \
+        | grep -o '"numFound":[0-9]*' | grep -o '[0-9]*')
+    echo "  $core: ${count:-0} documents"
+    if [ -z "$count" ] || [ "$count" -eq 0 ]; then
+        echo "ERROR: No documents found in $core after indexing" >&2
+        exit 1
+    fi
+done
+echo "Solr indexing verified successfully."
+
 # --- Stage 5: Explanations to JSON ---
 start_time=$(date +%s)
 echo "###################" explanations2json...
