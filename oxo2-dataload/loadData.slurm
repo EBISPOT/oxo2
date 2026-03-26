@@ -91,7 +91,7 @@ singularity instance start \
 
 singularity exec instance://solr_svc \
     /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp
-sleep 10
+sleep 30
 
 # Verify Solr is running
 if singularity exec instance://solr_svc curl -sf http://localhost:8983/solr/admin/info/system > /dev/null 2>&1; then

@@ -36,6 +36,12 @@ jobs:
           docker tag ghcr.io/ebispot/oxo2-dataload:${{github.sha}} ghcr.io/ebispot/oxo2-dataload:${{ github.head_ref || github.ref_name }}
           docker push --all-tags ghcr.io/ebispot/oxo2-dataload
 
+      - name: Build and push OxO2 nextflow Docker image
+        run: |
+          docker build -t ghcr.io/ebispot/oxo2-nextflow:${{ github.sha }} -f ./oxo2-dataload/Dockerfile.nextflow .
+          docker tag ghcr.io/ebispot/oxo2-nextflow:${{github.sha}} ghcr.io/ebispot/oxo2-nextflow:${{ github.head_ref || github.ref_name }}
+          docker push --all-tags ghcr.io/ebispot/oxo2-nextflow
+
       - name: Build and push OxO2 backend Docker image
         run: |
           docker build -t ghcr.io/ebispot/oxo2-backend:${{ github.sha }} -f ./oxo2-backend/backend.Dockerfile .
