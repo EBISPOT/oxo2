@@ -57,10 +57,11 @@ Ensure the following software is installed and available on the user path.
 1. Java 17 or later
 2. Maven 3.x
 3. Git
-4. Solr 9.x - Ensure SOLR_SCRIPT is set to /bin dir SOLR_HOME is set to /server/solr dir of your Solr installation.
-5. Nemo - download the latest version from [Nemo latest](https://github.com/knowsys/nemo/releases/latest) or build from source
+4. Solr 9.x - This is the datastore for OxO2. Ensure SOLR_SCRIPT is set to /bin dir SOLR_HOME is set to /server/solr dir 
+of your Solr installation.
+5. Nemo - Nemo is the rules engine used in OxO2. Download the latest version from [Nemo latest](https://github.com/knowsys/nemo/releases/latest) or build from source
  following instructions [here](https://github.com/knowsys/nemo?tab=readme-ov-file#installation). To check your Nemo installation, run `nmo --help`. Ensure that `nmo` is available on 
-the path. Nemo is the rules engine used in OxO2.
+the path.
 6. Optionally you could use Nextflow for parallelising the OxO2 dataload. Nextflow can be installed using `curl -s https://get.nextflow.io | bash`.
    Make sure to add it to your path.
 
