@@ -60,7 +60,9 @@ Ensure the following software is installed and available on the user path.
 4. Solr 9.x - Ensure SOLR_SCRIPT is set to /bin dir SOLR_HOME is set to /server/solr dir of your Solr installation.
 5. Nemo - download the latest version from [Nemo latest](https://github.com/knowsys/nemo/releases/latest) or build from source
  following instructions [here](https://github.com/knowsys/nemo?tab=readme-ov-file#installation). To check your Nemo installation, run `nmo --help`. Ensure that `nmo` is available on 
-the path. Nemo is the rules engine used in OxO2. 
+the path. Nemo is the rules engine used in OxO2.
+6. Optionally you could use Nextflow for parallelising the OxO2 dataload. Nextflow can be installed using `curl -s https://get.nextflow.io | bash`.
+   Make sure to add it to your path.
 
 ### Environment variables
 Define the following environment variables:
@@ -70,6 +72,7 @@ file see the `oxo-config.json` in the root of the OxO2 source code directory. NO
 3. SOLR_SCRIPT - This should point to the `bin` directory of your Solr installation.
 4. SOLR_HOME - This should point to the root of your Solr data directory.
 5. OXO2_SOLR_HOST - This is the URL to your Solr installation.
+6. NEXTFLOW_DIR - If you want to parallelise the OxO2 dataload using Nextflow, you need to specify where it can write interm results. 
 
 Here is an example script for setting environment variables:
 
@@ -80,6 +83,7 @@ Here is an example script for setting environment variables:
     export JAVA_OPTS="-Xmx16G"
     export OXO2_CONFIG=/home/myhome/oxo2/my_oxo2_config.json
     export OXO2_SOLR_HOST=http://localhost:8983/solr
+    export NEXTFLOW_DIR=/home/myhome/nextflow
 
 ### Steps
 1. Checkout OxO2:
@@ -88,7 +92,7 @@ and change to OxO2 source directory.
 2. To build, run: `mvn clean install` 
 3. Copy solr config to solr: `cp ./oxo2-dataload/solr-config/* $SOLR_HOME`
 4. Change to dataload directory: `cd ./oxo2-dataload`
-5. Run OxO2 dataload: `./loadData.sh`
+5. Run OxO2 dataload: `./loadData.sh` or use `loadData.nextflow` if you have Nextflow installed.
 6. Return to OxO2 root dir: `cd ..`
 7. Start Solr: `$SOLR_SCRIPT/solr start --user-managed`
 8. Run OxO backend: `./startBackend.sh`
