@@ -8,6 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
  NFS_PATH="/nfs/production/parkinso/spot/oxo2/dev"
  HPS_PATH="/hps/nobackup/parkinso/spot/oxo2/dev"
+ SLURM_LOGS="$NFS_PATH/logs"
  NEXTFLOW_DIR="$HPS_PATH/nextflow"
  NF_CONTAINER="docker://ghcr.io/ebispot/oxo2-nextflow:dev"
  OXO2_CONFIG="/nfs/production/parkinso/spot/oxo2/dev/oxo2/oxo-config-evora.json"
@@ -40,21 +41,21 @@ HPC_TIME="${HPC_TIME:-72:00:00}"
 HPC_MEM="${HPC_MEM:-16G}"
 
 # --- Create log directory ---
-mkdir -p "$NEXTFLOW_DIR/logs"
+mkdir -p "$SLURM_LOGS"
+rm -rf "$SLURM_LOGS"/*
 
 # --- Build sbatch arguments ---
 SBATCH_ARGS=(
     --time="$HPC_TIME"
     --mem="$HPC_MEM"
-    --output="$NEXTFLOW_DIR/logs/oxo2-dataload-%j.out"
-    --error="$NEXTFLOW_DIR/logs/oxo2-dataload-%j.err"
+    --output="$SLURM_LOGS/oxo2-dataload-%j.out"
+    --error="$SLURM_LOGS/logs/oxo2-dataload-%j.err"
     --export="SCRIPT_DIR=$SCRIPT_DIR,OXO2_DATA=$OXO2_DATA,OXO2_CONFIG=$OXO2_CONFIG,NEXTFLOW_DIR=$NEXTFLOW_DIR,SOLR_HOME=$SOLR_HOME,NF_CONTAINER=$NF_CONTAINER${HPC_PATH:+,HPC_PATH=$HPC_PATH}"
 )
 
 if [ -n "${HPC_ACCOUNT:-}" ]; then
     SBATCH_ARGS+=(--account="$HPC_ACCOUNT")
 fi
-
 
 # --- Submit the job ---
 echo "Submitting OXO2 dataload job..."
@@ -65,5 +66,6 @@ echo "  Data dir: $OXO2_DATA"
 echo "  Config: $OXO2_CONFIG"
 echo "  Nextflow dir: $NEXTFLOW_DIR"
 echo "  Solr home: $SOLR_HOME"
+echo "  Slurm logs: $SLURM_LOGS"
 
 sbatch "${SBATCH_ARGS[@]}" "$SCRIPT_DIR/loadData.slurm"
