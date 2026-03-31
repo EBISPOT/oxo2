@@ -9,6 +9,7 @@ set -euo pipefail
 : "${SCRIPT_DIR:?SCRIPT_DIR must be set}"
 
 export no_proxy=localhost,127.0.0.1
+export JAVA_OPTS="${JAVA_OPTS:-} -Dhttp.nonProxyHosts=localhost|127.0.0.1"
 
 echo "=== OXO2 HPC Dataload ==="
 echo "Job ID: $SLURM_JOB_ID"
