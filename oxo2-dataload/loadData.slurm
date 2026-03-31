@@ -8,6 +8,8 @@ set -euo pipefail
 # SCRIPT_DIR is passed via --export from loadData.hpc (BASH_SOURCE unreliable in Slurm)
 : "${SCRIPT_DIR:?SCRIPT_DIR must be set}"
 
+export no_proxy=localhost,127.0.0.1
+
 echo "=== OXO2 HPC Dataload ==="
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node: $(hostname)"
