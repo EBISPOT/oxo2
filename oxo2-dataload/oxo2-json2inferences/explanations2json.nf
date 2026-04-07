@@ -28,7 +28,11 @@ process EXPLANATIONS_TO_JSON {
 
     script:
     def output_file = "${input_file.baseName.replace('-chains', '-explained')}.json"
+    def solr_url = params.solr_url ?: 'http://localhost:8983/solr'
     """
+    export SOLR_URL="${solr_url}"
+    export no_proxy="localhost,127.0.0.1,\$(hostname),${solr_url.replaceAll('https?://','').replaceAll('/.*','').replaceAll(':.*','')}"
+    export JAVA_OPTS="\${JAVA_OPTS:-} -Dhttp.nonProxyHosts=localhost|127.0.0.1|${solr_url.replaceAll('https?://','').replaceAll('/.*','').replaceAll(':.*','')}"
     "${effective_script_dir}/explanations2jsonNextflow.sh" "${input_file}" "${output_file}"
 
     # Remove if empty

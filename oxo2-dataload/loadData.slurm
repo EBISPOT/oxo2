@@ -191,10 +191,12 @@ echo "Solr indexing verified successfully."
 # --- Stage 5: Explanations to JSON ---
 start_time=$(date +%s)
 echo "###################" explanations2json...
-(cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/.nextflow.log" \
+(cd "$NXF_LOGS" && NXF_OPTS="-Dhttp.nonProxyHosts=$(hostname)|localhost|127.0.0.1" \
+    nextflow -log "$NXF_LOGS/.nextflow.log" \
     -c "$SCRIPT_DIR/nextflow/nextflow.config" \
     run "$SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf" \
-    -profile "$NF_PROFILE")
+    -profile "$NF_PROFILE" \
+    --solr_url "$SOLR_URL")
 end_time=$(date +%s)
 echo "Explanations to JSON took: $((end_time - start_time)) seconds"
 
