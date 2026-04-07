@@ -68,11 +68,35 @@ module load nextflow
 
 echo "Nextflow version: $(nextflow -version 2>&1 | head -3)"
 
-# --- Pull Singularity image ---
+# --- Pull Singularity image (update if newer version available) ---
 SIF_IMAGE="$NXF_SINGULARITY_CACHEDIR/oxo2-nextflow.sif"
+SIF_DIGEST_FILE="$NXF_SINGULARITY_CACHEDIR/oxo2-nextflow.digest"
+
+# Check remote digest via ghcr.io registry API
+REMOTE_DIGEST=""
+GHCR_TOKEN=$(curl -sf "https://ghcr.io/token?scope=repository:ebispot/oxo2-nextflow:pull" | jq -r '.token' 2>/dev/null) || true
+if [ -n "$GHCR_TOKEN" ]; then
+    REMOTE_DIGEST=$(curl -sfI \
+        -H "Authorization: Bearer $GHCR_TOKEN" \
+        -H "Accept: application/vnd.oci.image.index.v1+json" \
+        https://ghcr.io/v2/ebispot/oxo2-nextflow/manifests/dev \
+        | grep -i docker-content-digest | awk '{print $2}' | tr -d '\r') || true
+fi
+
+LOCAL_DIGEST=""
+if [ -f "$SIF_DIGEST_FILE" ]; then
+    LOCAL_DIGEST=$(cat "$SIF_DIGEST_FILE")
+fi
+
 if [ ! -f "$SIF_IMAGE" ]; then
     echo "Pulling Singularity image: $NF_CONTAINER"
     singularity pull "$SIF_IMAGE" "$NF_CONTAINER"
+    [ -n "$REMOTE_DIGEST" ] && echo "$REMOTE_DIGEST" > "$SIF_DIGEST_FILE"
+elif [ -n "$REMOTE_DIGEST" ] && [ "$REMOTE_DIGEST" != "$LOCAL_DIGEST" ]; then
+    echo "New image version detected, pulling update..."
+    rm -f "$SIF_IMAGE"
+    singularity pull "$SIF_IMAGE" "$NF_CONTAINER"
+    echo "$REMOTE_DIGEST" > "$SIF_DIGEST_FILE"
 else
     echo "Using cached Singularity image: $SIF_IMAGE"
 fi
