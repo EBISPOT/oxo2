@@ -19,7 +19,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class DataloadSolr {
     private SolrClient solrMappingClient;
 
-    private String solrUrl = "http://localhost:8983/solr";
+    private String solrUrl = System.getenv("SOLR_URL") != null ? System.getenv("SOLR_URL") : "http://localhost:8983/solr";
 
     private int connectionTimeoutMillis = 10000;
 

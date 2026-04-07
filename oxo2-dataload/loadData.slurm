@@ -8,8 +8,9 @@ set -euo pipefail
 # SCRIPT_DIR is passed via --export from loadData.hpc (BASH_SOURCE unreliable in Slurm)
 : "${SCRIPT_DIR:?SCRIPT_DIR must be set}"
 
-export no_proxy=localhost,127.0.0.1
-export JAVA_OPTS="${JAVA_OPTS:-} -Dhttp.nonProxyHosts=localhost|127.0.0.1"
+export SOLR_URL="http://$(hostname):8983/solr"
+export no_proxy="localhost,127.0.0.1,$(hostname)"
+export JAVA_OPTS="${JAVA_OPTS:-} -Dhttp.nonProxyHosts=localhost|127.0.0.1|$(hostname)"
 
 echo "=== OXO2 HPC Dataload ==="
 echo "Job ID: $SLURM_JOB_ID"
