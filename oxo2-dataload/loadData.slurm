@@ -76,7 +76,7 @@ SIF_DIGEST_FILE="$NXF_SINGULARITY_CACHEDIR/oxo2-nextflow.digest"
 REMOTE_DIGEST=""
 GHCR_TOKEN=$(curl -sf "https://ghcr.io/token?scope=repository:ebispot/oxo2-nextflow:pull" | jq -r '.token' 2>/dev/null) || true
 if [ -n "$GHCR_TOKEN" ]; then
-    REMOTE_DIGEST=$(curl -sfI \
+    REMOTE_DIGEST=$(curl -sf -D - -o /dev/null \
         -H "Authorization: Bearer $GHCR_TOKEN" \
         -H "Accept: application/vnd.oci.image.index.v1+json" \
         https://ghcr.io/v2/ebispot/oxo2-nextflow/manifests/dev \
@@ -93,12 +93,13 @@ if [ ! -f "$SIF_IMAGE" ]; then
     singularity pull "$SIF_IMAGE" "$NF_CONTAINER"
     [ -n "$REMOTE_DIGEST" ] && echo "$REMOTE_DIGEST" > "$SIF_DIGEST_FILE"
 elif [ -n "$REMOTE_DIGEST" ] && [ "$REMOTE_DIGEST" != "$LOCAL_DIGEST" ]; then
-    echo "New image version detected, pulling update..."
+    echo "New image version detected (remote: $REMOTE_DIGEST, local: $LOCAL_DIGEST), pulling update..."
     rm -f "$SIF_IMAGE"
+    rm -f "$NXF_SINGULARITY_CACHEDIR"/*.img
     singularity pull "$SIF_IMAGE" "$NF_CONTAINER"
     echo "$REMOTE_DIGEST" > "$SIF_DIGEST_FILE"
 else
-    echo "Using cached Singularity image: $SIF_IMAGE"
+    echo "Using cached Singularity image: $SIF_IMAGE (digest: ${LOCAL_DIGEST:-unknown})"
 fi
 
 # --- Copy Solr config ---
