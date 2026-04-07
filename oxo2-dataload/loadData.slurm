@@ -74,14 +74,17 @@ SIF_DIGEST_FILE="$NXF_SINGULARITY_CACHEDIR/oxo2-nextflow.digest"
 
 # Check remote digest via ghcr.io registry API
 REMOTE_DIGEST=""
+HEADER_TMP=$(mktemp)
 GHCR_TOKEN=$(curl -sf "https://ghcr.io/token?scope=repository:ebispot/oxo2-nextflow:pull" | jq -r '.token' 2>/dev/null) || true
 if [ -n "$GHCR_TOKEN" ]; then
-    REMOTE_DIGEST=$(curl -sf -D - -o /dev/null \
+    curl -sf -D "$HEADER_TMP" -o /dev/null \
         -H "Authorization: Bearer $GHCR_TOKEN" \
         -H "Accept: application/vnd.oci.image.index.v1+json" \
-        https://ghcr.io/v2/ebispot/oxo2-nextflow/manifests/dev \
-        | grep -i docker-content-digest | awk '{print $2}' | tr -d '\r') || true
+        https://ghcr.io/v2/ebispot/oxo2-nextflow/manifests/dev || true
+    REMOTE_DIGEST=$(grep -i docker-content-digest "$HEADER_TMP" | awk '{print $2}' | tr -d '\r') || true
 fi
+rm -f "$HEADER_TMP"
+echo "Remote image digest: ${REMOTE_DIGEST:-not available}"
 
 LOCAL_DIGEST=""
 if [ -f "$SIF_DIGEST_FILE" ]; then
