@@ -113,7 +113,7 @@ singularity instance start \
     "$SIF_IMAGE" solr_svc
 
 singularity exec instance://solr_svc \
-    /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp
+    /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp -Djetty.host=0.0.0.0
 sleep 30
 
 # Verify Solr is running
