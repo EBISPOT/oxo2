@@ -118,9 +118,17 @@ sleep 30
 
 # Verify Solr is running
 if singularity exec instance://solr_svc curl -sf http://localhost:8983/solr/admin/info/system > /dev/null 2>&1; then
-    echo "Solr started successfully"
+    echo "Solr started successfully on localhost"
 else
-    echo "WARNING: Solr may not be ready yet, continuing..."
+    echo "WARNING: Solr may not be ready on localhost, continuing..."
+fi
+# Verify Solr is reachable via hostname (needed for Nextflow sub-jobs on other nodes)
+if curl -sf "$SOLR_URL/admin/info/system" > /dev/null 2>&1; then
+    echo "Solr reachable via hostname: $SOLR_URL"
+else
+    echo "WARNING: Solr NOT reachable via hostname: $SOLR_URL"
+    echo "DEBUG: Testing port with: curl -v $SOLR_URL/admin/info/system 2>&1 | head -20"
+    curl -v "$SOLR_URL/admin/info/system" 2>&1 | head -20 || true
 fi
 
 # --- Stage 1: Download mappings ---
