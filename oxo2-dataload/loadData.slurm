@@ -110,7 +110,7 @@ singularity instance start \
     --bind "$SOLR_HOME/logs:/opt/solr/server/logs" \
     --bind "$OXO2_DATA/tmp:/tmp" \
     --env "SOLR_PID_DIR=$SOLR_HOME/pid" \
-    --env "SOLR_JETTY_HOST=0.0.0.0" \
+    --env "SOLR_JETTY_HOST=$(hostname)" \
     "$SIF_IMAGE" solr_svc
 
 singularity exec instance://solr_svc \
