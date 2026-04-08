@@ -85,7 +85,7 @@ if [ -n "$GHCR_TOKEN" ]; then
         -H "Authorization: Bearer $GHCR_TOKEN" \
         -H "Accept: application/vnd.oci.image.index.v1+json" \
         https://ghcr.io/v2/ebispot/oxo2-nextflow/manifests/dev || true
-    REMOTE_DIGEST=$(grep -i docker-content-digest "$HEADER_TMP" | awk '{print $2}' | tr -d '\r') || true
+    REMOTE_DIGEST=$(sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: *//Ip' "$HEADER_TMP" | tr -d '\r\n') || true
 fi
 rm -f "$HEADER_TMP"
 echo "Remote image digest: ${REMOTE_DIGEST:-not available}"
