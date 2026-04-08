@@ -55,7 +55,7 @@ rm -rf "$NXF_WORK"/*
 rm -rf "$NXF_HOME"/*
 rm -rf "$NXF_TEMP"/*
 rm -rf "$NXF_CACHE_DIR"/*
-rm -rf "$NXF_SINGULARITY_CACHEDIR"/*
+#rm -rf "$NXF_SINGULARITY_CACHEDIR"/*
 rm -rf "$NXF_LOGS"/* "$NXF_LOGS"/.*[!.]*
 rm -rf "$OXO2_DATA/sssom"/*
 rm -rf "$OXO2_DATA/sssom-as-json"/*
@@ -85,7 +85,10 @@ if [ -n "$GHCR_TOKEN" ]; then
         -H "Authorization: Bearer $GHCR_TOKEN" \
         -H "Accept: application/vnd.oci.image.index.v1+json" \
         https://ghcr.io/v2/ebispot/oxo2-nextflow/manifests/dev || true
-    REMOTE_DIGEST=$(sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: *//Ip' "$HEADER_TMP" | tr -d '\r\n') || true
+    echo "DEBUG: HEADER_TMP=$HEADER_TMP, file size=$(wc -c < "$HEADER_TMP"), token length=${#GHCR_TOKEN}"
+    cat "$HEADER_TMP"
+    REMOTE_DIGEST=$(sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: *\([^ ]*\).*/\1/Ip' "$HEADER_TMP") || true
+    echo "DEBUG: REMOTE_DIGEST=$REMOTE_DIGEST"
 fi
 rm -f "$HEADER_TMP"
 echo "Remote image digest: ${REMOTE_DIGEST:-not available}"
