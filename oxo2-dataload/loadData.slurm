@@ -3,6 +3,10 @@
 #SBATCH --output=%x-%j.out
 #SBATCH --error=%x-%j.err
 
+#Set BASH strict mode:
+# -e: fails on any error
+# -u: fails on any variable that has not been set
+# -o pipefail: fails complete pipeline on any failure in the pipeline.
 set -euo pipefail
 
 # SCRIPT_DIR is passed via --export from loadData.hpc (BASH_SOURCE unreliable in Slurm)
@@ -51,7 +55,7 @@ rm -rf "$NXF_WORK"/*
 rm -rf "$NXF_HOME"/*
 rm -rf "$NXF_TEMP"/*
 rm -rf "$NXF_CACHE_DIR"/*
-#rm -rf "$NXF_SINGULARITY_CACHEDIR"/*
+rm -rf "$NXF_SINGULARITY_CACHEDIR"/*
 rm -rf "$NXF_LOGS"/* "$NXF_LOGS"/.*[!.]*
 rm -rf "$OXO2_DATA/sssom"/*
 rm -rf "$OXO2_DATA/sssom-as-json"/*
@@ -191,8 +195,7 @@ echo "Solr indexing verified successfully."
 # --- Stage 5: Explanations to JSON ---
 start_time=$(date +%s)
 echo "###################" explanations2json...
-(cd "$NXF_LOGS" && NXF_OPTS="-Dhttp.nonProxyHosts=$(hostname)|localhost|127.0.0.1" \
-    nextflow -log "$NXF_LOGS/.nextflow.log" \
+(cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/.nextflow.log" \
     -c "$SCRIPT_DIR/nextflow/nextflow.config" \
     run "$SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf" \
     -profile "$NF_PROFILE" \
