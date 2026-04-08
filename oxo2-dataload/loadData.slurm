@@ -114,7 +114,7 @@ singularity instance start \
     "$SIF_IMAGE" solr_svc
 
 singularity exec instance://solr_svc \
-    /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp -Djetty.host=0.0.0.0 -Dsolr.jetty.host=0.0.0.0
+    /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp -Dsolr.jetty.host=0.0.0.0
 sleep 30
 
 # Verify Solr is running
@@ -128,8 +128,6 @@ if curl -sf "$SOLR_URL/admin/info/system" > /dev/null 2>&1; then
     echo "Solr reachable via hostname: $SOLR_URL"
 else
     echo "WARNING: Solr NOT reachable via hostname: $SOLR_URL"
-    echo "DEBUG: Testing port with: curl -v $SOLR_URL/admin/info/system 2>&1 | head -20"
-    curl -v "$SOLR_URL/admin/info/system" 2>&1 | head -20 || true
 fi
 
 # --- Stage 1: Download mappings ---
