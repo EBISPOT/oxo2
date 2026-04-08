@@ -73,24 +73,8 @@ module load nextflow
 echo "Nextflow version: $(nextflow -version 2>&1 | head -3)"
 
 # --- Pull Singularity image (update if newer version available) ---
+# REMOTE_DIGEST and SIF_DIGEST_FILE are passed from loadData.hpc (login node has internet access, compute nodes do not)
 SIF_IMAGE="$NXF_SINGULARITY_CACHEDIR/oxo2-nextflow.sif"
-SIF_DIGEST_FILE="$NXF_SINGULARITY_CACHEDIR/oxo2-nextflow.digest"
-
-# Check remote digest via ghcr.io registry API
-REMOTE_DIGEST=""
-HEADER_TMP=$(mktemp)
-GHCR_TOKEN=$(curl -sf "https://ghcr.io/token?scope=repository:ebispot/oxo2-nextflow:pull" | jq -r '.token' 2>/dev/null) || true
-if [ -n "$GHCR_TOKEN" ]; then
-    curl -sf -D "$HEADER_TMP" -o /dev/null \
-        -H "Authorization: Bearer $GHCR_TOKEN" \
-        -H "Accept: application/vnd.oci.image.index.v1+json" \
-        https://ghcr.io/v2/ebispot/oxo2-nextflow/manifests/dev || true
-    echo "DEBUG: HEADER_TMP=$HEADER_TMP, file size=$(wc -c < "$HEADER_TMP"), token length=${#GHCR_TOKEN}"
-    cat "$HEADER_TMP"
-    REMOTE_DIGEST=$(sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: *\([^ ]*\).*/\1/Ip' "$HEADER_TMP") || true
-    echo "DEBUG: REMOTE_DIGEST=$REMOTE_DIGEST"
-fi
-rm -f "$HEADER_TMP"
 echo "Remote image digest: ${REMOTE_DIGEST:-not available}"
 
 LOCAL_DIGEST=""
