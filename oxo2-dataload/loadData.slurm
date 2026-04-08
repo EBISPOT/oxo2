@@ -114,7 +114,7 @@ singularity instance start \
     "$SIF_IMAGE" solr_svc
 
 singularity exec instance://solr_svc \
-    /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp -Dsolr.jetty.host=0.0.0.0
+    /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp -Dsolr.jetty.host=$(hostname)
 sleep 30
 
 # Verify Solr is running
@@ -202,6 +202,21 @@ echo "###################" json2solr inferred mappings...
 singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
     /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_INFERENCES/solr" http://localhost:8983/solr/oxo2-mappings
 sleep 20
+
+# --- Verify Stage 7: Check inferred documents were indexed ---
+echo "Verifying Solr indexing..."
+for core in oxo2-mappings oxo2-mappingsets; do
+    count=$(singularity exec instance://solr_svc \
+        curl -sf "http://localhost:8983/solr/$core/select?q=*:*&rows=0" \
+        | grep -o '"numFound":[0-9]*' | grep -o '[0-9]*')
+    echo "  $core: ${count:-0} documents"
+    if [ -z "$count" ] || [ "$count" -eq 0 ]; then
+        echo "ERROR: No documents found in $core after indexing" >&2
+        exit 1
+    fi
+done
+echo "Solr indexing verified successfully."
+
 
 # --- Stop Solr ---
 echo "################### Stopping Solr..."
