@@ -110,18 +110,18 @@ singularity instance start \
     --bind "$SOLR_HOME/logs:/opt/solr/server/logs" \
     --bind "$OXO2_DATA/tmp:/tmp" \
     --env "SOLR_PID_DIR=$SOLR_HOME/pid" \
-    --env "SOLR_JETTY_HOST=0.0.0.0" \
+    --env "SOLR_JETTY_HOST=$(hostname)" \
     "$SIF_IMAGE" solr_svc
 
 singularity exec instance://solr_svc \
-    /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp -Dsolr.jetty.host=0.0.0.0
+    /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp -Dsolr.jetty.host=$(hostname)
 sleep 30
 
 # Verify Solr is running
-if singularity exec instance://solr_svc curl -sf http://localhost:8983/solr/admin/info/system > /dev/null 2>&1; then
-    echo "Solr started successfully on localhost"
+if singularity exec instance://solr_svc curl -sf "$SOLR_URL/admin/info/system" > /dev/null 2>&1; then
+    echo "Solr started successfully on $(hostname)"
 else
-    echo "WARNING: Solr may not be ready on localhost, continuing..."
+    echo "WARNING: Solr may not be ready on $(hostname), continuing..."
 fi
 # Verify Solr is reachable via hostname (needed for Nextflow sub-jobs on other nodes)
 if curl -sf "$SOLR_URL/admin/info/system" > /dev/null 2>&1; then
@@ -164,10 +164,10 @@ echo "Infer and explain took: $((end_time - start_time)) seconds"
 start_time=$(date +%s)
 echo "###################" json2solr mappings...
 singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
-    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/sssom-as-json/mapping" http://localhost:8983/solr/oxo2-mappings
+    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/sssom-as-json/mapping" "$SOLR_URL/oxo2-mappings"
 echo "###################" json2solr mappingSets...
 singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
-    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/sssom-as-json/mappingSet" http://localhost:8983/solr/oxo2-mappingsets
+    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/sssom-as-json/mappingSet" "$SOLR_URL/oxo2-mappingsets"
 end_time=$(date +%s)
 echo "Writing to Solr took: $((end_time - start_time)) seconds"
 sleep 20
@@ -176,7 +176,7 @@ sleep 20
 echo "Verifying Solr indexing..."
 for core in oxo2-mappings oxo2-mappingsets; do
     count=$(singularity exec instance://solr_svc \
-        curl -sf "http://localhost:8983/solr/$core/select?q=*:*&rows=0" \
+        curl -sf "$SOLR_URL/$core/select?q=*:*&rows=0" \
         | grep -o '"numFound":[0-9]*' | grep -o '[0-9]*')
     echo "  $core: ${count:-0} documents"
     if [ -z "$count" ] || [ "$count" -eq 0 ]; then
@@ -200,14 +200,14 @@ echo "Explanations to JSON took: $((end_time - start_time)) seconds"
 # --- Stage 6: Index inferred mappings to Solr ---
 echo "###################" json2solr inferred mappings...
 singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
-    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_INFERENCES/solr" http://localhost:8983/solr/oxo2-mappings
+    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_INFERENCES/solr" "$SOLR_URL/oxo2-mappings"
 sleep 20
 
 # --- Verify Stage 7: Check inferred documents were indexed ---
 echo "Verifying Solr indexing..."
 for core in oxo2-mappings oxo2-mappingsets; do
     count=$(singularity exec instance://solr_svc \
-        curl -sf "http://localhost:8983/solr/$core/select?q=*:*&rows=0" \
+        curl -sf "$SOLR_URL/$core/select?q=*:*&rows=0" \
         | grep -o '"numFound":[0-9]*' | grep -o '[0-9]*')
     echo "  $core: ${count:-0} documents"
     if [ -z "$count" ] || [ "$count" -eq 0 ]; then
