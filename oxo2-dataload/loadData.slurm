@@ -133,30 +133,39 @@ fi
 # --- Stage 1: Download mappings ---
 start_time=$(date +%s)
 echo "###################" downloadMappings...
-nextflow -log "$NXF_LOGS/.nextflow.log" \
+nextflow -log "$NXF_LOGS/downloadMappings.nextflow.log" \
     -c "$SCRIPT_DIR/nextflow/nextflow.config" \
     run "$SCRIPT_DIR/downloadMappings.nf" \
-    -profile "$NF_PROFILE"
+    -profile "$NF_PROFILE" \
+    -with-trace    "$NXF_LOGS/downloadMappings-trace.txt" \
+    -with-report   "$NXF_LOGS/downloadMappings-report.html" \
+    -with-timeline "$NXF_LOGS/downloadMappings-timeline.html"
 end_time=$(date +%s)
 echo "Download took: $((end_time - start_time)) seconds"
 
 # --- Stage 2: SSSOM to JSON ---
 start_time=$(date +%s)
 echo "###################" sssom2json...
-nextflow -log "$NXF_LOGS/.nextflow.log" \
+nextflow -log "$NXF_LOGS/sssom2json.nextflow.log" \
     -c "$SCRIPT_DIR/nextflow/nextflow.config" \
     run "$SCRIPT_DIR/sssom2json.nf" \
-    -profile "$NF_PROFILE"
+    -profile "$NF_PROFILE" \
+    -with-trace    "$NXF_LOGS/sssom2json-trace.txt" \
+    -with-report   "$NXF_LOGS/sssom2json-report.html" \
+    -with-timeline "$NXF_LOGS/sssom2json-timeline.html"
 end_time=$(date +%s)
 echo "SSSOM to JSON took: $((end_time - start_time)) seconds"
 
 # --- Stage 3: Infer and explain mappings ---
 start_time=$(date +%s)
 echo "###################" inferAndExplainMappings...
-nextflow -log "$NXF_LOGS/.nextflow.log" \
+nextflow -log "$NXF_LOGS/inferAndExplainMappings.nextflow.log" \
     -c "$SCRIPT_DIR/nextflow/nextflow.config" \
     run "$SCRIPT_DIR/inferAndExplainMappings.nf" \
-    -profile "$NF_PROFILE"
+    -profile "$NF_PROFILE" \
+    -with-trace    "$NXF_LOGS/inferAndExplainMappings-trace.txt" \
+    -with-report   "$NXF_LOGS/inferAndExplainMappings-report.html" \
+    -with-timeline "$NXF_LOGS/inferAndExplainMappings-timeline.html"
 end_time=$(date +%s)
 echo "Infer and explain took: $((end_time - start_time)) seconds"
 
@@ -189,11 +198,14 @@ echo "Solr indexing verified successfully."
 # --- Stage 5: Explanations to JSON ---
 start_time=$(date +%s)
 echo "###################" explanations2json...
-(cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/.nextflow.log" \
+(cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/explanations2json.nextflow.log" \
     -c "$SCRIPT_DIR/nextflow/nextflow.config" \
     run "$SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf" \
     -profile "$NF_PROFILE" \
-    --solr_url "$SOLR_URL")
+    --solr_url "$SOLR_URL" \
+    -with-trace    "$NXF_LOGS/explanations2json-trace.txt" \
+    -with-report   "$NXF_LOGS/explanations2json-report.html" \
+    -with-timeline "$NXF_LOGS/explanations2json-timeline.html")
 end_time=$(date +%s)
 echo "Explanations to JSON took: $((end_time - start_time)) seconds"
 
