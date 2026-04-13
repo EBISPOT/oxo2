@@ -41,8 +41,8 @@ mapping(?a, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?c) :- mapp
 mapping(?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?c) :- mapping(?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b ), mapping(?b, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?c) .
 mapping(?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c) :- mapping(?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b ), mapping(?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c) .
 mapping(?a, <http://www.w3.org/2004/02/skos/core#narrowMatch>, ?c) :- mapping(?a, <http://www.w3.org/2004/02/skos/core#narrowMatch>, ?b ), mapping(?b, <http://www.w3.org/2004/02/skos/core#narrowMatch>, ?c) .
-%mapping(?a, <http://www.geneontology.org/formats/oboInOwl#hasDbXref>, ?c) :- mapping(?a, <http://www.geneontology.org/formats/oboInOwl#hasDbXref>, ?b ), mapping(?b, <http://www.geneontology.org/formats/oboInOwl#hasDbXref>, ?c) .
-%mapping(?a, <http://www.w3.org/2004/02/skos/core#relatedMatch>, ?c) :- mapping(?a, <http://www.w3.org/2004/02/skos/core#relatedMatch>, ?b ), mapping(?b, <http://www.w3.org/2004/02/skos/core#relatedMatch>, ?c) .
+mapping(?a, <http://www.geneontology.org/formats/oboInOwl#hasDbXref>, ?c) :- mapping(?a, <http://www.geneontology.org/formats/oboInOwl#hasDbXref>, ?b ), mapping(?b, <http://www.geneontology.org/formats/oboInOwl#hasDbXref>, ?c) .
+mapping(?a, <http://www.w3.org/2004/02/skos/core#relatedMatch>, ?c) :- mapping(?a, <http://www.w3.org/2004/02/skos/core#relatedMatch>, ?b ), mapping(?b, <http://www.w3.org/2004/02/skos/core#relatedMatch>, ?c) .
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,16 +93,16 @@ mapping(?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b) :- mapping(?a,
 % OWL Rules
 
 % RCE-N1: (:A)-[owl:equivalentClass]->(:B)-[rdfs:subClassOf]->(:C) -> (:A)-[rdfs:subClassOf]->(:C)
-%mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) :- mapping(?a, <http://www.w3.org/2002/07/owl#equivalentClass>,?b), mapping(?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) .
+mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) :- mapping(?a, <http://www.w3.org/2002/07/owl#equivalentClass>,?b), mapping(?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) .
 
 % RCE-N2: (:A)-[rdfs:subClassOf]->(:B)-[owl:equivalentClass]->(:C) -> (:A)-[rdfs:subClassOf]->(:C)
-%mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) :- mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?b), mapping(?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) .
+mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) :- mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?b), mapping(?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) .
 
 % RCE-N3: (:A)-[owl:equivalentProperty]->(:B)-[rdfs:subPropertyOf]->(:C) -> (:A)-[rdfs:subPropertyOf]->(:C)
-%mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) :- mapping(?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?b), mapping(?b, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) .
+mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) :- mapping(?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?b), mapping(?b, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) .
 
 % RCE-N4: (:A)-[rdfs:subPropertyOf]->(:B)-[owl:equivalentProperty]->(:C) -> (:A)-[rdfs:subPropertyOf]->(:C)
-%mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) :- mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, b), mapping(?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?c) .
+mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) :- mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, b), mapping(?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?c) .
 
 @export inferredMapping :- turtle{resource=$exportfile} .
 

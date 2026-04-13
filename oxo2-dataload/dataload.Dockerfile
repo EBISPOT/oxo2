@@ -28,7 +28,7 @@ RUN mkdir -p /opt/nextflow  \
     && chown -R oxo:oxo /opt/nextflow
 
 RUN mkdir -p /opt/nemo \
-    && curl -L https://github.com/knowsys/nemo/releases/download/v0.9.1/nemo_v0.9.1_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf - \
+    && curl -L https://github.com/knowsys/nemo/releases/download/v0.10.0/nemo_v0.10.0_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf - \
     && chown -R oxo:oxo /opt/nemo
 
 RUN mkdir -p /opt/solr  \

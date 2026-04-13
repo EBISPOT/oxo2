@@ -25,6 +25,7 @@ echo NXF_HOME=$NXF_HOME
 OXO2_INFERENCES=$OXO2_DATA/inferences
 export OXO2_INFERENCES
 rm -R $OXO2_DATA/*
+rm -R $NEXTFLOW_DIR/*
 
 mkdir -p $NXF_WORK $NXF_HOME $NXF_TEMP $NXF_CACHE_DIR $NXF_LOGS
 
@@ -37,7 +38,13 @@ echo "Download took: ${elapsed} seconds"
 
 start_time=$(date +%s)
 echo "Using Nextflow for parallel processing of SSSOM to JSON conversion"
-(nextflow -log $NXF_LOGS/.nextflow.log -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/sssom2json.nf -profile $NF_PROFILE)
+(nextflow -log $NXF_LOGS/sssom2json.nextflow.log \
+    -c $SCRIPT_DIR/nextflow/nextflow.config \
+    run $SCRIPT_DIR/sssom2json.nf \
+    -profile $NF_PROFILE \
+    -with-trace    $NXF_LOGS/sssom2json-trace.txt \
+    -with-report   $NXF_LOGS/sssom2json-report.html \
+    -with-timeline $NXF_LOGS/sssom2json-timeline.html)
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Nextflow Parallel Processing: Writing JSON took: ${elapsed} seconds"
@@ -70,19 +77,25 @@ echo "Writing to Solr took: ${elapsed} seconds"
 sleep 20
 
 
-mkdir -p $OXO2_INFERENCES/solr
+#mkdir -p $OXO2_INFERENCES/solr
+#
+#start_time=$(date +%s)
+#echo "Using Nextflow for parallel explanations2json"
+#(cd $NXF_LOGS && nextflow -log $NXF_LOGS/explanations2json.nextflow.log \
+#    -c $SCRIPT_DIR/nextflow/nextflow.config \
+#    run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf \
+#    -profile $NF_PROFILE \
+#    -with-trace    $NXF_LOGS/explanations2json-trace.txt \
+#    -with-report   $NXF_LOGS/explanations2json-report.html \
+#    -with-timeline $NXF_LOGS/explanations2json-timeline.html)
+#end_time=$(date +%s)
+#elapsed=$((end_time - start_time))
+#echo "Nextflow Parallel Processing: explanations2json took: ${elapsed} seconds"
 
-start_time=$(date +%s)
-echo "Using Nextflow for parallel explanations2json"
-(cd $NXF_LOGS && nextflow -log $NXF_LOGS/.nextflow.log -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf -profile $NF_PROFILE)
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Nextflow Parallel Processing: explanations2json took: ${elapsed} seconds"
 
-
- echo  "###################"  json2solr inferred mappings ...
- $SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
- sleep 20
+# echo  "###################"  json2solr inferred mappings ...
+# $SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
+# sleep 20
 
 
 echo  "################### Stopping solr ..."

@@ -1,0 +1,68 @@
+{
+  "mapping_registries" : [
+    {
+      "id": "test_mondo",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom_files/mondo.ols.sssom.tsv"
+    },
+    {
+      "id": "test_slm",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/slm.ols.sssom.tsv"
+    },
+    {
+      "id": "test_ncbitaxon",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/ncbitaxon.ols.sssom.tsv"
+    },
+    {
+      "id": "test_snomed",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/snomed.ols.sssom.tsv"
+    },
+    {
+      "id": "test_lipidmaps",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/lipidmaps.ols.sssom.tsv"
+    },
+    {
+      "id": "test_chebi",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/chebi.ols.sssom.tsv"
+    },
+    {
+      "id": "test_pr",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/pr.ols.sssom.tsv"
+    },
+    {
+      "id": "test_vto",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/vto.ols.sssom.tsv"
+    },
+    {
+      "id": "test_ncit",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/ncit.ols.sssom.tsv"
+    },
+    {
+      "id": "test_ogg",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/ogg.ols.sssom.tsv"
+    },
+    {
+      "id": "test_omit",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/omit.ols.sssom.tsv"
+    },
+    {
+      "id": "test_gno",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/gno.ols.sssom.tsv"
+    },
+    {
+      "id": "test_dron",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/dron.ols.sssom.tsv"
+    },
+    {
+      "id": "test_ordo",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/ordo.ols.sssom.tsv"
+    },
+    {
+      "id": "test_uberon",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/uberon.ols.sssom.tsv"
+    },
+    {
+      "id": "test_tto",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/tto.ols.sssom.tsv"
+    }
+  ]
+}

@@ -5,4 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p $OXO2_DATA/sssom
 
 echo "Using Nextflow for parallel download of mappings"
-(nextflow -log $NXF_LOGS/.nextflow.log -c $SCRIPT_DIR/nextflow/nextflow.config run $SCRIPT_DIR/downloadMappings.nf -profile ${NF_PROFILE:-standard})
+(nextflow -log $NXF_LOGS/downloadMappings.nextflow.log \
+    -c $SCRIPT_DIR/nextflow/nextflow.config \
+    run $SCRIPT_DIR/downloadMappings.nf \
+    -profile ${NF_PROFILE:-standard} \
+    -with-trace    $NXF_LOGS/downloadMappings-trace.txt \
+    -with-report   $NXF_LOGS/downloadMappings-report.html \
+    -with-timeline $NXF_LOGS/downloadMappings-timeline.html)
