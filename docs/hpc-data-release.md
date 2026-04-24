@@ -133,8 +133,9 @@ The Nextflow workflow parses `$OXO2_CONFIG` (a JSON file listing mapping registr
 
 | Resource | Value |
 |----------|-------|
+| CPU | 1 |
 | Memory | 4 GB |
-| Time | 4 hours |
+| Time | 2 hours |
 
 **Input:** `$OXO2_CONFIG` (e.g., `oxo-config-evora.json`)  
 **Output:** `$OXO2_DATA/sssom/*.tsv`
@@ -145,10 +146,11 @@ The Nextflow workflow parses `$OXO2_CONFIG` (a JSON file listing mapping registr
 
 This is intentionally run as a single process because multiple SSSOM TSV files across different registries can produce the same output filename (derived from `mappingSetId`). Directory-mode processing lets the converter's `getUniqueFilename()` logic handle collisions safely.
 
-| Resource | Value |
-|----------|-------|
-| Memory | 4 GB |
-| Time | 4 hours |
+| Resource | Value   |
+|----------|---------|
+| CPU | 1       |
+| Memory | 16 GB   |
+| Time | 2 hours |
 
 **Input:** `$OXO2_DATA/sssom/` (all TSV files)  
 **Output:** `$OXO2_DATA/sssom-as-json/mapping/*.json` and `$OXO2_DATA/sssom-as-json/mappingSet/*.json`
@@ -170,7 +172,8 @@ Converts each JSON mapping file to RDF Turtle format using the `oxo2-json2infere
 
 | Resource | Value |
 |----------|-------|
-| Memory | 4 GB |
+| CPU | 2 |
+| Memory | 8 GB |
 | Time | 2 hours |
 
 **Input:** `$OXO2_DATA/sssom-as-json/mapping/*.json`  
@@ -182,8 +185,9 @@ Runs the Nemo rules engine (`nmo`) with `chain-rules.rls` to infer transitive ma
 
 | Resource | Value |
 |----------|-------|
-| Memory | **128 GB** |
-| Time | **48 hours** |
+| CPU | 1 |
+| Memory | **64 GB** |
+| Time | **24 hours** |
 
 **Command:**
 ```bash
@@ -202,8 +206,9 @@ Selects which inferred mappings need explanation chains, using the Java `MainDis
 
 | Resource | Value |
 |----------|-------|
-| Memory | 4 GB |
-| Time | 2 hours |
+| CPU | 4 |
+| Memory | 12 GB |
+| Time | 4 hours |
 
 **Input:** `$OXO2_INFERENCES/inferredMappings/*.ttl`  
 **Output:** `$OXO2_INFERENCES/inferencesToTrace/*.txt`
@@ -214,8 +219,9 @@ Runs Nemo with tracing enabled to generate human-readable explanation chains for
 
 | Resource | Value |
 |----------|-------|
-| Memory | 16 GB |
-| Time | 8 hours |
+| CPU | 1 |
+| Memory | 64 GB |
+| Time | 24 hours |
 
 **Command:**
 ```bash
@@ -251,8 +257,9 @@ Converts Nemo inference chains into enriched JSON mappings with explanations. Th
 
 | Resource | Value |
 |----------|-------|
-| Memory | 4 GB |
-| Time | 2 hours |
+| CPU | 1 |
+| Memory | 64 GB |
+| Time | 24 hours |
 
 Environment variables `SOLR_URL`, `no_proxy`, and `JAVA_OPTS` are whitelisted in the Singularity configuration and passed to the container so the Java process can reach Solr on the compute node.
 
@@ -274,33 +281,33 @@ json2solr.sh "$OXO2_INFERENCES/solr" http://localhost:8983/solr/oxo2-mappings
 
 ## Resource Summary
 
-| Process | Memory | Time | Parallelism |
-|---------|--------|------|-------------|
-| Main SLURM job | 16 GB | 72h | 1 (orchestrator) |
-| DOWNLOAD_REGISTRY | 4 GB | 4h | N registries |
-| SSSOM2JSON | 4 GB | 4h | 1 (batch) |
-| JSON2TTL | 4 GB | 2h | M files |
-| **INFER_MAPPINGS** | **128 GB** | **48h** | **M files** |
-| DETERMINE_INFERENCES_TO_TRACE | 4 GB | 2h | M files |
-| EXPLAIN_INFERENCES_TO_TRACE | 16 GB | 8h | M files |
-| EXPLANATIONS_TO_JSON | 4 GB | 2h | M files |
+| Process | CPU | Memory | Time | Parallelism |
+|---------|-----|--------|------|-------------|
+| Main SLURM job | 1 | 16 GB | 72h | 1 (orchestrator) |
+| DOWNLOAD_REGISTRY | 1 | 4 GB | 2h | N registries |
+| SSSOM2JSON | 1 | 8 GB | 2h | 1 (batch) |
+| JSON2TTL | 2 | 8 GB | 2h | M files |
+| **INFER_MAPPINGS** | 1 | **64 GB** | **24h** | **M files** |
+| DETERMINE_INFERENCES_TO_TRACE | 4 | 12 GB | 4h | M files |
+| EXPLAIN_INFERENCES_TO_TRACE | 1 | 64 GB | 24h | M files |
+| EXPLANATIONS_TO_JSON | 1 | 64 GB | 24h | M files |
 
-Nextflow limits: max 50 SLURM sub-jobs queued, max 10 submissions per minute.
+Nextflow concurrency limit: `executor.queueSize = 200` in the `slurm` profile — up to 200 sub-jobs queued/running concurrently. No `submitRateLimit` is set.
 
 ## Nextflow Configuration Highlights
 
 Key settings from `nextflow/nextflow.config`:
 
-- **SLURM profile:** `executor.name = 'slurm'`, `queueSize = 50`, `submitRateLimit = '10/1min'`
+- **SLURM profile:** `executor.name = 'slurm'`, `queueSize =50` (no `submitRateLimit` set)
 - **Singularity:** `enabled = true`, `autoMounts = true`, whitelists `SOLR_URL,no_proxy,JAVA_OPTS`
-- **Error handling:** All processes retry up to 2 times on failure (`errorStrategy = 'retry'`)
+- **Error handling:** Default `errorStrategy = 'ignore'` with `maxRetries = 1` (per-process overrides may apply)
 - **Caching:** `cache = 'lenient'` allows Nextflow to reuse completed tasks on resume
 - **Reports:** HTML execution report, timeline, and trace file written to `$NXF_LOGS/`
 
 ## Error Handling
 
 - **Shell strict mode:** `set -euo pipefail` in `loadData.slurm` fails the pipeline on any error.
-- **Nextflow retries:** Each process retries up to 2 times automatically.
+- **Nextflow retries:** Default `errorStrategy = 'ignore'` with `maxRetries = 1`; failing tasks are skipped rather than aborting the workflow.
 - **Solr verification:** Stage 4 explicitly checks document counts and aborts if indexing failed.
 - **Empty file handling:** All Nextflow processes remove output files smaller than 1 byte to prevent downstream issues.
 - **Heap dumps:** The `explanations2json` process enables `-XX:+HeapDumpOnOutOfMemoryError` for post-mortem analysis.
