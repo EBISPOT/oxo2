@@ -37,8 +37,10 @@ if [ ${#missing[@]} -gt 0 ]; then
 fi
 
 # --- Configurable Slurm resources ---
+# 32G: main batch step hosts the Solr singularity instance, the Nextflow driver JVM,
+# and (when a stage runs inline) the worker JVM. 16G was not enough for NCBI taxon.
 HPC_TIME="${HPC_TIME:-72:00:00}"
-HPC_MEM="${HPC_MEM:-16G}"
+HPC_MEM="${HPC_MEM:-32G}"
 
 # --- Create log directory ---
 mkdir -p "$SLURM_LOGS"

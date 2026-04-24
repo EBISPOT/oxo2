@@ -14,7 +14,10 @@ set -euo pipefail
 
 export SOLR_URL="http://$(hostname):8983/solr"
 export no_proxy="localhost,127.0.0.1,$(hostname)"
-export JAVA_OPTS="${JAVA_OPTS:-} -Dhttp.nonProxyHosts=localhost|127.0.0.1|$(hostname)"
+# -XX:MaxRAMPercentage=75 — default is 25%, which caps heap at ~4 GB for a 16 GB cgroup.
+# Large mapping sets (e.g. NCBI taxon) OOM'd on the default. 75% lets each stage's JVM
+# use most of its Nextflow-declared cgroup without hard-coding -Xmx per stage.
+export JAVA_OPTS="${JAVA_OPTS:-} -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -Dhttp.nonProxyHosts=localhost|127.0.0.1|$(hostname)"
 
 echo "=== OXO2 HPC Dataload ==="
 echo "Job ID: $SLURM_JOB_ID"
