@@ -1,29 +1,21 @@
-FROM ubuntu:22.04
+# syntax=docker/dockerfile:1.7
+FROM node:18-slim
 
-RUN apt update && apt install -y curl gpg
-
-# node
-RUN curl -sL https://deb.nodesource.com/setup_18.x | bash
-
-# caddy
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
-
-
-RUN apt update && apt install -y nodejs caddy
-
-RUN mkdir /opt/oxo2-frontend
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl gpg ca-certificates debian-keyring debian-archive-keyring apt-transport-https \
+    && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
+    && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends caddy \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/oxo2-frontend
 
+COPY package.json package-lock.json ./
 
-COPY package.json /opt/oxo2-frontend/
+RUN npm ci
 
-COPY . /opt/oxo2-frontend/
-
-RUN rm -rf ./node_modules && rm -rf ./dist
-
-RUN npm install
+COPY . .
 
 RUN chmod +x /opt/oxo2-frontend/entrypoint.dockersh
 

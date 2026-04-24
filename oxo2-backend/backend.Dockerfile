@@ -1,24 +1,38 @@
-FROM maven:3.9.10-eclipse-temurin-17
+# syntax=docker/dockerfile:1.7
+FROM maven:3.9.10-eclipse-temurin-17 AS builder
 
-WORKDIR /opt/oxo
+WORKDIR /build
 
-COPY  pom.xml /opt/oxo
-COPY  startBackend.sh /opt/oxo
-COPY oxo2-shared/ /opt/oxo/oxo2-shared
-COPY oxo2-backend/ /opt/oxo/oxo2-backend
+COPY pom.xml /build/
+COPY oxo2-shared/pom.xml /build/oxo2-shared/
+COPY oxo2-backend/pom.xml /build/oxo2-backend/
+COPY oxo2-dataload/pom.xml /build/oxo2-dataload/
+COPY oxo2-dataload/oxo2-downloader/pom.xml /build/oxo2-dataload/oxo2-downloader/
+COPY oxo2-dataload/oxo2-json2inferences/pom.xml /build/oxo2-dataload/oxo2-json2inferences/
+COPY oxo2-dataload/oxo2-sssom2json/pom.xml /build/oxo2-dataload/oxo2-sssom2json/
+COPY oxo2-dataload/oxo2-solr-dataload-client/pom.xml /build/oxo2-dataload/oxo2-solr-dataload-client/
+COPY oxo2-dataload/oxo2-dataload-testing/pom.xml /build/oxo2-dataload/oxo2-dataload-testing/
 
-RUN cd /opt/oxo/oxo2-shared \
-    && mvn -e -B package install
+RUN mvn -B -pl oxo2-backend -am dependency:go-offline -fae || true
 
-RUN cd /opt/oxo/oxo2-backend \
-    && mvn -e -B package install
+COPY oxo2-shared/ /build/oxo2-shared/
+COPY oxo2-backend/ /build/oxo2-backend/
+
+RUN mvn -B -pl oxo2-backend -am -DskipTests install
 
 
-RUN addgroup --system oxo && adduser --system --ingroup oxo oxo
+FROM eclipse-temurin:17-jre
 
-RUN chown -R oxo:oxo /opt/oxo
-RUN chmod -R 777 /opt/oxo
+RUN addgroup --system oxo && adduser --system --ingroup oxo oxo \
+    && mkdir -p /opt/oxo/oxo2-backend/target \
+    && chown -R oxo:oxo /opt/oxo
 
+COPY startBackend.sh /opt/oxo/
+COPY --from=builder \
+    /build/oxo2-backend/target/oxo2-backend-1.0.0-SNAPSHOT.jar \
+    /opt/oxo/oxo2-backend/target/
+
+RUN chown -R oxo:oxo /opt/oxo && chmod +x /opt/oxo/startBackend.sh
 
 USER oxo
 

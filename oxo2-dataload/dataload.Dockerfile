@@ -1,46 +1,45 @@
+# syntax=docker/dockerfile:1.7
 FROM maven:3.9.10-eclipse-temurin-17 AS builder
 
 WORKDIR /build
 
-COPY  pom.xml /build/
-COPY oxo2-shared/ /build/oxo2-shared
-COPY oxo2-dataload/ /build/oxo2-dataload
+COPY pom.xml /build/
+COPY oxo2-shared/pom.xml /build/oxo2-shared/
+COPY oxo2-backend/pom.xml /build/oxo2-backend/
+COPY oxo2-dataload/pom.xml /build/oxo2-dataload/
+COPY oxo2-dataload/oxo2-downloader/pom.xml /build/oxo2-dataload/oxo2-downloader/
+COPY oxo2-dataload/oxo2-json2inferences/pom.xml /build/oxo2-dataload/oxo2-json2inferences/
+COPY oxo2-dataload/oxo2-sssom2json/pom.xml /build/oxo2-dataload/oxo2-sssom2json/
+COPY oxo2-dataload/oxo2-solr-dataload-client/pom.xml /build/oxo2-dataload/oxo2-solr-dataload-client/
+COPY oxo2-dataload/oxo2-dataload-testing/pom.xml /build/oxo2-dataload/oxo2-dataload-testing/
 
+RUN mvn -B -pl :oxo2-downloader,:oxo2-json2inferences,:oxo2-sssom2json -am dependency:go-offline -fae || true
 
-RUN cd oxo2-shared \
-    && mvn -e -B package install
+COPY oxo2-shared/ /build/oxo2-shared/
+COPY oxo2-dataload/ /build/oxo2-dataload/
 
-
-RUN cd oxo2-dataload \
-    && mvn -e -B package install
+RUN mvn -B -pl :oxo2-downloader,:oxo2-json2inferences,:oxo2-sssom2json -am -DskipTests install
 
 
 FROM eclipse-temurin:17
+
+RUN mkdir -p /opt/nextflow  \
+    && curl -fsSL https://get.nextflow.io | bash \
+    && mv nextflow /opt/nextflow \
+    && chmod +x /opt/nextflow/nextflow
+
+RUN mkdir -p /opt/nemo \
+    && curl -L https://github.com/knowsys/nemo/releases/download/v0.10.0/nemo_v0.10.0_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf -
+
+RUN mkdir -p /opt/solr  \
+    && curl -L https://archive.apache.org/dist/solr/solr/9.9.0/solr-9.9.0.tgz | tar --strip-components=1 -C /opt/solr -xzf - \
+    && rm -rf /opt/solr/server/solr/*
 
 RUN addgroup --system oxo && adduser --system --ingroup oxo --home /home/oxo oxo \
     && mkdir -p /home/oxo \
     && chown -R oxo:oxo /home/oxo
 
-RUN mkdir -p /opt/nextflow  \
-    && curl -fsSL https://get.nextflow.io | bash \
-    && mv nextflow /opt/nextflow \
-    && chmod +x /opt/nextflow/nextflow \
-    && chown -R oxo:oxo /opt/nextflow
-
-RUN mkdir -p /opt/nemo \
-    && curl -L https://github.com/knowsys/nemo/releases/download/v0.10.0/nemo_v0.10.0_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf - \
-    && chown -R oxo:oxo /opt/nemo
-
-RUN mkdir -p /opt/solr  \
-    && curl -L https://archive.apache.org/dist/solr/solr/9.9.0/solr-9.9.0.tgz | tar --strip-components=1 -C /opt/solr -xzf - \
-    && rm -rf /opt/solr/server/solr/* \
-    && chown -R oxo:oxo /opt/solr
-  
-
-RUN mkdir -p /mnt \
-    && mkdir -p /mnt/oxo \
-    && mkdir -p /mnt/oxo/data \
-    && mkdir -p /mnt/oxo/logs \
+RUN mkdir -p /mnt/oxo/data /mnt/oxo/logs \
     && chown -R oxo:oxo /mnt/oxo
 
 ENV PATH="${PATH}:/opt/nextflow:/opt/nemo:/opt/solr" \
@@ -50,9 +49,8 @@ ENV PATH="${PATH}:/opt/nextflow:/opt/nemo:/opt/solr" \
     SOLR_SCRIPT="/opt/solr/bin" \
     NF_PROFILE="standard" \
     NF_CONTAINER="" \
-    NEXTFLOW_DIR="/mnt/oxo/nextflow"
-
-
+    NEXTFLOW_DIR="/mnt/oxo/nextflow" \
+    OXO2_CONFIG=/mnt/oxo/configs/config.json
 
 RUN mkdir -p /opt/oxo
 
@@ -105,16 +103,10 @@ COPY --from=builder \
     /build/oxo2-dataload/oxo2-sssom2json/target/oxo2-sssom2json-1.0.0-SNAPSHOT.jar \
     /opt/oxo/oxo2-dataload/oxo2-sssom2json/target/
 
-ENV OXO2_CONFIG=/mnt/oxo/configs/config.json
-
-RUN chown -R oxo:oxo /opt/*
-RUN chmod -R 777 /opt/* 
-
+RUN chown -R oxo:oxo /opt/* && chmod -R 777 /opt/*
 
 USER oxo
-
 
 WORKDIR /opt/oxo/oxo2-dataload
 
 CMD ["sh", "-c", "./loadData.nextflow > /mnt/oxo/logs/dataload.logs"]
-
