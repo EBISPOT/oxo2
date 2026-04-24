@@ -49,7 +49,7 @@ end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Nextflow Parallel Processing: Writing JSON took: ${elapsed} seconds"
 
-#
+
 start_time=$(date +%s)
 echo  "###################"  makeInferences...
 $SCRIPT_DIR/determineInferencesAndExplanations.nextflow
@@ -77,25 +77,25 @@ echo "Writing to Solr took: ${elapsed} seconds"
 sleep 20
 
 
-#mkdir -p $OXO2_INFERENCES/solr
-#
-#start_time=$(date +%s)
-#echo "Using Nextflow for parallel explanations2json"
-#(cd $NXF_LOGS && nextflow -log $NXF_LOGS/explanations2json.nextflow.log \
-#    -c $SCRIPT_DIR/nextflow/nextflow.config \
-#    run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf \
-#    -profile $NF_PROFILE \
-#    -with-trace    $NXF_LOGS/explanations2json-trace.txt \
-#    -with-report   $NXF_LOGS/explanations2json-report.html \
-#    -with-timeline $NXF_LOGS/explanations2json-timeline.html)
-#end_time=$(date +%s)
-#elapsed=$((end_time - start_time))
-#echo "Nextflow Parallel Processing: explanations2json took: ${elapsed} seconds"
+mkdir -p $OXO2_INFERENCES/solr
+
+start_time=$(date +%s)
+echo "Using Nextflow for parallel explanations2json"
+(cd $NXF_LOGS && nextflow -log $NXF_LOGS/explanations2json.nextflow.log \
+    -c $SCRIPT_DIR/nextflow/nextflow.config \
+    run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf \
+    -profile $NF_PROFILE \
+    -with-trace    $NXF_LOGS/explanations2json-trace.txt \
+    -with-report   $NXF_LOGS/explanations2json-report.html \
+    -with-timeline $NXF_LOGS/explanations2json-timeline.html)
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+echo "Nextflow Parallel Processing: explanations2json took: ${elapsed} seconds"
 
 
-# echo  "###################"  json2solr inferred mappings ...
-# $SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
-# sleep 20
+ echo  "###################"  json2solr inferred mappings ...
+ $SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
+ sleep 20
 
 
 echo  "################### Stopping solr ..."

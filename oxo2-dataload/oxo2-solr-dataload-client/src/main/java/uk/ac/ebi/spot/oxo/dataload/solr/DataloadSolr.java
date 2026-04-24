@@ -12,6 +12,8 @@ import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -21,10 +23,11 @@ public class DataloadSolr {
 
     private String solrUrl = System.getenv("SOLR_URL") != null ? System.getenv("SOLR_URL") : "http://localhost:8983/solr";
 
-    private int connectionTimeoutMillis = 10000;
+    private final int connectionTimeoutMillis = envInt("OXO2_SOLR_CONNECT_TIMEOUT_MS", 10000);
 
-    private int socketTimeoutMillis = 10000;
+    private final int socketTimeoutMillis = envInt("OXO2_SOLR_SOCKET_TIMEOUT_MS", 60000);
 
+    private final Map<String, EntityDetails> entityDetailsCache = new ConcurrentHashMap<>();
 
     private static final Logger logger = LoggerFactory.getLogger(DataloadSolr.class);
 
@@ -35,6 +38,20 @@ public class DataloadSolr {
                 .withIdleTimeout(socketTimeoutMillis, MILLISECONDS)
                 .useHttp1_1(true)
                 .build();
+    }
+
+    private static int envInt(String name, int defaultValue) {
+        String value = System.getenv(name);
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            LoggerFactory.getLogger(DataloadSolr.class)
+                    .warn("Invalid integer for env var {}={}, using default {}", name, value, defaultValue);
+            return defaultValue;
+        }
     }
 
     public List<Mapping> querySubjectPredicateObjectIRI(String subjectIRI, String predicateIRI, String objectIRI)  {
@@ -59,6 +76,11 @@ public class DataloadSolr {
     }
 
     public EntityDetails queryEntityDetailsForIRI(String iriField, String iriValue, String curieField, String labelField)  {
+        String cacheKey = iriField + '\0' + iriValue;
+        EntityDetails cached = entityDetailsCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
         try {
             SolrQuery query = new SolrQuery();
             query.setQuery(String.format("%s:\"%s\"",iriField, iriValue));
@@ -83,6 +105,7 @@ public class DataloadSolr {
                 }
             }
 
+            entityDetailsCache.put(cacheKey, entityDetails);
             return entityDetails;
         } catch (Exception e) {
             throw new RuntimeException(e);
