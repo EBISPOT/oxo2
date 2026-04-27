@@ -25,11 +25,12 @@ echo NXF_HOME=$NXF_HOME
 OXO2_INFERENCES=$OXO2_DATA/inferences
 export OXO2_INFERENCES
 
-# -XX:MaxRAMPercentage=75 — default is ~25%, which capped the SSSOM2JSON JVM at
-# ~7 GB on a 30 GB host and OOM'd on NCBI taxon. 75% lets each stage's JVM use
-# most of host RAM without hard-coding -Xmx per stage. Mirrors loadData.slurm.
+# Pin per-task heap to 4 GB. With per-file parallelism in sssom2json.nf, up to
+# ~5 SSSOM2JSON JVMs run concurrently on the local executor (cpus=6, executor
+# memory=22 GB), so an explicit -Xmx avoids the default JVM ergonomics letting
+# each one grab ~25% of host RAM and oversubscribing the box.
 export JAVA_OPTS="${JAVA_OPTS:-} -Xmx4g -XX:+ExitOnOutOfMemoryError"
-#rm -R $OXO2_DATA/*
+rm -R $OXO2_DATA/*
 rm -R $NEXTFLOW_DIR/*
 
 mkdir -p $NXF_WORK $NXF_HOME $NXF_TEMP $NXF_CACHE_DIR $NXF_LOGS
