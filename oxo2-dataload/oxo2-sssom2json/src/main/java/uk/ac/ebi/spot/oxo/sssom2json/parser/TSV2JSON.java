@@ -53,12 +53,14 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.SortedSet;
+import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,6 +71,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -77,8 +81,10 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import uk.ac.ebi.spot.oxo.model.sssom.CurieMap;
+import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingSet;
+import uk.ac.ebi.spot.oxo.model.sssom.Uri;
 
 /**
  *  A SSSOM TSV file contains 1 MappingSet object. See structure of TSV discussed
@@ -106,18 +112,8 @@ public class TSV2JSON {
                             MappingSet.Builder externalMappingBuilderSet = filenameToExternalMetadataMap.get(filename);
                             externalMappingSetBuilderOptional = Optional.of(externalMappingBuilderSet);
                         }
-                        long startReadTime = System.currentTimeMillis();
-                        Optional<MappingSet> mappingSetOptional = readTSVFile(path.toFile(), externalMappingSetBuilderOptional);
-                        long endReadTime = System.currentTimeMillis();
-                        logger.info("Time taken to read TSV file: {} s", (endReadTime - startReadTime)/1000);
-
-                        if (mappingSetOptional.isPresent() && mappingSetOptional.get().mappings().size() > 0) {
-                            MappingSet mappingSet = mappingSetOptional.get();
-
-                            writeJSONFile(mappingSet, mappingSetOutputDirectory, mappingsOutputDirectory);
-                            long endWriteTime = System.currentTimeMillis();
-                            logger.info("Time taken to write JSON file: {} s", (endWriteTime - endReadTime)/1000);
-                        }
+                        processOneTSV(path.toFile(), externalMappingSetBuilderOptional,
+                                mappingSetOutputDirectory, mappingsOutputDirectory);
                     });
         } catch (Throwable t) {
             logger.error("Error while looking for .yml files in {}", directory, t);
@@ -159,26 +155,70 @@ public class TSV2JSON {
             externalMappingSetBuilderOptional = Optional.of(externalMappingBuilderSet);
         }
 
-        long startReadTime = System.currentTimeMillis();
-        Optional<MappingSet> mappingSetOptional = readTSVFile(tsvFile, externalMappingSetBuilderOptional);
-        long endReadTime = System.currentTimeMillis();
-        logger.info("Time taken to read TSV file: {} s", (endReadTime - startReadTime) / 1000);
-
-        if (mappingSetOptional.isPresent() && mappingSetOptional.get().mappings().size() > 0) {
-            MappingSet mappingSet = mappingSetOptional.get();
-            writeJSONFile(mappingSet, mappingSetOutputDirectory, mappingsOutputDirectory);
-            long endWriteTime = System.currentTimeMillis();
-            logger.info("Time taken to write JSON file: {} s", (endWriteTime - endReadTime) / 1000);
-        } else {
-            logger.warn("No mappings found in file: {}", tsvFile);
-        }
+        processOneTSV(tsvFile, externalMappingSetBuilderOptional,
+                mappingSetOutputDirectory, mappingsOutputDirectory);
     }
     
 
-    private static void writeJSONFile(MappingSet mappingSet, String mappingSetOutputDirectory,
-                                      String mappingsOutputDirectory) {
+    /**
+     * Stream a TSV file straight to its JSON outputs without ever materialising the full
+     * SortedSet&lt;Mapping&gt; in memory. Heap retention is bounded by the dedup set of mappingId
+     * UUIDs (~32 bytes/row) plus the current row's builder, so a 5M-row file uses ~200 MB
+     * regardless of per-row payload size.
+     *
+     * <p>Order of mappings in the JSON output follows TSV order (no longer sorted by mappingId
+     * as was the case when a TreeSet was used). Dedup on mappingId is preserved, matching the
+     * old TreeSet contract which considered Mappings equal iff their mappingId matched.
+     */
+    private static void processOneTSV(File file,
+                                       Optional<MappingSet.Builder> externalMappingSetBuilderOptional,
+                                       String mappingSetOutputDirectory,
+                                       String mappingsOutputDirectory) {
+        // Drop prior file's CURIE/URI caches before parsing this one. The caches
+        // speed up repeated lookups within a single mapping set, but if left to
+        // accumulate across files they retain every distinct entity string for
+        // the lifetime of the JVM and OOM on large inputs (e.g. NCBI taxon).
+        EntityReference.clearCache();
+        Uri.clearCache();
+        logger.info("Reading TSV file {}", file);
 
-        logger.info("Writing JSON file for MappingSet {}", mappingSet.mappingSetId());
+        Optional<MappingSet.Builder> embeddedMappingSetBuilderOptional;
+        try {
+            embeddedMappingSetBuilderOptional = readYamlHeader(file);
+        } catch (IOException e) {
+            logger.error("Error while reading YAML header for TSV file {}", file, e);
+            return;
+        }
+
+        if (externalMappingSetBuilderOptional.isEmpty() && embeddedMappingSetBuilderOptional.isEmpty()) {
+            logger.error("Both external and embedded metadata are missing. See TSV file {}", file);
+            return;
+        }
+
+        // Pin the mappingSetId once before parsing; output filenames depend on it.
+        externalMappingSetBuilderOptional.ifPresent(b -> b.setMappingSetIdIfNotSetAlready(file.getName()));
+        embeddedMappingSetBuilderOptional.ifPresent(b -> b.setMappingSetIdIfNotSetAlready(file.getName()));
+
+        MappingSet.Builder mappingSetBuilder = MappingSet.builder();
+        if (externalMappingSetBuilderOptional.isPresent() && embeddedMappingSetBuilderOptional.isPresent()) {
+            mappingSetBuilder = updateBuilder(mappingSetBuilder, embeddedMappingSetBuilderOptional.get().build());
+        } else if (externalMappingSetBuilderOptional.isPresent()) {
+            mappingSetBuilder = externalMappingSetBuilderOptional.get();
+        } else {
+            mappingSetBuilder = embeddedMappingSetBuilderOptional.get();
+        }
+        // mappings is @JsonIgnore on MappingSet, so the metadata file does not contain
+        // them anyway; keeping the field empty avoids retaining references after streaming.
+        mappingSetBuilder.mappings(new TreeSet<>());
+        MappingSet mappingSetMetadata = mappingSetBuilder.build();
+
+        String baseFilename = mappingSetMetadata.mappingSetId().extractFragmentOrLastPathSegment();
+        String mappingSetFilename = getUniqueFilename(mappingSetOutputDirectory, baseFilename);
+        String mappingsFilename = getUniqueFilename(mappingsOutputDirectory, baseFilename);
+        File mappingsFile = new File(mappingsFilename);
+
+        Optional<CurieMap> optionalCurieMap = mergeCurieMaps(externalMappingSetBuilderOptional, embeddedMappingSetBuilderOptional);
+
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new Jdk8Module());
         objectMapper.registerModule(new JavaTimeModule());
@@ -186,70 +226,15 @@ public class TSV2JSON {
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-        String baseFilename = mappingSet.mappingSetId().extractFragmentOrLastPathSegment();
-        String mappingSetFilename = getUniqueFilename(mappingSetOutputDirectory, baseFilename);
-        String mappingsFilename = getUniqueFilename(mappingsOutputDirectory, baseFilename);
+        long startReadTime = System.currentTimeMillis();
+        long mappingsWritten = 0;
+        Set<UUID> seenMappingIds = new HashSet<>();
 
-
-        if (!mappingSet.mappings().isEmpty()) {
-            try {
-                objectMapper.writeValue(new File(mappingSetFilename), List.of(mappingSet));
-                List<Mapping> mappingsForMappingSet = new ArrayList<>(mappingSet.mappings());
-
-                objectMapper.writeValue(new File(mappingsFilename), mappingsForMappingSet);
-            } catch (IOException e) {
-                logger.error("Error while writing JSON file for MappingSet {}", mappingSet.mappingSetId(), e);
-            }
-        }
-    }
-
-    /**
-     * Generates a unique filename by appending a counter if the file already exists.
-     * For example: "mapping.json" -> "mapping.json", "mapping_1.json", "mapping_2.json", etc.
-     *
-     * @param directory The output directory
-     * @param baseFilename The base filename without extension
-     * @return A unique filename with .json extension
-     */    
-    private static String getUniqueFilename(String directory, String baseFilename) {
-        String basePath = directory + File.separator + baseFilename;
-        String filename = basePath + ".json";
-        File file = new File(filename);
-        
-        if (!file.exists()) {
-            return filename;
-        }
-        
-        // File exists, append counter
-        int counter = 1;
-        do {
-            filename = basePath + "_" + counter + ".json";
-            file = new File(filename);
-            counter++;
-        } while (file.exists());
-        
-        logger.warn("File {} already exists, using unique filename: {}", basePath + ".json", filename);
-        return filename;
-    }
-
-    public static Optional<MappingSet> readTSVFile(File file, Optional<MappingSet.Builder> externalMappingSetBuilderOptional) {
-        logger.info("Reading TSV file {}", file);
-        SortedSet<Mapping> mappings = new TreeSet<>();
-        Optional<MappingSet> mappingSetOptional = Optional.empty();
-        Optional<MappingSet.Builder> embeddedMappingSetBuilderOptional = Optional.empty();
-
-        try {
-            embeddedMappingSetBuilderOptional = readYamlHeader(file);
-            if (externalMappingSetBuilderOptional.isEmpty() && embeddedMappingSetBuilderOptional.isEmpty()) {
-                logger.error("Both external and embedded metadata are missing. See TSV file {}", file);
-                throw new IllegalArgumentException("Both external and embedded metadata are missing. See TSV file " + file);
-            }
-            CSVParser parser = CSVParser.parse(file, java.nio.charset.StandardCharsets.UTF_8,
+        try (CSVParser parser = CSVParser.parse(file, java.nio.charset.StandardCharsets.UTF_8,
                     CSVFormat.TDF.builder().setCommentMarker('#').setHeader().build());
+             JsonGenerator gen = objectMapper.getFactory().createGenerator(mappingsFile, JsonEncoding.UTF8)) {
 
-            Optional<CurieMap> optionalCurieMap = mergeCurieMaps(externalMappingSetBuilderOptional, embeddedMappingSetBuilderOptional);
-
-
+            gen.writeStartArray();
             for (CSVRecord record : parser) {
                 logger.debug("Processing record {}", record);
                 Mapping.Builder mappingBuilder = Mapping.builder();
@@ -300,33 +285,78 @@ public class TSV2JSON {
                         .subjectType(record.isSet(SUBJECT_TYPE) ? record.get(SUBJECT_TYPE) : "");
 
                 if (externalMappingSetBuilderOptional.isPresent()) {
-                    externalMappingSetBuilderOptional.get().setMappingSetIdIfNotSetAlready(file.getName());
                     mappingBuilder = propagateValuesFromMappingSet(
                             mappingBuilder, externalMappingSetBuilderOptional.get(), record);
                 }
                 if (embeddedMappingSetBuilderOptional.isPresent()) {
-                    embeddedMappingSetBuilderOptional.get().setMappingSetIdIfNotSetAlready(file.getName());
                     mappingBuilder = propagateValuesFromMappingSet(
                             mappingBuilder, embeddedMappingSetBuilderOptional.get(), record);
                 }
 
-                mappings.add(mappingBuilder.build());
+                Mapping mapping = mappingBuilder.build();
+                if (seenMappingIds.add(mapping.mappingId())) {
+                    objectMapper.writeValue(gen, mapping);
+                    mappingsWritten++;
+                }
             }
-            MappingSet.Builder mappingSetBuilder = MappingSet.builder();
-            if (externalMappingSetBuilderOptional.isPresent() && embeddedMappingSetBuilderOptional.isPresent()) {
-                MappingSet.Builder tempMappingSet = embeddedMappingSetBuilderOptional.get();
-                mappingSetBuilder = updateBuilder(mappingSetBuilder, tempMappingSet.build());
-            } else if (externalMappingSetBuilderOptional.isPresent()) {
-                mappingSetBuilder = externalMappingSetBuilderOptional.get();
-            } else if (embeddedMappingSetBuilderOptional.isPresent()) {
-                mappingSetBuilder = embeddedMappingSetBuilderOptional.get();
-            }
-            mappingSetBuilder.mappings(mappings);
-            mappingSetOptional = Optional.of(mappingSetBuilder.build());
+            gen.writeEndArray();
         } catch (IOException e) {
-            logger.error("Error while reading TSV file {}", file, e);
+            logger.error("Error while processing TSV file {}", file, e);
+            if (mappingsFile.exists() && !mappingsFile.delete()) {
+                logger.warn("Failed to delete partial mappings output {}", mappingsFile);
+            }
+            return;
         }
-        return mappingSetOptional;
+
+        long endReadTime = System.currentTimeMillis();
+        logger.info("Time taken to read TSV file: {} s, wrote {} mappings",
+                (endReadTime - startReadTime) / 1000, mappingsWritten);
+
+        if (mappingsWritten == 0) {
+            logger.warn("No mappings found in file: {}", file);
+            if (mappingsFile.exists() && !mappingsFile.delete()) {
+                logger.warn("Failed to delete empty mappings output {}", mappingsFile);
+            }
+            return;
+        }
+
+        try {
+            objectMapper.writeValue(new File(mappingSetFilename), List.of(mappingSetMetadata));
+        } catch (IOException e) {
+            logger.error("Error while writing JSON file for MappingSet {}",
+                    mappingSetMetadata.mappingSetId(), e);
+        }
+        long endWriteTime = System.currentTimeMillis();
+        logger.info("Time taken to write MappingSet JSON file: {} s", (endWriteTime - endReadTime) / 1000);
+    }
+
+    /**
+     * Generates a unique filename by appending a counter if the file already exists.
+     * For example: "mapping.json" -> "mapping.json", "mapping_1.json", "mapping_2.json", etc.
+     *
+     * @param directory The output directory
+     * @param baseFilename The base filename without extension
+     * @return A unique filename with .json extension
+     */    
+    private static String getUniqueFilename(String directory, String baseFilename) {
+        String basePath = directory + File.separator + baseFilename;
+        String filename = basePath + ".json";
+        File file = new File(filename);
+        
+        if (!file.exists()) {
+            return filename;
+        }
+        
+        // File exists, append counter
+        int counter = 1;
+        do {
+            filename = basePath + "_" + counter + ".json";
+            file = new File(filename);
+            counter++;
+        } while (file.exists());
+        
+        logger.warn("File {} already exists, using unique filename: {}", basePath + ".json", filename);
+        return filename;
     }
 
     private static Optional<CurieMap> mergeCurieMaps(Optional<MappingSet.Builder> externalMappingSetBuilderOptional, Optional<MappingSet.Builder> embeddedMappingSetBuilderOptional) {

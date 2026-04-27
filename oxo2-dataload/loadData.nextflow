@@ -24,7 +24,12 @@ echo NXF_HOME=$NXF_HOME
 
 OXO2_INFERENCES=$OXO2_DATA/inferences
 export OXO2_INFERENCES
-rm -R $OXO2_DATA/*
+
+# -XX:MaxRAMPercentage=75 — default is ~25%, which capped the SSSOM2JSON JVM at
+# ~7 GB on a 30 GB host and OOM'd on NCBI taxon. 75% lets each stage's JVM use
+# most of host RAM without hard-coding -Xmx per stage. Mirrors loadData.slurm.
+export JAVA_OPTS="${JAVA_OPTS:-} -Xmx4g -XX:+ExitOnOutOfMemoryError"
+#rm -R $OXO2_DATA/*
 rm -R $NEXTFLOW_DIR/*
 
 mkdir -p $NXF_WORK $NXF_HOME $NXF_TEMP $NXF_CACHE_DIR $NXF_LOGS

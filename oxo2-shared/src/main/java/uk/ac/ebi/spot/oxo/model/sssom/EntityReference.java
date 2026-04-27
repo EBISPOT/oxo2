@@ -30,6 +30,15 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
 
     private static Map<String, String> uriOrCurieToStringMap = new HashMap();
 
+    /**
+     * Reset the per-JVM cache. Callers (e.g. SSSOM2JSON's per-file loop) must invoke this
+     * between mapping sets, otherwise the map retains every distinct CURIE/URI string from
+     * every prior file and OOMs the JVM on large inputs (e.g. NCBI taxon).
+     */
+    public static void clearCache() {
+        uriOrCurieToStringMap.clear();
+    }
+
     @Override
     protected Optional<String> parseData(String uriOrCurie) {
         if (uriOrCurie == null || uriOrCurie.isBlank())

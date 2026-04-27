@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
  SLURM_LOGS="$NFS_PATH/logs"
  NEXTFLOW_DIR="$HPS_PATH/nextflow"
  NF_CONTAINER="docker://ghcr.io/ebispot/oxo2-nextflow:dev"
- OXO2_CONFIG="/nfs/production/parkinso/spot/oxo2/dev/oxo2/oxo-config-evora.json"
+ OXO2_CONFIG="/nfs/production/parkinso/spot/oxo2/dev/tests/oxo-config-stress-test-hpc.json"
  OXO2_DATA="$HPS_PATH/data"
  SOLR_HOME="$HPS_PATH/solr-data"
 

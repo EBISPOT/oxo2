@@ -17,6 +17,15 @@ public class Uri extends SSSOMDataType<URI> implements Comparable<Uri> {
 
     private static Map<String, URI> stringToUriMap = new HashMap<String, URI> ();
 
+    /**
+     * Reset the per-JVM cache. Callers (e.g. SSSOM2JSON's per-file loop) must invoke this
+     * between mapping sets, otherwise the map retains every distinct URI from every prior
+     * file and OOMs the JVM on large inputs (e.g. NCBI taxon).
+     */
+    public static void clearCache() {
+        stringToUriMap.clear();
+    }
+
     public Uri(String uri) {
         super(uri);
     }
