@@ -20,6 +20,8 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -115,20 +117,23 @@ public class JSON2Turtle {
      */
     private static void generateTTLfromJSON(Path jsonFile, Path outputFile) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
-        
-        logger.info("Processing file: {}", jsonFile);
-        try (BufferedWriter writer = Files.newBufferedWriter(outputFile)) {
-            JsonNode rootNode = objectMapper.readTree(jsonFile.toFile());
-            if (rootNode.isArray()) {
-                for (JsonNode mappingNode : rootNode) {
-                    String predicateIRI = mappingNode.get(MappingEnum.PREDICATE_IRI.getField()).asText();
-                    if (isApplicablePredicate(predicateIRI)) {
-                        String subjectIRI = mappingNode.get(MappingEnum.SUBJECT_IRI.getField()).asText();
-                        String objectIRI = mappingNode.get(MappingEnum.OBJECT_IRI.getField()).asText();
 
-                        if (!isSkipOnPredicateModifier(mappingNode) && areURIsValid(subjectIRI, predicateIRI, objectIRI))
-                            writer.write(String.format("<%s> <%s> <%s> .\n", subjectIRI, predicateIRI, objectIRI));
-                    }
+        logger.info("Processing file: {}", jsonFile);
+        try (BufferedWriter writer = Files.newBufferedWriter(outputFile);
+             JsonParser parser = objectMapper.getFactory().createParser(jsonFile.toFile())) {
+            JsonToken firstToken = parser.nextToken();
+            if (firstToken != JsonToken.START_ARRAY) {
+                return;
+            }
+            while (parser.nextToken() != JsonToken.END_ARRAY) {
+                JsonNode mappingNode = objectMapper.readTree(parser);
+                String predicateIRI = mappingNode.get(MappingEnum.PREDICATE_IRI.getField()).asText();
+                if (isApplicablePredicate(predicateIRI)) {
+                    String subjectIRI = mappingNode.get(MappingEnum.SUBJECT_IRI.getField()).asText();
+                    String objectIRI = mappingNode.get(MappingEnum.OBJECT_IRI.getField()).asText();
+
+                    if (!isSkipOnPredicateModifier(mappingNode) && areURIsValid(subjectIRI, predicateIRI, objectIRI))
+                        writer.write(String.format("<%s> <%s> <%s> .\n", subjectIRI, predicateIRI, objectIRI));
                 }
             }
         }
