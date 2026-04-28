@@ -120,16 +120,18 @@ function buildGraphData(mapping: InferredMapping): GraphData {
         visited.add(nodeId);
 
         const isAsserted = current.chainRuleApplications?.chainRule?.chainRuleName === "Asserted";
+        const formatEntity = (label?: string, idOrIri?: string) =>
+            label ? `${label} (${idOrIri ?? ''})` : (idOrIri ?? '');
         nodes.push({
             id: nodeId,
             data: {
                 label: [
-                    current.subjectId ?? "",
-                    current.predicateId ?? "",
-                    current.objectId ?? ""
+                    formatEntity(current.subjectLabel, current.subjectId ?? current.subjectIri),
+                    current.predicateId ?? current.predicateIri,
+                    formatEntity(current.objectLabel, current.objectId ?? current.objectIri)
                 ].join("\n"),
                 chainRule: isAsserted ? ''
-                    : (current.chainRuleApplications?.chainRule?.chainRuleAbbreviated ?? '').replace(/[<>?]/g, '')
+                    : (current.chainRuleApplications?.chainRule?.chainRuleAbbreviated ?? '').replace(/[<>?]/g, '').replace(/ - /, ' ← ')
             },
             position: {
                 x: 0,
