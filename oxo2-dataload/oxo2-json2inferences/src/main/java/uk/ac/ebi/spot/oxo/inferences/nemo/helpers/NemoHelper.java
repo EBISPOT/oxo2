@@ -17,20 +17,108 @@ public class NemoHelper {
     public static Set<InferredMapping> fromNemoInferencesToInferredMappings(
             NemoInferences nemoInferences, DataloadSolr solrClient) {
 
+        // Walk every conclusion/premise string in the chains file once to collect
+        // distinct subject/predicate/object IRIs, then bulk-populate the Solr
+        // entity-details cache in batched queries. Without this, each
+        // createInferredMapping() call would issue 3 sequential Solr round-trips
+        // for IRI -> curie/label lookups (cached after the first hit but still
+        // single-keyed), which dominates wall-clock for large chains files.
+        prefetchEntityDetailsForChains(nemoInferences, solrClient);
+
         Set<InferredMapping> inferredMappings = new HashSet<>();
+        // Memoize InferredMapping per conclusion string so that shared sub-chains
+        // in the inference DAG share one object instead of being re-expanded as a
+        // fresh subtree per parent. Without this, deep DAGs with shared premises
+        // blow up super-linearly. The memo lives only for this call (per file).
+        Map<String, InferredMapping> memo = new HashMap<>();
 
-        nemoInferences.getFinalConclusion().forEach(finalConclusion -> {
+        List<String> finalConclusions = nemoInferences.getFinalConclusion();
+        int totalConclusions = finalConclusions != null ? finalConclusions.size() : 0;
+        logger.info("Building InferredMappings for {} final conclusions", totalConclusions);
+        long buildStart = System.currentTimeMillis();
+        int progressInterval = Math.max(1000, totalConclusions / 20);
+        int processed = 0;
+
+        for (String finalConclusion : finalConclusions) {
             InferredMapping inferredMapping = determineInferencesLeadingToConclusion(nemoInferences,
-                    finalConclusion, solrClient);
+                    finalConclusion, solrClient, memo);
             inferredMappings.add(inferredMapping);
-        });
+            processed++;
+            if (processed % progressInterval == 0 || processed == totalConclusions) {
+                long elapsedMs = System.currentTimeMillis() - buildStart;
+                double rate = elapsedMs > 0 ? (processed * 1000.0 / elapsedMs) : 0.0;
+                logger.info("InferredMapping build progress: {}/{} ({}%) — memo size {}, elapsed {} ms, ~{} conclusions/s",
+                        processed, totalConclusions,
+                        totalConclusions > 0 ? (processed * 100 / totalConclusions) : 100,
+                        memo.size(), elapsedMs, String.format("%.0f", rate));
+            }
+        }
 
+        logger.info("Finished InferredMapping build: {} top-level mappings, {} memoized conclusions, {} ms total",
+                inferredMappings.size(), memo.size(), System.currentTimeMillis() - buildStart);
         return inferredMappings;
+    }
+
+    private static void prefetchEntityDetailsForChains(NemoInferences nemoInferences,
+                                                        DataloadSolr solrClient) {
+        Set<String> subjectIris = new HashSet<>();
+        Set<String> predicateIris = new HashSet<>();
+        Set<String> objectIris = new HashSet<>();
+        // Use a Set keyed on the spoKey for cheap dedup; carry the parsed parts
+        // alongside so we can hand String[3] arrays to the SPO prefetch.
+        Map<String, String[]> distinctTriples = new HashMap<>();
+
+        if (nemoInferences.getFinalConclusion() != null) {
+            nemoInferences.getFinalConclusion().forEach(c ->
+                    collectFromConclusion(c, subjectIris, predicateIris, objectIris, distinctTriples));
+        }
+        if (nemoInferences.getInferences() != null) {
+            for (NemoInferences.NemoInference inference : nemoInferences.getInferences()) {
+                collectFromConclusion(inference.getConclusion(), subjectIris, predicateIris, objectIris, distinctTriples);
+                if (inference.getPremises() != null) {
+                    for (String premise : inference.getPremises()) {
+                        collectFromConclusion(premise, subjectIris, predicateIris, objectIris, distinctTriples);
+                    }
+                }
+            }
+        }
+
+        long start = System.currentTimeMillis();
+        solrClient.prefetchEntityDetails(SUBJECT_IRI, subjectIris, SUBJECT_ID, SUBJECT_LABEL);
+        solrClient.prefetchEntityDetails(PREDICATE_IRI, predicateIris, PREDICATE_ID, PREDICATE_LABEL);
+        solrClient.prefetchEntityDetails(OBJECT_IRI, objectIris, OBJECT_ID, OBJECT_LABEL);
+        logger.info("Prefetched entity details for {} subject / {} predicate / {} object IRIs in {} ms",
+                subjectIris.size(), predicateIris.size(), objectIris.size(),
+                System.currentTimeMillis() - start);
+
+        solrClient.prefetchMappingsForTriples(distinctTriples.values());
+    }
+
+    private static void collectFromConclusion(String conclusion,
+                                               Set<String> subjectIris,
+                                               Set<String> predicateIris,
+                                               Set<String> objectIris,
+                                               Map<String, String[]> distinctTriples) {
+        if (conclusion == null || conclusion.isEmpty()) return;
+        int firstAngle = conclusion.indexOf('<');
+        int lastAngle = conclusion.lastIndexOf('>');
+        if (firstAngle < 0 || lastAngle <= firstAngle) return;
+        String[] parts = conclusion.substring(firstAngle + 1, lastAngle).split(">\\s*,\\s*<");
+        if (parts.length != 3) return;
+        subjectIris.add(parts[0]);
+        predicateIris.add(parts[1]);
+        objectIris.add(parts[2]);
+        String key = parts[0] + '\0' + parts[1] + '\0' + parts[2];
+        distinctTriples.putIfAbsent(key, parts);
     }
 
     private static InferredMapping determineInferencesLeadingToConclusion(
             NemoInferences nemoInferences,
-            String conclusion, DataloadSolr solrClient) {
+            String conclusion, DataloadSolr solrClient,
+            Map<String, InferredMapping> memo) {
+
+        InferredMapping cached = memo.get(conclusion);
+        if (cached != null) return cached;
 
         InferredMapping inferredMapping = createInferredMapping(conclusion, solrClient);
 
@@ -48,29 +136,29 @@ public class NemoHelper {
                         new InferredMapping.ChainRuleApplications(Optional.of(ChainRulesEnum.ASSERTED));
                 chainRuleApplication.setPremises(new ArrayList<>());
                 inferredMapping.setChainRuleApplications(Optional.of(chainRuleApplication));
-                return inferredMapping;
+            } else {
+                InferredMapping.ChainRuleApplications chainRuleApplication =
+                        new InferredMapping.ChainRuleApplications(chainRulesEnum);
+
+                inferredMapping.setMappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL);
+                inferredMapping.setMappingJustification(new EntityReference(
+                        OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION));
+                inferredMapping.setMappingSetId(OXOInferenceConstants.OXO_MAPPING_SET_ID);
+
+                List<InferredMapping> premises = new ArrayList<>();
+
+                nemoInference.getPremises().forEach(premise -> {
+                    InferredMapping premiseAsInferredMapping = determineInferencesLeadingToConclusion(
+                            nemoInferences, premise, solrClient, memo
+                    );
+                    premises.add(premiseAsInferredMapping);
+                });
+
+                chainRuleApplication.setPremises(premises);
+                inferredMapping.setChainRuleApplications(Optional.of(chainRuleApplication));
             }
-
-            InferredMapping.ChainRuleApplications chainRuleApplication =
-                    new InferredMapping.ChainRuleApplications(chainRulesEnum);
-
-            inferredMapping.setMappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL);
-            inferredMapping.setMappingJustification(new EntityReference(
-                    OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION));
-            inferredMapping.setMappingSetId(OXOInferenceConstants.OXO_MAPPING_SET_ID);
-
-            List<InferredMapping> premises = new ArrayList<>();
-
-            nemoInference.getPremises().forEach(premise -> {
-                InferredMapping premiseAsInferredMapping = determineInferencesLeadingToConclusion(
-                        nemoInferences, premise, solrClient
-                );
-                premises.add(premiseAsInferredMapping);
-            });
-
-            chainRuleApplication.setPremises(premises);
-            inferredMapping.setChainRuleApplications(Optional.of(chainRuleApplication));
         }
+        memo.put(conclusion, inferredMapping);
         return inferredMapping;
     }
 

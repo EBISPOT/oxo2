@@ -68,6 +68,7 @@ $SCRIPT_DIR/copySolrConfig.sh
 sleep 2
 echo Start solr ...
 mkdir -p $OXO2_DATA/tmp
+ulimit -n 65000 2>/dev/null || true
 $SOLR_SCRIPT/solr start --user-managed -Djava.io.tmpdir=$OXO2_DATA/tmp
 
 
@@ -99,9 +100,9 @@ elapsed=$((end_time - start_time))
 echo "Nextflow Parallel Processing: explanations2json took: ${elapsed} seconds"
 
 
- echo  "###################"  json2solr inferred mappings ...
- $SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
- sleep 20
+echo  "###################"  json2solr inferred mappings ...
+$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
+sleep 20
 
 
 echo  "################### Stopping solr ..."

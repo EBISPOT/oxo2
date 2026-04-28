@@ -35,7 +35,7 @@ public enum ChainRulesEnum {
             "(?a, <OWL:sameAs>, ?c) <- (?a, <OWL:sameAs>, ?b), (?b, <OWL:sameAs>, ?c)"),
     T4("T4",
             "(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) <- (?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?b), (?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c)",
-            "(?a, <RDFS:subClassOf>, ?c) <- (?a, <RDFS:subClassOf>, ?b), (?b, <http://www.w3.org/2000/01/rdf-schemasubClassOf>, ?c)"),
+            "(?a, <RDFS:subClassOf>, ?c) <- (?a, <RDFS:subClassOf>, ?b), (?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c)"),
     T5("T5", "(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) <- (?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?b), (?b, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c)",
             "(?a, <RDFS:subPropertyOf>, ?c) <- (?a, <RDFS:subPropertyOf>, ?b), (?b, <RDFS:subPropertyOf>, ?c)"),
     T6("T6",

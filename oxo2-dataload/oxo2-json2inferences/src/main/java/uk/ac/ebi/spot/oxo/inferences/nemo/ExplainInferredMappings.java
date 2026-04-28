@@ -235,7 +235,7 @@ public class ExplainInferredMappings {
         
         File file = new File(outputFile);
         try {
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, mappings);
+            objectMapper.writeValue(file, mappings);
             logger.info("Mappings successfully written to {} ({} bytes)", outputFile, file.length());
         } catch (IOException e) {
             logger.error("Error writing mappings to JSON file = {}, {}", file.getName(), e.getMessage());
