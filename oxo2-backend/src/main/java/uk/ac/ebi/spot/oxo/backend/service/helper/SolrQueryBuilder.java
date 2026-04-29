@@ -9,6 +9,7 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingFacetEnum;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
+import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,9 +48,17 @@ public class SolrQueryBuilder {
         solrQuery.setStart((int) pageable.getOffset());
         solrQuery.setRows(pageable.getPageSize());
 
-        solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
-        solrQuery.setQuery(constructQuery(mappingSearchRequest.getQueries()));
-        solrQuery.set(QF, constructQueryFields(mappingSearchRequest.getQueryFields()));
+        List<MappingEnum> queryFields = mappingSearchRequest.getQueryFields();
+        if (queryFields != null && !queryFields.isEmpty()) {
+            // Override path: caller pinned the fields — preserve legacy edismax behavior.
+            solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
+            solrQuery.setQuery(constructLegacyQuery(mappingSearchRequest.getQueries()));
+            solrQuery.set(QF, constructQueryFields(queryFields));
+        } else {
+            // Default path: classify each term by shape and route to type-appropriate fields.
+            solrQuery.setQuery(constructClassifiedQuery(mappingSearchRequest.getQueries()));
+        }
+
         solrQuery.setFields(constructFieldList(mappingSearchRequest.getFieldList()));
         solrQuery.setFilterQueries(constructFilterQueries(mappingSearchRequest.getColumnFilters()));
         solrQuery = configureFacets(solrQuery, mappingSearchRequest.getFacets());
@@ -97,22 +106,81 @@ public class SolrQueryBuilder {
     }
 
     /**
-     * @Todo Only do text queries on text fields
-     * @param queries
-     * @return
+     * Legacy query construction used by the override path (caller-pinned {@code queryFields}).
+     * Joins all terms with {@code OR}; relies on edismax {@code qf} to select fields.
      */
-    private static String constructQuery(List<String> queries) {
+    private static String constructLegacyQuery(List<String> queries) {
         if (queries == null || queries.isEmpty()) {
-            return "*:*"; // Return all documents if no query
+            return "*:*";
         }
-        
-        // For edismax, we can use a simple query string and let qf handle field selection
-        // Join multiple queries with OR, and escape special characters
+
         String query = queries.stream()
                 .map(q -> ClientUtils.escapeQueryChars(q))
                 .collect(Collectors.joining(" OR "));
-        
-        logger.debug("Query string: {}", query);
+
+        logger.debug("Legacy query string: {}", query);
+        return query;
+    }
+
+    /**
+     * Default query construction. Classifies each term by shape and emits a parenthesised
+     * OR-clause across the type-appropriate fields:
+     * <ul>
+     *   <li>IRI ({@code http(s)://...}) → subject_iri / object_iri / predicate_iri</li>
+     *   <li>CURIE ({@code prefix:local}) → subject_id / object_id / predicate_id</li>
+     *   <li>Free text → subject_label / object_label / predicate_label (phrase match)</li>
+     * </ul>
+     * Quoting the value gives a TermQuery on {@code string} fields and a PhraseQuery on
+     * {@code text_general} fields after analysis.
+     */
+    private static String constructClassifiedQuery(List<String> queries) {
+        if (queries == null || queries.isEmpty()) {
+            return "*:*";
+        }
+
+        List<String> clauses = new ArrayList<>();
+        for (String raw : queries) {
+            if (raw == null) continue;
+            String term = raw.strip();
+            if (term.isEmpty()) continue;
+
+            String escaped = ClientUtils.escapeQueryChars(term);
+            String[] fields;
+            if (StringUtils.isIri(term)) {
+                fields = new String[]{
+                        MappingEnum.SUBJECT_IRI.getField(),
+                        MappingEnum.OBJECT_IRI.getField(),
+                        MappingEnum.PREDICATE_IRI.getField()
+                };
+            } else if (StringUtils.isCurie(term)) {
+                fields = new String[]{
+                        MappingEnum.SUBJECT_ID.getField(),
+                        MappingEnum.OBJECT_ID.getField(),
+                        MappingEnum.PREDICATE_ID.getField()
+                };
+            } else {
+                fields = new String[]{
+                        MappingEnum.SUBJECT_LABEL.getField(),
+                        MappingEnum.OBJECT_LABEL.getField(),
+                        MappingEnum.PREDICATE_LABEL.getField()
+                };
+            }
+
+            StringBuilder clause = new StringBuilder("(");
+            for (int i = 0; i < fields.length; i++) {
+                if (i > 0) clause.append(" OR ");
+                clause.append(fields[i]).append(":\"").append(escaped).append("\"");
+            }
+            clause.append(")");
+            clauses.add(clause.toString());
+        }
+
+        if (clauses.isEmpty()) {
+            return "*:*";
+        }
+
+        String query = String.join(" OR ", clauses);
+        logger.debug("Classified query string: {}", query);
         return query;
     }
 

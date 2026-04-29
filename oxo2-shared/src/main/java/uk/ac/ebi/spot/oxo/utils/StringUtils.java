@@ -48,6 +48,21 @@ public class StringUtils {
         return false;
     }
 
+    public static boolean isIri(String term) {
+        if (term == null || term.isBlank()) return false;
+        int colon = term.indexOf(':');
+        if (colon < 0) return false;
+        return isUriNotCurie(term.substring(colon));
+    }
+
+    public static boolean isCurie(String term) {
+        if (term == null || term.isBlank()) return false;
+        int colon = term.indexOf(':');
+        if (colon < 0) return false;
+        if (term.chars().anyMatch(Character::isWhitespace)) return false;
+        return !isUriNotCurie(term.substring(colon));
+    }
+
     public static boolean isURIValid(String uri) {
         if (uri == null || uri.isBlank())
             return false;

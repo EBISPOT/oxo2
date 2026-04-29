@@ -536,7 +536,7 @@
 -->
   <field name="mapping_set_id_facet" type="string" multiValued="false" indexed="true" stored="true" docValues="true"/>
   <field name="object_id_prefix" type="string" indexed="false" stored="true" docValues="true"/>
-  <field name="predicated_id_prefix" type="string" indexed="false" stored="true" docValues="true"/>
+  <field name="predicate_id_prefix" type="string" indexed="false" stored="true" docValues="true"/>
   <field name="subject_id_prefix" type="string" indexed="false" stored="true" docValues="true"/>
 
 <!-- Extension -->
