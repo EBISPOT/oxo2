@@ -22,6 +22,8 @@ public class MappingSearchRequest {
 
     private List<ColumnFilter> columnFilters;
 
+    private List<String> mappingSetIds;
+
 
     public List<String> getQueries() {
         return queries;
@@ -95,6 +97,14 @@ public class MappingSearchRequest {
         this.columnFilters = columnFilters;
     }
 
+    public List<String> getMappingSetIds() {
+        return mappingSetIds;
+    }
+
+    public void setMappingSetIds(List<String> mappingSetIds) {
+        this.mappingSetIds = mappingSetIds;
+    }
+
     @Override
     public String toString() {
         return "MappingSearchRequest{" +
@@ -107,6 +117,7 @@ public class MappingSearchRequest {
                 ", facets=" + facets +
                 ", page=" + page +
                 ", size=" + size +
+                ", mappingSetIds=" + mappingSetIds +
                 '}';
     }
 

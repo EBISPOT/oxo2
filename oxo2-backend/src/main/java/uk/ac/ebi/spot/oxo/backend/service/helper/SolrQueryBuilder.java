@@ -60,7 +60,9 @@ public class SolrQueryBuilder {
         }
 
         solrQuery.setFields(constructFieldList(mappingSearchRequest.getFieldList()));
-        solrQuery.setFilterQueries(constructFilterQueries(mappingSearchRequest.getColumnFilters()));
+        solrQuery.setFilterQueries(constructFilterQueries(
+                mappingSearchRequest.getColumnFilters(),
+                mappingSearchRequest.getMappingSetIds()));
         solrQuery = configureFacets(solrQuery, mappingSearchRequest.getFacets());
         solrQuery = constructSortedFields(solrQuery, mappingSearchRequest);
 
@@ -68,7 +70,8 @@ public class SolrQueryBuilder {
     }
 
 
-    private static String[] constructFilterQueries(List<MappingSearchRequest.ColumnFilter> queryFilters) {
+    private static String[] constructFilterQueries(List<MappingSearchRequest.ColumnFilter> queryFilters,
+                                                   List<String> mappingSetIds) {
         List<String> filterQueriesList = queryFilters.stream()
                 .map(f ->
                         textGeneralToNGram.containsKey(MappingEnum.fromString(f.getId()))
@@ -78,6 +81,18 @@ public class SolrQueryBuilder {
                         MappingEnum.fromString(f.getId()).getField() + ":*" +
                                 ClientUtils.escapeQueryChars(f.getValue()) + "*")
                 .collect(Collectors.toList());
+
+        if (mappingSetIds != null && !mappingSetIds.isEmpty()) {
+            String field = MappingEnum.MAPPING_SET_ID.getField();
+            String clause = mappingSetIds.stream()
+                    .filter(id -> id != null && !id.isBlank())
+                    .map(id -> field + ":\"" + ClientUtils.escapeQueryChars(id) + "\"")
+                    .collect(Collectors.joining(" OR "));
+            if (!clause.isEmpty()) {
+                filterQueriesList.add("(" + clause + ")");
+            }
+        }
+
         return filterQueriesList.toArray(new String[filterQueriesList.size()]);
     }
 

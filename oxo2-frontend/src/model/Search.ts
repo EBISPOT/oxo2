@@ -1,9 +1,11 @@
 export interface SearchInput {
     userSearchInput: string;
-    sanitizedSearchInput: string[]
+    sanitizedSearchInput: string[];
+    mappingSetIds?: string[];
 }
 
 export const initialSearchState: SearchInput = {
     userSearchInput: '',
-    sanitizedSearchInput: []
+    sanitizedSearchInput: [],
+    mappingSetIds: undefined
 }

@@ -1,5 +1,5 @@
 import {useMemo, useState} from "react";
-import {useNavigate, useParams} from "react-router-dom";
+import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {Search} from "../../components/search/Search";
 import {SearchInput} from "../../model/Search";
 import {emptyFacetedMapping, FacetedMapping, fetchMappings, fromJson} from "./MappingResultsSlice";
@@ -16,11 +16,14 @@ function MappingResults() {
         pageSize: 10,
     });
     const { curies } = useParams<{ curies: string }>();
+    const [searchParams] = useSearchParams();
+    const mappingSetIds = searchParams.getAll("mapping_set_id");
     const searchInput: SearchInput = {
         userSearchInput: curies || "",
         sanitizedSearchInput: curies
             ? curies.split(/[\n,]+/).filter((item) => item.trim() !== "")
             : [],
+        mappingSetIds: mappingSetIds.length > 0 ? mappingSetIds : undefined,
     };
 
     const [columnFilters, setColumnFilters] = useState<any[]>([]);
@@ -28,6 +31,7 @@ function MappingResults() {
         { id: 'subject_id', desc: false }
     ]);
 
+    const mappingSetIdsKey = mappingSetIds.join(",");
     const { data, isLoading, isError } = useQuery({
         queryKey: [
             "fetchMappings",
@@ -35,7 +39,8 @@ function MappingResults() {
             pagination.pageIndex,
             pagination.pageSize,
             columnFilters,
-            sorting
+            sorting,
+            mappingSetIdsKey
         ],
         queryFn: () =>
             fetchMappings(
@@ -43,7 +48,8 @@ function MappingResults() {
                 pagination.pageIndex,
                 pagination.pageSize,
                 columnFilters,
-                sorting
+                sorting,
+                mappingSetIds
             ),
         staleTime: Infinity,
     });

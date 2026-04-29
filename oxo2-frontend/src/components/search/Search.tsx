@@ -1,38 +1,156 @@
 import { useNavigate } from "react-router-dom";
 import { SearchInput, initialSearchState } from "../../model/Search";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+    MaterialReactTable,
+    type MRT_ColumnDef,
+    type MRT_RowSelectionState,
+    useMaterialReactTable,
+} from "material-react-table";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { fetchMappingSets } from "../../pages/results/MappingSetsSlice";
+import { MappingSet } from "../../model/MappingSet";
 
-export function Search({searchInput = initialSearchState, showWelcome = false }: {
+const tableTheme = createTheme({
+    palette: {
+        primary: { main: "#d4522c", light: "#b75c00", dark: "#461901", contrastText: "#fff" },
+        secondary: { main: "#525252", light: "#99a1af", dark: "#373a36", contrastText: "#fff" },
+    },
+});
+
+export function Search({ searchInput = initialSearchState, showWelcome = false }: {
     searchInput: SearchInput,
     showWelcome?: boolean
 }) {
     const navigate = useNavigate();
     const [searchState, setSearchState] = useState<SearchInput>(searchInput);
 
+    const { data: mappingSets = [], isLoading: mappingSetsLoading } = useQuery({
+        queryKey: ["fetchMappingSets"],
+        queryFn: fetchMappingSets,
+        staleTime: Infinity,
+    });
+
+    const idsToSelectionState = (ids?: string[]): MRT_RowSelectionState =>
+        (ids ?? []).reduce<MRT_RowSelectionState>((acc, id) => {
+            acc[id] = true;
+            return acc;
+        }, {});
+
+    const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>(
+        idsToSelectionState(searchInput.mappingSetIds)
+    );
+
+    // Keep row selection in sync when mapping_set_id query params arrive later
+    // (e.g. via URL on the results page) after the table mounts.
+    const incomingIdsKey = (searchInput.mappingSetIds ?? []).join(",");
+    useEffect(() => {
+        const ids = searchInput.mappingSetIds;
+        setRowSelection(idsToSelectionState(ids));
+        setSearchState((prev) => ({ ...prev, mappingSetIds: ids }));
+    }, [incomingIdsKey]);
+
     const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         const userSearchInput = event.target.value;
         const sanitizedSearchInput = userSearchInput.split(/[\n,]+/).filter(item => item.trim() !== '');
-        setSearchState({ userSearchInput, sanitizedSearchInput });
+        setSearchState((prev) => ({ ...prev, userSearchInput, sanitizedSearchInput }));
     };
 
     const handleSearch = () => {
         if (searchState.userSearchInput && searchState.userSearchInput.trim() !== "") {
             const curies = searchState.sanitizedSearchInput.join(",");
-            navigate(`/search/${encodeURIComponent(curies)}`);
+            const path = `/search/${encodeURIComponent(curies)}`;
+            const ids = searchState.mappingSetIds ?? [];
+            const query = ids.length > 0
+                ? "?" + ids.map((id) => `mapping_set_id=${encodeURIComponent(id)}`).join("&")
+                : "";
+            navigate(`${path}${query}`);
         }
     };
 
     const handleClear = () => {
         setSearchState({
             userSearchInput: "",
-            sanitizedSearchInput: []
+            sanitizedSearchInput: [],
+            mappingSetIds: undefined,
         });
+        setRowSelection({});
     };
 
-    return  (
+    const columns = useMemo<MRT_ColumnDef<MappingSet>[]>(
+        () => [
+            { accessorKey: "mappingSetTitle", header: "Title", size: 200 },
+            {
+                accessorKey: "mappingSetId",
+                header: "Mapping Set Id",
+                size: 250,
+                Cell: ({ cell }) => (
+                    <div style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
+                        {cell.getValue<string>()}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: "mappingSetDescription",
+                header: "Description",
+                size: 350,
+                Cell: ({ cell }) => (
+                    <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+                        {cell.getValue<string>()}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: "creatorLabel",
+                header: "Creator",
+                size: 150,
+                Cell: ({ cell }) => <span>{(cell.getValue<string[]>() ?? []).join(", ")}</span>,
+            },
+            { accessorKey: "mappingProvider", header: "Provider", size: 150 },
+        ],
+        []
+    );
+
+    const table = useMaterialReactTable<MappingSet>({
+        columns,
+        data: mappingSets,
+        enableRowSelection: true,
+        enableMultiRowSelection: true,
+        enableSelectAll: true,
+        getRowId: (row) => row.mappingSetId,
+        state: { rowSelection, isLoading: mappingSetsLoading, density: "compact" },
+        onRowSelectionChange: (updater) => {
+            const next = typeof updater === "function" ? updater(rowSelection) : updater;
+            setRowSelection(next);
+            const selectedIds = Object.keys(next).filter((k) => next[k]);
+            setSearchState((prev) => ({
+                ...prev,
+                mappingSetIds: selectedIds.length > 0 ? selectedIds : undefined,
+            }));
+        },
+        muiTableBodyRowProps: ({ row }) => ({
+            onClick: () => row.toggleSelected(),
+            sx: { cursor: "pointer" },
+        }),
+        muiTableContainerProps: { sx: { maxHeight: "20rem" } },
+        enableTopToolbar: false,
+        enableBottomToolbar: false,
+        enableColumnActions: false,
+        enableColumnFilters: false,
+        enableSorting: true,
+        enablePagination: false,
+        enableStickyHeader: true,
+        muiTableHeadCellProps: {
+            sx: { fontWeight: "bold", fontSize: "14px" },
+        },
+        initialState: { density: "compact" },
+    });
+
+    return (
         <div className="search-container">
-            { showWelcome && (
+            {showWelcome && (
                 <div className="text-primary">
                     Welcome to the EMBL-EBI OxO Mapping Service
                 </div>
@@ -41,15 +159,16 @@ export function Search({searchInput = initialSearchState, showWelcome = false }:
                 <div className="w-full">
                     <div className="flex flex-col md:flex-row justify-between mb-2">
                         <div className="text-tertiary">
-                            Enter identifiers (CURIE format) separated by comma or newline:
+                            Enter identifiers, IRIs, or labels separated by comma or newline:
                         </div>
                         <div
                             className="link-default md:mx-0.5"
                             onClick={() => {
-                                setSearchState({
-                                    userSearchInput: "UBERON:0002107\nHP:0000518\nMP:0001289\nMP:0000564",
-                                    sanitizedSearchInput: ["UBERON:0002107", "HP:0000518", "MP:0001289", "MP:0000564"]
-                                });
+                                setSearchState((prev) => ({
+                                    ...prev,
+                                    userSearchInput: "UBERON:0002107\nCataract\nhttp://purl.obolibrary.org/obo/MP_0001289",
+                                    sanitizedSearchInput: ["UBERON:0002107", "Cataract", "http://purl.obolibrary.org/obo/MP_0001289"],
+                                }));
                             }}
                         >
                             Examples...
@@ -60,25 +179,38 @@ export function Search({searchInput = initialSearchState, showWelcome = false }:
                         rows={2}
                         className="input-default text-lg resize-y min-h-24"
                         placeholder={"Search OxO..."}
-                        value={ searchState.userSearchInput }
-                        onChange={ handleInputChange }
+                        value={searchState.userSearchInput}
+                        onChange={handleInputChange}
                     />
                 </div>
                 <div className="flex flex-col gap-2 md:mt-10">
                     <button
                         className="button-primary text-base font-bold px-4 py-1"
-                        onClick={ handleSearch }
+                        onClick={handleSearch}
                     >
                         Search
                     </button>
                     <button
                         className="button-primary text-base font-bold px-4 py-1"
-                        onClick={ handleClear }
+                        onClick={handleClear}
                     >
                         Clear
                     </button>
                 </div>
             </div>
+            <div className="mt-4">
+                <div className="text-tertiary mb-2">
+                    Optionally restrict the search to one or more mapping sets
+                    {(searchState.mappingSetIds ?? []).length > 0 && (
+                        <span className="ml-2 text-sm">
+                            ({(searchState.mappingSetIds ?? []).length} selected — click a row to toggle)
+                        </span>
+                    )}
+                </div>
+                <ThemeProvider theme={tableTheme}>
+                    <MaterialReactTable table={table} />
+                </ThemeProvider>
+            </div>
         </div>
-    )
+    );
 }

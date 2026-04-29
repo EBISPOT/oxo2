@@ -59,6 +59,7 @@ interface SearchRequest {
     facets: string[];
     columnFilters: string[];
     sortedFields: string[];
+    mappingSetIds?: string[];
 }
 
 export enum SearchStatus {
@@ -249,7 +250,7 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
 }
 
 export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10, columnFilters: any[],
-                              sorting: any[]): Promise<FacetedMappingResponse> {
+                              sorting: any[], mappingSetIds?: string[]): Promise<FacetedMappingResponse> {
     const requestBody: SearchRequest = {
         queries: queries,
         page: page,
@@ -259,7 +260,8 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
             'predicate_modifier', 'object_id', 'object_label', 'object_id_prefix', 'mapping_justification', 'asserted_mappings', 'explanation'],
         facets: ['object_id_prefix', 'subject_id_prefix'],
         columnFilters: columnFilters,
-        sortedFields: sorting
+        sortedFields: sorting,
+        ...(mappingSetIds && mappingSetIds.length > 0 ? { mappingSetIds } : {}),
     };
 
     const searchResponse = post<SearchRequest, FacetedMappingResponse>(

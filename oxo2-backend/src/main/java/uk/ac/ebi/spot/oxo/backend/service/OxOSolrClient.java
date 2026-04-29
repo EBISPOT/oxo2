@@ -27,6 +27,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Service
 public class OxOSolrClient {
     private SolrClient solrMappingClient;
+    private SolrClient solrMappingSetClient;
 
     @Value("${solr.url}")
     private String solrUrl;
@@ -46,6 +47,14 @@ public class OxOSolrClient {
                 .withConnectionTimeout(connectionTimeoutMillis, MILLISECONDS)
                 .withIdleTimeout(socketTimeoutMillis, MILLISECONDS)
                 .build();
+        this.solrMappingSetClient = new HttpJdkSolrClient.Builder(solrUrl + "/oxo2-mappingsets")
+                .withConnectionTimeout(connectionTimeoutMillis, MILLISECONDS)
+                .withIdleTimeout(socketTimeoutMillis, MILLISECONDS)
+                .build();
+    }
+
+    public QueryResponse queryMappingSets(SolrParams params) throws Exception {
+        return solrMappingSetClient.query(params);
     }
 
     public FacetedMappingResponse query(SolrParams params, Pageable pageable) throws Exception {
