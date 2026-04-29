@@ -17,6 +17,7 @@ import uk.ac.ebi.spot.oxo.inferences.nemo.model.OXOInferenceConstants;
 import uk.ac.ebi.spot.oxo.model.sssom.ChainRulesEnum;
 import uk.ac.ebi.spot.oxo.model.sssom.InferredMapping;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
+import uk.ac.ebi.spot.oxo.model.sssom.PrefixMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -272,8 +273,21 @@ public class ExplainInferredMappings {
 
                 EntityDetails subjectDetails = solrClient.queryEntityDetailsForIRI(SUBJECT_IRI,
                         inferredMapping.getSubjectIRI().asStringIRI(), SUBJECT_ID, SUBJECT_LABEL);
-                EntityDetails predicateDetails = solrClient.queryEntityDetailsForIRI(PREDICATE_IRI,
-                        inferredMapping.getPredicateIRI().asStringIRI(), PREDICATE_ID, PREDICATE_LABEL);
+                String predicateIri = inferredMapping.getPredicateIRI().asStringIRI();
+                Optional<String> predicateCurie = PrefixMap.toCurie(predicateIri);
+                String predicateId;
+                String predicateLabel;
+                if (predicateCurie.isPresent()) {
+                    predicateId = predicateCurie.get();
+                    predicateLabel = "";
+                } else {
+                    EntityDetails predicateDetails = solrClient.queryEntityDetailsForIRI(PREDICATE_IRI,
+                            predicateIri, PREDICATE_ID, PREDICATE_LABEL);
+                    predicateId = (predicateDetails != null && predicateDetails.getCurie() != null) ?
+                            predicateDetails.getCurie() : "";
+                    predicateLabel = (predicateDetails != null && predicateDetails.getLabel() != null) ?
+                            predicateDetails.getLabel() : "";
+                }
                 EntityDetails objectDetails = solrClient.queryEntityDetailsForIRI(OBJECT_IRI,
                         inferredMapping.getObjectIRI().asStringIRI(), OBJECT_ID, OBJECT_LABEL);
 
@@ -283,11 +297,9 @@ public class ExplainInferredMappings {
                             subjectDetails.getCurie() : "")
                     .subjectLabel((subjectDetails != null && subjectDetails.getLabel() != null) ?
                             subjectDetails.getLabel() : "")
-                    .predicateIRI(inferredMapping.getPredicateIRI().asStringIRI())
-                    .predicateId((predicateDetails != null && predicateDetails.getCurie() != null) ?
-                            predicateDetails.getCurie() : "")
-                    .predicateLabel((predicateDetails != null && predicateDetails.getLabel() != null) ?
-                            predicateDetails.getLabel() : "")
+                    .predicateIRI(predicateIri)
+                    .predicateId(predicateId)
+                    .predicateLabel(predicateLabel)
                     .objectIRI(inferredMapping.getObjectIRI().asStringIRI())
                     .objectId((objectDetails != null && objectDetails.getCurie() != null) ?
                             objectDetails.getCurie() : "")

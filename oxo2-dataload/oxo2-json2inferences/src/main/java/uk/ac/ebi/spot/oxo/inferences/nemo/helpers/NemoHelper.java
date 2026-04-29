@@ -246,9 +246,16 @@ public class NemoHelper {
     private static InferredMapping updatePredicate(InferredMapping inferredMapping,
                                           DataloadSolr solrClient) {
 
+        String predicateIri = inferredMapping.getPredicateIRI().asStringIRI();
+        Optional<String> predicateCurie = PrefixMap.toCurie(predicateIri);
+        if (predicateCurie.isPresent()) {
+            inferredMapping.setPredicateId(predicateCurie.get());
+            return inferredMapping;
+        }
+
         EntityDetails details = solrClient.queryEntityDetailsForIRI(
                 PREDICATE_IRI,
-                inferredMapping.getPredicateIRI().asStringIRI(),
+                predicateIri,
                 PREDICATE_ID,
                 PREDICATE_LABEL);
         if (details != null) {
