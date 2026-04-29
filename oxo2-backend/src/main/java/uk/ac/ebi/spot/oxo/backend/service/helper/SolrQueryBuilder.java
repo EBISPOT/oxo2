@@ -52,7 +52,7 @@ public class SolrQueryBuilder {
         if (queryFields != null && !queryFields.isEmpty()) {
             // Override path: caller pinned the fields — preserve legacy edismax behavior.
             solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
-            solrQuery.setQuery(constructLegacyQuery(mappingSearchRequest.getQueries()));
+            solrQuery.setQuery(constructUsingQueryFields(mappingSearchRequest.getQueries()));
             solrQuery.set(QF, constructQueryFields(queryFields));
         } else {
             // Default path: classify each term by shape and route to type-appropriate fields.
@@ -106,10 +106,10 @@ public class SolrQueryBuilder {
     }
 
     /**
-     * Legacy query construction used by the override path (caller-pinned {@code queryFields}).
+     * Query construction used by the override path (caller-pinned {@code queryFields}).
      * Joins all terms with {@code OR}; relies on edismax {@code qf} to select fields.
      */
-    private static String constructLegacyQuery(List<String> queries) {
+    private static String constructUsingQueryFields(List<String> queries) {
         if (queries == null || queries.isEmpty()) {
             return "*:*";
         }
