@@ -50,6 +50,11 @@ export const emptyFacetedMapping: FacetedMapping = {
     size: 0
 }
 
+interface AdvancedFieldQueryRequest {
+    field: string;
+    value: string;
+}
+
 interface SearchRequest {
     queries: string[];
     page: number;
@@ -60,6 +65,7 @@ interface SearchRequest {
     columnFilters: string[];
     sortedFields: string[];
     mappingSetIds?: string[];
+    advancedFieldQueries?: AdvancedFieldQueryRequest[];
 }
 
 export enum SearchStatus {
@@ -250,7 +256,8 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
 }
 
 export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10, columnFilters: any[],
-                              sorting: any[], mappingSetIds?: string[]): Promise<FacetedMappingResponse> {
+                              sorting: any[], mappingSetIds?: string[],
+                              advancedFieldQueries?: AdvancedFieldQueryRequest[]): Promise<FacetedMappingResponse> {
     const requestBody: SearchRequest = {
         queries: queries,
         page: page,
@@ -262,6 +269,7 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
         columnFilters: columnFilters,
         sortedFields: sorting,
         ...(mappingSetIds && mappingSetIds.length > 0 ? { mappingSetIds } : {}),
+        ...(advancedFieldQueries && advancedFieldQueries.length > 0 ? { advancedFieldQueries } : {}),
     };
 
     const searchResponse = post<SearchRequest, FacetedMappingResponse>(

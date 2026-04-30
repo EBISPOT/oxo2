@@ -6,7 +6,7 @@ import {ChevronDownIcon, ChevronUpIcon} from "@heroicons/react/24/solid";
 import InferredMappings from "./InferredMappings.tsx";
 import InferredMappingGraph from "../../components/mapping/InferredMappingGraph.tsx";
 
-const hasValue = (value?: string | number | string[] | Record<string, string> | InferredMapping[]): boolean => {
+const hasValue = (value?: string | number | string[] | Record<string, string> | InferredMapping | InferredMapping[]): boolean => {
     if (value === undefined) return false;
     if (Array.isArray(value)) return value.length > 0;
     if (typeof value === 'object') return Object.keys(value).length > 0;

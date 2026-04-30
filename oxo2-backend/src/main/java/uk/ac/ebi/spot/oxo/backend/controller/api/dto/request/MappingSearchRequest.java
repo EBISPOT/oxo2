@@ -24,6 +24,8 @@ public class MappingSearchRequest {
 
     private List<String> mappingSetIds;
 
+    private List<FieldQuery> advancedFieldQueries;
+
 
     public List<String> getQueries() {
         return queries;
@@ -105,6 +107,14 @@ public class MappingSearchRequest {
         this.mappingSetIds = mappingSetIds;
     }
 
+    public List<FieldQuery> getAdvancedFieldQueries() {
+        return advancedFieldQueries;
+    }
+
+    public void setAdvancedFieldQueries(List<FieldQuery> advancedFieldQueries) {
+        this.advancedFieldQueries = advancedFieldQueries;
+    }
+
     @Override
     public String toString() {
         return "MappingSearchRequest{" +
@@ -118,6 +128,7 @@ public class MappingSearchRequest {
                 ", page=" + page +
                 ", size=" + size +
                 ", mappingSetIds=" + mappingSetIds +
+                ", advancedFieldQueries=" + advancedFieldQueries +
                 '}';
     }
 

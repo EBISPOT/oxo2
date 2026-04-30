@@ -1,7 +1,8 @@
 import {useMemo, useState} from "react";
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {Search} from "../../components/search/Search";
-import {SearchInput} from "../../model/Search";
+import {AdvancedFieldQuery, SearchInput} from "../../model/Search";
+import {ADVANCED_FIELD_NAMES} from "../../model/AdvancedFields";
 import {emptyFacetedMapping, FacetedMapping, fetchMappings, fromJson} from "./MappingResultsSlice";
 import {useQuery} from "@tanstack/react-query";
 import {MaterialReactTable, type MRT_ColumnDef, MRT_PaginationState, useMaterialReactTable} from 'material-react-table';
@@ -18,12 +19,32 @@ function MappingResults() {
     const { curies } = useParams<{ curies: string }>();
     const [searchParams] = useSearchParams();
     const mappingSetIds = searchParams.getAll("mapping_set_id");
+    const isAdvanced = curies === "_advanced";
+
+    const advancedFieldQueries: AdvancedFieldQuery[] = isAdvanced
+        ? searchParams
+              .getAll("af")
+              .map((s) => {
+                  const eq = s.indexOf("=");
+                  if (eq < 0) return null;
+                  const field = s.slice(0, eq);
+                  const value = s.slice(eq + 1);
+                  if (!ADVANCED_FIELD_NAMES.has(field) || value === "") return null;
+                  return { field, value };
+              })
+              .filter((x): x is AdvancedFieldQuery => x !== null)
+        : [];
+
+    const queriesForBackend = isAdvanced ? [] : (curies
+        ? curies.split(/[\n,]+/).filter((item) => item.trim() !== "")
+        : []);
+
     const searchInput: SearchInput = {
-        userSearchInput: curies || "",
-        sanitizedSearchInput: curies
-            ? curies.split(/[\n,]+/).filter((item) => item.trim() !== "")
-            : [],
+        userSearchInput: isAdvanced ? "" : (curies || ""),
+        sanitizedSearchInput: queriesForBackend,
         mappingSetIds: mappingSetIds.length > 0 ? mappingSetIds : undefined,
+        advancedFieldQueries: isAdvanced && advancedFieldQueries.length > 0 ? advancedFieldQueries : undefined,
+        activeTab: isAdvanced ? "advanced" : "search",
     };
 
     const [columnFilters, setColumnFilters] = useState<any[]>([]);
@@ -32,6 +53,7 @@ function MappingResults() {
     ]);
 
     const mappingSetIdsKey = mappingSetIds.join(",");
+    const advancedKey = JSON.stringify(advancedFieldQueries);
     const { data, isLoading, isError } = useQuery({
         queryKey: [
             "fetchMappings",
@@ -40,16 +62,18 @@ function MappingResults() {
             pagination.pageSize,
             columnFilters,
             sorting,
-            mappingSetIdsKey
+            mappingSetIdsKey,
+            advancedKey,
         ],
         queryFn: () =>
             fetchMappings(
-                searchInput.sanitizedSearchInput,
+                queriesForBackend,
                 pagination.pageIndex,
                 pagination.pageSize,
                 columnFilters,
                 sorting,
-                mappingSetIds
+                mappingSetIds,
+                advancedFieldQueries.length > 0 ? advancedFieldQueries : undefined
             ),
         staleTime: Infinity,
     });
@@ -134,8 +158,7 @@ function MappingResults() {
         []
     );
 
-    const [columnVisibility, setColumnVisibility] = useState({
-
+    const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
         license: false,
         mappingJustification: false,
         mappingProvider: false,
@@ -143,9 +166,8 @@ function MappingResults() {
         mappingTool: false,
         objectIri: true,
         predicateIri: true,
-        subjectIri: true
-        }
-    )
+        subjectIri: true,
+    })
 
     const table = useMaterialReactTable({
         columns,

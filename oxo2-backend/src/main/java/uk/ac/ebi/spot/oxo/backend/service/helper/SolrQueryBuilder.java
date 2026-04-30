@@ -5,6 +5,7 @@ import org.apache.solr.client.solrj.util.ClientUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.FieldQuery;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingFacetEnum;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
@@ -48,8 +49,16 @@ public class SolrQueryBuilder {
         solrQuery.setStart((int) pageable.getOffset());
         solrQuery.setRows(pageable.getPageSize());
 
+        // Dispatch order (most specific first):
+        //   1. advancedFieldQueries non-empty → AND-joined per-field clauses (Advanced tab).
+        //   2. queryFields non-empty       → legacy edismax/qf path.
+        //   3. otherwise                    → classified-by-shape path (default search).
+        // Do not silently rewire — each path is independent and documented.
+        List<FieldQuery> advancedFieldQueries = mappingSearchRequest.getAdvancedFieldQueries();
         List<MappingEnum> queryFields = mappingSearchRequest.getQueryFields();
-        if (queryFields != null && !queryFields.isEmpty()) {
+        if (advancedFieldQueries != null && !advancedFieldQueries.isEmpty()) {
+            solrQuery.setQuery(constructAdvancedQuery(advancedFieldQueries));
+        } else if (queryFields != null && !queryFields.isEmpty()) {
             // Override path: caller pinned the fields — preserve legacy edismax behavior.
             solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
             solrQuery.setQuery(constructUsingQueryFields(mappingSearchRequest.getQueries()));
@@ -196,6 +205,44 @@ public class SolrQueryBuilder {
 
         String query = String.join(" OR ", clauses);
         logger.debug("Classified query string: {}", query);
+        return query;
+    }
+
+    /**
+     * Advanced search path. Builds an AND-joined query from per-field (field, value) pairs.
+     * Each clause is {@code (field:"<escaped value>")}. The same syntax works for
+     * {@code string} (exact term) and {@code text_general} (analyzed phrase) field types —
+     * Solr applies the appropriate semantics based on the field type from the schema.
+     * For multiValued fields, Solr matches if any element in the list matches; no special
+     * handling needed here.
+     */
+    private static String constructAdvancedQuery(List<FieldQuery> advancedFieldQueries) {
+        if (advancedFieldQueries == null || advancedFieldQueries.isEmpty()) {
+            return "*:*";
+        }
+
+        List<String> clauses = new ArrayList<>();
+        for (FieldQuery fq : advancedFieldQueries) {
+            if (fq == null || fq.getField() == null || fq.getValue() == null) continue;
+            String value = fq.getValue().strip();
+            if (value.isEmpty()) continue;
+
+            MappingEnum me = MappingEnum.fromString(fq.getField());
+            if (me == null) {
+                logger.warn("Unknown field in advancedFieldQueries: {}", fq.getField());
+                continue;
+            }
+
+            String escaped = ClientUtils.escapeQueryChars(value);
+            clauses.add("(" + me.getField() + ":\"" + escaped + "\")");
+        }
+
+        if (clauses.isEmpty()) {
+            return "*:*";
+        }
+
+        String query = String.join(" AND ", clauses);
+        logger.debug("Advanced query string: {}", query);
         return query;
     }
 

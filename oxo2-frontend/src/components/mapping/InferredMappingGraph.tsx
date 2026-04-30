@@ -1,4 +1,3 @@
-import React, { useEffect, useRef, useState } from 'react';
 import {
     ReactFlow,
     Handle,
@@ -161,7 +160,12 @@ function buildGraphData(mapping: InferredMapping): GraphData {
     return { nodes, edges };
 }
 
-function CustomNodeInferred({ data }) {
+interface CustomNodeData {
+    label: string;
+    chainRule?: string;
+}
+
+function CustomNodeInferred({ data }: { data: CustomNodeData }) {
     return (
         <div className="custom-node-inferred" style={{ position: "relative" }}>
             <div style={{ position: "relative", height: 0 }}>
@@ -182,7 +186,7 @@ function CustomNodeInferred({ data }) {
     );
 }
 
-function CustomNodeAsserted({ data }) {
+function CustomNodeAsserted({ data }: { data: CustomNodeData }) {
     return (
         <div className="custom-node-asserted" style={{ position: "relative" }}>
             <div style={{ position: "relative", height: 0 }}>
