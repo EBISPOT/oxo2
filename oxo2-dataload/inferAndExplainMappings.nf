@@ -118,6 +118,7 @@ process EXPLAIN_INFERENCES_TO_TRACE {
     def inferred_file = "${params.inferred_mappings_dir}/${baseName}.ttl"
 
     """
+    echo "[EXPLAIN_INFERENCES_TO_TRACE] baseName=${baseName} trace_input_bytes=${inferences_to_trace_file.size()} allocated_memory=${task.memory}"
     "${params.script_dir}/oxo2-json2inferences/nemoExplainMappingsNextflow.sh" "${params.rules_definition}" \
         "${asserted_file}" "${inferred_file}" "./" "${inferences_to_trace_file}" "${output_file}"
     """
