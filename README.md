@@ -93,7 +93,7 @@ and change to OxO2 source directory.
 2. To build, run: `mvn clean install` 
 3. Copy solr config to solr: `cp ./oxo2-dataload/solr-config/* $SOLR_HOME`
 4. Change to dataload directory: `cd ./oxo2-dataload`
-5. Run OxO2 dataload: `./loadData.sh` or use `loadData.nextflow` if you have Nextflow installed.
+5. Run OxO2 dataload: `./loadData.nextflow` (Nextflow is required).
 6. Return to OxO2 root dir: `cd ..`
 7. Start Solr: `$SOLR_SCRIPT/solr start --user-managed`
 8. Run OxO backend: `./startBackend.sh`

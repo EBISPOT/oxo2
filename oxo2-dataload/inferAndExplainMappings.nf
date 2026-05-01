@@ -12,6 +12,9 @@ params.inference_chains_dir = "${System.getenv('OXO2_DATA')}/inferences/inferenc
 params.script_dir = params.script_dir ?: "${projectDir}"
 params.rules_definition = file("${params.script_dir}/oxo2-json2inferences/chain-rules.rls")
 
+// Mappings per tracing chunk. Smaller = more parallelism / more per-chunk overhead.
+params.trace_chunk_size = 100000
+
 
 workflow {
     json_files = channel.fromPath("${params.json_input_dir}/*.json")
@@ -19,7 +22,9 @@ workflow {
     asserted_ttl = JSON2TTL(json_files)
     infer_result = INFER_MAPPINGS(asserted_ttl)
     trace_result = DETERMINE_INFERENCES_TO_TRACE(infer_result)
-    EXPLAIN_INFERENCES_TO_TRACE(trace_result)
+    chunks = SPLIT_INFERENCES_TO_TRACE(trace_result).transpose()
+    chunk_chains = EXPLAIN_INFERENCES_TO_TRACE_CHUNK(chunks)
+    MERGE_CHAIN_JSON(chunk_chains.groupTuple())
 }
 
 
@@ -101,25 +106,60 @@ process DETERMINE_INFERENCES_TO_TRACE {
 }
 
 
-process EXPLAIN_INFERENCES_TO_TRACE {
-    tag "Explain mappings: ${baseName}"
-
-    publishDir "${params.inference_chains_dir}", mode: 'move', overwrite: true
+process SPLIT_INFERENCES_TO_TRACE {
+    tag "Split trace input: ${baseName}"
 
     input:
     tuple val(baseName), path(inferences_to_trace_file)
 
     output:
-    path "${inferences_to_trace_file.baseName}-chains.json", optional: true
+    tuple val(baseName), path("${baseName}-chunk*.txt"), optional: true
 
     script:
-    def output_file = "${inferences_to_trace_file.baseName}-chains.json"
+    """
+    "${params.script_dir}/oxo2-json2inferences/splitInferencesToTrace.sh" \
+        "${inferences_to_trace_file}" ${params.trace_chunk_size} "${baseName}"
+    """
+}
+
+
+process EXPLAIN_INFERENCES_TO_TRACE_CHUNK {
+    tag "Explain chunk: ${chunk_file.baseName}"
+
+    input:
+    tuple val(baseName), path(chunk_file)
+
+    output:
+    tuple val(baseName), path("${chunk_file.baseName}-chains.json"), optional: true
+
+    script:
+    def output_file = "${chunk_file.baseName}-chains.json"
     def asserted_file = "${params.asserted_mappings_dir}/${baseName}.ttl"
     def inferred_file = "${params.inferred_mappings_dir}/${baseName}.ttl"
 
     """
-    echo "[EXPLAIN_INFERENCES_TO_TRACE] baseName=${baseName} trace_input_bytes=${inferences_to_trace_file.size()} allocated_memory=${task.memory}"
+    echo "[EXPLAIN_INFERENCES_TO_TRACE_CHUNK] baseName=${baseName} chunk=${chunk_file.name} trace_input_bytes=${chunk_file.size()} allocated_memory=${task.memory}"
     "${params.script_dir}/oxo2-json2inferences/nemoExplainMappingsNextflow.sh" "${params.rules_definition}" \
-        "${asserted_file}" "${inferred_file}" "./" "${inferences_to_trace_file}" "${output_file}"
+        "${asserted_file}" "${inferred_file}" "./" "${chunk_file}" "${output_file}"
+    """
+}
+
+
+process MERGE_CHAIN_JSON {
+    tag "Merge chain chunks: ${baseName}"
+
+    publishDir "${params.inference_chains_dir}", mode: 'move', overwrite: true
+
+    input:
+    tuple val(baseName), path(chunk_chains_files)
+
+    output:
+    path "${baseName}-chains.json", optional: true
+
+    script:
+    def output_file = "${baseName}-chains.json"
+    """
+    "${params.script_dir}/oxo2-json2inferences/mergeChainFiles.sh" \
+        "${output_file}" ${chunk_chains_files}
     """
 }

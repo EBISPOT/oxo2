@@ -31,6 +31,9 @@ public class MainDispatcher {
                 case "explanations2json":
                     uk.ac.ebi.spot.oxo.inferences.nemo.ExplainInferredMappings.main(remainingArgs);
                     break;
+                case "mergeChainFiles":
+                    uk.ac.ebi.spot.oxo.inferences.nemo.MergeChainFiles.main(remainingArgs);
+                    break;
                 default:
                     logger.error("Unknown command: {}", command);
                     printUsage();
@@ -56,5 +59,6 @@ public class MainDispatcher {
         System.out.println("  json2ttl  - Creates .ttl file from mappings in .json. ");
         System.out.println("  inferences2trace  - Creates a file of inferences to trace in the format expected by Nemo.");
         System.out.println("  explanations2json - Creates a .json file of inferred mappings with their explanations.");
+        System.out.println("  mergeChainFiles  - Merges per-chunk Nemo chain trace JSON files into one per-mapping-set file.");
     }
 }

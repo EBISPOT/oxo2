@@ -157,14 +157,14 @@ This is intentionally run as a single process because multiple SSSOM TSV files a
 
 ### Step 4: Stage 3 -- Infer and Explain Mappings (`inferAndExplainMappings.nf`)
 
-This is the most complex and resource-intensive stage. It is a **four-process pipelined workflow** where each input file flows independently through all four sub-stages:
+This is the most complex and resource-intensive stage. It is a **six-process pipelined workflow** where each input file flows independently through the inference + chunked-tracing stages:
 
 ```
-*.json ──> JSON2TTL ──> INFER_MAPPINGS ──> DETERMINE_INFERENCES_TO_TRACE ──> EXPLAIN_INFERENCES_TO_TRACE
- (per file)  (per file)    (per file)              (per file)                        (per file)
+*.json ──> JSON2TTL ──> INFER_MAPPINGS ──> DETERMINE_INFERENCES_TO_TRACE ──> SPLIT_INFERENCES_TO_TRACE ──> EXPLAIN_INFERENCES_TO_TRACE_CHUNK ──> MERGE_CHAIN_JSON
+ (per file)  (per file)    (per file)              (per file)                       (per file)                  (per chunk, fan-out)              (per file)
 ```
 
-Because each file moves through the pipeline independently, later files can begin Stage 3a while earlier files are still in Stage 3c. This **per-file pipelining** significantly improves throughput.
+Because each file moves through the pipeline independently, later files can begin Stage 3a while earlier files are still in tracing. The chunked tracing step (split → per-chunk explain → merge) parallelises within a single mapping set: each per-set facts-to-trace file is split into chunks of `params.trace_chunk_size` mappings (default 100 000), nmo runs per chunk concurrently, and per-chunk chain JSONs are merged back into one per-set chain file.
 
 #### Stage 3a: JSON to Turtle (`JSON2TTL`)
 
@@ -181,13 +181,15 @@ Converts each JSON mapping file to RDF Turtle format using the `oxo2-json2infere
 
 #### Stage 3b: Nemo Inference (`INFER_MAPPINGS`)
 
-Runs the Nemo rules engine (`nmo`) with `chain-rules.rls` to infer transitive mappings. This is the **heaviest task in the entire pipeline**.
+Runs the Nemo rules engine (`nmo`) with `chain-rules.rls` to infer transitive mappings.
 
 | Resource | Value |
 |----------|-------|
 | CPU | 1 |
-| Memory | **64 GB** |
-| Time | **24 hours** |
+| Memory | 4 GB |
+| Time | 4 hours |
+
+Sized from observed peak RSS of ~444 MB (snomed) across 248 mapping sets; 4 GB provides ~10× headroom. Slowest observed realtime is ~17 min (ncbitaxon); 4 h gives ~14× headroom and may keep INFER_MAPPINGS eligible for shorter SLURM partitions where the cluster tiers by walltime.
 
 **Command:**
 ```bash
@@ -213,15 +215,35 @@ Selects which inferred mappings need explanation chains, using the Java `MainDis
 **Input:** `$OXO2_INFERENCES/inferredMappings/*.ttl`  
 **Output:** `$OXO2_INFERENCES/inferencesToTrace/*.txt`
 
-#### Stage 3d: Explain Inferences (`EXPLAIN_INFERENCES_TO_TRACE`)
+#### Stage 3d: Split Trace Input (`SPLIT_INFERENCES_TO_TRACE`)
 
-Runs Nemo with tracing enabled to generate human-readable explanation chains for each selected inference.
+Splits the per-mapping-set facts-to-trace file into chunks of `params.trace_chunk_size` mappings (default 100 000) so the trace step can fan out within a single set.
 
 | Resource | Value |
 |----------|-------|
 | CPU | 1 |
-| Memory | 64 GB |
-| Time | 24 hours |
+| Memory | 1 GB |
+| Time | 30 min |
+
+#### Stage 3e: Explain Inference Chunk (`EXPLAIN_INFERENCES_TO_TRACE_CHUNK`)
+
+Runs Nemo with tracing enabled on a single chunk of the facts-to-trace file. One task per chunk; concurrency capped by `executor.queueSize`.
+
+| Resource | Value |
+|----------|-------|
+| CPU | 1 |
+| Memory | dynamic (chunk size × 120, floor 4 GB) |
+| Time | 4 hours |
+
+#### Stage 3f: Merge Chain JSON (`MERGE_CHAIN_JSON`)
+
+Deduplicates and concatenates the per-chunk chain JSONs back into one per-mapping-set chain file matching the schema `NemoInferenceReader` expects.
+
+| Resource | Value |
+|----------|-------|
+| CPU | 1 |
+| Memory | 16 GB |
+| Time | 1 hour |
 
 **Command:**
 ```bash
@@ -258,8 +280,10 @@ Converts Nemo inference chains into enriched JSON mappings with explanations. Th
 | Resource | Value |
 |----------|-------|
 | CPU | 1 |
-| Memory | 64 GB |
-| Time | 24 hours |
+| Memory | 16 GB |
+| Time | 12 hours |
+
+Sized from observed peak RSS of ~8 GB (mondo, pre-RG/RI cleanup) across 231 mapping sets; mean was ~743 MB. 16 GB gives ~2× headroom. Slowest historical realtime was mondo at 11.9 h; post-RG/RI-cleanup workload is lighter, so 12 h is a comfortable upper bound.
 
 Environment variables `SOLR_URL`, `no_proxy`, and `JAVA_OPTS` are whitelisted in the Singularity configuration and passed to the container so the Java process can reach Solr on the compute node.
 
@@ -287,10 +311,12 @@ json2solr.sh "$OXO2_INFERENCES/solr" http://localhost:8983/solr/oxo2-mappings
 | DOWNLOAD_REGISTRY | 1 | 4 GB | 2h | N registries |
 | SSSOM2JSON | 1 | 8 GB | 2h | 1 (batch) |
 | JSON2TTL | 2 | 8 GB | 2h | M files |
-| **INFER_MAPPINGS** | 1 | **64 GB** | **24h** | **M files** |
-| DETERMINE_INFERENCES_TO_TRACE | 4 | 12 GB | 4h | M files |
-| EXPLAIN_INFERENCES_TO_TRACE | 1 | 64 GB | 24h | M files |
-| EXPLANATIONS_TO_JSON | 1 | 64 GB | 24h | M files |
+| INFER_MAPPINGS | 1 | 4 GB | 4h | M files |
+| DETERMINE_INFERENCES_TO_TRACE | 2 | 4 GB | 4h | M files |
+| SPLIT_INFERENCES_TO_TRACE | 1 | 1 GB | 30m | M files |
+| EXPLAIN_INFERENCES_TO_TRACE_CHUNK | 1 | dynamic (≥4 GB) | 4h | M × chunks |
+| MERGE_CHAIN_JSON | 1 | 16 GB | 1h | M files |
+| EXPLANATIONS_TO_JSON | 1 | 16 GB | 12h | M files |
 
 Nextflow concurrency limit: `executor.queueSize = 200` in the `slurm` profile — up to 200 sub-jobs queued/running concurrently. No `submitRateLimit` is set.
 

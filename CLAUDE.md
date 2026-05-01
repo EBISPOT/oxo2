@@ -41,7 +41,7 @@ export OXO2_SOLR_HOST=http://localhost:8983/solr
 # Start Solr, load data, start backend
 cp ./oxo2-dataload/solr-config/* $SOLR_HOME
 $SOLR_SCRIPT/solr start --user-managed
-cd oxo2-dataload && ./loadData.sh && cd ..
+cd oxo2-dataload && ./loadData.nextflow && cd ..
 ./startBackend.sh
 ```
 
@@ -67,11 +67,11 @@ docker compose up
 
 ## Data Loading Pipeline
 
-Two execution paths exist:
-- **Sequential** (`*.sh` scripts): `loadData.sh` → `downloadMappings.sh` → `sssom2json.sh` → `determineInferencesAndExplanations.sh` → `json2solr.sh`
-- **Parallel** (`*.nextflow` / `*.nf` scripts): Uses Nextflow for parallelization. Docker always uses this path.
+Single execution path: `loadData.nextflow` → `downloadMappings.nf` → `sssom2json.nf` → `determineInferencesAndExplanations.nextflow` (which runs `inferAndExplainMappings.nf`) → `json2solr.sh`. Nextflow is required for both local and HPC.
 
-Shell scripts use `SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"` for relative paths. Nextflow DSL workflows are in `.nf` files; `*Nextflow.sh` are helper scripts called by `.nf` workflows.
+Tracing of inferred mappings is parallelised within each mapping set: `inferAndExplainMappings.nf` splits each per-set facts-to-trace file into chunks of `params.trace_chunk_size` mappings (default 100 000), runs nmo trace per chunk concurrently, then merges the per-chunk chain JSONs back into one per-set chain file.
+
+Per-stage component scripts (`json2ttl.sh`, `inferMappings.sh`, `explanations2json.sh`, etc.) remain available for local debugging of individual stages but are not part of the production pipeline. Nextflow DSL workflows are in `.nf` files; `*Nextflow.sh` are helper scripts called by `.nf` workflows.
 
 ## Tech Stack
 
