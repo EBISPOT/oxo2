@@ -47,7 +47,7 @@ export OXO2_INFERENCES
 
 mkdir -p "$NXF_WORK" "$NXF_HOME" "$NXF_TEMP" "$NXF_CACHE_DIR" "$NXF_SINGULARITY_CACHEDIR" "$NXF_LOGS"
 mkdir -p "$OXO2_DATA/sssom" "$OXO2_DATA/sssom-as-json" "$OXO2_DATA/assertedMappings"
-mkdir -p "$OXO2_INFERENCES/inferredMappings" "$OXO2_INFERENCES/inferencesToTrace" "$OXO2_INFERENCES/inferenceChains" "$OXO2_INFERENCES/solr"
+mkdir -p "$OXO2_INFERENCES/inferredMappings" "$OXO2_INFERENCES/inferencesToTrace" "$OXO2_INFERENCES/inferenceChains" "$OXO2_INFERENCES/solr/mapping" "$OXO2_INFERENCES/solr/mappingSet"
 mkdir -p "$OXO2_DATA/tmp"
 mkdir -p "$NEXTFLOW_DIR/logs"
 mkdir -p "$SOLR_HOME"
@@ -212,10 +212,13 @@ echo "###################" explanations2json...
 end_time=$(date +%s)
 echo "Explanations to JSON took: $((end_time - start_time)) seconds"
 
-# --- Stage 6: Index inferred mappings to Solr ---
+# --- Stage 6: Index inferred mappings and mapping sets to Solr ---
 echo "###################" json2solr inferred mappings...
 singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
-    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_INFERENCES/solr" "$SOLR_URL/oxo2-mappings"
+    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_INFERENCES/solr/mapping" "$SOLR_URL/oxo2-mappings"
+echo "###################" json2solr inferred mappingSets...
+singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
+    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_INFERENCES/solr/mappingSet" "$SOLR_URL/oxo2-mappingsets"
 sleep 20
 
 # --- Verify Stage 7: Check inferred documents were indexed ---

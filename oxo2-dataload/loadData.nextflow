@@ -84,7 +84,8 @@ echo "Writing to Solr took: ${elapsed} seconds"
 sleep 20
 
 
-mkdir -p $OXO2_INFERENCES/solr
+mkdir -p $OXO2_INFERENCES/solr/mapping
+mkdir -p $OXO2_INFERENCES/solr/mappingSet
 
 start_time=$(date +%s)
 echo "Using Nextflow for parallel explanations2json"
@@ -101,7 +102,9 @@ echo "Nextflow Parallel Processing: explanations2json took: ${elapsed} seconds"
 
 
 echo  "###################"  json2solr inferred mappings ...
-$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
+$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr/mapping http://localhost:8983/solr/oxo2-mappings
+echo  "###################"  json2solr inferred mappingSets ...
+$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr/mappingSet http://localhost:8983/solr/oxo2-mappingsets
 sleep 20
 
 

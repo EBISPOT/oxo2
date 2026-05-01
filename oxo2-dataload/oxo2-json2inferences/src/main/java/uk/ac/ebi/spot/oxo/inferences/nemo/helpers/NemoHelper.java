@@ -15,7 +15,7 @@ public class NemoHelper {
     private static final Logger logger = LoggerFactory.getLogger(NemoHelper.class);
 
     public static Set<InferredMapping> fromNemoInferencesToInferredMappings(
-            NemoInferences nemoInferences, DataloadSolr solrClient) {
+            NemoInferences nemoInferences, DataloadSolr solrClient, String sourceMappingSetId) {
 
         // Walk every conclusion/premise string in the chains file once to collect
         // distinct subject/predicate/object IRIs, then bulk-populate the Solr
@@ -23,7 +23,7 @@ public class NemoHelper {
         // createInferredMapping() call would issue 3 sequential Solr round-trips
         // for IRI -> curie/label lookups (cached after the first hit but still
         // single-keyed), which dominates wall-clock for large chains files.
-        prefetchEntityDetailsForChains(nemoInferences, solrClient);
+        prefetchEntityDetailsForChains(nemoInferences, solrClient, sourceMappingSetId);
 
         Set<InferredMapping> inferredMappings = new HashSet<>();
         // Memoize InferredMapping per conclusion string so that shared sub-chains
@@ -39,9 +39,11 @@ public class NemoHelper {
         int progressInterval = Math.max(1000, totalConclusions / 20);
         int processed = 0;
 
+        String inferredMappingSetId = OXOInferenceConstants.inferredMappingSetIdFor(sourceMappingSetId);
+
         for (String finalConclusion : finalConclusions) {
             InferredMapping inferredMapping = determineInferencesLeadingToConclusion(nemoInferences,
-                    finalConclusion, solrClient, memo);
+                    finalConclusion, solrClient, memo, sourceMappingSetId, inferredMappingSetId);
             inferredMappings.add(inferredMapping);
             processed++;
             if (processed % progressInterval == 0 || processed == totalConclusions) {
@@ -60,7 +62,8 @@ public class NemoHelper {
     }
 
     private static void prefetchEntityDetailsForChains(NemoInferences nemoInferences,
-                                                        DataloadSolr solrClient) {
+                                                        DataloadSolr solrClient,
+                                                        String sourceMappingSetId) {
         Set<String> subjectIris = new HashSet<>();
         Set<String> predicateIris = new HashSet<>();
         Set<String> objectIris = new HashSet<>();
@@ -91,7 +94,7 @@ public class NemoHelper {
                 subjectIris.size(), predicateIris.size(), objectIris.size(),
                 System.currentTimeMillis() - start);
 
-        solrClient.prefetchMappingsForTriples(distinctTriples.values());
+        solrClient.prefetchMappingsForTriples(distinctTriples.values(), sourceMappingSetId);
     }
 
     private static void collectFromConclusion(String conclusion,
@@ -115,12 +118,14 @@ public class NemoHelper {
     private static InferredMapping determineInferencesLeadingToConclusion(
             NemoInferences nemoInferences,
             String conclusion, DataloadSolr solrClient,
-            Map<String, InferredMapping> memo) {
+            Map<String, InferredMapping> memo,
+            String sourceMappingSetId,
+            String inferredMappingSetId) {
 
         InferredMapping cached = memo.get(conclusion);
         if (cached != null) return cached;
 
-        InferredMapping inferredMapping = createInferredMapping(conclusion, solrClient);
+        InferredMapping inferredMapping = createInferredMapping(conclusion, solrClient, sourceMappingSetId);
 
         Optional<NemoInferences.NemoInference> optionalNemoInference =
                 nemoInferences.findNemoInferenceForConclusion(conclusion);
@@ -143,13 +148,13 @@ public class NemoHelper {
                 inferredMapping.setMappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL);
                 inferredMapping.setMappingJustification(new EntityReference(
                         OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION));
-                inferredMapping.setMappingSetId(OXOInferenceConstants.OXO_MAPPING_SET_ID);
+                inferredMapping.setMappingSetId(inferredMappingSetId);
 
                 List<InferredMapping> premises = new ArrayList<>();
 
                 nemoInference.getPremises().forEach(premise -> {
                     InferredMapping premiseAsInferredMapping = determineInferencesLeadingToConclusion(
-                            nemoInferences, premise, solrClient, memo
+                            nemoInferences, premise, solrClient, memo, sourceMappingSetId, inferredMappingSetId
                     );
                     premises.add(premiseAsInferredMapping);
                 });
@@ -174,7 +179,7 @@ public class NemoHelper {
 
 
     private static InferredMapping createInferredMapping(
-            String mapping, DataloadSolr solrClient) {
+            String mapping, DataloadSolr solrClient, String sourceMappingSetId) {
 
         InferredMapping inferredMapping = new InferredMapping();
         if (!isValidMappingString(mapping)) {
@@ -193,8 +198,13 @@ public class NemoHelper {
         inferredMapping.setPredicateIRI(new Uri(predicateIRI));
         inferredMapping.setObjectIRI(new Uri(objectIRI));
 
+        // Scope the asserted-mapping lookup to the source set whose TTL was fed
+        // into nmo for this run. Premises in the chain came from that set's TTL,
+        // so the in-set hit is the authoritative provenance label. The Solr
+        // overload falls back to an unscoped lookup with a WARN if the in-set
+        // query is empty (data drift between TTL and Solr).
         List<Mapping> assertedMappingsList =
-                solrClient.querySubjectPredicateObjectIRI(subjectIRI, predicateIRI, objectIRI);
+                solrClient.querySubjectPredicateObjectIRI(subjectIRI, predicateIRI, objectIRI, sourceMappingSetId);
 
         if (assertedMappingsList != null && assertedMappingsList.size() > 0) {
             Mapping firstAssertedMapping = assertedMappingsList.get(0);

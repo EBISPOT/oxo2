@@ -8,14 +8,16 @@ SCRIPT_DIR=$(dirname $(readlink -f $0))
 echo Running explanations2jsonNextflow.sh
 
 # Check if the required arguments are provided
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <input_file> <output_file>"
+if [ "$#" -ne 4 ]; then
+  echo "Usage: $0 <input_file> <output_file> <mapping_set_output_file> <source_mapping_set_id>"
   exit 1
 fi
 
 # Assign arguments to variables
 INPUT_FILE=$1
 OUTPUT_FILE=$2
+MAPPING_SET_OUTPUT_FILE=$3
+SOURCE_MAPPING_SET_ID=$4
 
 # Define the path to the JAR file
 JAR_FILE="$SCRIPT_DIR/target/oxo2-json2inferences-1.0.0-SNAPSHOT.jar"
@@ -27,4 +29,6 @@ if [ ! -f "$JAR_FILE" ]; then
 fi
 
 java $JAVA_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=explanations-heapdump.hprof -cp "$JAR_FILE" \
-     uk.ac.ebi.spot.oxo.inferences.nemo.MainDispatcher explanations2json -i "$INPUT_FILE" -f "$OUTPUT_FILE"
+     uk.ac.ebi.spot.oxo.inferences.nemo.MainDispatcher explanations2json \
+     -i "$INPUT_FILE" -f "$OUTPUT_FILE" \
+     -m "$MAPPING_SET_OUTPUT_FILE" -s "$SOURCE_MAPPING_SET_ID"

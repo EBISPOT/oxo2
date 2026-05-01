@@ -77,7 +77,21 @@ public class DataloadSolr {
     }
 
     public List<Mapping> querySubjectPredicateObjectIRI(String subjectIRI, String predicateIRI, String objectIRI)  {
-        String cacheKey = subjectIRI + '\0' + predicateIRI + '\0' + objectIRI;
+        return querySubjectPredicateObjectIRI(subjectIRI, predicateIRI, objectIRI, null);
+    }
+
+    /**
+     * Like {@link #querySubjectPredicateObjectIRI(String, String, String)} but
+     * scoped to a single source mapping set via an {@code fq} on
+     * {@link MappingEnum#MAPPING_SET_ID}. If the in-set query returns no match
+     * for a triple that should exist in that set (i.e. data drift), logs a
+     * WARN and falls back to the unfiltered query so the chain enrichment
+     * keeps making progress.
+     */
+    public List<Mapping> querySubjectPredicateObjectIRI(String subjectIRI, String predicateIRI, String objectIRI,
+                                                        String mappingSetIdFilter)  {
+        String cacheKey = (mappingSetIdFilter == null ? "" : mappingSetIdFilter)
+                + '\1' + subjectIRI + '\0' + predicateIRI + '\0' + objectIRI;
         List<Mapping> cached = spoMappingsCache.get(cacheKey);
         if (cached != null) {
             return cached;
@@ -88,6 +102,10 @@ public class DataloadSolr {
             query.setQuery(String.format("{!term f=%s}%s", MappingEnum.SUBJECT_IRI.getField(),subjectIRI));
             query.addFilterQuery(String.format("{!term f=%s}%s", MappingEnum.PREDICATE_IRI.getField(), predicateIRI));
             query.addFilterQuery(String.format("{!term f=%s}%s", MappingEnum.OBJECT_IRI.getField(), objectIRI));
+            if (mappingSetIdFilter != null && !mappingSetIdFilter.isBlank()) {
+                query.addFilterQuery(String.format("{!term f=%s}%s",
+                        MappingEnum.MAPPING_SET_ID.getField(), mappingSetIdFilter));
+            }
 
             QueryResponse response = solrMappingClient.query(query);
 
@@ -95,6 +113,14 @@ public class DataloadSolr {
             List<Mapping> mappings = mappingBuilders.stream()
                     .map(Mapping.Builder::build)
                     .collect(Collectors.toList());
+
+            if (mappings.isEmpty() && mappingSetIdFilter != null && !mappingSetIdFilter.isBlank()) {
+                logger.warn("No asserted mapping found in source set {} for triple <{}> <{}> <{}>; falling back to unscoped lookup. This indicates pipeline drift between TTL and Solr.",
+                        mappingSetIdFilter, subjectIRI, predicateIRI, objectIRI);
+                List<Mapping> fallback = querySubjectPredicateObjectIRI(subjectIRI, predicateIRI, objectIRI);
+                spoMappingsCache.put(cacheKey, fallback);
+                return fallback;
+            }
 
             spoMappingsCache.put(cacheKey, mappings);
             return mappings;
@@ -251,16 +277,29 @@ public class DataloadSolr {
      * <p>Each input triple is a {@code String[3]} of {@code {s, p, o}}.
      */
     public void prefetchMappingsForTriples(Collection<String[]> triples) {
+        prefetchMappingsForTriples(triples, null);
+    }
+
+    /**
+     * Like {@link #prefetchMappingsForTriples(Collection)} but scoped to a
+     * single source mapping set via an {@code fq} on
+     * {@link MappingEnum#MAPPING_SET_ID}. The cache keys produced by this
+     * method include the filter, so they hit the cache used by
+     * {@link #querySubjectPredicateObjectIRI(String, String, String, String)}
+     * when called with the same filter.
+     */
+    public void prefetchMappingsForTriples(Collection<String[]> triples, String mappingSetIdFilter) {
         if (triples == null || triples.isEmpty()) {
             return;
         }
 
+        String filterPrefix = (mappingSetIdFilter == null ? "" : mappingSetIdFilter) + '\1';
         Set<String> distinctSubjects = new HashSet<>();
         Set<String> distinctTripleKeys = new HashSet<>();
         for (String[] t : triples) {
             if (t == null || t.length != 3) continue;
             if (t[0] == null || t[1] == null || t[2] == null) continue;
-            String key = t[0] + '\0' + t[1] + '\0' + t[2];
+            String key = filterPrefix + t[0] + '\0' + t[1] + '\0' + t[2];
             if (spoMappingsCache.containsKey(key)) continue;
             distinctSubjects.add(t[0]);
             distinctTripleKeys.add(key);
@@ -271,8 +310,8 @@ public class DataloadSolr {
 
         List<String> fetchList = new ArrayList<>(distinctSubjects);
         int totalChunks = (fetchList.size() + PREFETCH_TRIPLES_CHUNK_SIZE - 1) / PREFETCH_TRIPLES_CHUNK_SIZE;
-        logger.info("Prefetch SPO mappings: {} distinct subjects covering {} triples in {} chunk(s) of up to {}",
-                fetchList.size(), distinctTripleKeys.size(), totalChunks, PREFETCH_TRIPLES_CHUNK_SIZE);
+        logger.info("Prefetch SPO mappings (filter={}): {} distinct subjects covering {} triples in {} chunk(s) of up to {}",
+                mappingSetIdFilter, fetchList.size(), distinctTripleKeys.size(), totalChunks, PREFETCH_TRIPLES_CHUNK_SIZE);
 
         long batchStart = System.currentTimeMillis();
         int totalDocs = 0;
@@ -280,7 +319,7 @@ public class DataloadSolr {
             List<String> chunk = fetchList.subList(i, Math.min(i + PREFETCH_TRIPLES_CHUNK_SIZE, fetchList.size()));
             int chunkIndex = (i / PREFETCH_TRIPLES_CHUNK_SIZE) + 1;
             long chunkStart = System.currentTimeMillis();
-            int docs = fetchSpoChunk(chunk);
+            int docs = fetchSpoChunk(chunk, mappingSetIdFilter, filterPrefix);
             totalDocs += docs;
             logger.info("Prefetch SPO mappings: chunk {}/{} ({} subjects) -> {} docs in {} ms",
                     chunkIndex, totalChunks, chunk.size(), docs,
@@ -299,11 +338,15 @@ public class DataloadSolr {
                 totalDocs, emptyMarked, System.currentTimeMillis() - batchStart);
     }
 
-    private int fetchSpoChunk(List<String> subjectChunk) {
+    private int fetchSpoChunk(List<String> subjectChunk, String mappingSetIdFilter, String filterPrefix) {
         try {
             SolrQuery query = new SolrQuery();
             query.setQuery("{!terms f=" + MappingEnum.SUBJECT_IRI.getField() + "}"
                     + String.join(",", subjectChunk));
+            if (mappingSetIdFilter != null && !mappingSetIdFilter.isBlank()) {
+                query.addFilterQuery(String.format("{!term f=%s}%s",
+                        MappingEnum.MAPPING_SET_ID.getField(), mappingSetIdFilter));
+            }
             // Each subject can have multiple Mapping documents; size generously
             // so a single batch returns all matches without paging.
             query.setRows(subjectChunk.size() * 50);
@@ -316,7 +359,7 @@ public class DataloadSolr {
                 String p = mapping.predicateIRI().map(uk.ac.ebi.spot.oxo.model.sssom.Uri::asStringIRI).orElse(null);
                 String o = mapping.objectIRI().map(uk.ac.ebi.spot.oxo.model.sssom.Uri::asStringIRI).orElse(null);
                 if (s == null || p == null || o == null) continue;
-                String key = s + '\0' + p + '\0' + o;
+                String key = filterPrefix + s + '\0' + p + '\0' + o;
                 spoMappingsCache.computeIfAbsent(key, k -> new ArrayList<>()).add(mapping);
             }
             return builders.size();

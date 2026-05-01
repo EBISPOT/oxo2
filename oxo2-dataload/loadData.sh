@@ -53,14 +53,19 @@ echo "Writing to Solr took: ${elapsed} seconds"
 sleep 20
 
 
-mkdir -p $OXO2_INFERENCES/solr
+mkdir -p $OXO2_INFERENCES/solr/mapping
+mkdir -p $OXO2_INFERENCES/solr/mappingSet
 
 $SCRIPT_DIR/oxo2-json2inferences/explanations2json.sh "$OXO2_INFERENCES/inferenceChains" \
-    "$OXO2_INFERENCES/solr"
+    "$OXO2_INFERENCES/solr/mapping" \
+    "$OXO2_INFERENCES/solr/mappingSet" \
+    "$OXO2_DATA/sssom-as-json/mappingSet"
 
 
  echo  "###################"  json2solr inferred mappings ...
- $SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr http://localhost:8983/solr/oxo2-mappings
+ $SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr/mapping http://localhost:8983/solr/oxo2-mappings
+ echo  "###################"  json2solr inferred mappingSets ...
+ $SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr/mappingSet http://localhost:8983/solr/oxo2-mappingsets
  sleep 20
 
 
