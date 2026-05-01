@@ -24,7 +24,8 @@ RUN mvn -B -pl :oxo2-downloader,:oxo2-json2inferences,:oxo2-sssom2json -am -Dski
 FROM eclipse-temurin:17
 
 RUN mkdir -p /opt/nemo \
-    && curl -L https://github.com/knowsys/nemo/releases/download/v0.9.1/nemo_v0.9.1_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf -
+    && curl -L https://github.com/knowsys/nemo/releases/download/v0.10.0/nemo_v0.10.0_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf -
+
 
 RUN mkdir -p /opt/solr  \
     && curl -L https://archive.apache.org/dist/solr/solr/9.9.0/solr-9.9.0.tgz | tar --strip-components=1 -C /opt/solr -xzf - \
