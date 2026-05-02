@@ -29,10 +29,6 @@ public class NemoInferences {
         this.inferences = inferences;
     }
 
-    public Set<NemoInference> getInferencesSet() {
-        return new HashSet<>(inferences);
-    }
-
     public Optional<NemoInference> findNemoInferenceForConclusion(String conclusion) {
         for (NemoInference inference : inferences) {
             if (inference.getConclusion().equals(conclusion))
