@@ -18,7 +18,7 @@
     <!-- Application loggers -->
     <logger name="uk.ac.ebi.spot.oxo.model.sssom" level="info"/>
     <logger name="uk.ac.ebi.spot.oxo" level="info"/>
-    <logger name="uk.ac.ebi.spot.oxo.inferences.nemo" level="ERROR"/>
+    <logger name="uk.ac.ebi.spot.oxo.inferences.nemo" level="info"/>
     
     <!-- Third-party loggers -->
     <logger name="com.fasterxml.jackson" level="error" />
