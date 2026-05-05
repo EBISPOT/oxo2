@@ -12,6 +12,8 @@ public class NemoInferences {
     @JsonProperty("inferences")
     private List<NemoInference> inferences;
 
+    private Map<String, NemoInference> inferenceByConclusion;
+
     // Getters and setters
     public List<String> getFinalConclusion() {
         return finalConclusion;
@@ -27,14 +29,18 @@ public class NemoInferences {
 
     public void setInferences(List<NemoInference> inferences) {
         this.inferences = inferences;
+        this.inferenceByConclusion = null;
     }
 
     public Optional<NemoInference> findNemoInferenceForConclusion(String conclusion) {
-        for (NemoInference inference : inferences) {
-            if (inference.getConclusion().equals(conclusion))
-                return Optional.of(inference);
+        if (inferenceByConclusion == null) {
+            Map<String, NemoInference> tmpInferenceByConclusion = new HashMap<>(inferences.size() * 2);
+            for (NemoInference inference : inferences) {
+                tmpInferenceByConclusion.putIfAbsent(inference.getConclusion(), inference);
+            }
+            inferenceByConclusion = tmpInferenceByConclusion;
         }
-        return Optional.empty();
+        return Optional.ofNullable(inferenceByConclusion.get(conclusion));
     }
 
 
