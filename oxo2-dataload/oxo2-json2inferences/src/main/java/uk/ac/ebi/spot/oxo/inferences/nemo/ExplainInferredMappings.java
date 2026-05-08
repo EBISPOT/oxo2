@@ -3,6 +3,7 @@ package uk.ac.ebi.spot.oxo.inferences.nemo;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SequenceWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -130,14 +131,12 @@ public class ExplainInferredMappings {
                 logger.info("Generated {} inferred mappings", inferredMappings.size());
             }
 
-            logger.info("Creating mappings...");
-            List<Mapping> mappings = createMappings(inferredMappings, solrClient, sourceMappingSetId);
-            logger.info("Created {} mappings", mappings.size());
+            logger.info("Creating mappings and streaming to file: {}", outputFilePath);
+            long writtenCount = streamMappingsToJson(inferredMappings, solrClient, sourceMappingSetId,
+                    outputFilePath);
+            logger.info("Wrote {} mappings", writtenCount);
 
-            logger.info("Writing mappings to file: {}", outputFilePath);
-            writeMappingsAsJson(mappings, outputFilePath);
-
-            if (!mappings.isEmpty()) {
+            if (writtenCount > 0) {
                 logger.info("Writing inferred MappingSet metadata to file: {}", mappingSetOutputFilePath);
                 writeInferredMappingSet(sourceMappingSetId, mappingSetOutputFilePath);
             } else {
@@ -255,16 +254,14 @@ public class ExplainInferredMappings {
                         logger.info("Generated {} inferred mappings", inferredMappings.size());
                     }
 
-                    logger.info("Creating mappings...");
-                    List<Mapping> mappings = createMappings(inferredMappings, solrClient, sourceMappingSetId);
-                    logger.info("Created {} mappings", mappings.size());
-
                     String outputFilePath = new File(outputDir, baseName + ".json").getAbsolutePath();
 
-                    logger.info("Writing mappings to file: {}", outputFilePath);
-                    writeMappingsAsJson(mappings, outputFilePath);
+                    logger.info("Creating mappings and streaming to file: {}", outputFilePath);
+                    long writtenCount = streamMappingsToJson(inferredMappings, solrClient,
+                            sourceMappingSetId, outputFilePath);
+                    logger.info("Wrote {} mappings", writtenCount);
 
-                    if (!mappings.isEmpty()) {
+                    if (writtenCount > 0) {
                         String mappingSetBaseName = baseName.endsWith(CHAIN_FILE_SUFFIX)
                                 ? baseName.substring(0, baseName.length() - CHAIN_FILE_SUFFIX.length())
                                 : baseName;
@@ -371,11 +368,34 @@ public class ExplainInferredMappings {
         logger.info("Inferred MappingSet successfully written to {} ({} bytes)", outputFilePath, file.length());
     }
 
-    public static void writeMappingsAsJson(List<Mapping> mappings, String outputFile) throws IOException {
-        if (mappings == null || mappings.isEmpty()) {
-            logger.warn("No mappings to write to file");
-            return;
+    /**
+     * Build {@link Mapping} records from the inferred-mapping DAG and stream
+     * them straight to {@code outputFilePath} as a JSON array. Each Mapping is
+     * serialized and dropped within its own loop iteration, so the working set
+     * never holds the full result list. The output file is opened lazily on
+     * the first emitted mapping; if no mapping survives the skip filters, no
+     * file is written (matching the previous {@code writeMappingsAsJson}
+     * behaviour and the downstream {@code [ ! -s file ]} cleanup in the .nf).
+     *
+     * @return the number of {@link Mapping} records written.
+     */
+    public static long streamMappingsToJson(Set<InferredMapping> inferredMappings,
+                                             DataloadSolr solrClient,
+                                             String sourceMappingSetId,
+                                             String outputFilePath) throws IOException {
+        if (inferredMappings == null || inferredMappings.isEmpty()) {
+            logger.warn("No inferred mappings to process");
+            return 0;
         }
+
+        String inferredMappingSetId = OXOInferenceConstants.inferredMappingSetIdFor(sourceMappingSetId);
+
+        // Per-run memos for the two recursive walks over the InferredMapping DAG.
+        // NemoHelper.determineInferencesLeadingToConclusion guarantees one object
+        // per distinct conclusion string, so identity-keyed maps are correct and
+        // cheaper than equals-keyed (InferredMapping.hashCode hashes 3 IRI Strings).
+        IdentityHashMap<InferredMapping, List<InferredMapping>> assertedMemo = new IdentityHashMap<>();
+        IdentityHashMap<InferredMapping, Integer> lengthMemo = new IdentityHashMap<>();
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new Jdk8Module());
@@ -384,100 +404,115 @@ public class ExplainInferredMappings {
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-        File file = new File(outputFile);
+        File outputFile = new File(outputFilePath);
+        SequenceWriter seqWriter = null;
+        long written = 0;
+        int processed = 0;
+        boolean closedCleanly = false;
         try {
-            objectMapper.writeValue(file, mappings);
-            logger.info("Mappings successfully written to {} ({} bytes)", outputFile, file.length());
-        } catch (IOException e) {
-            logger.error("Error writing mappings to JSON file = {}, {}", file.getName(), e.getMessage());
-            throw e;
-        }
-    }
+            for (InferredMapping inferredMapping : inferredMappings) {
+                try {
+                    if (inferredMapping.getSubjectIRI() == null || inferredMapping.getPredicateIRI() == null ||
+                        inferredMapping.getObjectIRI() == null) {
+                        logger.warn("Skipping mapping with null IRI values: {}", inferredMapping);
+                        continue;
+                    }
+                    if (inferredMapping.isMappingToSelf()) {
+                        logger.debug("Skipping self-mapping: {}", inferredMapping);
+                        continue;
+                    }
+                    if (inferredMapping.getChainRuleApplications().isPresent() &&
+                        inferredMapping.getChainRuleApplications().get().getPremises().size() <= 1) {
+                        logger.debug("Skipping mapping with no premises - hence it is an asserted mapping: {}", inferredMapping);
+                        continue;
+                    }
 
-    public static List<Mapping> createMappings(Set<InferredMapping> inferredMappings,
-                                               DataloadSolr solrClient,
-                                               String sourceMappingSetId) {
-        if (inferredMappings == null || inferredMappings.isEmpty()) {
-            logger.warn("No inferred mappings to process");
-            return new ArrayList<>();
-        }
+                    EntityDetails subjectDetails = solrClient.queryEntityDetailsForIRI(SUBJECT_IRI,
+                            inferredMapping.getSubjectIRI().asStringIRI(), SUBJECT_ID, SUBJECT_LABEL);
+                    String predicateIri = inferredMapping.getPredicateIRI().asStringIRI();
+                    Optional<String> predicateCurie = PrefixMap.toCurie(predicateIri);
+                    String predicateId;
+                    String predicateLabel;
+                    if (predicateCurie.isPresent()) {
+                        predicateId = predicateCurie.get();
+                        predicateLabel = "";
+                    } else {
+                        EntityDetails predicateDetails = solrClient.queryEntityDetailsForIRI(PREDICATE_IRI,
+                                predicateIri, PREDICATE_ID, PREDICATE_LABEL);
+                        predicateId = (predicateDetails != null && predicateDetails.getCurie() != null) ?
+                                predicateDetails.getCurie() : "";
+                        predicateLabel = (predicateDetails != null && predicateDetails.getLabel() != null) ?
+                                predicateDetails.getLabel() : "";
+                    }
+                    EntityDetails objectDetails = solrClient.queryEntityDetailsForIRI(OBJECT_IRI,
+                            inferredMapping.getObjectIRI().asStringIRI(), OBJECT_ID, OBJECT_LABEL);
 
-        String inferredMappingSetId = OXOInferenceConstants.inferredMappingSetIdFor(sourceMappingSetId);
-        List<Mapping> mappings = new ArrayList<>(inferredMappings.size());
-        int count = 0;
+                    Mapping mapping = new Mapping.Builder()
+                        .subjectIRI(inferredMapping.getSubjectIRI().asStringIRI())
+                        .subjectId((subjectDetails != null && subjectDetails.getCurie() != null) ?
+                                subjectDetails.getCurie() : "")
+                        .subjectLabel((subjectDetails != null && subjectDetails.getLabel() != null) ?
+                                subjectDetails.getLabel() : "")
+                        .predicateIRI(predicateIri)
+                        .predicateId(predicateId)
+                        .predicateLabel(predicateLabel)
+                        .objectIRI(inferredMapping.getObjectIRI().asStringIRI())
+                        .objectId((objectDetails != null && objectDetails.getCurie() != null) ?
+                                objectDetails.getCurie() : "")
+                        .objectLabel((objectDetails != null && objectDetails.getLabel() != null) ?
+                                objectDetails.getLabel() : "")
+                        .mappingJustification(OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION)
+                        .mappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL)
+                        .explanation(inferredMapping)
+                        .assertedMappings(determineAssertedMappingsForExplanation(inferredMapping, assertedMemo))
+                        .explanationLength(explanationLength(inferredMapping, lengthMemo))
+                        .distance(calculateMappingDistance(inferredMapping))
+                        .mappingSetId(inferredMappingSetId)
+                        .build();
 
-        for (InferredMapping inferredMapping : inferredMappings) {
-            try {
-                if (inferredMapping.getSubjectIRI() == null || inferredMapping.getPredicateIRI() == null ||
-                    inferredMapping.getObjectIRI() == null) {
-                    logger.warn("Skipping mapping with null IRI values: {}", inferredMapping);
-                    continue;
+                    if (seqWriter == null) {
+                        seqWriter = objectMapper.writer().writeValuesAsArray(outputFile);
+                    }
+                    seqWriter.write(mapping);
+                    written++;
+
+                    processed++;
+                    if (processed % 1000 == 0) {
+                        logger.info("Processed {} mappings", processed);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error creating mapping for: {}", inferredMapping, e);
                 }
-                if (inferredMapping.isMappingToSelf()) {
-                    logger.debug("Skipping self-mapping: {}", inferredMapping);
-                    continue;
-                }
-                if (inferredMapping.getChainRuleApplications().isPresent() &&
-                    inferredMapping.getChainRuleApplications().get().getPremises().size() <= 1) {
-                    logger.debug("Skipping mapping with no premises - hence it is an asserted mapping: {}", inferredMapping);
-                    continue;
-                }
-
-                EntityDetails subjectDetails = solrClient.queryEntityDetailsForIRI(SUBJECT_IRI,
-                        inferredMapping.getSubjectIRI().asStringIRI(), SUBJECT_ID, SUBJECT_LABEL);
-                String predicateIri = inferredMapping.getPredicateIRI().asStringIRI();
-                Optional<String> predicateCurie = PrefixMap.toCurie(predicateIri);
-                String predicateId;
-                String predicateLabel;
-                if (predicateCurie.isPresent()) {
-                    predicateId = predicateCurie.get();
-                    predicateLabel = "";
-                } else {
-                    EntityDetails predicateDetails = solrClient.queryEntityDetailsForIRI(PREDICATE_IRI,
-                            predicateIri, PREDICATE_ID, PREDICATE_LABEL);
-                    predicateId = (predicateDetails != null && predicateDetails.getCurie() != null) ?
-                            predicateDetails.getCurie() : "";
-                    predicateLabel = (predicateDetails != null && predicateDetails.getLabel() != null) ?
-                            predicateDetails.getLabel() : "";
-                }
-                EntityDetails objectDetails = solrClient.queryEntityDetailsForIRI(OBJECT_IRI,
-                        inferredMapping.getObjectIRI().asStringIRI(), OBJECT_ID, OBJECT_LABEL);
-
-                Mapping mapping = new Mapping.Builder()
-                    .subjectIRI(inferredMapping.getSubjectIRI().asStringIRI())
-                    .subjectId((subjectDetails != null && subjectDetails.getCurie() != null) ?
-                            subjectDetails.getCurie() : "")
-                    .subjectLabel((subjectDetails != null && subjectDetails.getLabel() != null) ?
-                            subjectDetails.getLabel() : "")
-                    .predicateIRI(predicateIri)
-                    .predicateId(predicateId)
-                    .predicateLabel(predicateLabel)
-                    .objectIRI(inferredMapping.getObjectIRI().asStringIRI())
-                    .objectId((objectDetails != null && objectDetails.getCurie() != null) ?
-                            objectDetails.getCurie() : "")
-                    .objectLabel((objectDetails != null && objectDetails.getLabel() != null) ?
-                            objectDetails.getLabel() : "")
-                    .mappingJustification(OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION)
-                    .mappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL)
-                    .explanation(inferredMapping)
-                    .assertedMappings(determineAssertedMappingsForExplanation(inferredMapping))
-                    .explanationLength(determineExplanationLength(inferredMapping, 0))
-                    .distance(calculateMappingDistance(inferredMapping))
-                    .mappingSetId(inferredMappingSetId)
-                    .build();
-                mappings.add(mapping);
-
-                count++;
-                if (count % 1000 == 0) {
-                    logger.info("Processed {} mappings", count);
-                }
-            } catch (Exception e) {
-                logger.error("Error creating mapping for: {}", inferredMapping, e);
             }
-
+            if (seqWriter != null) {
+                seqWriter.close();
+                seqWriter = null;
+            }
+            closedCleanly = true;
+        } finally {
+            if (seqWriter != null) {
+                try { seqWriter.close(); } catch (Exception ignored) { /* swallow during cleanup */ }
+            }
+            // On any failure that left a partial JSON on disk, remove it so the
+            // .nf "[ ! -s file ]" cleanup doesn't preserve a corrupt artefact
+            // that downstream Solr indexing would later fail to parse.
+            if (!closedCleanly && written > 0 && outputFile.exists()) {
+                if (!outputFile.delete()) {
+                    logger.warn("Failed to delete partial output file after error: {}", outputFilePath);
+                }
+            }
         }
 
-        return mappings;
+        logger.info("Walk memos: {} top-level mappings, {} memoized assertedMappings entries, {} memoized explanationLength entries",
+                inferredMappings.size(), assertedMemo.size(), lengthMemo.size());
+
+        if (written > 0) {
+            logger.info("Mappings successfully streamed to {} ({} mappings, {} bytes)",
+                    outputFilePath, written, outputFile.length());
+        } else {
+            logger.warn("No mappings written to file");
+        }
+        return written;
     }
 
     /**
@@ -485,16 +520,21 @@ public class ExplainInferredMappings {
      * However, it is possible that the same mapping is asserted in multiple mapping sets. Hence, this method retrieves
      * all asserted mappings. This can be useful for users who need to debug incorrect derived mappings.
      *
-     * @param explanation
-     * @return
+     * <p>Memoized: shared sub-chains in the DAG (created via NemoHelper's
+     * conclusion-keyed memo) are walked once, not once per parent.
      */
-    private static List<InferredMapping> determineAssertedMappingsForExplanation(
-            InferredMapping explanation) {
+    static List<InferredMapping> determineAssertedMappingsForExplanation(
+            InferredMapping explanation,
+            IdentityHashMap<InferredMapping, List<InferredMapping>> memo) {
+        List<InferredMapping> cached = memo.get(explanation);
+        if (cached != null) return cached;
 
         List<InferredMapping> assertedMappings = new ArrayList<>();
 
-        if (explanation.getChainRuleApplications().isEmpty())
+        if (explanation.getChainRuleApplications().isEmpty()) {
+            memo.put(explanation, assertedMappings);
             return assertedMappings;
+        }
 
         InferredMapping.ChainRuleApplications chainRuleApplications = explanation.getChainRuleApplications().get();
 
@@ -502,25 +542,35 @@ public class ExplainInferredMappings {
                 chainRuleApplications.getChainRule().get().equals(ChainRulesEnum.ASSERTED))
             assertedMappings.add(explanation);
 
-        explanation.getChainRuleApplications().get().getPremises().forEach(premise -> {
-            List<InferredMapping> assertedMappingsToAdd = determineAssertedMappingsForExplanation(premise);
-            assertedMappings.addAll(assertedMappingsToAdd);
-        });
+        for (InferredMapping premise : chainRuleApplications.getPremises()) {
+            assertedMappings.addAll(determineAssertedMappingsForExplanation(premise, memo));
+        }
 
+        memo.put(explanation, assertedMappings);
         return assertedMappings;
     }
 
-    private static int determineExplanationLength(InferredMapping explanation, int startExplanationLength) {
-        int explanationLength = startExplanationLength;
+    /**
+     * Length of the chain rooted at {@code explanation}: 0 for an asserted/leaf
+     * node, otherwise 1 + sum of premise lengths. Memoized so shared sub-chains
+     * are walked once.
+     */
+    static int explanationLength(InferredMapping explanation,
+                                 IdentityHashMap<InferredMapping, Integer> memo) {
+        Integer cached = memo.get(explanation);
+        if (cached != null) return cached;
 
-        if (explanation.getChainRuleApplications().isEmpty())
-            return explanationLength;
-        explanationLength++;
-        for (InferredMapping premise: explanation.getChainRuleApplications().get().getPremises()) {
-            explanationLength = determineExplanationLength(premise, explanationLength);
+        int length;
+        if (explanation.getChainRuleApplications().isEmpty()) {
+            length = 0;
+        } else {
+            length = 1;
+            for (InferredMapping premise : explanation.getChainRuleApplications().get().getPremises()) {
+                length += explanationLength(premise, memo);
+            }
         }
-
-        return explanationLength;
+        memo.put(explanation, length);
+        return length;
     }
 
     private static int calculateMappingDistance(InferredMapping explanation) {
