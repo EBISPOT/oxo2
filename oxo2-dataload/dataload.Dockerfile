@@ -21,7 +21,7 @@ COPY oxo2-dataload/ /build/oxo2-dataload/
 RUN mvn -B -pl :oxo2-downloader,:oxo2-json2inferences,:oxo2-sssom2json -am -DskipTests install
 
 
-FROM eclipse-temurin:17
+FROM eclipse-temurin:17-jdk-noble
 
 RUN mkdir -p /opt/nextflow  \
     && curl -fsSL https://get.nextflow.io | bash \
