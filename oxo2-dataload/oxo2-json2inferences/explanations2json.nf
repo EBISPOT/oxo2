@@ -64,10 +64,16 @@ process EXPLANATIONS_TO_JSON {
     def output_file = "${base}-explained.json"
     def mapping_set_output_file = "${base}-mappingSet.json"
     def solr_url = params.solr_url ?: 'http://localhost:8983/solr'
+    // Size the JVM heap from the task allocation. Without -Xmx, OpenJDK falls
+    // back to ~25% of host RAM, which on large SLURM nodes is far below the
+    // configured task.memory and OOMs on big inputs (e.g. snomed at 64 GB
+    // allocated, ~31 GB default heap). 80% of allocation leaves headroom for
+    // metaspace, direct buffers, and native code.
+    def heap_mb = (task.memory.toMega() * 0.8) as long
     """
     export SOLR_URL="${solr_url}"
     export no_proxy="localhost,127.0.0.1,\$(hostname),${solr_url.replaceAll('https?://','').replaceAll('/.*','').replaceAll(':.*','')}"
-    export JAVA_OPTS="\${JAVA_OPTS:-} -Dhttp.nonProxyHosts=localhost|127.0.0.1|${solr_url.replaceAll('https?://','').replaceAll('/.*','').replaceAll(':.*','')}"
+    export JAVA_OPTS="-Xmx${heap_mb}m \${JAVA_OPTS:-} -Dhttp.nonProxyHosts=localhost|127.0.0.1|${solr_url.replaceAll('https?://','').replaceAll('/.*','').replaceAll(':.*','')}"
     "${effective_script_dir}/explanations2jsonNextflow.sh" "${input_file}" "${output_file}" "${mapping_set_output_file}" "${source_mapping_set_id}"
 
     # Remove if empty
