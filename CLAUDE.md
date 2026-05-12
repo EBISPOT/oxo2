@@ -4,19 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-OxO2 is a SSSOM-compliant (Simple Standard for Sharing Ontology Mappings) ontology mapping service. It downloads SSSOM mappings, converts them to JSON, generates inferences using the Nemo rules engine, and indexes them into Apache Solr. A Spring Boot backend serves an API and a React frontend provides the UI.
+OxO2 is a SSSOM-compliant ontology mapping service. For purpose, domain language, module roles, cross-cutting constraints, and the end-to-end data flow see [`/CONTEXT.md`](CONTEXT.md). For architectural decisions and their rationale see [`docs/adr/`](docs/adr/).
+
+## Documentation conventions
+
+- **Domain language and architecture** live in [`/CONTEXT.md`](CONTEXT.md) (project-wide) and `<module>/CONTEXT.md` (per top-level module). Update these when introducing or renaming a domain term, or when changing what a module exposes.
+- **Architectural decisions** live in [`docs/adr/`](docs/adr/). When changing a cross-cutting constraint (e.g. inference scope, Solr collection layout, mapping-justification handling), add or supersede an ADR in the same PR. See [`docs/adr/README.md`](docs/adr/README.md) for conventions and template.
+- **Operational instructions** (build/run/deploy) live here in CLAUDE.md and in the root `README.md`.
+
+## Module map
+
+See [`/CONTEXT.md`](CONTEXT.md) § Module map for the canonical list with one-line descriptions. Per-module detail in each `oxo2-*/CONTEXT.md`.
+
+## Data Loading Pipeline
+
+See [`oxo2-dataload/CONTEXT.md`](oxo2-dataload/CONTEXT.md) for the pipeline stages, scripts, and chunked-tracing details.
 
 ## Build & Test Commands
 
 ```bash
 # Build everything (from repo root)
 mvn clean install
-
-# Run all tests
-mvn clean test
-
-# Run a single test class
-mvn test -pl oxo2-dataload/oxo2-sssom2json -Dtest=SomeTestClass
 
 # Frontend
 cd oxo2-frontend
@@ -52,34 +60,13 @@ docker compose up
 # Frontend: :8080  Backend: :8081  Solr: :8983
 ```
 
-## Module Structure
-
-- **oxo2-shared** — SSSOM data models and Jackson serialization (Mapping, MappingSet, EntityReference, etc.)
-- **oxo2-dataload** — Data loading pipeline with sub-modules:
-  - `oxo2-downloader` — Download SSSOM files from URLs/GitHub
-  - `oxo2-sssom2json` — Convert SSSOM TSV → JSON
-  - `oxo2-json2inferences` — Generate inferences via Nemo rules engine
-  - `oxo2-solr-dataload-client` — Index JSON into Solr
-  - `oxo2-dataload-testing` — Test utilities
-  - `solr-config/` — Solr collection configs (oxo2-mappings, oxo2-mappingsets)
-- **oxo2-backend** — Spring Boot 3.4.1 REST API (port 8081), queries Solr via SolrJ
-- **oxo2-frontend** — React 19 + TypeScript + Vite + Tailwind CSS
-
-## Data Loading Pipeline
-
-Single execution path: `loadData.nextflow` → `downloadMappings.nf` → `sssom2json.nf` → `determineInferencesAndExplanations.nextflow` (which runs `inferAndExplainMappings.nf`) → `json2solr.sh`. Nextflow is required for both local and HPC.
-
-Tracing of inferred mappings is parallelised within each mapping set: `inferAndExplainMappings.nf` splits each per-set facts-to-trace file into chunks of `params.trace_chunk_size` mappings (default 100 000), runs nmo trace per chunk concurrently, then merges the per-chunk chain JSONs back into one per-set chain file.
-
-Per-stage component scripts (`json2ttl.sh`, `inferMappings.sh`, `explanations2json.sh`, etc.) remain available for local debugging of individual stages but are not part of the production pipeline. Nextflow DSL workflows are in `.nf` files; `*Nextflow.sh` are helper scripts called by `.nf` workflows.
-
 ## Tech Stack
 
 - Java 17, Maven, Spring Boot 3.4.1
-- Apache Solr 9.9.0 (no database — Solr is the sole data store)
+- Apache Solr 9.9.0 (sole data store — see [ADR-0002](docs/adr/0002-solr-as-sole-data-store.md))
 - Nemo v0.9.1 rules engine (inference/explanation)
 - React 19, TypeScript, Vite, Tailwind CSS, TanStack React Query
-- Nextflow (optional for local, required in Docker)
+- Nextflow (required for local and HPC — see [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md))
 
 ## CI/CD
 

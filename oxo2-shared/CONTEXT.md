@@ -1,0 +1,45 @@
+# oxo2-shared — Module Context
+
+See [`/CONTEXT.md`](../CONTEXT.md) for the project-wide glossary and cross-cutting constraints. This document covers what this module specifically owns.
+
+## Purpose
+
+`oxo2-shared` defines the **SSSOM data model** as Java types and their Jackson serialization. It is the vocabulary library every other Java module depends on. It owns no logic beyond construction, validation, and (de)serialization of SSSOM entities — query, transformation, inference, and storage live in other modules.
+
+## Vocabulary introduced here
+
+None new. This module is the *implementation* of the SSSOM and OxO2 cross-cutting terms defined in `/CONTEXT.md` § Glossary. The concrete Java types that realise those terms are listed under § Exposes.
+
+The one term worth noting at module level is `ChainRuleApplications` (a record of which `ChainRulesEnum` rules fired to derive a given `InferredMapping`). It is a code structure, not a new domain concept.
+
+## Depends on
+
+External:
+- Jackson (databind, jdk8) — JSON (de)serialization of SSSOM types.
+- SolrJ — `@Field` annotations on `Mapping` allow direct binding from Solr documents.
+- SLF4J — logging.
+
+OxO2 modules: none. `oxo2-shared` is the dependency root.
+
+## Exposes
+
+All Java types under `uk.ac.ebi.spot.oxo.model.sssom`:
+
+- **Data records** — `Mapping`, `MappingSet`, `InferredMapping`, `EntityReference`, `Prefix`, `PrefixMap`, `CurieMap`, `ChainRuleApplications`.
+- **SSSOM value wrappers** — `Uri`, `Date`, `Double` (SSSOM-shaped types with Jackson custom serialization).
+- **Enumerations** — `ChainRulesEnum`, `MappingCardinalityEnum`, `MappingEnum`, `MappingSetConstants`/`MappingConstants` (string keys), `PredicateModifierEnum`, `EntityTypeEnum`, `SSSOMDataType`.
+- **Utilities** — `StringUtils`, `KeyValuePairsAsString`.
+
+`ChainRulesEnum` deserves special attention: it enumerates the SSSOM chaining-rule families (`RCE1-*`, `RCE2-*`, `T1`–`T11`, `RI1`–`RI5`, `RG1`–`RG2`, `RCE-N1`–`RCE-N4`) plus the `Asserted` baseline. Each rule carries its long-form and abbreviated Nemo representations. This is the bridge between the SSSOM chaining-rules spec and the Nemo rules in `oxo2-json2inferences/chain-rules.rls`.
+
+## Module notes
+
+`Mapping` is a Java `record` deserialized via a builder (`Mapping.Builder`). Field set follows the SSSOM spec closely (subject/predicate/object IDs and IRIs, label fields, justification, confidence, mapping set provenance, author/creator metadata). See the class Javadoc for the SSSOM Mapping spec link.
+
+`InferredMapping` is a class (not a record) and carries:
+- subject/predicate/object IDs, IRIs, and labels;
+- `mapping_set_id` (per [ADR-0001](../docs/adr/0001-inference-scope-per-mapping-set.md) — every inferred mapping is scoped to one set);
+- `distance` (default 1) — the hop count along the chain;
+- `ChainRuleApplications` (optional) — the chain rules that produced this mapping.
+
+Constants classes (`MappingConstants`, `MappingSetConstants`) hold the SSSOM field-name string keys used by both Jackson `@JsonProperty` annotations and Solr field references — making this module the canonical source of those names for backend and dataload alike.
