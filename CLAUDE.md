@@ -77,3 +77,7 @@ GitHub Actions (`.github/workflows/docker.yml`): builds and pushes Docker images
 - **Local**: Docker Compose or manual setup
 - **Kubernetes**: Helm charts in `k8chart-local/` and `k8chart-dev/`
 - **HPC**: SLURM integration via `loadData.slurm` / `loadData.hpc`
+
+## Markdown style
+- Wrap markdown prose at 100 columns. Never write paragraphs as a single long line.
+- Exceptions: tables, code blocks, and URLs may exceed the limit.
