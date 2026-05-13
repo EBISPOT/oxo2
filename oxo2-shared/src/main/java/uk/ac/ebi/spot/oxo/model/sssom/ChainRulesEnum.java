@@ -9,6 +9,11 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ *  SSSOM chain rules are defined here: https://mapping-commons.github.io/sssom/dev/chaining-rules/
+ *
+ */
+
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum ChainRulesEnum {
     ASSERTED("Asserted", "Asserted","Asserted", false),
