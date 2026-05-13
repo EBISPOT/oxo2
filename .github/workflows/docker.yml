@@ -28,16 +28,16 @@ jobs:
       matrix:
         include:
           - image: oxo2-dataload
-            dockerfile: ./oxo2-dataload/dataload.Dockerfile
+            dockerfile: ./oxo2-dataload/Dockerfile.dataload
             context: .
           - image: oxo2-nextflow
             dockerfile: ./oxo2-dataload/Dockerfile.nextflow
             context: .
           - image: oxo2-backend
-            dockerfile: ./oxo2-backend/backend.Dockerfile
+            dockerfile: ./oxo2-backend/Dockerfile.backend
             context: .
           - image: oxo2-frontend
-            dockerfile: ./oxo2-frontend/frontend.Dockerfile
+            dockerfile: ./oxo2-frontend/Dockerfile.frontend
             context: ./oxo2-frontend
 
     steps:
