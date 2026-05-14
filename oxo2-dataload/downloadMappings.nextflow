@@ -4,9 +4,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 mkdir -p $OXO2_DATA/sssom
 
+# Optional extra config layered on top of the base nextflow.config (test harness
+# uses this to pick the `test` profile in oxo2-integration-tests/nextflow-test.config).
+NF_EXTRA_CONFIG_ARG=""
+if [ -n "${NF_EXTRA_CONFIG:-}" ]; then
+    NF_EXTRA_CONFIG_ARG="-c ${NF_EXTRA_CONFIG}"
+fi
+
 echo "Using Nextflow for parallel download of mappings"
 (nextflow -log $NXF_LOGS/downloadMappings.nextflow.log \
-    -c $SCRIPT_DIR/nextflow/nextflow.config \
+    -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
     run $SCRIPT_DIR/downloadMappings.nf \
     -profile ${NF_PROFILE:-standard} \
     -with-trace    $NXF_LOGS/downloadMappings-trace.txt \

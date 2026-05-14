@@ -1,0 +1,1 @@
+<https://w3id.org/oxo2/test/ex/A> <http://www.w3.org/2002/07/owl#equivalentProperty> <https://w3id.org/oxo2/test/ex/C> .

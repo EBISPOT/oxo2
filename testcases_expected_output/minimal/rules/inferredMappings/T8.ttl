@@ -1,0 +1,4 @@
+<https://w3id.org/oxo2/test/ex/A> <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch> <https://w3id.org/oxo2/test/ex/C> .
+<https://w3id.org/oxo2/test/ex/B> <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch> <https://w3id.org/oxo2/test/ex/A> .
+<https://w3id.org/oxo2/test/ex/C> <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch> <https://w3id.org/oxo2/test/ex/A> .
+<https://w3id.org/oxo2/test/ex/C> <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch> <https://w3id.org/oxo2/test/ex/B> .

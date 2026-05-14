@@ -84,8 +84,8 @@ public enum ChainRulesEnum {
             "(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) <- (?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?b), (?b, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c)",
             "(?a, <RDFS:subPropertyOf>, ?c) <- (?a, <OWL:equivalentProperty>, ?b), (?b, <RDFS:subPropertyOf>, ?c)"),
     RCE_N4("RCE-N4",
-            "mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) <- (?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, b), (?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?c)",
-            "mapping(?a, <RDFS:subPropertyOf>, ?c) <- (?a, <RDFS:subPropertyOf>, b), (?a, <OWL:equivalentProperty>, ?c)");
+            "(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) <- (?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?b), (?b, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?c)",
+            "(?a, <RDFS:subPropertyOf>, ?c) <- (?a, <RDFS:subPropertyOf>, ?b), (?b, <OWL:equivalentProperty>, ?c)");
 
 
     @JsonProperty(CHAIN_RULE_NAME)

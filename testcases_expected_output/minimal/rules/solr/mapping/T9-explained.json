@@ -1,0 +1,113 @@
+[ {
+  "asserted_mappings" : [ {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T9",
+    "object_id" : "EX:B",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "object_label" : "Entity B",
+    "predicate_id" : "SKOS:broadMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#broadMatch",
+    "subject_id" : "EX:A",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "subject_label" : "Entity A"
+  }, {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T9",
+    "object_id" : "EX:C",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "object_label" : "Entity C",
+    "predicate_id" : "SKOS:broadMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#broadMatch",
+    "subject_id" : "EX:B",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "subject_label" : "Entity B"
+  } ],
+  "distance" : -1,
+  "explanation" : {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "(?a, <SKOS:broadMatch>, ?c) <- (?a, <SKOS:broadMatch>, ?b), (?b, <SKOS:broadMatch>, ?c)",
+        "chain_rule_long_form" : "(?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?c) <- (?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b), (?b, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?c)",
+        "chain_rule_name" : "T9"
+      },
+      "premises" : [ {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "Asserted",
+            "chain_rule_long_form" : "Asserted",
+            "chain_rule_name" : "Asserted"
+          }
+        },
+        "distance" : 1,
+        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T9",
+        "object_id" : "EX:B",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "object_label" : "Entity B",
+        "predicate_id" : "SKOS:broadMatch",
+        "predicate_iri" : "http://www.w3.org/2004/02/skos/core#broadMatch",
+        "subject_id" : "EX:A",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+        "subject_label" : "Entity A"
+      }, {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "Asserted",
+            "chain_rule_long_form" : "Asserted",
+            "chain_rule_name" : "Asserted"
+          }
+        },
+        "distance" : 1,
+        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T9",
+        "object_id" : "EX:C",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+        "object_label" : "Entity C",
+        "predicate_id" : "SKOS:broadMatch",
+        "predicate_iri" : "http://www.w3.org/2004/02/skos/core#broadMatch",
+        "subject_id" : "EX:B",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "subject_label" : "Entity B"
+      } ]
+    },
+    "distance" : 1,
+    "mapping_justification" : "SEMAPV:MappingChaining",
+    "mapping_set_id" : "https://www.ebi.ac.uk/spot/oxo/inferences/https%3A%2F%2Fw3id.org%2Foxo2%2Ftest%2Fminimal%2Frules%2FT9",
+    "mapping_tool" : "OxO Inferences",
+    "object_id" : "EX:C",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "object_label" : "Entity C",
+    "predicate_id" : "SKOS:broadMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#broadMatch",
+    "subject_id" : "EX:A",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "subject_label" : "Entity A"
+  },
+  "explanation_length" : 3,
+  "mapping_id" : "8ba53233-1902-3bf3-a1df-5de92e84b2d0",
+  "mapping_justification" : "SEMAPV:MappingChaining",
+  "mapping_set_id" : "https://www.ebi.ac.uk/spot/oxo/inferences/https%3A%2F%2Fw3id.org%2Foxo2%2Ftest%2Fminimal%2Frules%2FT9",
+  "mapping_tool" : "OxO Inferences",
+  "object_id" : "EX:C",
+  "object_id_prefix" : "EX",
+  "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+  "object_label" : "Entity C",
+  "predicate_id" : "SKOS:broadMatch",
+  "predicate_iri" : "http://www.w3.org/2004/02/skos/core#broadMatch",
+  "subject_id" : "EX:A",
+  "subject_id_prefix" : "EX",
+  "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+  "subject_label" : "Entity A"
+} ]

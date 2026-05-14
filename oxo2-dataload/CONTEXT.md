@@ -43,7 +43,7 @@ Java sub-modules depend on `oxo2-shared` for the SSSOM data model.
 ## Exposes
 
 - **Two populated Solr collections** — `oxo2-mappings` and `oxo2-mappingsets`. Schemas under `solr-config/`.
-- **Container image** — built from `dataload.Dockerfile`; `CMD` invokes `loadData.nextflow`.
+- **Container image** — built from `Dockerfile.dataload`; `CMD` invokes `loadData.nextflow`.
 - **HPC entry points** — `loadData.hpc`, `loadData.slurm` for SLURM-based deployments.
 
 This module exposes no Java API to other OxO2 modules — its outputs flow downstream via Solr, not via library calls.
