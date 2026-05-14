@@ -1,0 +1,85 @@
+version: 2
+updates:
+  # Frontend npm
+  - package-ecosystem: "npm"
+    directory: "/oxo2-frontend"
+    schedule:
+      interval: "daily"
+      time: "07:00"
+      timezone: "Europe/London"
+    target-branch: "dev"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    groups:
+      frontend-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Maven — root parent pom + 7 module poms
+  - package-ecosystem: "maven"
+    directories:
+      - "/"
+      - "/oxo2-shared"
+      - "/oxo2-backend"
+      - "/oxo2-dataload"
+      - "/oxo2-dataload/oxo2-downloader"
+      - "/oxo2-dataload/oxo2-sssom2json"
+      - "/oxo2-dataload/oxo2-json2inferences"
+      - "/oxo2-dataload/oxo2-solr-dataload-client"
+    schedule:
+      interval: "daily"
+      time: "07:00"
+      timezone: "Europe/London"
+    target-branch: "dev"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      maven-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Docker base images — 4 Dockerfiles across 3 directories
+  - package-ecosystem: "docker"
+    directories:
+      - "/oxo2-frontend"
+      - "/oxo2-backend"
+      - "/oxo2-dataload"
+    schedule:
+      interval: "daily"
+      time: "07:00"
+      timezone: "Europe/London"
+    target-branch: "dev"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      docker-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions used in .github/workflows/*
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "07:00"
+      timezone: "Europe/London"
+    target-branch: "dev"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      actions-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"

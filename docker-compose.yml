@@ -2,7 +2,7 @@ services:
   dataload:
     build:
       context: .
-      dockerfile: ./oxo2-dataload/dataload.Dockerfile
+      dockerfile: ./oxo2-dataload/Dockerfile.dataload
     environment:
       - OXO2_CONFIG=/mnt/oxo/configs/config.json
       - SOLR_HOME=/opt/solr/server/solr
@@ -27,7 +27,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: ./oxo2-backend/backend.Dockerfile
+      dockerfile: ./oxo2-backend/Dockerfile.backend
     ports:
       - 8081:8081
     environment:
@@ -39,7 +39,7 @@ services:
   frontend:
     build:
       context: ./oxo2-frontend
-      dockerfile: ./frontend.Dockerfile
+      dockerfile: ./Dockerfile.frontend
       args:
         BACKEND_API_URL: http://localhost:8081
     env_file: ./oxo2-frontend/.env.production
