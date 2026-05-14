@@ -1,8 +1,5 @@
 #!/usr/bin/env nextflow
 
-import groovy.json.JsonSlurper
-import groovy.json.JsonOutput
-
 // Parameters
 params.config_file = "${System.getenv('OXO2_CONFIG')}"
 params.download_dir = "${System.getenv('OXO2_DATA')}/sssom"
@@ -10,11 +7,11 @@ params.script_dir = params.script_dir ?: "${projectDir}"
 
 workflow {
     // Parse config and create a channel with one entry per registry
-    def config = new JsonSlurper().parse(file(params.config_file))
+    def config = new groovy.json.JsonSlurper().parse(file(params.config_file))
 
     registries = Channel.of(config.mapping_registries.toArray())
         .map { registry ->
-            tuple(registry.id, JsonOutput.toJson([mapping_registries: [registry]]))
+            tuple(registry.id, groovy.json.JsonOutput.toJson([mapping_registries: [registry]]))
         }
 
     // Download each registry in parallel

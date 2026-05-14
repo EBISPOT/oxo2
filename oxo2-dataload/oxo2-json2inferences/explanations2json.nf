@@ -5,8 +5,6 @@
 // Writes: inferences/solr/mapping/*.json   (one explained-mapping JSON per source set)
 //         inferences/solr/mappingSet/*.json (one inferred MappingSet JSON per source set)
 
-import groovy.json.JsonSlurper
-
 // Parameters (use OXO2_INFERENCES if set, else $OXO2_DATA/inferences)
 params.input_dir = "${System.getenv('OXO2_INFERENCES')}/inferenceChains"
 params.output_dir = "${System.getenv('OXO2_INFERENCES')}/solr"
@@ -21,7 +19,7 @@ def resolveSourceMappingSetId = { chainFile ->
         log.warn "MappingSet JSON not found for chain file ${chainFile.name} (looked at ${mappingSetFile})"
         return null
     }
-    def parsed = new JsonSlurper().parse(mappingSetFile)
+    def parsed = new groovy.json.JsonSlurper().parse(mappingSetFile)
     def first = (parsed instanceof List) ? parsed[0] : parsed
     return first?.mapping_set_id
 }

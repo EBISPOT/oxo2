@@ -23,10 +23,12 @@ RUN mvn -B -pl :oxo2-downloader,:oxo2-json2inferences,:oxo2-sssom2json -am -Dski
 
 FROM eclipse-temurin:17-jdk-noble
 
+ENV NXF_VER=25.10.5
 RUN mkdir -p /opt/nextflow  \
     && curl -fsSL https://get.nextflow.io | bash \
     && mv nextflow /opt/nextflow \
-    && chmod +x /opt/nextflow/nextflow
+    && chmod +x /opt/nextflow/nextflow \
+    && /opt/nextflow/nextflow -version
 
 RUN mkdir -p /opt/nemo \
     && curl -L https://github.com/knowsys/nemo/releases/download/v0.10.0/nemo_v0.10.0_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf -
@@ -108,4 +110,4 @@ USER oxo
 
 WORKDIR /opt/oxo/oxo2-dataload
 
-CMD ["sh", "-c", "./loadData.nextflow > /mnt/oxo/logs/dataload.logs"]
+CMD ["bash", "-c", "set -o pipefail; ./loadData.nextflow 2>&1 | tee /mnt/oxo/logs/dataload.logs"]
