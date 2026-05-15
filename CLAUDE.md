@@ -83,3 +83,10 @@ GitHub Actions (`.github/workflows/docker.yml`): builds and pushes Docker images
 ## Markdown style
 - Wrap markdown prose at 100 columns. Never write paragraphs as a single long line.
 - Exceptions: tables, code blocks, and URLs may exceed the limit.
+
+## Code style
+- Use descriptive variable names. Avoid single-letter or short abbreviations
+  for local variables even when the type is obvious from context.
+  Prefer `processBuilder` over `pb`, `process` over `p`, `connection` over `conn`,
+  `request` over `req`. Loop counters (`i`, `j`) and conventional math
+  variables are fine.
