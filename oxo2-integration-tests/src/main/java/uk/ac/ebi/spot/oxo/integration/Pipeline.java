@@ -44,10 +44,10 @@ public final class Pipeline {
         // looks like it was never loaded. Stop any running Solr first to make the run idempotent.
         stopSolrIfRunning();
 
-        List<String> cmd = new ArrayList<>();
-        cmd.add(loadDataScript.toString());
+        List<String> command = new ArrayList<>();
+        command.add(loadDataScript.toString());
 
-        ProcessBuilder processBuilder = new ProcessBuilder(cmd)
+        ProcessBuilder processBuilder = new ProcessBuilder(command)
                 .directory(repoRoot.toFile())
                 .inheritIO();
         processBuilder.environment().put("OXO2_CONFIG", config.toString());
@@ -78,35 +78,35 @@ public final class Pipeline {
      *  immediately if Solr wasn't running. Errors are advisory — the next start will surface
      *  any real problem. */
     private static void stopSolrIfRunning() throws IOException, InterruptedException {
-        Path solrBin = Path.of(System.getenv(Env.SOLR_SCRIPT), "solr");
-        if (!Files.isExecutable(solrBin)) {
-            throw new IllegalStateException("Solr binary not executable: " + solrBin);
+        Path solrBinary = Path.of(System.getenv(Env.SOLR_SCRIPT), "solr");
+        if (!Files.isExecutable(solrBinary)) {
+            throw new IllegalStateException("Solr binary not executable: " + solrBinary);
         }
         System.out.println("Stopping Solr if it is already running...");
-        ProcessBuilder pb = new ProcessBuilder(solrBin.toString(), "stop", "-p", "8983")
+        ProcessBuilder processBuilder = new ProcessBuilder(solrBinary.toString(), "stop", "-p", "8983")
                 .redirectErrorStream(true);
-        Process p = pb.start();
-        p.waitFor(60, TimeUnit.SECONDS);
-        try (var in = p.getInputStream()) {
-            in.transferTo(System.out);
+        Process process = processBuilder.start();
+        process.waitFor(60, TimeUnit.SECONDS);
+        try (var inputStream = process.getInputStream()) {
+            inputStream.transferTo(System.out);
         }
     }
 
     /** Starts Solr via $SOLR_SCRIPT/solr start (no-op if it's already running) and waits
      *  until the admin ping endpoint responds 200. */
     private static void startSolrAndWait() throws IOException, InterruptedException {
-        Path solrBin = Path.of(System.getenv(Env.SOLR_SCRIPT), "solr");
-        if (!Files.isExecutable(solrBin)) {
-            throw new IllegalStateException("Solr binary not executable: " + solrBin);
+        Path solrBinary = Path.of(System.getenv(Env.SOLR_SCRIPT), "solr");
+        if (!Files.isExecutable(solrBinary)) {
+            throw new IllegalStateException("Solr binary not executable: " + solrBinary);
         }
         System.out.println("Starting Solr (in case loadData stopped it)...");
-        ProcessBuilder pb = new ProcessBuilder(solrBin.toString(), "start", "--user-managed")
+        ProcessBuilder processBuilder = new ProcessBuilder(solrBinary.toString(), "start", "--user-managed")
                 .redirectErrorStream(true);
-        Process p = pb.start();
+        Process process = processBuilder.start();
         // solr start is fast; treat exit code as advisory (already-running is fine).
-        p.waitFor(60, TimeUnit.SECONDS);
-        try (var in = p.getInputStream()) {
-            in.transferTo(System.out);
+        process.waitFor(60, TimeUnit.SECONDS);
+        try (var inputStream = process.getInputStream()) {
+            inputStream.transferTo(System.out);
         }
         waitForSolrReady(Duration.ofSeconds(60));
     }
@@ -118,10 +118,10 @@ public final class Pipeline {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(3)).build();
         long deadline = System.currentTimeMillis() + timeout.toMillis();
-        String base = Env.solrHost().replaceAll("/+$", "");
+        String baseUrl = Env.solrHost().replaceAll("/+$", "");
         String[] collections = { "oxo2-mappings", "oxo2-mappingsets" };
         for (String collection : collections) {
-            String url = base + "/" + collection + "/select?q=*:*&rows=0&wt=json";
+            String url = baseUrl + "/" + collection + "/select?q=*:*&rows=0&wt=json";
             while (true) {
                 if (System.currentTimeMillis() >= deadline) {
                     throw new IllegalStateException(
@@ -129,11 +129,11 @@ public final class Pipeline {
                                     + url + " within " + timeout);
                 }
                 try {
-                    HttpResponse<String> r = client.send(
+                    HttpResponse<String> response = client.send(
                             HttpRequest.newBuilder(URI.create(url))
                                     .timeout(Duration.ofSeconds(5)).GET().build(),
                             HttpResponse.BodyHandlers.ofString());
-                    if (r.statusCode() == 200) {
+                    if (response.statusCode() == 200) {
                         break;
                     }
                 } catch (Exception ignored) {

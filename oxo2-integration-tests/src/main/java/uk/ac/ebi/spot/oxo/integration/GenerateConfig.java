@@ -9,8 +9,8 @@ import java.nio.file.Path;
 public final class GenerateConfig {
     public static void main(String[] args) throws Exception {
         Env.requireAll();
-        Path out = ConfigGenerator.generate();
-        System.out.println("Generated config: " + out);
-        System.out.println("Set OXO2_CONFIG=" + out + " before invoking loadData.nextflow.");
+        Path configPath = ConfigGenerator.generate();
+        System.out.println("Generated config: " + configPath);
+        System.out.println("Set OXO2_CONFIG=" + configPath + " before invoking loadData.nextflow.");
     }
 }

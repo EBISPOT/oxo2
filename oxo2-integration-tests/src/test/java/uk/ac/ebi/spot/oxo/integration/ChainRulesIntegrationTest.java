@@ -43,38 +43,38 @@ public class ChainRulesIntegrationTest {
     @TestFactory
     Collection<DynamicNode> perRuleTests() {
         List<DynamicNode> nodes = new ArrayList<>();
-        for (RuleFixtures.Fixture f : fixtures) {
-            nodes.add(DynamicContainer.dynamicContainer(f.rule, ruleAssertions(f)));
+        for (RuleFixtures.Fixture fixture : fixtures) {
+            nodes.add(DynamicContainer.dynamicContainer(fixture.rule, ruleAssertions(fixture)));
         }
         return nodes;
     }
 
-    private List<DynamicTest> ruleAssertions(RuleFixtures.Fixture f) {
-        String base = f.baseName();
+    private List<DynamicTest> ruleAssertions(RuleFixtures.Fixture fixture) {
+        String baseName = fixture.baseName();
         List<DynamicTest> tests = new ArrayList<>();
         tests.add(DynamicTest.dynamicTest("inferredMappings.ttl", () -> compareTextLayer(
-                ArtifactPaths.expectedInferredTtl(base),
-                ArtifactPaths.actualInferredTtl(base),
+                ArtifactPaths.expectedInferredTtl(baseName),
+                ArtifactPaths.actualInferredTtl(baseName),
                 Canonicalisers::readTtl)));
         tests.add(DynamicTest.dynamicTest("inferenceChains.json", () -> compareTextLayer(
-                ArtifactPaths.expectedChainJson(base),
-                ArtifactPaths.actualChainJson(base),
+                ArtifactPaths.expectedChainJson(baseName),
+                ArtifactPaths.actualChainJson(baseName),
                 Canonicalisers::readJson)));
         tests.add(DynamicTest.dynamicTest("solr/mapping explained.json", () -> compareTextLayer(
-                ArtifactPaths.expectedExplainedJson(base),
-                ArtifactPaths.actualExplainedJson(base),
+                ArtifactPaths.expectedExplainedJson(baseName),
+                ArtifactPaths.actualExplainedJson(baseName),
                 Canonicalisers::readExplainedJson)));
         tests.add(DynamicTest.dynamicTest("solr/mappingSet.json", () -> compareTextLayer(
-                ArtifactPaths.expectedMappingSetJson(base),
-                ArtifactPaths.actualMappingSetJson(base),
+                ArtifactPaths.expectedMappingSetJson(baseName),
+                ArtifactPaths.actualMappingSetJson(baseName),
                 Canonicalisers::readJson)));
-        tests.add(DynamicTest.dynamicTest("Solr numFound", () -> compareSolrNumFound(f.rule)));
+        tests.add(DynamicTest.dynamicTest("Solr numFound", () -> compareSolrNumFound(fixture.rule)));
         return tests;
     }
 
     @FunctionalInterface
     private interface Reader {
-        String read(Path p) throws IOException;
+        String read(Path path) throws IOException;
     }
 
     private void compareTextLayer(Path expected, Path actual, Reader reader) throws IOException {
@@ -101,9 +101,9 @@ public class ChainRulesIntegrationTest {
                 "Layer drift: " + actual + " differs from " + expected);
     }
 
-    private static String trimTrailingNewline(String s) {
-        while (s.endsWith("\n") || s.endsWith("\r")) s = s.substring(0, s.length() - 1);
-        return s;
+    private static String trimTrailingNewline(String text) {
+        while (text.endsWith("\n") || text.endsWith("\r")) text = text.substring(0, text.length() - 1);
+        return text;
     }
 
     private void compareSolrNumFound(String rule) throws IOException, InterruptedException {

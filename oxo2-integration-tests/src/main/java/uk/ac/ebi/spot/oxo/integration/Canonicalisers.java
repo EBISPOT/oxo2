@@ -44,60 +44,60 @@ public final class Canonicalisers {
     /** Expands a turtle file with comma-shared objects into a sorted list of `<s> <p> <o> .` lines. */
     public static String canonicaliseTtl(String content) {
         List<String> triples = new ArrayList<>();
-        StringBuilder buf = new StringBuilder();
+        StringBuilder statementBuffer = new StringBuilder();
         for (String rawLine : content.split("\\R")) {
             String line = stripComment(rawLine).trim();
             if (line.isEmpty()) continue;
-            buf.append(' ').append(line);
+            statementBuffer.append(' ').append(line);
             if (line.endsWith(".")) {
-                String statement = buf.toString().trim();
+                String statement = statementBuffer.toString().trim();
                 statement = statement.substring(0, statement.length() - 1).trim(); // drop trailing '.'
                 triples.addAll(expandCommaObjects(statement));
-                buf.setLength(0);
+                statementBuffer.setLength(0);
             }
         }
         Collections.sort(triples);
-        StringBuilder out = new StringBuilder();
-        for (String t : triples) {
-            out.append(t).append('\n');
+        StringBuilder output = new StringBuilder();
+        for (String triple : triples) {
+            output.append(triple).append('\n');
         }
-        return out.toString();
+        return output.toString();
     }
 
     private static String stripComment(String line) {
-        int idx = line.indexOf('#');
-        if (idx < 0) return line;
+        int commentIndex = line.indexOf('#');
+        if (commentIndex < 0) return line;
         // Don't strip inside an IRI (between < and >). Our test data uses no IRIs containing '#',
         // wait, it does — # is common in URIs. Solution: only strip '#' that appears outside angle brackets.
-        StringBuilder sb = new StringBuilder();
+        StringBuilder stripped = new StringBuilder();
         boolean inIri = false;
         for (int i = 0; i < line.length(); i++) {
-            char c = line.charAt(i);
-            if (c == '<') inIri = true;
-            else if (c == '>') inIri = false;
-            else if (c == '#' && !inIri) {
-                return sb.toString();
+            char character = line.charAt(i);
+            if (character == '<') inIri = true;
+            else if (character == '>') inIri = false;
+            else if (character == '#' && !inIri) {
+                return stripped.toString();
             }
-            sb.append(c);
+            stripped.append(character);
         }
-        return sb.toString();
+        return stripped.toString();
     }
 
     private static List<String> expandCommaObjects(String statement) {
         // Statement shape: <s> <p> <o1> , <o2> , <o3>
         // Find first two angle-bracket terms (subject, predicate) then split rest on commas.
-        Matcher m = URI_ANGLE.matcher(statement);
-        if (!m.find()) return Collections.emptyList();
-        String subject = m.group();
-        if (!m.find()) return Collections.emptyList();
-        String predicate = m.group();
-        int rest = m.end();
-        String objects = statement.substring(rest).trim();
+        Matcher matcher = URI_ANGLE.matcher(statement);
+        if (!matcher.find()) return Collections.emptyList();
+        String subject = matcher.group();
+        if (!matcher.find()) return Collections.emptyList();
+        String predicate = matcher.group();
+        int objectsStart = matcher.end();
+        String objects = statement.substring(objectsStart).trim();
         List<String> triples = new ArrayList<>();
-        for (String objRaw : objects.split(",")) {
-            String obj = objRaw.trim();
-            if (obj.isEmpty()) continue;
-            triples.add(subject + " " + predicate + " " + obj + " .");
+        for (String rawObject : objects.split(",")) {
+            String object = rawObject.trim();
+            if (object.isEmpty()) continue;
+            triples.add(subject + " " + predicate + " " + object + " .");
         }
         return triples;
     }
@@ -114,46 +114,46 @@ public final class Canonicalisers {
 
     public static String canonicaliseGenericJson(String content) throws IOException {
         JsonNode tree = MAPPER.readTree(content);
-        JsonNode canon = canonNode(tree);
-        return MAPPER.writeValueAsString(canon);
+        JsonNode canonical = canonicaliseNode(tree);
+        return MAPPER.writeValueAsString(canonical);
     }
 
     public static String readJson(Path path) throws IOException {
         return canonicaliseGenericJson(Files.readString(path, StandardCharsets.UTF_8));
     }
 
-    private static JsonNode canonNode(JsonNode n) {
-        if (n.isObject()) {
-            ObjectNode src = (ObjectNode) n;
-            ObjectNode dst = MAPPER.createObjectNode();
+    private static JsonNode canonicaliseNode(JsonNode node) {
+        if (node.isObject()) {
+            ObjectNode source = (ObjectNode) node;
+            ObjectNode destination = MAPPER.createObjectNode();
             // Stable order: sort field names.
             Map<String, JsonNode> sorted = new TreeMap<>();
-            Iterator<Map.Entry<String, JsonNode>> it = src.fields();
-            while (it.hasNext()) {
-                Map.Entry<String, JsonNode> e = it.next();
-                sorted.put(e.getKey(), canonNode(e.getValue()));
+            Iterator<Map.Entry<String, JsonNode>> fields = source.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                sorted.put(entry.getKey(), canonicaliseNode(entry.getValue()));
             }
-            for (Map.Entry<String, JsonNode> e : sorted.entrySet()) {
-                dst.set(e.getKey(), e.getValue());
+            for (Map.Entry<String, JsonNode> entry : sorted.entrySet()) {
+                destination.set(entry.getKey(), entry.getValue());
             }
-            return dst;
+            return destination;
         }
-        if (n.isArray()) {
-            ArrayNode src = (ArrayNode) n;
-            List<JsonNode> children = new ArrayList<>(src.size());
-            for (JsonNode child : src) children.add(canonNode(child));
-            children.sort((a, b) -> {
+        if (node.isArray()) {
+            ArrayNode source = (ArrayNode) node;
+            List<JsonNode> children = new ArrayList<>(source.size());
+            for (JsonNode child : source) children.add(canonicaliseNode(child));
+            children.sort((left, right) -> {
                 try {
-                    return MAPPER.writeValueAsString(a).compareTo(MAPPER.writeValueAsString(b));
+                    return MAPPER.writeValueAsString(left).compareTo(MAPPER.writeValueAsString(right));
                 } catch (JsonProcessingException ex) {
                     throw new RuntimeException(ex);
                 }
             });
-            ArrayNode dst = MAPPER.createArrayNode();
-            for (JsonNode c : children) dst.add(c);
-            return dst;
+            ArrayNode destination = MAPPER.createArrayNode();
+            for (JsonNode child : children) destination.add(child);
+            return destination;
         }
-        return n;
+        return node;
     }
 
     /* ============================================================================
@@ -170,8 +170,8 @@ public final class Canonicalisers {
     public static String canonicaliseExplainedJson(String content) throws IOException {
         JsonNode tree = MAPPER.readTree(content);
         JsonNode unwrapped = unwrapEmbeddedJsonStrings(tree);
-        JsonNode canon = canonNode(unwrapped);
-        return MAPPER.writeValueAsString(canon);
+        JsonNode canonical = canonicaliseNode(unwrapped);
+        return MAPPER.writeValueAsString(canonical);
     }
 
     public static String readExplainedJson(Path path) throws IOException {
@@ -180,30 +180,30 @@ public final class Canonicalisers {
 
     /** Recursively replace any text-valued `asserted_mappings` / `explanation` field with
      *  its parsed JSON tree, so nested premise structure is visible to the comparator. */
-    private static JsonNode unwrapEmbeddedJsonStrings(JsonNode n) throws IOException {
-        if (n.isObject()) {
-            ObjectNode obj = (ObjectNode) n.deepCopy();
+    private static JsonNode unwrapEmbeddedJsonStrings(JsonNode node) throws IOException {
+        if (node.isObject()) {
+            ObjectNode objectNode = (ObjectNode) node.deepCopy();
             for (String field : new String[]{ASSERTED_MAPPINGS_FIELD, EXPLANATION_FIELD}) {
-                JsonNode v = obj.get(field);
-                if (v != null && v.isTextual()) {
-                    obj.set(field, MAPPER.readTree(v.asText()));
+                JsonNode fieldValue = objectNode.get(field);
+                if (fieldValue != null && fieldValue.isTextual()) {
+                    objectNode.set(field, MAPPER.readTree(fieldValue.asText()));
                 }
             }
-            Iterator<Map.Entry<String, JsonNode>> it = obj.fields();
-            ObjectNode dst = MAPPER.createObjectNode();
-            while (it.hasNext()) {
-                Map.Entry<String, JsonNode> e = it.next();
-                dst.set(e.getKey(), unwrapEmbeddedJsonStrings(e.getValue()));
+            Iterator<Map.Entry<String, JsonNode>> fields = objectNode.fields();
+            ObjectNode destination = MAPPER.createObjectNode();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                destination.set(entry.getKey(), unwrapEmbeddedJsonStrings(entry.getValue()));
             }
-            return dst;
+            return destination;
         }
-        if (n.isArray()) {
-            ArrayNode dst = MAPPER.createArrayNode();
-            for (JsonNode child : n) {
-                dst.add(unwrapEmbeddedJsonStrings(child));
+        if (node.isArray()) {
+            ArrayNode destination = MAPPER.createArrayNode();
+            for (JsonNode child : node) {
+                destination.add(unwrapEmbeddedJsonStrings(child));
             }
-            return dst;
+            return destination;
         }
-        return n;
+        return node;
     }
 }

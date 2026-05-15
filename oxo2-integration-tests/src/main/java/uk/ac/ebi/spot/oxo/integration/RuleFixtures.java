@@ -26,26 +26,26 @@ public final class RuleFixtures {
     /** Returns all fixtures (or just one if -Doxo2.it.rule is set), sorted by rule name. */
     public static List<Fixture> discover() throws IOException {
         String filter = Env.ruleFilter();
-        Path dir = fixturesDir();
-        if (!Files.isDirectory(dir)) {
-            throw new IllegalStateException("Fixtures dir does not exist: " + dir);
+        Path directory = fixturesDir();
+        if (!Files.isDirectory(directory)) {
+            throw new IllegalStateException("Fixtures dir does not exist: " + directory);
         }
         List<Fixture> fixtures = new ArrayList<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*" + FIXTURE_SUFFIX)) {
-            for (Path p : stream) {
-                String filename = p.getFileName().toString();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory, "*" + FIXTURE_SUFFIX)) {
+            for (Path fixturePath : stream) {
+                String filename = fixturePath.getFileName().toString();
                 String rule = filename.substring(0, filename.length() - FIXTURE_SUFFIX.length());
                 if (filter == null || filter.equals(rule)) {
-                    fixtures.add(new Fixture(rule, p));
+                    fixtures.add(new Fixture(rule, fixturePath));
                 }
             }
         }
         if (filter != null && fixtures.isEmpty()) {
             throw new IllegalStateException(
                     "Rule filter -D" + Env.RULE_FILTER_PROPERTY + "=" + filter +
-                    " matched no fixture in " + dir);
+                    " matched no fixture in " + directory);
         }
-        Collections.sort(fixtures, (a, b) -> a.rule.compareTo(b.rule));
+        Collections.sort(fixtures, (left, right) -> left.rule.compareTo(right.rule));
         return fixtures;
     }
 

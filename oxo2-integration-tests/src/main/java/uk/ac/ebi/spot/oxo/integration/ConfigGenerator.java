@@ -26,16 +26,16 @@ public final class ConfigGenerator {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode root = mapper.createObjectNode();
         ArrayNode registries = root.putArray("mapping_registries");
-        for (RuleFixtures.Fixture f : fixtures) {
+        for (RuleFixtures.Fixture fixture : fixtures) {
             ObjectNode entry = registries.addObject();
-            entry.put("id", f.rule);
-            entry.put("url", f.tsv.toUri().toString());
+            entry.put("id", fixture.rule);
+            entry.put("url", fixture.tsv.toUri().toString());
         }
 
-        Path outDir = Env.repoRoot().resolve("oxo2-integration-tests").resolve("target");
-        Files.createDirectories(outDir);
-        Path outFile = outDir.resolve(GENERATED_CONFIG_FILENAME);
-        mapper.writerWithDefaultPrettyPrinter().writeValue(outFile.toFile(), root);
-        return outFile;
+        Path outputDir = Env.repoRoot().resolve("oxo2-integration-tests").resolve("target");
+        Files.createDirectories(outputDir);
+        Path outputFile = outputDir.resolve(GENERATED_CONFIG_FILENAME);
+        mapper.writerWithDefaultPrettyPrinter().writeValue(outputFile.toFile(), root);
+        return outputFile;
     }
 }

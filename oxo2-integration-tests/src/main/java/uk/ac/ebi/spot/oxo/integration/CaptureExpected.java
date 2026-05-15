@@ -34,34 +34,34 @@ public final class CaptureExpected {
             numFoundRoot = mapper.createObjectNode();
         }
 
-        for (RuleFixtures.Fixture f : fixtures) {
-            String base = f.baseName();
-            System.out.println("Capturing " + f.rule + " (" + base + ")");
+        for (RuleFixtures.Fixture fixture : fixtures) {
+            String baseName = fixture.baseName();
+            System.out.println("Capturing " + fixture.rule + " (" + baseName + ")");
 
-            copyCanonical(ArtifactPaths.actualInferredTtl(base),
-                          ArtifactPaths.expectedInferredTtl(base),
+            copyCanonical(ArtifactPaths.actualInferredTtl(baseName),
+                          ArtifactPaths.expectedInferredTtl(baseName),
                           Canonicalisers::canonicaliseTtl);
-            copyCanonical(ArtifactPaths.actualChainJson(base),
-                          ArtifactPaths.expectedChainJson(base),
+            copyCanonical(ArtifactPaths.actualChainJson(baseName),
+                          ArtifactPaths.expectedChainJson(baseName),
                           Canonicalisers::canonicaliseGenericJson);
-            copyCanonical(ArtifactPaths.actualExplainedJson(base),
-                          ArtifactPaths.expectedExplainedJson(base),
+            copyCanonical(ArtifactPaths.actualExplainedJson(baseName),
+                          ArtifactPaths.expectedExplainedJson(baseName),
                           Canonicalisers::canonicaliseExplainedJson);
-            copyCanonical(ArtifactPaths.actualMappingSetJson(base),
-                          ArtifactPaths.expectedMappingSetJson(base),
+            copyCanonical(ArtifactPaths.actualMappingSetJson(baseName),
+                          ArtifactPaths.expectedMappingSetJson(baseName),
                           Canonicalisers::canonicaliseGenericJson);
 
             // Both asserted and inferred sets live in the same two Solr collections,
             // distinguished by mapping_set_id. Nested keys here keep that fact obvious
             // rather than implying "-inferred" suffixed collections that don't exist.
             int mappingsAsserted = SolrCheck.numFound(SolrCheck.MAPPINGS_COLLECTION,
-                    SolrCheck.mappingSetIdForRule(f.rule));
+                    SolrCheck.mappingSetIdForRule(fixture.rule));
             int mappingsInferred = SolrCheck.numFound(SolrCheck.MAPPINGS_COLLECTION,
-                    SolrCheck.inferredMappingSetIdForRule(f.rule));
+                    SolrCheck.inferredMappingSetIdForRule(fixture.rule));
             int mappingSetsAsserted = SolrCheck.numFound(SolrCheck.MAPPINGSETS_COLLECTION,
-                    SolrCheck.mappingSetIdForRule(f.rule));
+                    SolrCheck.mappingSetIdForRule(fixture.rule));
             int mappingSetsInferred = SolrCheck.numFound(SolrCheck.MAPPINGSETS_COLLECTION,
-                    SolrCheck.inferredMappingSetIdForRule(f.rule));
+                    SolrCheck.inferredMappingSetIdForRule(fixture.rule));
 
             ObjectNode mappings = mapper.createObjectNode();
             mappings.put("asserted", mappingsAsserted);
@@ -72,13 +72,13 @@ public final class CaptureExpected {
             ObjectNode counts = mapper.createObjectNode();
             counts.set(SolrCheck.MAPPINGS_COLLECTION, mappings);
             counts.set(SolrCheck.MAPPINGSETS_COLLECTION, mappingSets);
-            numFoundRoot.set(f.rule, counts);
+            numFoundRoot.set(fixture.rule, counts);
         }
 
         // Sort keys for deterministic on-disk shape.
         ObjectNode sortedNumFound = mapper.createObjectNode();
         TreeMap<String, com.fasterxml.jackson.databind.JsonNode> sorted = new TreeMap<>();
-        numFoundRoot.fields().forEachRemaining(e -> sorted.put(e.getKey(), e.getValue()));
+        numFoundRoot.fields().forEachRemaining(entry -> sorted.put(entry.getKey(), entry.getValue()));
         sorted.forEach(sortedNumFound::set);
 
         Files.createDirectories(numFoundPath.getParent());

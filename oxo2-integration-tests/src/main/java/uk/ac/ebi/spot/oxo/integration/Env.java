@@ -18,14 +18,14 @@ public final class Env {
 
     public static void requireAll() {
         Map<String, String> values = new LinkedHashMap<>();
-        for (String k : new String[]{OXO2_DATA, NEXTFLOW_DIR, SOLR_SCRIPT, SOLR_HOME, OXO2_SOLR_HOST}) {
-            String v = System.getenv(k);
-            if (v == null || v.isBlank()) {
+        for (String variableName : new String[]{OXO2_DATA, NEXTFLOW_DIR, SOLR_SCRIPT, SOLR_HOME, OXO2_SOLR_HOST}) {
+            String value = System.getenv(variableName);
+            if (value == null || value.isBlank()) {
                 throw new IllegalStateException(
-                        "Required environment variable " + k + " is not set. " +
+                        "Required environment variable " + variableName + " is not set. " +
                         "See oxo2-integration-tests/CONTEXT.md § Environment contract.");
             }
-            values.put(k, v);
+            values.put(variableName, value);
         }
     }
 
@@ -36,20 +36,20 @@ public final class Env {
         // Walk up from the JVM's working dir looking for the unique repo-root marker:
         // a directory that contains BOTH oxo2-shared/ and oxo2-dataload/ as subdirs.
         // Per-module CONTEXT.md and pom.xml aren't unique enough to identify the root.
-        Path p = Paths.get("").toAbsolutePath();
-        while (p != null) {
-            if (p.resolve("oxo2-shared").toFile().isDirectory()
-                    && p.resolve("oxo2-dataload").toFile().isDirectory()) {
-                return p;
+        Path candidate = Paths.get("").toAbsolutePath();
+        while (candidate != null) {
+            if (candidate.resolve("oxo2-shared").toFile().isDirectory()
+                    && candidate.resolve("oxo2-dataload").toFile().isDirectory()) {
+                return candidate;
             }
-            p = p.getParent();
+            candidate = candidate.getParent();
         }
         throw new IllegalStateException("Could not locate OxO2 repo root from " +
                 Paths.get("").toAbsolutePath() + " (no ancestor contains oxo2-shared/ + oxo2-dataload/).");
     }
 
     public static String ruleFilter() {
-        String v = System.getProperty(RULE_FILTER_PROPERTY);
-        return (v == null || v.isBlank()) ? null : v.trim();
+        String value = System.getProperty(RULE_FILTER_PROPERTY);
+        return (value == null || value.isBlank()) ? null : value.trim();
     }
 }

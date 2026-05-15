@@ -30,23 +30,23 @@ public final class SolrCheck {
     private SolrCheck() {}
 
     public static int numFound(String collection, String mappingSetId) throws IOException, InterruptedException {
-        String q = "mapping_set_id:\"" + mappingSetId + "\"";
+        String query = "mapping_set_id:\"" + mappingSetId + "\"";
         String url = Env.solrHost().replaceAll("/+$", "") + "/" + collection +
-                "/select?q=" + URLEncoder.encode(q, StandardCharsets.UTF_8) +
+                "/select?q=" + URLEncoder.encode(query, StandardCharsets.UTF_8) +
                 "&rows=0&wt=json";
-        HttpRequest req = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .timeout(Duration.ofSeconds(30))
                 .GET().build();
-        HttpResponse<String> resp = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
-        if (resp.statusCode() != 200) {
-            throw new IOException("Solr query failed (" + resp.statusCode() + "): " + url + "\n" + resp.body());
+        HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException("Solr query failed (" + response.statusCode() + "): " + url + "\n" + response.body());
         }
-        JsonNode body = MAPPER.readTree(resp.body());
-        JsonNode nf = body.path("response").path("numFound");
-        if (nf.isMissingNode() || !nf.isNumber()) {
-            throw new IOException("No numFound in Solr response from " + url + ": " + resp.body());
+        JsonNode body = MAPPER.readTree(response.body());
+        JsonNode numFoundNode = body.path("response").path("numFound");
+        if (numFoundNode.isMissingNode() || !numFoundNode.isNumber()) {
+            throw new IOException("No numFound in Solr response from " + url + ": " + response.body());
         }
-        return nf.asInt();
+        return numFoundNode.asInt();
     }
 
     /** Returns the canonical mapping_set_id baked into rule fixtures. Must match what
