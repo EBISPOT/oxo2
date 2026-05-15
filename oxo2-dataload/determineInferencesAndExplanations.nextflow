@@ -13,12 +13,19 @@ mkdir -p $OXO2_INFERENCES/inferredMappings
 mkdir -p $OXO2_INFERENCES/inferencesToTrace
 mkdir -p $OXO2_INFERENCES/inferenceChains
 
+# Optional extra config layered on top of the base nextflow.config (test harness
+# uses this to pick the `test` profile in oxo2-integration-tests/nextflow-test.config).
+NF_EXTRA_CONFIG_ARG=""
+if [ -n "${NF_EXTRA_CONFIG:-}" ]; then
+    NF_EXTRA_CONFIG_ARG="-c ${NF_EXTRA_CONFIG}"
+fi
+
 # Run combined 4-stage pipeline: JSON→TTL → Infer → Trace → Explain
 # Per-file pipelining: each file flows through all stages independently.
 start_time=$(date +%s)
 echo "Using Nextflow combined pipeline for JSON→TTL, inference, tracing, and explanation"
 (nextflow -log $NXF_LOGS/inferAndExplainMappings.nextflow.log \
-    -c $SCRIPT_DIR/nextflow/nextflow.config \
+    -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
     run $SCRIPT_DIR/inferAndExplainMappings.nf \
     -profile ${NF_PROFILE:-standard} \
     -with-trace    $NXF_LOGS/inferAndExplainMappings-trace.txt \

@@ -15,6 +15,7 @@
         <module>oxo2-shared</module>
         <module>oxo2-dataload</module>
         <module>oxo2-backend</module>
+        <module>oxo2-integration-tests</module>
     </modules>
 
 </project>

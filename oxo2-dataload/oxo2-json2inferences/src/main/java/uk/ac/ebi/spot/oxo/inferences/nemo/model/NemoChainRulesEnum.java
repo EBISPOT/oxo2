@@ -76,14 +76,14 @@ public enum NemoChainRulesEnum {
             "RCE-N1", 
             "mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) :- mapping(?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b), mapping(?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) ."),
     RCE_N2(
-            "RCE-N2", 
-            "mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) :- mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?b), mapping(?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) ."),
+            "RCE-N2",
+            "mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) :- mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?b), mapping(?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?c) ."),
     RCE_N3(
             "RCE-N3", 
             "mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) :- mapping(?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?b), mapping(?b, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) ."),
     RCE_N4(
-            "RCE-N4", 
-            "mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) :- mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, b), mapping(?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?c) .");
+            "RCE-N4",
+            "mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) :- mapping(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?b), mapping(?b, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?c) .");
     private final String name;
     private final String nemoRuleName; // Renamed field
 

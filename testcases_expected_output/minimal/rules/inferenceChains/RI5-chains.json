@@ -1,0 +1,16 @@
+{
+  "finalConclusion" : [ "mapping(<https://w3id.org/oxo2/test/ex/B>, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, <https://w3id.org/oxo2/test/ex/A>)" ],
+  "inferences" : [ {
+    "conclusion" : "assertedMapping(<https://w3id.org/oxo2/test/ex/A>, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ ],
+    "rule" : "Asserted"
+  }, {
+    "conclusion" : "mapping(<https://w3id.org/oxo2/test/ex/A>, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ "assertedMapping(<https://w3id.org/oxo2/test/ex/A>, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(?a, ?p, ?b) :- assertedMapping(?a, ?p, ?b) ."
+  }, {
+    "conclusion" : "mapping(<https://w3id.org/oxo2/test/ex/B>, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, <https://w3id.org/oxo2/test/ex/A>)",
+    "premises" : [ "mapping(<https://w3id.org/oxo2/test/ex/A>, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(?b, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?a) :- mapping(?a, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, ?b) ."
+  } ]
+}

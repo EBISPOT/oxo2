@@ -1,0 +1,9 @@
+# mapping_set_id: https://w3id.org/oxo2/test/minimal/rules/T3
+# mapping_set_title: Test fixture for chain rule T3
+# license: https://creativecommons.org/publicdomain/zero/1.0/
+# curie_map:
+#   ex: https://w3id.org/oxo2/test/ex/
+#   OWL: http://www.w3.org/2002/07/owl#
+subject_id	subject_label	predicate_id	object_id	object_label
+ex:A	Entity A	OWL:sameAs	ex:B	Entity B
+ex:B	Entity B	OWL:sameAs	ex:C	Entity C

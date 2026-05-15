@@ -16,6 +16,8 @@ OxO2 is a SSSOM-compliant ontology mapping service. For purpose, domain language
 
 See [`/CONTEXT.md`](CONTEXT.md) § Module map for the canonical list with one-line descriptions. Per-module detail in each `oxo2-*/CONTEXT.md`.
 
+Note that `oxo2-integration-tests` (added 2026-05) is a top-level sibling of the other modules; it drives the full `loadData.nextflow` pipeline against the rule fixtures in `testcases/minimal/rules/`. See [`oxo2-integration-tests/CONTEXT.md`](oxo2-integration-tests/CONTEXT.md).
+
 ## Data Loading Pipeline
 
 See [`oxo2-dataload/CONTEXT.md`](oxo2-dataload/CONTEXT.md) for the pipeline stages, scripts, and chunked-tracing details.

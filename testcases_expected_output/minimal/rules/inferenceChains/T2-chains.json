@@ -1,0 +1,24 @@
+{
+  "finalConclusion" : [ "mapping(<https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#equivalentProperty>, <https://w3id.org/oxo2/test/ex/C>)" ],
+  "inferences" : [ {
+    "conclusion" : "assertedMapping(<https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#equivalentProperty>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ ],
+    "rule" : "Asserted"
+  }, {
+    "conclusion" : "assertedMapping(<https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#equivalentProperty>, <https://w3id.org/oxo2/test/ex/C>)",
+    "premises" : [ ],
+    "rule" : "Asserted"
+  }, {
+    "conclusion" : "mapping(<https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#equivalentProperty>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ "assertedMapping(<https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#equivalentProperty>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(?a, ?p, ?b) :- assertedMapping(?a, ?p, ?b) ."
+  }, {
+    "conclusion" : "mapping(<https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#equivalentProperty>, <https://w3id.org/oxo2/test/ex/C>)",
+    "premises" : [ "mapping(<https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#equivalentProperty>, <https://w3id.org/oxo2/test/ex/B>)", "mapping(<https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#equivalentProperty>, <https://w3id.org/oxo2/test/ex/C>)" ],
+    "rule" : "mapping(?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?c) :- mapping(?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?b), mapping(?b, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?c) ."
+  }, {
+    "conclusion" : "mapping(<https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#equivalentProperty>, <https://w3id.org/oxo2/test/ex/C>)",
+    "premises" : [ "assertedMapping(<https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#equivalentProperty>, <https://w3id.org/oxo2/test/ex/C>)" ],
+    "rule" : "mapping(?a, ?p, ?b) :- assertedMapping(?a, ?p, ?b) ."
+  } ]
+}

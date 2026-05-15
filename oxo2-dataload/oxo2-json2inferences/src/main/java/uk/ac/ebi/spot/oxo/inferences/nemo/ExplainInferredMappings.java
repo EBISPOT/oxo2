@@ -422,7 +422,7 @@ public class ExplainInferredMappings {
                         continue;
                     }
                     if (inferredMapping.getChainRuleApplications().isPresent() &&
-                        inferredMapping.getChainRuleApplications().get().getPremises().size() <= 1) {
+                        inferredMapping.getChainRuleApplications().get().getPremises().isEmpty()) {
                         logger.debug("Skipping mapping with no premises - hence it is an asserted mapping: {}", inferredMapping);
                         continue;
                     }

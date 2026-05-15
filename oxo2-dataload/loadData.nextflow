@@ -2,8 +2,17 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-NF_PROFILE=standard
+NF_PROFILE=${NF_PROFILE:-standard}
 export NF_PROFILE
+
+# Optional extra config layered on top of the base nextflow.config. The
+# integration-test harness sets this to oxo2-integration-tests/nextflow-test.config
+# so it can pick the `test` profile with tiny per-process resource asks.
+NF_EXTRA_CONFIG_ARG=""
+if [ -n "${NF_EXTRA_CONFIG:-}" ]; then
+    NF_EXTRA_CONFIG_ARG="-c ${NF_EXTRA_CONFIG}"
+fi
+export NF_EXTRA_CONFIG_ARG
 
 # Nextflow directories derived from NEXTFLOW_DIR
 : "${NEXTFLOW_DIR:?NEXTFLOW_DIR must be set}"
@@ -45,7 +54,7 @@ echo "Download took: ${elapsed} seconds"
 start_time=$(date +%s)
 echo "Using Nextflow for parallel processing of SSSOM to JSON conversion"
 (nextflow -log $NXF_LOGS/sssom2json.nextflow.log \
-    -c $SCRIPT_DIR/nextflow/nextflow.config \
+    -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
     run $SCRIPT_DIR/sssom2json.nf \
     -profile $NF_PROFILE \
     -with-trace    $NXF_LOGS/sssom2json-trace.txt \
@@ -90,7 +99,7 @@ mkdir -p $OXO2_INFERENCES/solr/mappingSet
 start_time=$(date +%s)
 echo "Using Nextflow for parallel explanations2json"
 (cd $NXF_LOGS && nextflow -log $NXF_LOGS/explanations2json.nextflow.log \
-    -c $SCRIPT_DIR/nextflow/nextflow.config \
+    -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
     run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf \
     -profile $NF_PROFILE \
     -with-trace    $NXF_LOGS/explanations2json-trace.txt \
