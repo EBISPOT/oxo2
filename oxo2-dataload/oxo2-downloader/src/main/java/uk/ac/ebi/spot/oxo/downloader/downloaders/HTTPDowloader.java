@@ -84,18 +84,26 @@ public class HTTPDowloader {
         }
 
         private static void extractTgz(String tgzFilePath, String destDir) throws IOException {
+            File destinationDir = new File(destDir).getCanonicalFile();
             try (FileInputStream fis = new FileInputStream(tgzFilePath);
                  GzipCompressorInputStream gis = new GzipCompressorInputStream(fis);
                  TarArchiveInputStream tis = new TarArchiveInputStream(gis)) {
 
                 ArchiveEntry entry;
                 while ((entry = tis.getNextEntry()) != null) {
-                    File outputFile = new File(destDir, entry.getName());
+                    File outputFile = new File(destinationDir, entry.getName()).getCanonicalFile();
+                    if (!outputFile.toPath().startsWith(destinationDir.toPath())) {
+                        throw new IOException("Archive entry outside destination directory: " + entry.getName());
+                    }
                     if (entry.isDirectory()) {
                         if (!outputFile.exists()) {
                             outputFile.mkdirs();
                         }
                     } else {
+                        File parent = outputFile.getParentFile();
+                        if (parent != null && !parent.exists()) {
+                            parent.mkdirs();
+                        }
                         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
                             byte[] buffer = new byte[1024];
                             int len;
