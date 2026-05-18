@@ -11,7 +11,7 @@ COPY oxo2-dataload/oxo2-downloader/pom.xml /build/oxo2-dataload/oxo2-downloader/
 COPY oxo2-dataload/oxo2-json2inferences/pom.xml /build/oxo2-dataload/oxo2-json2inferences/
 COPY oxo2-dataload/oxo2-sssom2json/pom.xml /build/oxo2-dataload/oxo2-sssom2json/
 COPY oxo2-dataload/oxo2-solr-dataload-client/pom.xml /build/oxo2-dataload/oxo2-solr-dataload-client/
-COPY oxo2-dataload/oxo2-dataload-testing/pom.xml /build/oxo2-dataload/oxo2-dataload-testing/
+COPY oxo2-integration-tests/pom.xml /build/oxo2-integration-tests/
 
 RUN mvn -B -pl oxo2-backend -am dependency:go-offline -fae || true
 
