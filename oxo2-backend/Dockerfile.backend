@@ -21,7 +21,7 @@ COPY oxo2-backend/ /build/oxo2-backend/
 RUN mvn -B -pl oxo2-backend -am -DskipTests install
 
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:25-jre
 
 RUN addgroup --system oxo && adduser --system --ingroup oxo oxo \
     && mkdir -p /opt/oxo/oxo2-backend/target \
