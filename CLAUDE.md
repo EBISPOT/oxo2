@@ -90,3 +90,21 @@ GitHub Actions (`.github/workflows/docker.yml`): builds and pushes Docker images
   Prefer `processBuilder` over `pb`, `process` over `p`, `connection` over `conn`,
   `request` over `req`. Loop counters (`i`, `j`) and conventional math
   variables are fine.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues at `EBISPOT/oxo2`; skills use the `gh` CLI.
+See [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md).
+
+### Triage labels
+
+Canonical names (`needs-triage`, `needs-info`, `ready-for-agent`,
+`ready-for-human`, `wontfix`). See [`docs/agents/triage-labels.md`](docs/agents/triage-labels.md).
+
+### Domain docs
+
+Single-context: root `CONTEXT.md` is canonical with a Module map, per-module
+`oxo2-*/CONTEXT.md` provide module detail, ADRs at `docs/adr/`.
+See [`docs/agents/domain.md`](docs/agents/domain.md).
