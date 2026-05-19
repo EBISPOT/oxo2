@@ -19,17 +19,11 @@ updates:
           - "minor"
           - "patch"
 
-  # Maven — root parent pom + 7 module poms
+  # Maven — single scan from the repo root; dependabot walks the parent pom
+  # and every reachable module, opening one PR per dependency that touches
+  # all affected pom.xml files.
   - package-ecosystem: "maven"
-    directories:
-      - "/"
-      - "/oxo2-shared"
-      - "/oxo2-backend"
-      - "/oxo2-dataload"
-      - "/oxo2-dataload/oxo2-downloader"
-      - "/oxo2-dataload/oxo2-sssom2json"
-      - "/oxo2-dataload/oxo2-json2inferences"
-      - "/oxo2-dataload/oxo2-solr-dataload-client"
+    directory: "/"
     schedule:
       interval: "daily"
       time: "07:00"
