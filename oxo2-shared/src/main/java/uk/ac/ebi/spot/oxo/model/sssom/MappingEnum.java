@@ -113,7 +113,6 @@ public enum MappingEnum {
         return field;
     }
 
-    @JsonValue
     public String getProperty() {
         return property;
     }

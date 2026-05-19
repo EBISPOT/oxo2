@@ -21,24 +21,30 @@ COPY oxo2-dataload/ /build/oxo2-dataload/
 RUN mvn -B -pl :oxo2-downloader,:oxo2-json2inferences,:oxo2-sssom2json -am -DskipTests install
 
 
-FROM eclipse-temurin:17-jdk-noble
+FROM eclipse-temurin:25-jdk-noble
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates bash tar gzip lsof \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt/nemo \
     && curl -L https://github.com/knowsys/nemo/releases/download/v0.10.0/nemo_v0.10.0_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf -
 
 
 RUN mkdir -p /opt/solr  \
-    && curl -L https://archive.apache.org/dist/solr/solr/9.9.0/solr-9.9.0.tgz | tar --strip-components=1 -C /opt/solr -xzf - \
+    && curl -L https://archive.apache.org/dist/solr/solr/9.9.0/solr-9.9.0-slim.tgz | tar --strip-components=1 -C /opt/solr -xzf - \
     && rm -rf /opt/solr/server/solr/*
 
-RUN addgroup --system oxo && adduser --system --ingroup oxo --home /home/oxo oxo \
+RUN addgroup --system --gid 8389 oxo \
+    && adduser --system --uid 8389 --ingroup oxo --home /home/oxo oxo \
     && mkdir -p /home/oxo \
     && chown -R oxo:oxo /home/oxo
 
 ENV PATH="${PATH}:/opt/nemo:/opt/solr" \
     HOME="/home/oxo" \
     SOLR_HOME="/opt/solr/server/solr" \
-    SOLR_SCRIPT="/opt/solr/bin"
+    SOLR_SCRIPT="/opt/solr/bin" \
+    SOLR_SECURITY_MANAGER_ENABLED="false"
 
 RUN mkdir -p /opt/oxo
 

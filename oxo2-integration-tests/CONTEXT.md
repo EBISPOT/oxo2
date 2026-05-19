@@ -29,7 +29,7 @@ v1 scope: 22 per-rule minimal fixtures under `testcases/minimal/rules/`, one per
 ## Depends on
 
 External:
-- **JUnit 5 + Failsafe** — integration-test runner (`*IntegrationTest.java`, `mvn verify`).
+- **JUnit 6 + Failsafe** — integration-test runner (`*IntegrationTest.java`, `mvn verify`).
 - **Nextflow + Nemo + Solr** — invoked as the production pipeline; the test does not mock them.
 
 Internal:

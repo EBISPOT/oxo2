@@ -1,0 +1,24 @@
+# syntax=docker/dockerfile:1.7
+FROM eclipse-temurin:25-jdk-noble
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates bash tar gzip lsof \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /opt/solr \
+    && curl -L https://archive.apache.org/dist/solr/solr/9.9.0/solr-9.9.0-slim.tgz | tar --strip-components=1 -C /opt/solr -xzf -
+
+RUN addgroup --system --gid 8389 solr \
+    && adduser --system --uid 8389 --ingroup solr --home /var/solr solr \
+    && mkdir -p /var/solr /mnt/oxo/solr-data \
+    && chown -R solr:solr /opt/solr /var/solr /mnt/oxo
+
+ENV PATH="${PATH}:/opt/solr/bin" \
+    SOLR_HOME="/mnt/oxo/solr-data" \
+    SOLR_JETTY_HOST="0.0.0.0" \
+    SOLR_SECURITY_MANAGER_ENABLED="false"
+
+USER solr
+
+EXPOSE 8983
+CMD ["solr", "start", "-f"]

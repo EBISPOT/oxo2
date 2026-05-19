@@ -8,19 +8,29 @@ services:
       - SOLR_HOME=/opt/solr/server/solr
       - SOLR_SCRIPT=/opt/solr/bin
     volumes:
-      - build:/opt/oxo:rw
       - data:/mnt/oxo/data:rw
       - solr-data:/opt/solr/server/solr:rw
       - logs:/mnt/oxo/logs:rw
       - ${OXO2_CONFIG:-./oxo-config.json}:/mnt/oxo/configs/config.json:ro
   solr:
-    image: solr:9.9.0
+    build:
+      context: .
+      dockerfile: ./oxo2-dataload/Dockerfile.solr
+    image: oxo2-solr:9.9.0-slim-java25
     environment:
       - SOLR_HOME=/mnt/oxo/solr-data
+      - SOLR_JETTY_HOST=0.0.0.0
+      - SOLR_SECURITY_MANAGER_ENABLED=false
     ports:
       - 8983:8983
     volumes:
       - solr-data:/mnt/oxo/solr-data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS 'http://localhost:8983/solr/oxo2-mappings/select?q=*:*&rows=0' >/dev/null && curl -fsS 'http://localhost:8983/solr/oxo2-mappingsets/select?q=*:*&rows=0' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
     depends_on:
       dataload:
         condition: service_completed_successfully
@@ -33,7 +43,8 @@ services:
     environment:
       - OXO2_SOLR_HOST=http://solr:8983/solr
     depends_on:
-      - solr
+      solr:
+        condition: service_healthy
     links:
       - solr
   frontend:
@@ -51,10 +62,8 @@ services:
     depends_on:
       - backend
     links:
-      - backend  
+      - backend
 volumes:
-  build:
   data:
   solr-data:
   logs:
-

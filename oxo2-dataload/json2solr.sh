@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -euo pipefail
 
 if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <inputDir> <solrUrl> where <solrUrl> has the form <solr_server_url>:<port>/<solr_core>"
@@ -26,16 +27,11 @@ post_to_solr() {
   local file=$1
   local solr_url=$2
   echo "Posting $file to Solr... $solr_url/update?commit=true"
-  curl -X POST -H "Content-Type: application/json" -T $file "$solr_url/update?commit=true"
-  if [ $? -eq 0 ]; then
-    echo "Successfully posted $file to Solr."
-  else
-    echo "Failed to post $file to Solr."
-  fi
+  curl -fsS -X POST -H "Content-Type: application/json" -T "$file" "$solr_url/update?commit=true"
+  echo "Successfully posted $file to Solr."
 }
 
-# Export the function to be used by find
-export -f post_to_solr
-
 # Find and post all .json files
-find $DIRECTORY -type f -name "*.json" -exec bash -c 'post_to_solr "$0" "$1"' {} $SOLR_URL \;
+while IFS= read -r -d '' file; do
+  post_to_solr "$file" "$SOLR_URL"
+done < <(find "$DIRECTORY" -type f -name "*.json" -print0)

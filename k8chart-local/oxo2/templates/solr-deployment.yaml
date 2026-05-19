@@ -19,10 +19,14 @@ spec:
         runAsNonRoot: true     
       containers:
         - name: solr
-          image: docker.io/library/solr:9.9.0
+          image: {{ .Values.solr.image | quote }}
           env:
             - name: SOLR_HOME
               value: /var/solr
+            - name: SOLR_JETTY_HOST
+              value: "0.0.0.0"
+            - name: SOLR_SECURITY_MANAGER_ENABLED
+              value: "false"
           ports:
             - containerPort: {{ .Values.solr.service.containerPort }}
           volumeMounts:

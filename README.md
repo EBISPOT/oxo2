@@ -54,7 +54,7 @@ and the point your browser to http://localhost:8080. The OxO2 backend will be ac
 ## Running OxO2 locally from the commandline. 
 ### Prerequisites 
 Ensure the following software is installed and available on the user path.
-1. Java 17 or later
+1. Java 25
 2. Maven 3.x
 3. Git
 4. Solr 9.x - This is the datastore for OxO2. Ensure SOLR_SCRIPT is set to /bin dir SOLR_HOME is set to /server/solr dir 
@@ -104,4 +104,3 @@ and change to OxO2 source directory.
    4. Access frontend from browser at: `http://localhost:8080/`
    5. Backend is accessible at: `http://localhost:8081`.
  
-

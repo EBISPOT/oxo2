@@ -64,7 +64,7 @@ docker compose up
 
 ## Tech Stack
 
-- Java 17, Maven, Spring Boot 3.4.1
+- Java 25, Maven, Spring Boot 3.4.1
 - Apache Solr 9.9.0 (sole data store — see [ADR-0002](docs/adr/0002-solr-as-sole-data-store.md))
 - Nemo v0.9.1 rules engine (inference/explanation)
 - React 19, TypeScript, Vite, Tailwind CSS, TanStack React Query

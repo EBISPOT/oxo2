@@ -33,6 +33,9 @@ echo NXF_HOME=$NXF_HOME
 
 OXO2_INFERENCES=$OXO2_DATA/inferences
 export OXO2_INFERENCES
+SOLR_URL=${SOLR_URL:-http://localhost:8983/solr}
+SOLR_SECURITY_MANAGER_ENABLED=${SOLR_SECURITY_MANAGER_ENABLED:-false}
+export SOLR_URL SOLR_SECURITY_MANAGER_ENABLED
 
 # Pin per-task heap to 4 GB. With per-file parallelism in sssom2json.nf, up to
 # ~5 SSSOM2JSON JVMs run concurrently on the local executor (cpus=6, executor
@@ -73,20 +76,76 @@ elapsed=$((end_time - start_time))
 echo "Total inference process took: ${elapsed} seconds"
 
 echo  "###################"  copySolrConfig...
-$SCRIPT_DIR/copySolrConfig.sh
+if ! "$SCRIPT_DIR/copySolrConfig.sh"; then
+    echo "Failed to copy Solr config into $SOLR_HOME" >&2
+    exit 1
+fi
 sleep 2
 echo Start solr ...
 mkdir -p $OXO2_DATA/tmp
 ulimit -n 65000 2>/dev/null || true
 $SOLR_SCRIPT/solr start --user-managed -Djava.io.tmpdir=$OXO2_DATA/tmp
 
+wait_for_solr_url() {
+    local url=$1
+    local description=$2
 
-sleep 10
+    for attempt in {1..60}; do
+        if curl -fsS "$url" > /dev/null; then
+            echo "$description is ready at $url"
+            return 0
+        fi
+        sleep 2
+    done
+
+    echo "$description did not become ready at $url" >&2
+    return 1
+}
+
+wait_for_solr_core() {
+    local core=$1
+    local status_file="$OXO2_DATA/tmp/${core}-status.json"
+
+    for attempt in {1..60}; do
+        if curl -fsS "$SOLR_URL/admin/cores?action=STATUS&core=$core" > "$status_file" \
+            && grep -q "\"$core\"" "$status_file"; then
+            echo "Solr core $core is ready"
+            return 0
+        fi
+        sleep 2
+    done
+
+    echo "Solr core $core did not become ready" >&2
+    return 1
+}
+
+if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr"; then
+    exit 1
+fi
+
+if ! wait_for_solr_core "oxo2-mappings"; then
+    exit 1
+fi
+
+if ! wait_for_solr_core "oxo2-mappingsets"; then
+    exit 1
+fi
+
+run_json2solr() {
+    local input_dir=$1
+    local solr_url=$2
+
+    if ! "$SCRIPT_DIR/json2solr.sh" "$input_dir" "$solr_url"; then
+        echo "Failed to post $input_dir to $solr_url" >&2
+        exit 1
+    fi
+}
+
 start_time=$(date +%s)
 echo  "###################"  json2solr mappings ...
-$SCRIPT_DIR/json2solr.sh $OXO2_DATA/sssom-as-json/mapping http://localhost:8983/solr/oxo2-mappings
+run_json2solr "$OXO2_DATA/sssom-as-json/mapping" "$SOLR_URL/oxo2-mappings"
 echo  "###################"  json2solr mappingSets ...
-$SCRIPT_DIR/json2solr.sh $OXO2_DATA/sssom-as-json/mappingSet http://localhost:8983/solr/oxo2-mappingsets
+run_json2solr "$OXO2_DATA/sssom-as-json/mappingSet" "$SOLR_URL/oxo2-mappingsets"
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
 echo "Writing to Solr took: ${elapsed} seconds"
@@ -111,14 +170,14 @@ echo "Nextflow Parallel Processing: explanations2json took: ${elapsed} seconds"
 
 
 echo  "###################"  json2solr inferred mappings ...
-$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr/mapping http://localhost:8983/solr/oxo2-mappings
+run_json2solr "$OXO2_INFERENCES/solr/mapping" "$SOLR_URL/oxo2-mappings"
 echo  "###################"  json2solr inferred mappingSets ...
-$SCRIPT_DIR/json2solr.sh $OXO2_INFERENCES/solr/mappingSet http://localhost:8983/solr/oxo2-mappingsets
+run_json2solr "$OXO2_INFERENCES/solr/mappingSet" "$SOLR_URL/oxo2-mappingsets"
 sleep 20
 
 
 echo  "################### Stopping solr ..."
-$SOLR_SCRIPT/solr stop
+$SOLR_SCRIPT/solr stop -p 8983
 
 #Important to ensure docker does not experience errors related to write.lock.
 chmod -R 777 $SOLR_HOME/*

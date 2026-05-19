@@ -1,7 +1,7 @@
 imageTag: "dev"
 
 solr:
-  image: "solr:9.9.0"
+  image: "oxo2-solr:9.9.0-slim-java25"
   replicaCount: 1
   service:
     port: 8983
@@ -36,4 +36,3 @@ frontend:
     limits:
       cpu: 500m
       memory: 4Gi
-

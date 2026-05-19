@@ -21,7 +21,11 @@ COPY oxo2-dataload/ /build/oxo2-dataload/
 RUN mvn -B -pl :oxo2-downloader,:oxo2-json2inferences,:oxo2-sssom2json -am -DskipTests install
 
 
-FROM eclipse-temurin:17-jdk-noble
+FROM eclipse-temurin:25-jdk-noble
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates bash tar gzip lsof \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV NXF_VER=25.10.5
 RUN mkdir -p /opt/nextflow  \
@@ -34,10 +38,11 @@ RUN mkdir -p /opt/nemo \
     && curl -L https://github.com/knowsys/nemo/releases/download/v0.10.0/nemo_v0.10.0_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf -
 
 RUN mkdir -p /opt/solr  \
-    && curl -L https://archive.apache.org/dist/solr/solr/9.9.0/solr-9.9.0.tgz | tar --strip-components=1 -C /opt/solr -xzf - \
+    && curl -L https://archive.apache.org/dist/solr/solr/9.9.0/solr-9.9.0-slim.tgz | tar --strip-components=1 -C /opt/solr -xzf - \
     && rm -rf /opt/solr/server/solr/*
 
-RUN addgroup --system oxo && adduser --system --ingroup oxo --home /home/oxo oxo \
+RUN addgroup --system --gid 8389 oxo \
+    && adduser --system --uid 8389 --ingroup oxo --home /home/oxo oxo \
     && mkdir -p /home/oxo \
     && chown -R oxo:oxo /home/oxo
 
@@ -49,6 +54,7 @@ ENV PATH="${PATH}:/opt/nextflow:/opt/nemo:/opt/solr" \
     OXO2_DATA="/mnt/oxo/data" \
     SOLR_HOME="/opt/solr/server/solr" \
     SOLR_SCRIPT="/opt/solr/bin" \
+    SOLR_SECURITY_MANAGER_ENABLED="false" \
     NF_PROFILE="standard" \
     NF_CONTAINER="" \
     NEXTFLOW_DIR="/mnt/oxo/nextflow" \
@@ -104,10 +110,15 @@ COPY --from=builder \
     /build/oxo2-dataload/oxo2-sssom2json/target/oxo2-sssom2json-1.0.0-SNAPSHOT.jar \
     /opt/oxo/oxo2-dataload/oxo2-sssom2json/target/
 
-RUN chown -R oxo:oxo /opt/* && chmod -R 777 /opt/*
+COPY ./oxo2-dataload/docker-entrypoint.sh /usr/local/bin/oxo2-dataload-entrypoint
 
-USER oxo
+RUN chown -R oxo:oxo /opt/* \
+    && chmod -R 777 /opt/* \
+    && chmod +x /usr/local/bin/oxo2-dataload-entrypoint
+
+USER root
 
 WORKDIR /opt/oxo/oxo2-dataload
 
+ENTRYPOINT ["oxo2-dataload-entrypoint"]
 CMD ["bash", "-c", "set -o pipefail; ./loadData.nextflow 2>&1 | tee /mnt/oxo/logs/dataload.logs"]
