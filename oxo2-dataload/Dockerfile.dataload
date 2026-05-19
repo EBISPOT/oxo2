@@ -116,7 +116,7 @@ RUN chown -R oxo:oxo /opt/* \
     && chmod -R 777 /opt/* \
     && chmod +x /usr/local/bin/oxo2-dataload-entrypoint
 
-USER root
+USER oxo
 
 WORKDIR /opt/oxo/oxo2-dataload
 

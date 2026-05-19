@@ -17,6 +17,18 @@ is `my_oxo2_config.json`, set OXO2_CONFIG=./my_oxo2_config.json by running `expo
 will be available at `http://localhost:8080`, the backend at `http://localhost:8081` and Solr at `http://localhost:8983`.
 2. To stop OxO2 run `docker compose down`.
 
+### Upgrading from an earlier OxO2 release
+All OxO2 containers now run as non-root users (`oxo`, UID 8389, for `dataload`/`backend`;
+`solr`, UID 8389, for `solr`; `node`, UID 1000, for `frontend`). If you are upgrading
+from a release where the `dataload` container ran as root, the existing Docker named
+volumes (`data`, `logs`, `solr-data`) are still root-owned and the non-root `dataload`
+container will not be able to write to them. Recreate the volumes once:
+
+```
+docker compose down -v
+docker compose up
+```
+
 ## Running OxO2 locally in Kubernetes using Minikube
 ### Prerequisites
 1. Ensure you have a kubernetes cluster available. E.g. for a local k8s cluster using `minikube` run `minikube start --driver=docker`.  

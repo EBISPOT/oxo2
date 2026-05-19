@@ -19,4 +19,10 @@ COPY . .
 
 RUN chmod +x /opt/oxo2-frontend/entrypoint.dockersh
 
+ENV XDG_CONFIG_HOME=/tmp XDG_DATA_HOME=/tmp
+
+RUN chown -R node:node /opt/oxo2-frontend
+
+USER node
+
 CMD ["/opt/oxo2-frontend/entrypoint.dockersh"]

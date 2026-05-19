@@ -179,6 +179,4 @@ sleep 20
 echo  "################### Stopping solr ..."
 $SOLR_SCRIPT/solr stop -p 8983
 
-#Important to ensure docker does not experience errors related to write.lock.
-chmod -R 777 $SOLR_HOME/*
 cd ..
