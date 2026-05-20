@@ -85,3 +85,16 @@ JSON into the two Solr collections. The Solr client caches `EntityDetails` and `
 
 `solr-config/oxo2-mappings/` and `solr-config/oxo2-mappingsets/` hold the Solr collection configs. `copySolrConfig.sh` deploys 
 them to `$SOLR_HOME` for local runs.
+
+### Input validation
+
+Remote filenames sourced from registries (GitHub API, FTP listings, TAR entries) are untrusted: they flow into
+`Paths.get`/`File` on disk and later into Bash interpolation in the Nextflow scripts, so an unsanitised name
+enables both path traversal and command injection. All three downloaders validate names against the allowlist
+in [`SafeFilename`](oxo2-downloader/src/main/java/uk/ac/ebi/spot/oxo/downloader/util/SafeFilename.java)
+(`[A-Za-z0-9._-]+`, no leading `.` or `-`, no `.`/`..`, max 255 bytes) and skip+log offending files. Every
+`.nf` script re-asserts the same rule on `baseName` at the `channel.fromPath` entry point as defense-in-depth
+against files dropped into `OXO2_DATA/` outside the downloader path, via the shared Groovy class
+[`FilenameGuard`](lib/FilenameGuard.groovy) in `oxo2-dataload/lib/` (Nextflow auto-loads this for all scripts
+run via `loadData.nextflow`; `oxo2-json2inferences/lib` is a symlink to `../lib` for standalone debug runs).
+Keep `FilenameGuard`'s regex in sync with `SafeFilename.PATTERN`.

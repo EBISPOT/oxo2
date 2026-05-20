@@ -9,6 +9,7 @@ import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.spot.oxo.downloader.util.SafeFilename;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -69,7 +70,12 @@ public class GitHubDownloader {
 
             for (Map<String, Object> file : files) {
                 String downloadUrl = (String) file.get("download_url");
-                String fileName = dirPath.resolve((String) file.get("name")).toString();
+                String remoteName = (String) file.get("name");
+                if (!SafeFilename.isSafe(remoteName)) {
+                    logger.error("Skipping GitHub file with unsafe name in {}: {}", destination, remoteName);
+                    continue;
+                }
+                String fileName = dirPath.resolve(remoteName).toString();
                 logger.debug("Creating task to download {} ...", fileName);
                 Future future = executorService.submit(new DownloadGithubFileTask(downloadUrl, fileName));
                 futures.add(future);

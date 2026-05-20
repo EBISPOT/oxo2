@@ -11,6 +11,7 @@ workflow {
 
     registries = Channel.of(config.mapping_registries.toArray())
         .map { registry ->
+            FilenameGuard.assertSafe(registry.id)
             tuple(registry.id, groovy.json.JsonOutput.toJson([mapping_registries: [registry]]))
         }
 

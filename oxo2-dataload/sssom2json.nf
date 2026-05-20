@@ -7,10 +7,13 @@ params.script_dir = params.script_dir ?: "${projectDir}"
 
 workflow {
     tsv_files = channel.fromPath("${params.input_dir}/**.tsv")
+        .map { f -> FilenameGuard.assertSafe(f.name); f }
     // Stage every external metadata YAML alongside each TSV so that the JAR's
     // readExternalMetadata() pass finds the matching .yml file in the workdir.
     // The YAML files are tiny; broadcasting them to every task is cheap.
-    yml_files = channel.fromPath("${params.input_dir}/**.yml").collect().ifEmpty([])
+    yml_files = channel.fromPath("${params.input_dir}/**.yml")
+        .map { f -> FilenameGuard.assertSafe(f.name); f }
+        .collect().ifEmpty([])
 
     SSSOM2JSON(tsv_files, yml_files)
 }

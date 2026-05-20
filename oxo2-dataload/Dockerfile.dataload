@@ -84,6 +84,9 @@ COPY     ./oxo2-dataload/solr-config/ \
 COPY     ./oxo2-dataload/nextflow/ \
          /opt/oxo/oxo2-dataload/nextflow/
 
+COPY     ./oxo2-dataload/lib/ \
+         /opt/oxo/oxo2-dataload/lib/
+
 COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/downloadMappings.sh \
          ./oxo2-dataload/downloadMappings.nextflow \

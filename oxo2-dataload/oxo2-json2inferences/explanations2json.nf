@@ -27,6 +27,7 @@ def resolveSourceMappingSetId = { chainFile ->
 workflow {
     input_files = channel.fromPath("${params.input_dir}/*-chains.json")
         .filter { file -> file.size() > 0 }  // Skip empty files
+        .map { f -> FilenameGuard.assertSafe(f.name); f }
         .map { chainFile ->
             def sourceId = resolveSourceMappingSetId(chainFile)
             tuple(chainFile, sourceId)

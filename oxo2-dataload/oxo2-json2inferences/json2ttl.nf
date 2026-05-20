@@ -8,7 +8,8 @@ params.script_dir = "${System.getenv('SCRIPT_DIR')}"
 workflow {
     // Create a channel of JSON files from the input directory
     json_files = channel.fromPath("${params.input_dir}/*.json")
-    
+        .map { f -> FilenameGuard.assertSafe(f.name); f }
+
     // Process each JSON file individually
     JSON2TTL(json_files)
 }

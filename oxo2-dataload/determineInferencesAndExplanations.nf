@@ -17,10 +17,10 @@ params.rules_definition = file("${projectDir}/oxo2-json2inferences/chain-rules.r
 // Mappings per tracing chunk. Smaller = more parallelism / more per-chunk overhead.
 params.trace_chunk_size = 100000
 
-
 workflow {
     inferred_mappings = channel.fromPath("${params.inferred_mappings_dir}/*.ttl")
         .filter { file -> file.size() > 0 }  // Skip empty files
+        .map { f -> FilenameGuard.assertSafe(f.name); f }
 
     inferences_to_trace = DETERMINE_INFERENCES_TO_TRACE(inferred_mappings)
     chunks = SPLIT_INFERENCES_TO_TRACE(inferences_to_trace).transpose()

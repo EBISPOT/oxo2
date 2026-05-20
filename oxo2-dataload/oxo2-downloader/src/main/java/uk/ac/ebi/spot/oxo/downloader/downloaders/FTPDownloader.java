@@ -14,6 +14,7 @@ import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.spot.oxo.downloader.util.SafeFilename;
 
 public class FTPDownloader {
     private static final Logger logger = LoggerFactory.getLogger(FTPDownloader.class);
@@ -76,7 +77,12 @@ public class FTPDownloader {
             logger.trace("Downloading file {} to {}", remoteFile, destination);
             Collection<Future> futures = new LinkedList<>();
 
-            String fileName = Paths.get(destination, Paths.get(remoteFile).getFileName().toString()).toString();
+            String remoteBase = Paths.get(remoteFile).getFileName().toString();
+            if (!SafeFilename.isSafe(remoteBase)) {
+                logger.error("Skipping FTP file with unsafe name from {}: {}", remoteFile, remoteBase);
+                return Collections.emptyList();
+            }
+            String fileName = Paths.get(destination, remoteBase).toString();
             Future future = executorService.submit(new DownloadFTPFileTask(ftpClient, remoteFile, fileName));
             futures.add(future);
 
@@ -90,8 +96,13 @@ public class FTPDownloader {
             Collection<Future> futures = new LinkedList<>();
 
             for (String file : files) {
+                String fileBaseName = Paths.get(file).getFileName().toString();
+                if (!SafeFilename.isSafe(fileBaseName)) {
+                    logger.error("Skipping FTP file with unsafe name in {}: {}", remoteDirectory, file);
+                    continue;
+                }
                 String remoteFilePath = remoteDirectory + "/" + file;
-                String localFilePath = Paths.get(destination, file).toString();
+                String localFilePath = Paths.get(destination, fileBaseName).toString();
                 Future future = executorService.submit(new DownloadFTPFileTask(ftpClient, remoteFilePath, localFilePath));
                 futures.add(future);
             }

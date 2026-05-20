@@ -15,9 +15,9 @@ params.rules_definition = file("${params.script_dir}/oxo2-json2inferences/chain-
 // Mappings per tracing chunk. Smaller = more parallelism / more per-chunk overhead.
 params.trace_chunk_size = 100000
 
-
 workflow {
     json_files = channel.fromPath("${params.json_input_dir}/*.json")
+        .map { f -> FilenameGuard.assertSafe(f.name); f }
 
     asserted_ttl = JSON2TTL(json_files)
     infer_result = INFER_MAPPINGS(asserted_ttl)

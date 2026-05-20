@@ -5,11 +5,11 @@ params.output_dir = "${System.getenv('OXO2_DATA')}/inferences/inferredMappings"
 params.script_dir = file("${projectDir}")
 params.rules_definition = file("${projectDir}/chain-rules.rls")
 
-
 workflow {
     ttl_files = channel.fromPath("${params.input_dir}/*.ttl")
-        .filter { file -> file.size() > 0 }  // Skip empty files  
-    
+        .filter { file -> file.size() > 0 }  // Skip empty files
+        .map { f -> FilenameGuard.assertSafe(f.name); f }
+
     // Process each TTL file individually
     INFER_MAPPINGS(ttl_files)
 }

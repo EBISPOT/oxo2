@@ -9,6 +9,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.spot.oxo.downloader.util.SafeFilename;
 
 import java.io.*;
 import java.util.Optional;
@@ -91,6 +92,10 @@ public class HTTPDowloader {
 
                 ArchiveEntry entry;
                 while ((entry = tis.getNextEntry()) != null) {
+                    if (!hasOnlySafeSegments(entry.getName())) {
+                        logger.error("Skipping tar entry with unsafe name in {}: {}", tgzFilePath, entry.getName());
+                        continue;
+                    }
                     File outputFile = new File(destinationDir, entry.getName()).getCanonicalFile();
                     if (!outputFile.toPath().startsWith(destinationDir.toPath())) {
                         throw new IOException("Archive entry outside destination directory: " + entry.getName());
@@ -114,6 +119,21 @@ public class HTTPDowloader {
                     }
                 }
             }
+        }
+
+        private static boolean hasOnlySafeSegments(String entryName) {
+            if (entryName == null || entryName.isEmpty()) {
+                return false;
+            }
+            String normalised = entryName.endsWith("/")
+                    ? entryName.substring(0, entryName.length() - 1)
+                    : entryName;
+            for (String segment : normalised.split("/")) {
+                if (!SafeFilename.isSafe(segment)) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private static void copyLocalFile(String sourcePath, String destinationPath) throws IOException {
