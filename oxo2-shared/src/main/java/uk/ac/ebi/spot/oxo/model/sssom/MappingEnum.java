@@ -1,6 +1,7 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
@@ -113,6 +114,7 @@ public enum MappingEnum {
         return field;
     }
 
+    @JsonIgnore
     public String getProperty() {
         return property;
     }

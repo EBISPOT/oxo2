@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.FacetedMappingResponse;
@@ -25,6 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MappingController.class)
@@ -108,5 +110,57 @@ class MappingControllerTest {
 
         mockMvc.perform(get("/api/v2/mappings/DOID:1"))
                 .andExpect(status().isInternalServerError());
+    }
+
+    // ---------- POST /api/v2/mappings/search ----------
+
+    @Test
+    void postSearchDeserializesRequestAndDelegatesToBuilder() throws Exception {
+        when(solrClient.query(any(SolrParams.class), any(Pageable.class)))
+                .thenReturn(emptyResponse());
+
+        String body = """
+                {
+                  "queries": ["UBERON:0000948"],
+                  "queryFields": ["subject_id"],
+                  "columnFilters": [],
+                  "facets": [],
+                  "page": 0,
+                  "size": 10
+                }
+                """;
+
+        mockMvc.perform(post("/api/v2/mappings/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+
+        SolrQuery solrQuery = captureQuery();
+        String escapedTerm = ClientUtils.escapeQueryChars("UBERON:0000948");
+        assertThat(solrQuery.getQuery()).isEqualTo(escapedTerm);
+        assertThat(solrQuery.getParams("qf"))
+                .containsExactly(MappingEnum.SUBJECT_ID.getField());
+        assertThat(solrQuery.get("defType")).isEqualTo("edismax");
+        assertThat(solrQuery.getStart()).isZero();
+        assertThat(solrQuery.getRows()).isEqualTo(10);
+    }
+
+    @Test
+    void postSearchReturns400OnOversizeSize() throws Exception {
+        String body = """
+                {
+                  "queries": ["UBERON:0000948"],
+                  "queryFields": ["subject_id"],
+                  "columnFilters": [],
+                  "facets": [],
+                  "page": 0,
+                  "size": 101
+                }
+                """;
+
+        mockMvc.perform(post("/api/v2/mappings/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
     }
 }

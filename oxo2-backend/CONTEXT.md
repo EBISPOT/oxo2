@@ -75,16 +75,15 @@ Conventions:
   `get("defType")`, `getParams("qf")`). All `construct*` helpers are private — exercise them
   through dispatch in `buildSolrQuery`; do not loosen visibility for tests.
 - **`MappingControllerTest`** uses `@WebMvcTest(MappingController.class)` with
-  `@MockitoBean OxOSolrClient`. A `MockMvc` GET triggers the controller; an
+  `@MockitoBean OxOSolrClient`. A `MockMvc` GET or POST triggers the controller; an
   `ArgumentCaptor<SolrParams>` captures the `SolrQuery` handed to the mocked Solr client.
 - **Escape oracle.** When asserting on escaped Solr strings, compute the expected value
   with `ClientUtils.escapeQueryChars(...)` rather than hard-coding a backslash form. Tests
   stay correct if Solr's escape set changes.
-
-Known limitation: POST `/api/v2/mappings/search` is not covered by MockMvc tests. Jackson
-2.21 (pulled transitively by `solr-solrj`) flakily fails to introspect `MappingEnum` —
-only `getField()` carries `@JsonValue`, but Jackson also detects `getProperty()` as an
-as-value candidate and reports "Multiple 'as-value' properties defined". The error appears
-or not depending on deserializer-cache order across test runs. Until this is resolved
-(adding `@JsonIgnore` to `MappingEnum.getProperty()` or pinning Jackson via
-`dependencyManagement`), cover the POST endpoint indirectly through `SolrQueryBuilderTest`.
+- **`MappingEnum` as-value annotation.** `MappingEnum.getProperty()` carries `@JsonIgnore`
+  so Jackson treats only the `@JsonValue`-annotated `getField()` as the as-value method.
+  Required from Jackson 2.21 onwards (pulled transitively by `solr-solrj`), which flags any
+  public no-arg `String` getter on an enum as an as-value candidate. Camel-case
+  deserialization (`"subjectId"` → `SUBJECT_ID`) still works via the `@JsonCreator`
+  factory `fromString(...)`. Do not remove the `@JsonIgnore` without confirming the
+  POST `/api/v2/mappings/search` MockMvc tests still deserialize their request bodies.
