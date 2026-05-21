@@ -61,3 +61,30 @@ controllers and Solr — this is deliberate ([ADR-0002](../docs/adr/0002-solr-as
 
 - `OXO2_SOLR_HOST` — base URL of the Solr instance the backend queries.
 - The backend serves on port 8081 (see `startBackend.sh` and Docker compose).
+
+### Testing
+
+Tests live under `src/test/java/`. Run with `mvn -pl oxo2-backend test`. No live Solr or
+running backend required — tests are pure JVM.
+
+Conventions:
+
+- **`SolrQueryBuilderTest`** drives the builder through its public entry point
+  `buildSolrQuery(...)` and asserts on the resulting `SolrQuery`'s observable properties
+  (`getQuery()`, `getFilterQueries()`, `getSorts()`, `getFacetFields()`, `getFields()`,
+  `get("defType")`, `getParams("qf")`). All `construct*` helpers are private — exercise them
+  through dispatch in `buildSolrQuery`; do not loosen visibility for tests.
+- **`MappingControllerTest`** uses `@WebMvcTest(MappingController.class)` with
+  `@MockitoBean OxOSolrClient`. A `MockMvc` GET triggers the controller; an
+  `ArgumentCaptor<SolrParams>` captures the `SolrQuery` handed to the mocked Solr client.
+- **Escape oracle.** When asserting on escaped Solr strings, compute the expected value
+  with `ClientUtils.escapeQueryChars(...)` rather than hard-coding a backslash form. Tests
+  stay correct if Solr's escape set changes.
+
+Known limitation: POST `/api/v2/mappings/search` is not covered by MockMvc tests. Jackson
+2.21 (pulled transitively by `solr-solrj`) flakily fails to introspect `MappingEnum` —
+only `getField()` carries `@JsonValue`, but Jackson also detects `getProperty()` as an
+as-value candidate and reports "Multiple 'as-value' properties defined". The error appears
+or not depending on deserializer-cache order across test runs. Until this is resolved
+(adding `@JsonIgnore` to `MappingEnum.getProperty()` or pinning Jackson via
+`dependencyManagement`), cover the POST endpoint indirectly through `SolrQueryBuilderTest`.

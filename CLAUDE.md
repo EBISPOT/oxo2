@@ -28,6 +28,10 @@ See [`oxo2-dataload/CONTEXT.md`](oxo2-dataload/CONTEXT.md) for the pipeline stag
 # Build everything (from repo root)
 mvn clean install
 
+# Backend tests (oxo2-backend has unit tests for the REST controllers and SolrQueryBuilder)
+mvn -pl oxo2-backend test
+# Conventions and known limitations: oxo2-backend/CONTEXT.md § Testing
+
 # Frontend
 cd oxo2-frontend
 npm install

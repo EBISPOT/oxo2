@@ -85,7 +85,8 @@ public class SolrQueryBuilder {
                 .map(f ->
                         textGeneralToNGram.containsKey(MappingEnum.fromString(f.getId()))
                                 ?
-                        textGeneralToNGram.get(MappingEnum.fromString(f.getId())) + ":*" + f.getValue() + "*"
+                        textGeneralToNGram.get(MappingEnum.fromString(f.getId())) + ":*" +
+                                ClientUtils.escapeQueryChars(f.getValue()) + "*"
                                 :
                         MappingEnum.fromString(f.getId()).getField() + ":*" +
                                 ClientUtils.escapeQueryChars(f.getValue()) + "*")
@@ -116,7 +117,6 @@ public class SolrQueryBuilder {
      */
     private static SolrQuery constructSortedFields(SolrQuery solrQuery, MappingSearchRequest mappingSearchRequest) {
         if (mappingSearchRequest.getSortedFields() != null) {
-            ClientUtils.escapeQueryChars(solrQuery.getQuery());
             for (SortedField sortedField : mappingSearchRequest.getSortedFields()) {
                 solrQuery.addSort(
                         textGeneralToDocValues.containsKey(sortedField.getId()) ?

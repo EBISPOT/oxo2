@@ -1,6 +1,7 @@
 package uk.ac.ebi.spot.oxo.backend.controller.api.v2;
 
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +48,8 @@ public class MappingController {
             String decodedSubjectId = URLDecoder.decode(subjectId, StandardCharsets.UTF_8.name());
             Pageable pageable = PageRequest.of(page, size);
             SolrQuery solrQuery = new SolrQuery();
-            solrQuery.setQuery(MappingEnum.SUBJECT_ID.getField() + ":\"" + decodedSubjectId + "\"");
+            solrQuery.setQuery(MappingEnum.SUBJECT_ID.getField()
+                    + ":\"" + ClientUtils.escapeQueryChars(decodedSubjectId) + "\"");
             solrQuery.setStart((int) pageable.getOffset());
             solrQuery.setRows(pageable.getPageSize());
 
