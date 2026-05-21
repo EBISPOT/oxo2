@@ -19,7 +19,8 @@ spec:
         runAsNonRoot: true     
       containers:
         - name: solr
-          image: {{ .Values.solr.image | quote }}
+          image: ghcr.io/ebispot/oxo2-solr:{{ .Values.imageTag }}
+          imagePullPolicy: IfNotPresent
           env:
             - name: SOLR_HOME
               value: /var/solr

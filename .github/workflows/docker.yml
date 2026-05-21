@@ -39,6 +39,9 @@ jobs:
           - image: oxo2-frontend
             dockerfile: ./oxo2-frontend/Dockerfile.frontend
             context: ./oxo2-frontend
+          - image: oxo2-solr
+            dockerfile: ./oxo2-dataload/Dockerfile.solr
+            context: .
 
     steps:
       - name: Checkout repository

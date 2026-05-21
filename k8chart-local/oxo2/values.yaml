@@ -1,7 +1,6 @@
 imageTag: "dev"
 
 solr:
-  image: "oxo2-solr:9.9.0-slim-java25"
   replicaCount: 1
   service:
     port: 8983
