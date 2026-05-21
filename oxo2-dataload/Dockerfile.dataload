@@ -87,6 +87,10 @@ COPY     ./oxo2-dataload/nextflow/ \
 COPY     ./oxo2-dataload/lib/ \
          /opt/oxo/oxo2-dataload/lib/
 
+# Mirror the dev-tree symlink so Nextflow can auto-load lib/FilenameGuard.groovy
+# when launching subdirectory scripts such as oxo2-json2inferences/explanations2json.nf.
+RUN ln -s ../lib /opt/oxo/oxo2-dataload/oxo2-json2inferences/lib
+
 COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/downloadMappings.sh \
          ./oxo2-dataload/downloadMappings.nextflow \
