@@ -22,14 +22,27 @@ import java.nio.charset.StandardCharsets;
 @RestController
 @RequestMapping(path="/api/v2/mappings", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class MappingController {
+    static final int MAX_PAGE_SIZE = 100;
+
     @Autowired
     private OxOSolrClient solrClient;
     private static final Logger logger = LoggerFactory.getLogger(MappingController.class);
+
+    private static ResponseEntity<FacetedMappingResponse> validatePaging(int page, int size) {
+        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
+            return ResponseEntity.badRequest().build();
+        }
+        return null;
+    }
 
     @GetMapping("/{subjectId}")
     public ResponseEntity<FacetedMappingResponse> getMappingsById(@PathVariable String subjectId,
                                                          @RequestParam(defaultValue = "0") int page,
                                                          @RequestParam(defaultValue = "10") int size) {
+        ResponseEntity<FacetedMappingResponse> pagingError = validatePaging(page, size);
+        if (pagingError != null) {
+            return pagingError;
+        }
         try {
             String decodedSubjectId = URLDecoder.decode(subjectId, StandardCharsets.UTF_8.name());
             Pageable pageable = PageRequest.of(page, size);
@@ -51,6 +64,12 @@ public class MappingController {
     public ResponseEntity<FacetedMappingResponse> getMappings(@RequestBody MappingSearchRequest mappingSearchRequest) {
 
         logger.info("Mapping search request: {}", mappingSearchRequest);
+
+        ResponseEntity<FacetedMappingResponse> pagingError =
+                validatePaging(mappingSearchRequest.getPage(), mappingSearchRequest.getSize());
+        if (pagingError != null) {
+            return pagingError;
+        }
 
         Pageable pageable = PageRequest.of(mappingSearchRequest.getPage(), mappingSearchRequest.getSize());
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(mappingSearchRequest, pageable);
