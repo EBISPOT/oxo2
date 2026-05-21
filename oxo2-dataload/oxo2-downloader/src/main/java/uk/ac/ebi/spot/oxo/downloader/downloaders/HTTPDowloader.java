@@ -128,7 +128,14 @@ public class HTTPDowloader {
             String normalised = entryName.endsWith("/")
                     ? entryName.substring(0, entryName.length() - 1)
                     : entryName;
+            if (normalised.isEmpty()) {
+                return false;
+            }
             for (String segment : normalised.split("/")) {
+                if (segment.equals(".")) {
+                    // current-directory marker (e.g. GNU-tar's "./" prefix); no-op, not a traversal
+                    continue;
+                }
                 if (!SafeFilename.isSafe(segment)) {
                     return false;
                 }

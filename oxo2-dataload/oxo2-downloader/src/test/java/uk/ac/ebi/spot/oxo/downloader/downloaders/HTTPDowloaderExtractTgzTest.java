@@ -66,6 +66,42 @@ class HTTPDowloaderExtractTgzTest {
         assertFalse(Files.exists(destDir.resolve("evil dir")));
     }
 
+    @Test
+    void extractTgzAcceptsEntriesWithLeadingDotSlashPrefix(@TempDir Path tmpDir) throws Exception {
+        // Mirrors https://ftp.ebi.ac.uk/pub/databases/spot/ols/latest/sssom.tgz, whose entries
+        // are all written as "./<file>". Regression test for the ols_mappings extraction bug.
+        Path tgz = tmpDir.resolve("ols.tgz");
+        Path destDir = tmpDir.resolve("dest");
+        Files.createDirectories(destDir);
+
+        try (FileOutputStream fileOut = new FileOutputStream(tgz.toFile());
+             GzipCompressorOutputStream gzipOut = new GzipCompressorOutputStream(fileOut);
+             TarArchiveOutputStream tarOut = new TarArchiveOutputStream(gzipOut)) {
+            tarOut.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+            writeDirEntry(tarOut, "./");
+            writeEntry(tarOut, "./sepio.ols.sssom.tsv", "ols-payload");
+            writeEntry(tarOut, "./ontoneo.ols.sssom.tsv", "ols-payload-2");
+            // Traversal attempts must still be rejected even with the leading-dot prefix.
+            writeEntry(tarOut, "./../escape.tsv", "traversal");
+            tarOut.finish();
+        }
+
+        invokeExtractTgz(tgz.toString(), destDir.toString());
+
+        assertTrue(Files.exists(destDir.resolve("sepio.ols.sssom.tsv")),
+                "leading './' prefix must not block extraction");
+        assertTrue(Files.exists(destDir.resolve("ontoneo.ols.sssom.tsv")),
+                "leading './' prefix must not block extraction");
+        assertFalse(Files.exists(destDir.getParent().resolve("escape.tsv")),
+                "'./../' traversal must still be skipped");
+    }
+
+    private static void writeDirEntry(TarArchiveOutputStream tarOut, String name) throws Exception {
+        TarArchiveEntry entry = new TarArchiveEntry(name);
+        tarOut.putArchiveEntry(entry);
+        tarOut.closeArchiveEntry();
+    }
+
     private static void writeEntry(TarArchiveOutputStream tarOut, String name, String body) throws Exception {
         byte[] bytes = body.getBytes();
         TarArchiveEntry entry = new TarArchiveEntry(name);
