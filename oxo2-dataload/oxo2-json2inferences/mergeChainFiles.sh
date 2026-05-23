@@ -21,6 +21,7 @@ if [ ! -f "$JAR_FILE" ]; then
   exit 1
 fi
 
-java -cp "$JAR_FILE" \
+java $JAVA_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=mergechain-heapdump.hprof \
+     -cp "$JAR_FILE" \
      uk.ac.ebi.spot.oxo.inferences.nemo.MainDispatcher mergeChainFiles \
      -o "$OUTPUT_FILE" -i "$@"

@@ -158,7 +158,12 @@ process MERGE_CHAIN_JSON {
 
     script:
     def output_file = "${baseName}-chains.json"
+    // Cap the JVM heap at 80 % of the SLURM allocation. Without -Xmx the JVM
+    // uses ~25 % of host RAM; on large nodes that exceeds the cgroup limit and
+    // SLURM's OOM killer fires before any data is loaded (exit 137).
+    def heap_mb = (task.memory.toMega() * 0.8) as long
     """
+    export JAVA_OPTS="-Xmx${heap_mb}m \${JAVA_OPTS:-}"
     "${params.script_dir}/oxo2-json2inferences/mergeChainFiles.sh" \
         "${output_file}" ${chunk_chains_files}
     """
