@@ -116,11 +116,11 @@ singularity instance start \
     --bind "$SOLR_HOME:/opt/solr/server/solr" \
     --bind "$SOLR_HOME/logs:/opt/solr/server/logs" \
     --bind "$OXO2_DATA/tmp:/tmp" \
-    --env "SOLR_PID_DIR=$SOLR_HOME/pid" \
+    --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" \
     --env "SOLR_JETTY_HOST=$(hostname)" \
     "$SIF_IMAGE" solr_svc
 
-singularity exec instance://solr_svc \
+singularity exec --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" instance://solr_svc \
     /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp -Dsolr.jetty.host=$(hostname)
 sleep 30
 
@@ -242,7 +242,7 @@ echo "Solr indexing verified successfully."
 
 # --- Stop Solr ---
 echo "################### Stopping Solr..."
-singularity exec instance://solr_svc /opt/solr/bin/solr stop || true
+singularity exec --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" instance://solr_svc /opt/solr/bin/solr stop || true
 singularity instance stop solr_svc || true
 
 # Ensure Solr data is accessible
