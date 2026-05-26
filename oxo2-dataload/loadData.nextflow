@@ -103,12 +103,14 @@ wait_for_solr_url() {
 }
 
 wait_for_solr_core() {
+    # /admin/cores?action=STATUS returns 200 before the core has finished
+    # loading, so the first real /update hits "SolrCore is loading" 503s.
+    # Probe the collection's /select endpoint directly — a 200 means the
+    # core is loaded and ready to accept writes.
     local core=$1
-    local status_file="$OXO2_DATA/tmp/${core}-status.json"
 
     for attempt in {1..60}; do
-        if curl -fsS "$SOLR_URL/admin/cores?action=STATUS&core=$core" > "$status_file" \
-            && grep -q "\"$core\"" "$status_file"; then
+        if curl -fsS "$SOLR_URL/$core/select?q=*:*&rows=0" > /dev/null; then
             echo "Solr core $core is ready"
             return 0
         fi
