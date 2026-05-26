@@ -9,6 +9,10 @@
 # -o pipefail: fails complete pipeline on any failure in the pipeline.
 set -euo pipefail
 
+echo "=== OXO2 HPC Dataload Started ==="
+dataload_start_time=$(date +%s)
+echo "OxO2 Dataload started at: $dataload_start_time"
+
 # SCRIPT_DIR is passed via --export from loadData.hpc (BASH_SOURCE unreliable in Slurm)
 : "${SCRIPT_DIR:?SCRIPT_DIR must be set}"
 
@@ -246,3 +250,5 @@ chmod -R 777 "$SOLR_HOME"/* 2>/dev/null || true
 
 echo "=== OXO2 HPC Dataload Complete ==="
 echo "Date: $(date)"
+dataload_end_time=$(date +%s)
+echo "OxO2 Dataload took: $((dataload_end_time - dataload_start_time)/60/60) hours"
