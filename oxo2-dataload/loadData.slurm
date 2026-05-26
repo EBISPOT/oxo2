@@ -251,4 +251,5 @@ chmod -R 777 "$SOLR_HOME"/* 2>/dev/null || true
 echo "=== OXO2 HPC Dataload Complete ==="
 echo "Date: $(date)"
 dataload_end_time=$(date +%s)
-echo "OxO2 Dataload took: $((dataload_end_time - dataload_start_time)/60/60) hours"
+duration=$(echo "scale=2; ($dataload_end_time - dataload_start_time) / 3600" | bc)
+echo "OxO2 Dataload took: $duration hours"
