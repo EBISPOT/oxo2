@@ -120,8 +120,11 @@ singularity instance start \
     --env "SOLR_JETTY_HOST=$(hostname)" \
     "$SIF_IMAGE" solr_svc
 
-singularity exec --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" instance://solr_svc \
-    /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp -Dsolr.jetty.host=$(hostname)
+singularity exec \
+    --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" \
+    --env "SOLR_JETTY_HOST=$(hostname)" \
+    instance://solr_svc \
+    /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp
 sleep 30
 
 # Verify Solr is running
