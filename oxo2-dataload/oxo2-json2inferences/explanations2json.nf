@@ -9,9 +9,9 @@
 params.input_dir = "${System.getenv('OXO2_INFERENCES')}/inferenceChains"
 params.output_dir = "${System.getenv('OXO2_INFERENCES')}/solr"
 params.mapping_set_json_dir = "${System.getenv('OXO2_DATA')}/sssom-as-json/mappingSet"
-def effective_script_dir = params.script_dir ? "${params.script_dir}/oxo2-json2inferences" : "${projectDir}"
 
-def resolveSourceMappingSetId = { chainFile ->
+// Top-level function (not a closure variable) so DSL2 allows it alongside process/workflow.
+def resolveSourceMappingSetId(chainFile) {
     def baseName = chainFile.getBaseName()
     def sourceBaseName = baseName.endsWith('-chains') ? baseName[0..-8] : baseName
     def mappingSetFile = file("${params.mapping_set_json_dir}/${sourceBaseName}.json")
@@ -63,6 +63,7 @@ process EXPLANATIONS_TO_JSON {
     def output_file = "${base}-explained.json"
     def mapping_set_output_file = "${base}-mappingSet.json"
     def solr_url = params.solr_url ?: 'http://localhost:8983/solr'
+    def effective_script_dir = params.script_dir ? "${params.script_dir}/oxo2-json2inferences" : "${projectDir}"
     // Size the JVM heap from the task allocation. Without -Xmx, OpenJDK falls
     // back to ~25% of host RAM, which on large SLURM nodes is far below the
     // configured task.memory and OOMs on big inputs (e.g. snomed at 64 GB
