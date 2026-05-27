@@ -109,28 +109,50 @@ singularity exec --bind "$SOLR_HOME:/opt/solr/server/solr" "$SIF_IMAGE" \
     /opt/oxo/oxo2-dataload/copySolrConfig.sh
 sleep 2
 
-# --- Start Solr as Singularity instance ---
-echo "Starting Solr instance..."
+# --- Start Solr as a backgrounded foreground process ---
+# Run bin/solr in foreground (-f) inside a plain `singularity exec`, then background
+# it from the slurm shell with `&`. Solr's Java is a direct child of singularity exec
+# which is a direct child of this slurm batch step — everything stays inside the slurm
+# cgroup, with no detached sinit. We captured the host PID for cleanup.
+#
+# Previous attempts used `singularity instance start solr_svc` (detached sinit). On
+# this HPC, that pattern was being SIGTERM'd silently — sacct showed no signal at job
+# level, dmesg showed no kernel OOM, and the instance vanished mid-startup (last Solr
+# log line was core-loading; no shutdown message). Whatever was sending the kill only
+# saw the detached sinit. The foreground-and-background pattern keeps Solr visible to
+# slurm's process tracking and out of reach of that path.
+#
+# Bind Jetty to 0.0.0.0 — singularity uses host networking, so all of localhost, the
+# host's loopback, and the FQDN-resolved IPs reach the same listener.
+echo "Starting Solr (foreground via singularity exec, backgrounded by slurm shell)..."
 mkdir -p "$SOLR_HOME/logs" "$SOLR_HOME/pid"
-# Bind Jetty to 0.0.0.0 so Solr listens on every interface (loopback for in-container
-# probes, internal cluster IP for cross-node Nextflow sub-jobs). Earlier attempts bound
-# to $(hostname): the FQDN sometimes resolves to an IP that is not configured on any
-# local interface on the allocated compute node, leaving Jetty bound nowhere reachable
-# while bin/solr's localhost-based wait check still printed "Started Solr server".
-# Compute nodes are firewalled, so 0.0.0.0 does not expose Solr externally.
-singularity instance start \
+singularity exec \
     --bind "$SOLR_HOME:/opt/solr/server/solr" \
     --bind "$SOLR_HOME/logs:/opt/solr/server/logs" \
     --bind "$OXO2_DATA/tmp:/tmp" \
     --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" \
     --env "SOLR_JETTY_HOST=0.0.0.0" \
-    "$SIF_IMAGE" solr_svc
+    "$SIF_IMAGE" \
+    /opt/solr/bin/solr start -f --user-managed -Djava.io.tmpdir=/tmp &
+SOLR_PID=$!
+echo "Solr running as PID $SOLR_PID (singularity exec wrapping bin/solr -f)"
 
-singularity exec \
-    --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" \
-    --env "SOLR_JETTY_HOST=0.0.0.0" \
-    instance://solr_svc \
-    /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp
+# Trap any exit (success, failure, signal) and tear Solr down. Without this, an early
+# `exit 1` from the wait loop would leave Solr running and the host's :8983 listener
+# would block the next slurm allocation on this node.
+cleanup_solr() {
+    if [ -n "${SOLR_PID:-}" ] && kill -0 "$SOLR_PID" 2>/dev/null; then
+        echo "Cleanup: stopping Solr (PID=$SOLR_PID)..."
+        kill -TERM "$SOLR_PID" 2>/dev/null || true
+        for _ in {1..30}; do
+            kill -0 "$SOLR_PID" 2>/dev/null || break
+            sleep 1
+        done
+        kill -KILL "$SOLR_PID" 2>/dev/null || true
+        wait "$SOLR_PID" 2>/dev/null || true
+    fi
+}
+trap cleanup_solr EXIT
 
 # --- Diagnostics: capture per-node network state for intermittent-failure forensics ---
 echo "=== Solr network diagnostics (host) ==="
@@ -154,53 +176,39 @@ elif command -v lsof >/dev/null 2>&1; then
 else
     echo "no ss/lsof on host"
 fi
-echo "--- container view (inside solr_svc) ---"
-SOLR_HOSTNAME="$(hostname)"
-# Split into separate singularity exec calls so one curl failing doesn't take out the
-# rest of the block. Don't suppress stderr — if singularity exec or bash inside fails,
-# we want to see the error message in the slurm log.
-singularity exec instance://solr_svc bash -c "
-    set +e
-    echo 'cat /etc/hosts:'
-    cat /etc/hosts 2>&1 || echo 'n/a'
-    echo '--- cat /etc/resolv.conf ---'
-    cat /etc/resolv.conf 2>&1 || echo 'n/a'
-    echo '--- getent hosts $SOLR_HOSTNAME ---'
-    getent hosts '$SOLR_HOSTNAME' 2>&1 || echo 'no resolution'
-    echo '--- listeners on :8983 ---'
-    if command -v lsof >/dev/null 2>&1; then
-        lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>&1 || echo 'lsof: no listener on :8983'
-    else
-        echo 'lsof not available in container'
-    fi
-" || echo "container info exec returned $?"
-echo "--- curl -v localhost:8983/solr/admin/info/system (in container) ---"
-singularity exec instance://solr_svc curl -v --max-time 5 \
-    'http://localhost:8983/solr/admin/info/system' 2>&1 \
-    || echo "in-container localhost curl returned $?"
-echo "--- curl -v $SOLR_HOSTNAME:8983/solr/admin/info/system (in container) ---"
-singularity exec instance://solr_svc curl -v --max-time 5 \
-    "http://$SOLR_HOSTNAME:8983/solr/admin/info/system" 2>&1 \
-    || echo "in-container FQDN curl returned $?"
+echo "--- SOLR_PID liveness ---"
+# Quick check that the backgrounded singularity exec hasn't already died. If it's
+# already dead at this point, Solr never even got out of bin/solr's preamble.
+if kill -0 "$SOLR_PID" 2>/dev/null; then
+    echo "SOLR_PID $SOLR_PID is alive"
+else
+    echo "WARNING: SOLR_PID $SOLR_PID is already dead before wait loop"
+fi
 echo "=== End Solr network diagnostics ==="
 
 # --- Verify Solr is reachable; abort if not ---
-# Two distinct probes:
-#   1. In-container via localhost — confirms Solr is responding to HTTP at all. Unambiguous
-#      because Solr binds 0.0.0.0, so loopback inside the same network namespace always works.
-#   2. Host-side via $SOLR_URL (FQDN) — confirms cross-node reachability for Nextflow
-#      sub-jobs that will run on other compute nodes.
-# Retry up to ~120s — bin/solr's "Started Solr server" message uses its own localhost
-# probe which can succeed before Jetty has finished accepting general connections.
+# Two distinct probes, both via host curl (singularity uses host networking, so the
+# host shell and the container share the same network namespace — no need to exec
+# into the container for HTTP probes):
+#   1. localhost — confirms Solr is responding to HTTP at all
+#   2. $SOLR_URL (FQDN) — confirms cross-node reachability for Nextflow sub-jobs that
+#      will run on other compute nodes
+# Retry up to ~120s — bin/solr -f starts Solr asynchronously; we have to poll for the
+# listener to come up rather than relying on bin/solr's own wait check (which only
+# applies when running daemonized).
 wait_for_solr_url() {
     local url=$1
     local description=$2
-    local probe_cmd=$3
 
     for attempt in {1..60}; do
-        if eval "$probe_cmd" > /dev/null 2>&1; then
+        if curl -sf "$url" > /dev/null 2>&1; then
             echo "$description is ready at $url (attempt $attempt)"
             return 0
+        fi
+        # Fail fast if Solr's parent process died — no point waiting 120s for a dead Solr.
+        if ! kill -0 "$SOLR_PID" 2>/dev/null; then
+            echo "ERROR: SOLR_PID $SOLR_PID died while waiting for $description" >&2
+            return 1
         fi
         sleep 2
     done
@@ -209,24 +217,28 @@ wait_for_solr_url() {
     return 1
 }
 
-# Dumps whatever we can grab about Solr/instance/JVM state to stderr.
-# Called immediately before exiting on a wait_for_solr_url failure so the slurm .err
-# file always captures forensic state, regardless of which probe failed.
+# Dumps whatever we can grab about Solr/JVM state to stderr. Called immediately before
+# exiting on a wait_for_solr_url failure so the slurm .err file always captures
+# forensic state, regardless of which probe failed.
 dump_failure_state() {
     {
         echo ""
         echo "=== Failure-time diagnostics ==="
-        echo "--- singularity instance list (host) ---"
-        singularity instance list 2>&1 || echo "instance list failed"
+        echo "--- SOLR_PID ($SOLR_PID) alive? ---"
+        if kill -0 "$SOLR_PID" 2>/dev/null; then
+            echo "yes"
+            echo "--- ps for SOLR_PID and descendants ---"
+            ps -o pid,ppid,pgid,sid,stat,etime,comm -g "$SOLR_PID" 2>&1 \
+                || ps -ef 2>&1 | grep -E "(PID|$SOLR_PID|solr|java)" | head -40
+        else
+            echo "NO — Solr's parent process has died"
+        fi
         echo "--- listeners on :8983 (host) ---"
         if command -v ss >/dev/null 2>&1; then
             ss -ltnp 2>/dev/null | grep -E '(:8983|State)' || echo "ss: no listener on :8983"
         elif command -v lsof >/dev/null 2>&1; then
             lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>/dev/null || echo "lsof: no listener on :8983"
         fi
-        echo "--- listeners on :8983 (inside solr_svc container) ---"
-        singularity exec instance://solr_svc lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>&1 \
-            || echo "exec lsof failed (instance dead?)"
         echo "--- Solr PID file ($SOLR_HOME/pid/solr-8983.pid) ---"
         if [ -f "$SOLR_HOME/pid/solr-8983.pid" ]; then
             cat "$SOLR_HOME/pid/solr-8983.pid"
@@ -245,35 +257,22 @@ dump_failure_state() {
         echo "--- last 20 entries of $SOLR_HOME/logs (if any) ---"
         ls -lt "$SOLR_HOME/logs" 2>/dev/null | head -20 || echo "logs dir not readable"
         echo "--- dmesg tail (kernel ring buffer; may require CAP_SYSLOG) ---"
-        # Look for OOM-killer ("Killed process", "Out of memory") or other kernel signals
-        # against the singularity/solr process tree. dmesg may be restricted to root on
-        # hardened hosts (kernel.dmesg_restrict=1); if so the command errors out and we
-        # move on. Filter to recent lines only — full ring buffer is too noisy.
         if dmesg --help 2>&1 | grep -q -- '--ctime'; then
             dmesg --ctime 2>&1 | tail -200 || echo "dmesg failed (restricted?)"
         else
             dmesg 2>&1 | tail -200 || echo "dmesg failed (restricted?)"
         fi
-        echo "--- journalctl recent entries for this user (if accessible) ---"
-        if command -v journalctl >/dev/null 2>&1; then
-            journalctl --user --since "10 minutes ago" --no-pager 2>&1 | tail -100 \
-                || echo "journalctl --user failed (no session journal?)"
-        else
-            echo "journalctl not available"
-        fi
         echo "=== End failure-time diagnostics ==="
     } >&2
 }
 
-if ! wait_for_solr_url "http://localhost:8983/solr/admin/info/system" "Solr (in-container via localhost)" \
-        "singularity exec instance://solr_svc curl -sf \"http://localhost:8983/solr/admin/info/system\""; then
+if ! wait_for_solr_url "http://localhost:8983/solr/admin/info/system" "Solr (via localhost)"; then
     dump_failure_state
-    echo "ERROR: Solr is not responding to HTTP on localhost inside the singularity instance. Aborting." >&2
+    echo "ERROR: Solr is not responding to HTTP on localhost. Aborting." >&2
     exit 1
 fi
 
-if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr (via hostname)" \
-        "curl -sf \"$SOLR_URL/admin/info/system\""; then
+if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr (via hostname)"; then
     dump_failure_state
     echo "ERROR: Solr is not reachable via hostname \"$SOLR_URL\" — Nextflow sub-jobs on other nodes will fail. Aborting." >&2
     exit 1
@@ -333,8 +332,7 @@ sleep 20
 # --- Verify Stage 4: Check documents were indexed ---
 echo "Verifying Solr indexing..."
 for core in oxo2-mappings oxo2-mappingsets; do
-    count=$(singularity exec instance://solr_svc \
-        curl -sf "$SOLR_URL/$core/select?q=*:*&rows=0" \
+    count=$(curl -sf "$SOLR_URL/$core/select?q=*:*&rows=0" \
         | grep -o '"numFound":[0-9]*' | grep -o '[0-9]*')
     echo "  $core: ${count:-0} documents"
     if [ -z "$count" ] || [ "$count" -eq 0 ]; then
@@ -370,8 +368,7 @@ sleep 20
 # --- Verify Stage 7: Check inferred documents were indexed ---
 echo "Verifying Solr indexing..."
 for core in oxo2-mappings oxo2-mappingsets; do
-    count=$(singularity exec instance://solr_svc \
-        curl -sf "$SOLR_URL/$core/select?q=*:*&rows=0" \
+    count=$(curl -sf "$SOLR_URL/$core/select?q=*:*&rows=0" \
         | grep -o '"numFound":[0-9]*' | grep -o '[0-9]*')
     echo "  $core: ${count:-0} documents"
     if [ -z "$count" ] || [ "$count" -eq 0 ]; then
@@ -383,9 +380,10 @@ echo "Solr indexing verified successfully."
 
 
 # --- Stop Solr ---
-echo "################### Stopping Solr..."
-singularity exec --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" instance://solr_svc /opt/solr/bin/solr stop || true
-singularity instance stop solr_svc || true
+# Cleanup is handled by the EXIT trap (cleanup_solr) installed near the top of the
+# script — it sends SIGTERM, waits up to 30s, then SIGKILL. No explicit stop needed
+# here, and explicitly running it would race with the trap.
+echo "################### Solr stop handled by EXIT trap"
 
 # Ensure Solr data is accessible
 chmod -R 777 "$SOLR_HOME"/* 2>/dev/null || true
