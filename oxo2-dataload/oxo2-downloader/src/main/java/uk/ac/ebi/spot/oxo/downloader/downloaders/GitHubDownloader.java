@@ -133,13 +133,27 @@ public class GitHubDownloader {
 
         logger.debug("apiUrl = {}", apiUrl);
 
+        String hostname;
+        try {
+            hostname = java.net.InetAddress.getLocalHost().getHostName();
+        } catch (java.net.UnknownHostException e) {
+            hostname = "unknown";
+        }
+        logger.info("[diag] GitHub Contents API request from host={} url={}", hostname, apiUrl);
+
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpGet request = new HttpGet(apiUrl);
             request.addHeader("Accept", "application/vnd.github.v3+json");
 
             try (CloseableHttpResponse response = httpClient.execute(request)) {
+                int statusCode = response.getCode();
+                String body = EntityUtils.toString(response.getEntity());
+                String bodyForLog = body == null ? "<null>" :
+                        (body.length() > 500 ? body.substring(0, 500) + "...[truncated, total len=" + body.length() + "]" : body);
+                logger.info("[diag] GitHub Contents API response from host={} url={} status={} body={}",
+                        hostname, apiUrl, statusCode, bodyForLog);
                 ObjectMapper mapper = new ObjectMapper();
-                return mapper.readValue(EntityUtils.toString(response.getEntity()), List.class);
+                return mapper.readValue(body, List.class);
             }
         }
     }
