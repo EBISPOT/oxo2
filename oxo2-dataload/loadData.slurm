@@ -154,19 +154,36 @@ elif command -v lsof >/dev/null 2>&1; then
 else
     echo "no ss/lsof on host"
 fi
-echo "--- listeners on :8983 (inside solr_svc container) ---"
-singularity exec instance://solr_svc bash -c '
+echo "--- container view (inside solr_svc) ---"
+SOLR_HOSTNAME="$(hostname)"
+singularity exec instance://solr_svc bash -c "
+    echo 'cat /etc/hosts:'
+    cat /etc/hosts 2>/dev/null || echo 'n/a'
+    echo '--- cat /etc/resolv.conf ---'
+    cat /etc/resolv.conf 2>/dev/null || echo 'n/a'
+    echo '--- getent hosts $SOLR_HOSTNAME ---'
+    getent hosts '$SOLR_HOSTNAME' 2>/dev/null || echo 'no resolution'
+    echo '--- listeners on :8983 ---'
     if command -v lsof >/dev/null 2>&1; then
-        lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>/dev/null || echo "lsof: no listener on :8983"
+        lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>/dev/null || echo 'lsof: no listener on :8983'
     else
-        echo "lsof not available in container"
+        echo 'lsof not available in container'
     fi
-' 2>/dev/null || echo "diagnostic exec failed"
+    echo '--- curl -v localhost:8983/solr/admin/info/system ---'
+    curl -v --max-time 5 'http://localhost:8983/solr/admin/info/system' 2>&1 | head -40 || true
+    echo '--- curl -v <hostname>:8983/solr/admin/info/system ---'
+    curl -v --max-time 5 'http://$SOLR_HOSTNAME:8983/solr/admin/info/system' 2>&1 | head -40 || true
+" 2>/dev/null || echo "diagnostic exec failed"
 echo "=== End Solr network diagnostics ==="
 
 # --- Verify Solr is reachable; abort if not ---
-# Retry up to ~120s — Solr's "Started Solr server" message uses bin/solr's localhost
-# probe, which can succeed before Jetty has finished binding to the requested host.
+# Two distinct probes:
+#   1. In-container via localhost — confirms Solr is responding to HTTP at all. Unambiguous
+#      because Solr binds 0.0.0.0, so loopback inside the same network namespace always works.
+#   2. Host-side via $SOLR_URL (FQDN) — confirms cross-node reachability for Nextflow
+#      sub-jobs that will run on other compute nodes.
+# Retry up to ~120s — bin/solr's "Started Solr server" message uses its own localhost
+# probe which can succeed before Jetty has finished accepting general connections.
 wait_for_solr_url() {
     local url=$1
     local description=$2
@@ -184,9 +201,9 @@ wait_for_solr_url() {
     return 1
 }
 
-if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr (in-container)" \
-        "singularity exec instance://solr_svc curl -sf \"$SOLR_URL/admin/info/system\""; then
-    echo "ERROR: Solr is not reachable from inside the singularity instance. Aborting." >&2
+if ! wait_for_solr_url "http://localhost:8983/solr/admin/info/system" "Solr (in-container via localhost)" \
+        "singularity exec instance://solr_svc curl -sf \"http://localhost:8983/solr/admin/info/system\""; then
+    echo "ERROR: Solr is not responding to HTTP on localhost inside the singularity instance. Aborting." >&2
     exit 1
 fi
 
