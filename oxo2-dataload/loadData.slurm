@@ -112,32 +112,88 @@ sleep 2
 # --- Start Solr as Singularity instance ---
 echo "Starting Solr instance..."
 mkdir -p "$SOLR_HOME/logs" "$SOLR_HOME/pid"
+# Bind Jetty to 0.0.0.0 so Solr listens on every interface (loopback for in-container
+# probes, internal cluster IP for cross-node Nextflow sub-jobs). Earlier attempts bound
+# to $(hostname): the FQDN sometimes resolves to an IP that is not configured on any
+# local interface on the allocated compute node, leaving Jetty bound nowhere reachable
+# while bin/solr's localhost-based wait check still printed "Started Solr server".
+# Compute nodes are firewalled, so 0.0.0.0 does not expose Solr externally.
 singularity instance start \
     --bind "$SOLR_HOME:/opt/solr/server/solr" \
     --bind "$SOLR_HOME/logs:/opt/solr/server/logs" \
     --bind "$OXO2_DATA/tmp:/tmp" \
     --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" \
-    --env "SOLR_JETTY_HOST=$(hostname)" \
+    --env "SOLR_JETTY_HOST=0.0.0.0" \
     "$SIF_IMAGE" solr_svc
 
 singularity exec \
     --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" \
-    --env "SOLR_JETTY_HOST=$(hostname)" \
+    --env "SOLR_JETTY_HOST=0.0.0.0" \
     instance://solr_svc \
     /opt/solr/bin/solr start --user-managed -Djava.io.tmpdir=/tmp
-sleep 30
 
-# Verify Solr is running
-if singularity exec instance://solr_svc curl -sf "$SOLR_URL/admin/info/system" > /dev/null 2>&1; then
-    echo "Solr started successfully on $(hostname)"
+# --- Diagnostics: capture per-node network state for intermittent-failure forensics ---
+echo "=== Solr network diagnostics (host) ==="
+echo "hostname        : $(hostname)"
+echo "hostname -f     : $(hostname -f 2>/dev/null || echo n/a)"
+echo "hostname -I     : $(hostname -I 2>/dev/null || echo n/a)"
+echo "getent hosts    : $(getent hosts "$(hostname)" 2>/dev/null || echo 'no resolution')"
+echo "--- /etc/hosts ---"
+cat /etc/hosts 2>/dev/null || echo "n/a"
+echo "--- ip addr (host) ---"
+if command -v ip >/dev/null 2>&1; then
+    ip -o addr show 2>/dev/null | awk '{print $2, $3, $4}'
 else
-    echo "WARNING: Solr may not be ready on $(hostname), continuing..."
+    echo "ip command not available"
 fi
-# Verify Solr is reachable via hostname (needed for Nextflow sub-jobs on other nodes)
-if curl -sf "$SOLR_URL/admin/info/system" > /dev/null 2>&1; then
-    echo "Solr reachable via hostname: $SOLR_URL"
+echo "--- listeners on :8983 (host) ---"
+if command -v ss >/dev/null 2>&1; then
+    ss -ltnp 2>/dev/null | grep -E '(:8983|State)' || echo "ss: no listener on :8983"
+elif command -v lsof >/dev/null 2>&1; then
+    lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>/dev/null || echo "lsof: no listener on :8983"
 else
-    echo "WARNING: Solr NOT reachable via hostname: $SOLR_URL"
+    echo "no ss/lsof on host"
+fi
+echo "--- listeners on :8983 (inside solr_svc container) ---"
+singularity exec instance://solr_svc bash -c '
+    if command -v lsof >/dev/null 2>&1; then
+        lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>/dev/null || echo "lsof: no listener on :8983"
+    else
+        echo "lsof not available in container"
+    fi
+' 2>/dev/null || echo "diagnostic exec failed"
+echo "=== End Solr network diagnostics ==="
+
+# --- Verify Solr is reachable; abort if not ---
+# Retry up to ~120s — Solr's "Started Solr server" message uses bin/solr's localhost
+# probe, which can succeed before Jetty has finished binding to the requested host.
+wait_for_solr_url() {
+    local url=$1
+    local description=$2
+    local probe_cmd=$3
+
+    for attempt in {1..60}; do
+        if eval "$probe_cmd" > /dev/null 2>&1; then
+            echo "$description is ready at $url (attempt $attempt)"
+            return 0
+        fi
+        sleep 2
+    done
+
+    echo "ERROR: $description did not become ready at $url after 120s" >&2
+    return 1
+}
+
+if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr (in-container)" \
+        "singularity exec instance://solr_svc curl -sf \"$SOLR_URL/admin/info/system\""; then
+    echo "ERROR: Solr is not reachable from inside the singularity instance. Aborting." >&2
+    exit 1
+fi
+
+if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr (via hostname)" \
+        "curl -sf \"$SOLR_URL/admin/info/system\""; then
+    echo "ERROR: Solr is not reachable via hostname \"$SOLR_URL\" — Nextflow sub-jobs on other nodes will fail. Aborting." >&2
+    exit 1
 fi
 
 # --- Stage 1: Download mappings ---
