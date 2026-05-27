@@ -156,24 +156,32 @@ else
 fi
 echo "--- container view (inside solr_svc) ---"
 SOLR_HOSTNAME="$(hostname)"
+# Split into separate singularity exec calls so one curl failing doesn't take out the
+# rest of the block. Don't suppress stderr — if singularity exec or bash inside fails,
+# we want to see the error message in the slurm log.
 singularity exec instance://solr_svc bash -c "
+    set +e
     echo 'cat /etc/hosts:'
-    cat /etc/hosts 2>/dev/null || echo 'n/a'
+    cat /etc/hosts 2>&1 || echo 'n/a'
     echo '--- cat /etc/resolv.conf ---'
-    cat /etc/resolv.conf 2>/dev/null || echo 'n/a'
+    cat /etc/resolv.conf 2>&1 || echo 'n/a'
     echo '--- getent hosts $SOLR_HOSTNAME ---'
-    getent hosts '$SOLR_HOSTNAME' 2>/dev/null || echo 'no resolution'
+    getent hosts '$SOLR_HOSTNAME' 2>&1 || echo 'no resolution'
     echo '--- listeners on :8983 ---'
     if command -v lsof >/dev/null 2>&1; then
-        lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>/dev/null || echo 'lsof: no listener on :8983'
+        lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>&1 || echo 'lsof: no listener on :8983'
     else
         echo 'lsof not available in container'
     fi
-    echo '--- curl -v localhost:8983/solr/admin/info/system ---'
-    curl -v --max-time 5 'http://localhost:8983/solr/admin/info/system' 2>&1 | head -40 || true
-    echo '--- curl -v <hostname>:8983/solr/admin/info/system ---'
-    curl -v --max-time 5 'http://$SOLR_HOSTNAME:8983/solr/admin/info/system' 2>&1 | head -40 || true
-" 2>/dev/null || echo "diagnostic exec failed"
+" || echo "container info exec returned $?"
+echo "--- curl -v localhost:8983/solr/admin/info/system (in container) ---"
+singularity exec instance://solr_svc curl -v --max-time 5 \
+    'http://localhost:8983/solr/admin/info/system' 2>&1 \
+    || echo "in-container localhost curl returned $?"
+echo "--- curl -v $SOLR_HOSTNAME:8983/solr/admin/info/system (in container) ---"
+singularity exec instance://solr_svc curl -v --max-time 5 \
+    "http://$SOLR_HOSTNAME:8983/solr/admin/info/system" 2>&1 \
+    || echo "in-container FQDN curl returned $?"
 echo "=== End Solr network diagnostics ==="
 
 # --- Verify Solr is reachable; abort if not ---
@@ -201,14 +209,55 @@ wait_for_solr_url() {
     return 1
 }
 
+# Dumps whatever we can grab about Solr/instance/JVM state to stderr.
+# Called immediately before exiting on a wait_for_solr_url failure so the slurm .err
+# file always captures forensic state, regardless of which probe failed.
+dump_failure_state() {
+    {
+        echo ""
+        echo "=== Failure-time diagnostics ==="
+        echo "--- singularity instance list (host) ---"
+        singularity instance list 2>&1 || echo "instance list failed"
+        echo "--- listeners on :8983 (host) ---"
+        if command -v ss >/dev/null 2>&1; then
+            ss -ltnp 2>/dev/null | grep -E '(:8983|State)' || echo "ss: no listener on :8983"
+        elif command -v lsof >/dev/null 2>&1; then
+            lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>/dev/null || echo "lsof: no listener on :8983"
+        fi
+        echo "--- listeners on :8983 (inside solr_svc container) ---"
+        singularity exec instance://solr_svc lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>&1 \
+            || echo "exec lsof failed (instance dead?)"
+        echo "--- Solr PID file ($SOLR_HOME/pid/solr-8983.pid) ---"
+        if [ -f "$SOLR_HOME/pid/solr-8983.pid" ]; then
+            cat "$SOLR_HOME/pid/solr-8983.pid"
+        else
+            echo "no solr-8983.pid file"
+        fi
+        echo "--- JVM crash files ($SOLR_HOME/logs/jvm_crash_*.log, hs_err_*.log) ---"
+        ls -la "$SOLR_HOME/logs"/jvm_crash_*.log "$SOLR_HOME/logs"/hs_err_*.log 2>/dev/null \
+            || echo "no JVM crash/hs_err files"
+        echo "--- tail -n 100 $SOLR_HOME/logs/solr.log ---"
+        if [ -f "$SOLR_HOME/logs/solr.log" ]; then
+            tail -n 100 "$SOLR_HOME/logs/solr.log"
+        else
+            echo "$SOLR_HOME/logs/solr.log does not exist"
+        fi
+        echo "--- last 20 entries of $SOLR_HOME/logs (if any) ---"
+        ls -lt "$SOLR_HOME/logs" 2>/dev/null | head -20 || echo "logs dir not readable"
+        echo "=== End failure-time diagnostics ==="
+    } >&2
+}
+
 if ! wait_for_solr_url "http://localhost:8983/solr/admin/info/system" "Solr (in-container via localhost)" \
         "singularity exec instance://solr_svc curl -sf \"http://localhost:8983/solr/admin/info/system\""; then
+    dump_failure_state
     echo "ERROR: Solr is not responding to HTTP on localhost inside the singularity instance. Aborting." >&2
     exit 1
 fi
 
 if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr (via hostname)" \
         "curl -sf \"$SOLR_URL/admin/info/system\""; then
+    dump_failure_state
     echo "ERROR: Solr is not reachable via hostname \"$SOLR_URL\" — Nextflow sub-jobs on other nodes will fail. Aborting." >&2
     exit 1
 fi
