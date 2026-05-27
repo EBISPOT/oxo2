@@ -244,6 +244,23 @@ dump_failure_state() {
         fi
         echo "--- last 20 entries of $SOLR_HOME/logs (if any) ---"
         ls -lt "$SOLR_HOME/logs" 2>/dev/null | head -20 || echo "logs dir not readable"
+        echo "--- dmesg tail (kernel ring buffer; may require CAP_SYSLOG) ---"
+        # Look for OOM-killer ("Killed process", "Out of memory") or other kernel signals
+        # against the singularity/solr process tree. dmesg may be restricted to root on
+        # hardened hosts (kernel.dmesg_restrict=1); if so the command errors out and we
+        # move on. Filter to recent lines only — full ring buffer is too noisy.
+        if dmesg --help 2>&1 | grep -q -- '--ctime'; then
+            dmesg --ctime 2>&1 | tail -200 || echo "dmesg failed (restricted?)"
+        else
+            dmesg 2>&1 | tail -200 || echo "dmesg failed (restricted?)"
+        fi
+        echo "--- journalctl recent entries for this user (if accessible) ---"
+        if command -v journalctl >/dev/null 2>&1; then
+            journalctl --user --since "10 minutes ago" --no-pager 2>&1 | tail -100 \
+                || echo "journalctl --user failed (no session journal?)"
+        else
+            echo "journalctl not available"
+        fi
         echo "=== End failure-time diagnostics ==="
     } >&2
 }
