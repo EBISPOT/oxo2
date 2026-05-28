@@ -2,7 +2,6 @@ package uk.ac.ebi.spot.oxo.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.spot.oxo.model.sssom.CurieMap;
 
 import java.net.URI;
 import java.util.*;
