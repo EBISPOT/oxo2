@@ -1,5 +1,25 @@
+stages:
+  - test
+  - secret-detection
 include:
+  - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
   - template: Jobs/SAST.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
 
 variables:
-  GITLAB_ADVANCED_SAST_ENABLED: 'true'  
+  DS_ENFORCE_NEW_ANALYZER: 'true'
+  GITLAB_ADVANCED_SAST_ENABLED: 'true'
+
+sast:
+  stage: test
+  artifacts:
+    name: sast
+    paths:
+      - gl-sast-report.json
+    reports:
+      sast: gl-sast-report.json
+    when: always
+
+secret_detection:
+  stage: secret-detection
+
