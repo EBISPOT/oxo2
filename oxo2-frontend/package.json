@@ -13,7 +13,7 @@
     "@dagrejs/dagre": "^1.1.5",
     "@heroicons/react": "^2.2.0",
     "@tailwindcss/vite": "^4.0.15",
-    "@tanstack/react-query": "^5.81.5",
+    "@tanstack/react-query": "^5.100.14",
     "@xyflow/react": "^12.8.4",
     "material-react-table": "^3.2.1",
     "react": "^19.0.0",
@@ -27,10 +27,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
-    "@types/react": "^19.0.10",
+    "@types/react": "^19.2.15",
     "@types/react-dom": "^19.0.4",
-    "@typescript-eslint/eslint-plugin": "^8.29.0",
-    "@typescript-eslint/parser": "^8.29.0",
+    "@typescript-eslint/eslint-plugin": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.0",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.21.0",
     "eslint-plugin-react": "^7.37.4",
@@ -38,7 +38,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.29.0",
+    "typescript-eslint": "^8.60.0",
     "vite": "^6.4.2"
   }
 }
