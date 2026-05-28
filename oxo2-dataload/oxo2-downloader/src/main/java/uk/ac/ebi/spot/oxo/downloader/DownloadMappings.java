@@ -85,7 +85,6 @@ public class DownloadMappings {
 
         if (mappingRegistry.getGithubRepository().isPresent()) {
             future = executorService.submit(new GitHubDownloader.DownloadGithubDirectoryTask(
-                    executorService,
                     mappingRegistry.getGithubRepository().get(),
                     mappingRegistry.getDirectory().get(),
                     downloadDirectory));

@@ -1,15 +1,12 @@
 package uk.ac.ebi.spot.oxo.downloader.downloaders;
 
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.spot.oxo.downloader.util.SafeFilename;
+import uk.ac.ebi.spot.oxo.downloader.util.TgzExtractor;
 
 import java.io.*;
 import java.util.Optional;
@@ -53,7 +50,7 @@ public class HTTPDowloader {
                 }
 
                 if (extension.isPresent() && (extension.get().equals("tgz") || extension.get().equals("tar.gz"))) {
-                    extractTgz(fileWithExtension, destination);
+                    TgzExtractor.extract(fileWithExtension, destination);
                 }
             } catch (Exception e) {
                 logger.error("Error downloading file from URL = {}, destination = {}, extension = {}, fileWithExtension = {}",
@@ -82,65 +79,6 @@ public class HTTPDowloader {
                     out.write(buffer, 0, count);
                 }
             }
-        }
-
-        private static void extractTgz(String tgzFilePath, String destDir) throws IOException {
-            File destinationDir = new File(destDir).getCanonicalFile();
-            try (FileInputStream fis = new FileInputStream(tgzFilePath);
-                 GzipCompressorInputStream gis = new GzipCompressorInputStream(fis);
-                 TarArchiveInputStream tis = new TarArchiveInputStream(gis)) {
-
-                ArchiveEntry entry;
-                while ((entry = tis.getNextEntry()) != null) {
-                    if (!hasOnlySafeSegments(entry.getName())) {
-                        logger.error("Skipping tar entry with unsafe name in {}: {}", tgzFilePath, entry.getName());
-                        continue;
-                    }
-                    File outputFile = new File(destinationDir, entry.getName()).getCanonicalFile();
-                    if (!outputFile.toPath().startsWith(destinationDir.toPath())) {
-                        throw new IOException("Archive entry outside destination directory: " + entry.getName());
-                    }
-                    if (entry.isDirectory()) {
-                        if (!outputFile.exists()) {
-                            outputFile.mkdirs();
-                        }
-                    } else {
-                        File parent = outputFile.getParentFile();
-                        if (parent != null && !parent.exists()) {
-                            parent.mkdirs();
-                        }
-                        try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-                            byte[] buffer = new byte[1024];
-                            int len;
-                            while ((len = tis.read(buffer)) != -1) {
-                                fos.write(buffer, 0, len);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        private static boolean hasOnlySafeSegments(String entryName) {
-            if (entryName == null || entryName.isEmpty()) {
-                return false;
-            }
-            String normalised = entryName.endsWith("/")
-                    ? entryName.substring(0, entryName.length() - 1)
-                    : entryName;
-            if (normalised.isEmpty()) {
-                return false;
-            }
-            for (String segment : normalised.split("/")) {
-                if (segment.equals(".")) {
-                    // current-directory marker (e.g. GNU-tar's "./" prefix); no-op, not a traversal
-                    continue;
-                }
-                if (!SafeFilename.isSafe(segment)) {
-                    return false;
-                }
-            }
-            return true;
         }
 
         private static void copyLocalFile(String sourcePath, String destinationPath) throws IOException {

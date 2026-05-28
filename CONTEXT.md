@@ -67,6 +67,9 @@ and `oxo2-mappingsets`. See [ADR-0002](docs/adr/0002-solr-as-sole-data-store.md)
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **OxO2 is backwards compatible with OxO v1** — API surface answers v1's questions even where SSSOM terms are richer. 
 See [ADR-0004](docs/adr/0004-backwards-compatible-with-oxo-v1.md). Affects `oxo2-backend` (API design) and `oxo2-frontend` (documentation surface).
+- **GitHub registries are fetched via archive tarball** — GitHub mapping registries download as the default-branch archive 
+tarball over plain HTTP (no GitHub Contents API, no token), extracting only the configured directory; avoids the shared-NAT 
+60 req/hr API rate limit. See [ADR-0007](docs/adr/0007-github-registries-via-archive-tarball.md). Affects `oxo2-dataload` (downloader).
 - **Per-set chunked tracing** — when computing explanation chains, the per-set "facts to trace" file is split into chunks 
 (default `trace_chunk_size = 100 000`, in `inferAndExplainMappings.nf`) and traced in parallel. Tactical parallelism choice, not an ADR.
 

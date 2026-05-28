@@ -56,7 +56,9 @@ Single execution path: `loadData.nextflow` invokes the stages below in order. Pe
 `inferMappings.sh`) exist for local debugging only — they are *not* part of the production pipeline (see [ADR-0003](../docs/adr/0003-nextflow-as-sole-dataload-path.md)).
 
 **1. Download** — `downloadMappings.nf` (calling logic in `oxo2-downloader`). Reads the SSSOM source list from `OXO2_CONFIG` 
-(an `oxo-config*.json` file) and downloads each mapping set's TSV to the dataload working directory.
+(an `oxo-config*.json` file) and downloads each mapping set's TSV to the dataload working directory. A registry may be a direct
+`url`, an `ftp_server`, or a `github_repository`; GitHub registries are fetched as the default-branch archive tarball and only the
+configured `directory` is extracted — no GitHub API, see [ADR-0007](../docs/adr/0007-github-registries-via-archive-tarball.md).
 
 **2. SSSOM → JSON** — `sssom2json.nf` (logic in `oxo2-sssom2json`). Parses each SSSOM TSV into OxO2's JSON representation of 
 `MappingSet` and its `Mapping`s, using the types in `oxo2-shared`.
@@ -88,11 +90,16 @@ them to `$SOLR_HOME` for local runs.
 
 ### Input validation
 
-Remote filenames sourced from registries (GitHub API, FTP listings, TAR entries) are untrusted: they flow into
-`Paths.get`/`File` on disk and later into Bash interpolation in the Nextflow scripts, so an unsanitised name
-enables both path traversal and command injection. All three downloaders validate names against the allowlist
-in [`SafeFilename`](oxo2-downloader/src/main/java/uk/ac/ebi/spot/oxo/downloader/util/SafeFilename.java)
-(`[A-Za-z0-9._-]+`, no leading `.` or `-`, no `.`/`..`, max 255 bytes) and skip+log offending files. Every
+Remote filenames sourced from registries (FTP listings, and TAR entries — including the GitHub archive
+tarballs fetched per [ADR-0007](../docs/adr/0007-github-registries-via-archive-tarball.md)) are untrusted:
+they flow into `Paths.get`/`File` on disk and later into Bash interpolation in the Nextflow scripts, so an
+unsanitised name enables both path traversal and command injection. All three downloaders validate names
+against the allowlist in
+[`SafeFilename`](oxo2-downloader/src/main/java/uk/ac/ebi/spot/oxo/downloader/util/SafeFilename.java)
+(`[A-Za-z0-9._-]+`, no leading `.` or `-`, no `.`/`..`, max 255 bytes) and skip+log offending files. The
+GitHub and HTTP downloaders share the tar-extraction guard (per-segment `SafeFilename` check plus a
+canonical-path containment check) in
+[`TgzExtractor`](oxo2-downloader/src/main/java/uk/ac/ebi/spot/oxo/downloader/util/TgzExtractor.java). Every
 `.nf` script re-asserts the same rule on `baseName` at the `channel.fromPath` entry point as defense-in-depth
 against files dropped into `OXO2_DATA/` outside the downloader path, via the shared Groovy class
 [`FilenameGuard`](lib/FilenameGuard.groovy) in `oxo2-dataload/lib/` (Nextflow auto-loads this for all scripts

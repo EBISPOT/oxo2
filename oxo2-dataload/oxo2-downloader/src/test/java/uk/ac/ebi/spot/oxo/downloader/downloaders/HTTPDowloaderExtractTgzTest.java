@@ -5,11 +5,10 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import uk.ac.ebi.spot.oxo.downloader.util.TgzExtractor;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.FileOutputStream;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -112,9 +111,6 @@ class HTTPDowloaderExtractTgzTest {
     }
 
     private static void invokeExtractTgz(String tgzFilePath, String destDir) throws Exception {
-        Method method = HTTPDowloader.HTTPDownloadTask.class
-                .getDeclaredMethod("extractTgz", String.class, String.class);
-        method.setAccessible(true);
-        method.invoke(null, tgzFilePath, destDir);
+        TgzExtractor.extract(tgzFilePath, destDir);
     }
 }
