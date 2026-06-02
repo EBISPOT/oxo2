@@ -4,6 +4,11 @@ metadata:
   name: {{ .Release.Name }}-solr
 spec:
   replicas: {{ .Values.solr.replicaCount }}
+  # Recreate (not the default RollingUpdate): the Solr PVC is ReadWriteOnce, so a
+  # rolling update would try to start the new pod while the old one still holds the
+  # volume and deadlock. Recreate frees the volume before the replacement starts.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: {{ .Release.Name }}-solr
