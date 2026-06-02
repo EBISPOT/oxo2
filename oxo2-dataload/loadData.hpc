@@ -39,8 +39,12 @@ fi
 # --- Configurable Slurm resources ---
 # 32G: main batch step hosts the Solr singularity instance, the Nextflow driver JVM,
 # and (when a stage runs inline) the worker JVM. 16G was not enough for NCBI taxon.
-HPC_TIME="${HPC_TIME:-72:00:00}"
+HPC_TIME="${HPC_TIME:-24:00:00}"
 HPC_MEM="${HPC_MEM:-32G}"
+# 8 CPUs: the main batch step runs Solr, the Nextflow driver, and inline json2solr indexing,
+# and at the end compresses $SOLR_HOME with pigz (parallel gzip), which scales with cores.
+# pigz is run with -p $SLURM_CPUS_PER_TASK in loadData.slurm, so it tracks this value.
+HPC_CPUS="${HPC_CPUS:-8}"
 
 # --- Create log directory ---
 mkdir -p "$SLURM_LOGS"
@@ -65,6 +69,7 @@ echo "Remote image digest: ${REMOTE_DIGEST:-not available}"
 SBATCH_ARGS=(
     --time="$HPC_TIME"
     --mem="$HPC_MEM"
+    --cpus-per-task="$HPC_CPUS"
     --output="$SLURM_LOGS/oxo2-dataload-%j.out"
     --error="$SLURM_LOGS/oxo2-dataload-%j.err"
     --export="SCRIPT_DIR=$SCRIPT_DIR,OXO2_DATA=$OXO2_DATA,OXO2_CONFIG=$OXO2_CONFIG,NEXTFLOW_DIR=$NEXTFLOW_DIR,SOLR_HOME=$SOLR_HOME,NF_CONTAINER=$NF_CONTAINER,SIF_DIGEST_FILE=$SIF_DIGEST_FILE${HPC_PATH:+,HPC_PATH=$HPC_PATH}${REMOTE_DIGEST:+,REMOTE_DIGEST=$REMOTE_DIGEST}"
@@ -78,6 +83,7 @@ fi
 echo "Submitting OXO2 dataload job..."
 echo "  Time limit: $HPC_TIME"
 echo "  Memory: $HPC_MEM"
+echo "  CPUs: $HPC_CPUS"
 echo "  Container: $NF_CONTAINER"
 echo "  Data dir: $OXO2_DATA"
 echo "  Config: $OXO2_CONFIG"

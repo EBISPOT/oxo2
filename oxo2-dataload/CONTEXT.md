@@ -45,6 +45,10 @@ Java sub-modules depend on `oxo2-shared` for the SSSOM data model.
 - **Two populated Solr collections** — `oxo2-mappings` and `oxo2-mappingsets`. Schemas under `solr-config/`.
 - **Container image** — built from `Dockerfile.dataload`; `CMD` invokes `loadData.nextflow`.
 - **HPC entry points** — `loadData.hpc`, `loadData.slurm` for SLURM-based deployments.
+- **Solr data archive** — on a successful HPC run, `loadData.slurm` stops Solr cleanly and writes
+  `$OXO2_INFERENCES/solr-data.tar.gz` (the contents of `$SOLR_HOME`, excluding the run-local `logs/`
+  and `pid/` dirs). Jenkins copies it onto the NFS export, and the dev-cluster Solr init container
+  extracts it into `/var/solr` (`k8chart-dev/oxo2/templates/solr-deployment.yaml`).
 
 This module exposes no Java API to other OxO2 modules — its outputs flow downstream via Solr, not via library calls.
 

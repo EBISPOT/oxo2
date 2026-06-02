@@ -379,14 +379,44 @@ done
 echo "Solr indexing verified successfully."
 
 
-# --- Stop Solr ---
-# Cleanup is handled by the EXIT trap (cleanup_solr) installed near the top of the
-# script — it sends SIGTERM, waits up to 30s, then SIGKILL. No explicit stop needed
-# here, and explicitly running it would race with the trap.
-echo "################### Solr stop handled by EXIT trap"
+# --- Stop Solr before archiving ---
+# Archive the Solr data only after a clean shutdown: SIGTERM lets Solr commit and close
+# the index so the on-disk state in $SOLR_HOME is durable and self-consistent. cleanup_solr
+# (the EXIT-trap handler installed near the top) is idempotent — sends SIGTERM, waits up to
+# 30s, then SIGKILL. We invoke it explicitly here so the stop happens before the tar, then
+# disarm the trap so it does not run a second time on exit.
+echo "################### Stopping Solr before archiving..."
+cleanup_solr
+trap - EXIT
 
 # Ensure Solr data is accessible
 chmod -R 777 "$SOLR_HOME"/* 2>/dev/null || true
+
+# --- Archive Solr data for the Kubernetes import volume ---
+# Jenkins copies this tarball to the NFS export that the dev cluster's Solr init container
+# mounts read-only and extracts into /var/solr (see k8chart-dev/oxo2/templates/solr-deployment.yaml).
+# The archive holds the *contents* of $SOLR_HOME (created with `-C "$SOLR_HOME" .`) so that
+# `tar -xzf ... -C /var/solr` on the cluster reproduces the layout. The run-local logs/ and
+# pid/ dirs are excluded — they are meaningless in the cluster and only bloat the archive.
+#
+# Compression runs inside the Singularity image (which ships pigz) rather than on the host,
+# so parallel gzip is guaranteed available. pigz uses $SLURM_CPUS_PER_TASK threads (set via
+# --cpus-per-task in loadData.hpc; falls back to 1 — plain single-threaded gzip — if unset).
+# Both $SOLR_HOME and $OXO2_DATA (which contains $OXO2_INFERENCES) are bound at their host
+# paths so the same absolute paths resolve inside the container. The inner `set -o pipefail`
+# makes a tar failure propagate through the pigz pipe rather than being masked by pigz's exit.
+SOLR_ARCHIVE="$OXO2_INFERENCES/solr-data.tar.gz"
+PIGZ_THREADS="${SLURM_CPUS_PER_TASK:-1}"
+echo "################### Archiving Solr data to $SOLR_ARCHIVE (pigz -p $PIGZ_THREADS) ..."
+archive_start_time=$(date +%s)
+rm -f "$SOLR_ARCHIVE"
+singularity exec \
+    --bind "$SOLR_HOME:$SOLR_HOME" \
+    --bind "$OXO2_DATA:$OXO2_DATA" \
+    "$SIF_IMAGE" \
+    bash -c "set -o pipefail; tar -cf - -C '$SOLR_HOME' --exclude=./logs --exclude=./pid . | pigz -p $PIGZ_THREADS > '$SOLR_ARCHIVE'"
+archive_end_time=$(date +%s)
+echo "Solr data archived in $((archive_end_time - archive_start_time)) seconds ($(du -h "$SOLR_ARCHIVE" | cut -f1))"
 
 echo "=== OXO2 HPC Dataload Complete ==="
 echo "Date: $(date)"

@@ -24,18 +24,22 @@ spec:
             - sh
             - -c
             - |
-              if [ -d /import ] && [ -z "$(ls -A /var/solr 2>/dev/null)" ]; then
-                echo "Copying import volume into Solr data..."
-                cp -a /import/. /var/solr/
+              if [ -n "$(ls -A /var/solr 2>/dev/null)" ]; then
+                echo "Skipping import (Solr data dir /var/solr is not empty)"
+              elif [ -f /import/solr-data.tar.gz ]; then
+                echo "Extracting /import/solr-data.tar.gz into /var/solr..."
+                tar -xzf /import/solr-data.tar.gz -C /var/solr
+                echo "Extraction complete."
               else
-                echo "Skipping copy (import missing or Solr dir not empty)"
+                echo "ERROR: /import/solr-data.tar.gz not found in import volume" >&2
+                exit 1
               fi
           volumeMounts:
             - name: solr-data
               mountPath: /var/solr
             - name: import-data
               mountPath: /import
-              readOnly: true              
+              readOnly: true
       containers:
         - name: solr
           image: ghcr.io/ebispot/oxo2-solr:{{ .Values.imageTag }}
