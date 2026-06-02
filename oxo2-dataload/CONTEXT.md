@@ -48,7 +48,11 @@ Java sub-modules depend on `oxo2-shared` for the SSSOM data model.
 - **Solr data archive** — on a successful HPC run, `loadData.slurm` stops Solr cleanly and writes
   `$OXO2_INFERENCES/solr-data.tar.gz` (the contents of `$SOLR_HOME`, excluding the run-local `logs/`
   and `pid/` dirs). Jenkins copies it onto the NFS export, and the dev-cluster Solr init container
-  extracts it into `/var/solr` (`k8chart-dev/oxo2/templates/solr-deployment.yaml`).
+  extracts it into `/var/solr` (`k8chart-dev/oxo2/templates/solr-deployment.yaml`). The init
+  container is version-gated: it records the tarball's size+mtime in `/var/solr/.import-version` on
+  the persistent PVC and re-extracts only when a new tarball differs from that marker. So restarting
+  the Solr pod (`kubectl rollout restart deploy/oxo2-solr`) after a dataload refreshes the data iff
+  the tarball actually changed; an unchanged tarball is a fast no-op.
 
 This module exposes no Java API to other OxO2 modules — its outputs flow downstream via Solr, not via library calls.
 

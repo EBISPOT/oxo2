@@ -24,15 +24,33 @@ spec:
             - sh
             - -c
             - |
-              if [ -n "$(ls -A /var/solr 2>/dev/null)" ]; then
-                echo "Skipping import (Solr data dir /var/solr is not empty)"
-              elif [ -f /import/solr-data.tar.gz ]; then
-                echo "Extracting /import/solr-data.tar.gz into /var/solr..."
-                tar -xzf /import/solr-data.tar.gz -C /var/solr
-                echo "Extraction complete."
-              else
-                echo "ERROR: /import/solr-data.tar.gz not found in import volume" >&2
+              IMPORT_TARBALL=/import/solr-data.tar.gz
+              MARKER_FILE=/var/solr/.import-version
+
+              if [ ! -f "$IMPORT_TARBALL" ]; then
+                echo "ERROR: $IMPORT_TARBALL not found in import volume" >&2
                 exit 1
+              fi
+
+              # Identity of the source data: tarball size + mtime. This changes
+              # whenever the dataload pipeline writes a new tarball to NFS, so a
+              # pod restart re-imports only when the data has actually changed.
+              CURRENT_VERSION="$(stat -c '%s-%Y' "$IMPORT_TARBALL")"
+              LOADED_VERSION="$(cat "$MARKER_FILE" 2>/dev/null || echo none)"
+
+              if [ "$CURRENT_VERSION" = "$LOADED_VERSION" ]; then
+                echo "Solr data already at version $CURRENT_VERSION; skipping import."
+              else
+                echo "Import tarball changed (loaded=$LOADED_VERSION current=$CURRENT_VERSION); refreshing /var/solr..."
+                rm -rf /var/solr/* 2>/dev/null
+                rm -rf /var/solr/.[!.]* 2>/dev/null
+                if tar -xzf "$IMPORT_TARBALL" -C /var/solr; then
+                  printf '%s' "$CURRENT_VERSION" > "$MARKER_FILE"
+                  echo "Import complete; now at version $CURRENT_VERSION."
+                else
+                  echo "ERROR: extraction of $IMPORT_TARBALL failed" >&2
+                  exit 1
+                fi
               fi
           volumeMounts:
             - name: solr-data
