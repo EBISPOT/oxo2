@@ -67,7 +67,7 @@ public enum MappingEnum {
     DISTANCE(MappingConstants.DISTANCE),
     EXPLANATION_LENGTH(MappingConstants.EXPLANATION_LENGTH),
     EXPLANATION(MappingConstants.EXPLANATION),
-    MAPPING_ID(MappingConstants.MAPPING_PROVIDER),
+    MAPPING_ID(MappingConstants.MAPPING_ID),
     OBJECT_ID_PREFIX(MappingConstants.OBJECT_ID_PREFIX),
     OBJECT_IRI(MappingConstants.OBJECT_IRI),
     PREDICATE_ID_PREFIX(MappingConstants.PREDICATE_ID_PREFIX),

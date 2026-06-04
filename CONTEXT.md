@@ -26,6 +26,9 @@ ingestion and the unit over which chaining rules are applied. Modelled as `Mappi
 - **EntityReference** — a typed reference to an entity (typically a CURIE) used as the subject or object of a `Mapping`. Modelled as `EntityReference`.
 - **predicate_id**, **subject_id**, **object_id** — the three components that identify what a mapping asserts: which entity (subject) 
 is related, by which relation (predicate), to which other entity (object).
+- **predicate_modifier** — an optional qualifier on the predicate whose one standard value, `Not`, negates the relation: the 
+mapping asserts that the predicate does *not* hold between subject and object. Because it inverts a mapping's meaning, a predicate 
+displayed without its modifier misrepresents the mapping.
 - **mapping_justification** — why the mapping is held to be true (e.g. asserted by curator, derived by lexical match, inferred by a chain rule). 
 A SSSOM-defined enumeration.
 - **subject_source**, **object_source** — the ontologies the subject and object come from. Used in faceting and filtering.
