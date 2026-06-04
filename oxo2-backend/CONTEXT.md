@@ -57,6 +57,24 @@ Queries are built directly with SolrJ `SolrQuery`. There is no JPA, no repositor
 controllers and Solr — this is deliberate ([ADR-0002](../docs/adr/0002-solr-as-sole-data-store.md)). Field names come from constants in `oxo2-shared` (`MappingEnum`, 
 `MappingSetConstants`) so the dataload and backend stay aligned.
 
+#### Column-filter matching
+
+`POST /api/v2/mappings/search` `columnFilters` use "contains" semantics. Label fields
+(subject/object/predicate label) are matched against their `*_ngram` twin, whose indexed
+terms are n-grams of individual words. The filter value is split on whitespace and each word
+becomes its own `*word*` substring wildcard, AND-ed together — order-independent "contains all
+of these words". A single wildcard cannot span words: `_ngram:*two words*` matches nothing,
+because the analyzer tokenises on whitespace before n-gramming, so no indexed term contains a
+space. Non-label fields are `string`-typed (the whole value is one term), so a single
+escaped-space wildcard already matches a literal multi-word substring; they are not split.
+Every word is escaped with `ClientUtils.escapeQueryChars`.
+
+Performance note: `*word*` is a leading wildcard that scans the n-gram term dictionary
+(~0.7 s cold per word on the current corpus, so a two-word label filter is ~1.4 s cold).
+Solr's `filterCache` makes a repeated filter ~1 ms, but each distinct value a user types is a
+cold query. This is the cost of preserving partial-word (substring) matching; a phrase query
+on the plain `text_general` field would be ~50× faster but match whole words only.
+
 ### Configuration
 
 - `OXO2_SOLR_HOST` — base URL of the Solr instance the backend queries.

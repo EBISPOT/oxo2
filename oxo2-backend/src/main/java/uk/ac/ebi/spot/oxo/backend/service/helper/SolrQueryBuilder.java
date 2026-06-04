@@ -82,14 +82,8 @@ public class SolrQueryBuilder {
     private static String[] constructFilterQueries(List<MappingSearchRequest.ColumnFilter> queryFilters,
                                                    List<String> mappingSetIds) {
         List<String> filterQueriesList = queryFilters.stream()
-                .map(f ->
-                        textGeneralToNGram.containsKey(MappingEnum.fromString(f.getId()))
-                                ?
-                        textGeneralToNGram.get(MappingEnum.fromString(f.getId())) + ":*" +
-                                ClientUtils.escapeQueryChars(f.getValue()) + "*"
-                                :
-                        MappingEnum.fromString(f.getId()).getField() + ":*" +
-                                ClientUtils.escapeQueryChars(f.getValue()) + "*")
+                .map(SolrQueryBuilder::constructFilterClause)
+                .filter(clause -> !clause.isEmpty())
                 .collect(Collectors.toList());
 
         if (mappingSetIds != null && !mappingSetIds.isEmpty()) {
@@ -104,6 +98,42 @@ public class SolrQueryBuilder {
         }
 
         return filterQueriesList.toArray(new String[filterQueriesList.size()]);
+    }
+
+    /**
+     * Builds one Solr filter clause ("contains" semantics) for a single column filter.
+     *
+     * <p>Label fields are backed by an n-gram field whose indexed terms are n-grams of
+     * individual words: the analyzer tokenises on whitespace <em>before</em> generating
+     * n-grams, so no indexed term contains a space. A single {@code *value*} wildcard
+     * therefore cannot match a multi-word value — e.g. {@code "CDISC Questionnaire"}
+     * matched nothing. We split the value on whitespace and AND one substring wildcard
+     * per word, giving order-independent "contains all of these words" matching while
+     * preserving the partial-word (substring) matching a single wildcard provides.
+     *
+     * <p>Non-label fields are {@code string}-typed: the whole value is a single indexed
+     * term, so an escaped-space wildcard already matches a literal multi-word substring.
+     * They keep the single-clause form.
+     *
+     * <p>Every word is passed through {@link ClientUtils#escapeQueryChars} so user input
+     * cannot inject query syntax.
+     */
+    private static String constructFilterClause(MappingSearchRequest.ColumnFilter filter) {
+        MappingEnum field = MappingEnum.fromString(filter.getId());
+        String value = filter.getValue() == null ? "" : filter.getValue().strip();
+        if (value.isEmpty()) {
+            return "";
+        }
+
+        if (textGeneralToNGram.containsKey(field)) {
+            String ngramField = textGeneralToNGram.get(field);
+            return Arrays.stream(value.split("\\s+"))
+                    .filter(word -> !word.isEmpty())
+                    .map(word -> ngramField + ":*" + ClientUtils.escapeQueryChars(word) + "*")
+                    .collect(Collectors.joining(" AND ", "(", ")"));
+        }
+
+        return field.getField() + ":*" + ClientUtils.escapeQueryChars(value) + "*";
     }
 
     /**

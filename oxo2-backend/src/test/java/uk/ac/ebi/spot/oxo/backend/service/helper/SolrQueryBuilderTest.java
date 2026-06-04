@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +36,19 @@ class SolrQueryBuilderTest {
         return labelField.getField() + "_ngram";
     }
 
+    /**
+     * Mirrors the production split-on-whitespace, AND-of-substring-wildcards clause that
+     * label-field column filters now produce, so multi-word values match labels
+     * containing all of the words (see {@link SolrQueryBuilder}).
+     */
+    private static String ngramContainsAll(MappingEnum labelField, String value) {
+        String field = labelNgram(labelField);
+        return Arrays.stream(value.strip().split("\\s+"))
+                .filter(word -> !word.isEmpty())
+                .map(word -> field + ":*" + ClientUtils.escapeQueryChars(word) + "*")
+                .collect(Collectors.joining(" AND ", "(", ")"));
+    }
+
     private static String labelStr(MappingEnum labelField) {
         return labelField.getField() + "_str";
     }
@@ -49,10 +63,50 @@ class SolrQueryBuilderTest {
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
-        String expected = labelNgram(MappingEnum.SUBJECT_LABEL) + ":*"
-                + ClientUtils.escapeQueryChars(INJECTION_PAYLOAD) + "*";
+        // The payload contains whitespace, so the label filter splits it into per-word
+        // wildcard clauses — each word still escaped so the " OR *:* injection is inert.
+        String expected = ngramContainsAll(MappingEnum.SUBJECT_LABEL, INJECTION_PAYLOAD);
         assertThat(solrQuery.getFilterQueries()).containsExactly(expected);
         assertThat(solrQuery.getFilterQueries()[0]).doesNotContain(INJECTION_PAYLOAD);
+        assertThat(solrQuery.getFilterQueries()[0]).doesNotContain("\" OR *:*");
+    }
+
+    @Test
+    void labelFieldColumnFilterSplitsMultiWordValueIntoAndedSubstrings() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(
+                new ColumnFilter(MappingEnum.SUBJECT_LABEL.getField(), "CDISC Questionnaire")));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        String ngram = labelNgram(MappingEnum.SUBJECT_LABEL);
+        String expected = "(" + ngram + ":*CDISC* AND " + ngram + ":*Questionnaire*)";
+        assertThat(solrQuery.getFilterQueries()).containsExactly(expected);
+    }
+
+    @Test
+    void labelFieldColumnFilterCollapsesSurroundingAndRepeatedWhitespace() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(
+                new ColumnFilter(MappingEnum.OBJECT_LABEL.getField(), "  CDISC   Questionnaire  ")));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        String ngram = labelNgram(MappingEnum.OBJECT_LABEL);
+        String expected = "(" + ngram + ":*CDISC* AND " + ngram + ":*Questionnaire*)";
+        assertThat(solrQuery.getFilterQueries()).containsExactly(expected);
+    }
+
+    @Test
+    void labelFieldColumnFilterSingleWordWrapsSingleClause() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(
+                new ColumnFilter(MappingEnum.SUBJECT_LABEL.getField(), "leukemia")));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        String expected = "(" + labelNgram(MappingEnum.SUBJECT_LABEL) + ":*leukemia*)";
+        assertThat(solrQuery.getFilterQueries()).containsExactly(expected);
     }
 
     @Test
@@ -77,8 +131,9 @@ class SolrQueryBuilderTest {
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
         String fq = solrQuery.getFilterQueries()[0];
-        assertThat(fq).startsWith(labelNgram(MappingEnum.OBJECT_LABEL) + ":*");
-        assertThat(fq).endsWith("*");
+        // Single-word value (no whitespace) → one clause, wrapped in parens.
+        assertThat(fq).startsWith("(" + labelNgram(MappingEnum.OBJECT_LABEL) + ":*");
+        assertThat(fq).endsWith("*)");
         // user-supplied * becomes \* — the only un-escaped wildcards are the wrapping ones
         assertThat(fq).contains(ClientUtils.escapeQueryChars("foo*bar"));
         assertThat(fq).doesNotContain("foo*bar");
