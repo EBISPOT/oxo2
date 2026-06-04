@@ -1,19 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { AdvancedFieldQuery, SearchInput, initialSearchState } from "../../model/Search";
 import { ADVANCED_FIELD_NAMES } from "../../model/AdvancedFields";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import {
-    MaterialReactTable,
-    type MRT_ColumnDef,
-    type MRT_RowSelectionState,
-    useMaterialReactTable,
-} from "material-react-table";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { fetchMappingSets } from "../../pages/results/MappingSetsSlice";
-import { MappingSet } from "../../model/MappingSet";
 import { AdvancedSearch } from "./AdvancedSearch";
+import { MappingSetSelector } from "./MappingSetSelector";
 
 const tableTheme = createTheme({
     palette: {
@@ -39,29 +31,27 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
         )
     );
 
-    const { data: mappingSets = [], isLoading: mappingSetsLoading } = useQuery({
-        queryKey: ["fetchMappingSets"],
-        queryFn: fetchMappingSets,
-        staleTime: Infinity,
-    });
-
-    const idsToSelectionState = (ids?: string[]): MRT_RowSelectionState =>
-        (ids ?? []).reduce<MRT_RowSelectionState>((acc, id) => {
-            acc[id] = true;
-            return acc;
-        }, {});
-
-    const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>(
-        idsToSelectionState(searchInput.mappingSetIds)
+    // Mapping-set selection is held in searchState.mappingSetIds and passed down to the
+    // (memoised) MappingSetSelector as controlled state. selectedIds / onSelectionChange
+    // are kept referentially stable so the selector — a table of hundreds of rows — is
+    // skipped by React.memo while the user types in the search box or advanced fields.
+    const selectedIds = useMemo(
+        () => searchState.mappingSetIds ?? [],
+        [searchState.mappingSetIds]
     );
 
-    // Keep row selection in sync when mapping_set_id query params arrive later
-    // (e.g. via URL on the results page) after the table mounts.
+    const handleSelectionChange = useCallback((ids: string[]) => {
+        setSearchState((prev) => ({
+            ...prev,
+            mappingSetIds: ids.length > 0 ? ids : undefined,
+        }));
+    }, []);
+
+    // Keep selection in sync when mapping_set_id query params arrive later
+    // (e.g. via URL on the results page) after this component mounts.
     const incomingIdsKey = (searchInput.mappingSetIds ?? []).join(",");
     useEffect(() => {
-        const ids = searchInput.mappingSetIds;
-        setRowSelection(idsToSelectionState(ids));
-        setSearchState((prev) => ({ ...prev, mappingSetIds: ids }));
+        setSearchState((prev) => ({ ...prev, mappingSetIds: searchInput.mappingSetIds }));
     }, [incomingIdsKey]);
 
     // Pick up advanced values arriving via URL after mount.
@@ -104,7 +94,6 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
             mappingSetIds: undefined,
             activeTab,
         });
-        setRowSelection({});
     };
 
     const handleAdvancedChange = (field: string, value: string) => {
@@ -132,75 +121,6 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
     const handleAdvancedClear = () => {
         setAdvancedValues({});
     };
-
-    const columns = useMemo<MRT_ColumnDef<MappingSet>[]>(
-        () => [
-            { accessorKey: "mappingSetTitle", header: "Title", size: 200 },
-            {
-                accessorKey: "mappingSetId",
-                header: "Mapping Set Id",
-                size: 250,
-                Cell: ({ cell }) => (
-                    <div style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
-                        {cell.getValue<string>()}
-                    </div>
-                ),
-            },
-            {
-                accessorKey: "mappingSetDescription",
-                header: "Description",
-                size: 350,
-                Cell: ({ cell }) => (
-                    <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
-                        {cell.getValue<string>()}
-                    </div>
-                ),
-            },
-            {
-                accessorKey: "creatorLabel",
-                header: "Creator",
-                size: 150,
-                Cell: ({ cell }) => <span>{(cell.getValue<string[]>() ?? []).join(", ")}</span>,
-            },
-            { accessorKey: "mappingProvider", header: "Provider", size: 150 },
-        ],
-        []
-    );
-
-    const table = useMaterialReactTable<MappingSet>({
-        columns,
-        data: mappingSets,
-        enableRowSelection: true,
-        enableMultiRowSelection: true,
-        enableSelectAll: true,
-        getRowId: (row) => row.mappingSetId,
-        state: { rowSelection, isLoading: mappingSetsLoading, density: "compact" },
-        onRowSelectionChange: (updater) => {
-            const next = typeof updater === "function" ? updater(rowSelection) : updater;
-            setRowSelection(next);
-            const selectedIds = Object.keys(next).filter((k) => next[k]);
-            setSearchState((prev) => ({
-                ...prev,
-                mappingSetIds: selectedIds.length > 0 ? selectedIds : undefined,
-            }));
-        },
-        muiTableBodyRowProps: ({ row }) => ({
-            onClick: () => row.toggleSelected(),
-            sx: { cursor: "pointer" },
-        }),
-        muiTableContainerProps: { sx: { maxHeight: "20rem" } },
-        enableTopToolbar: false,
-        enableBottomToolbar: false,
-        enableColumnActions: false,
-        enableColumnFilters: false,
-        enableSorting: true,
-        enablePagination: false,
-        enableStickyHeader: true,
-        muiTableHeadCellProps: {
-            sx: { fontWeight: "bold", fontSize: "14px" },
-        },
-        initialState: { density: "compact" },
-    });
 
     const tabButtonClass = (tab: ActiveTab) =>
         `px-4 py-1 text-base font-semibold border-b-2 cursor-pointer ${
@@ -296,7 +216,10 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
                     )}
                 </div>
                 <ThemeProvider theme={tableTheme}>
-                    <MaterialReactTable table={table} />
+                    <MappingSetSelector
+                        selectedIds={selectedIds}
+                        onSelectionChange={handleSelectionChange}
+                    />
                 </ThemeProvider>
             </div>
         </div>
