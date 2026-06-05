@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.MappingSetSummary;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
@@ -34,7 +35,8 @@ public class MappingSetController {
     private OxOSolrClient solrClient;
 
     @GetMapping
-    public ResponseEntity<List<MappingSetSummary>> listMappingSets() {
+    public ResponseEntity<List<MappingSetSummary>> listMappingSets(
+            @RequestParam(required = false) Boolean inferred) {
         try {
             SolrQuery solrQuery = new SolrQuery("*:*");
             solrQuery.setRows(MAX_ROWS);
@@ -43,7 +45,12 @@ public class MappingSetController {
                     MAPPING_SET_TITLE,
                     MAPPING_SET_DESCRIPTION,
                     CREATOR_LABEL,
-                    MAPPING_PROVIDER);
+                    MAPPING_PROVIDER,
+                    IS_INFERRED);
+            // Tri-state filter: null = all sets, true = inferred only, false = asserted only (ADR-0008).
+            if (inferred != null) {
+                solrQuery.addFilterQuery(IS_INFERRED + ":" + inferred);
+            }
             solrQuery.addSort(TITLE_SORT_FIELD, SolrQuery.ORDER.asc);
 
             QueryResponse response = solrClient.queryMappingSets(solrQuery);
@@ -54,7 +61,8 @@ public class MappingSetController {
                         asString(doc.getFieldValue(MAPPING_SET_TITLE)),
                         asString(doc.getFieldValue(MAPPING_SET_DESCRIPTION)),
                         asStringList(doc.getFieldValues(CREATOR_LABEL)),
-                        asString(doc.getFieldValue(MAPPING_PROVIDER))
+                        asString(doc.getFieldValue(MAPPING_PROVIDER)),
+                        Boolean.TRUE.equals(doc.getFieldValue(IS_INFERRED))
                 ));
             }
             return ResponseEntity.ok(summaries);

@@ -30,7 +30,20 @@ public final class SolrCheck {
     private SolrCheck() {}
 
     public static int numFound(String collection, String mappingSetId) throws IOException, InterruptedException {
-        String query = "mapping_set_id:\"" + mappingSetId + "\"";
+        return numFoundForQuery(collection, "mapping_set_id:\"" + mappingSetId + "\"");
+    }
+
+    /** numFound restricted to documents in the given set that carry the given is_inferred flag.
+     *  Verifies ADR-0008: an asserted set's documents are is_inferred:false, an inferred set's
+     *  documents is_inferred:true. */
+    public static int numFound(String collection, String mappingSetId, boolean inferred)
+            throws IOException, InterruptedException {
+        return numFoundForQuery(collection,
+                "mapping_set_id:\"" + mappingSetId + "\" AND is_inferred:" + inferred);
+    }
+
+    private static int numFoundForQuery(String collection, String query)
+            throws IOException, InterruptedException {
         String url = Env.solrHost().replaceAll("/+$", "") + "/" + collection +
                 "/select?q=" + URLEncoder.encode(query, StandardCharsets.UTF_8) +
                 "&rows=0&wt=json";

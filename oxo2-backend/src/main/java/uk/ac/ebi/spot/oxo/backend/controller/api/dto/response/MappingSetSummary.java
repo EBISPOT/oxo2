@@ -11,5 +11,6 @@ public record MappingSetSummary(
         @JsonProperty(MAPPING_SET_TITLE) String mappingSetTitle,
         @JsonProperty(MAPPING_SET_DESCRIPTION) String mappingSetDescription,
         @JsonProperty(CREATOR_LABEL) List<String> creatorLabel,
-        @JsonProperty(MAPPING_PROVIDER) String mappingProvider
+        @JsonProperty(MAPPING_PROVIDER) String mappingProvider,
+        @JsonProperty(IS_INFERRED) boolean isInferred
 ) {}

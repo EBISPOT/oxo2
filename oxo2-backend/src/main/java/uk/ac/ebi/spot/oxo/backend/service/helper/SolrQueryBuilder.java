@@ -71,7 +71,8 @@ public class SolrQueryBuilder {
         solrQuery.setFields(constructFieldList(mappingSearchRequest.getFieldList()));
         solrQuery.setFilterQueries(constructFilterQueries(
                 mappingSearchRequest.getColumnFilters(),
-                mappingSearchRequest.getMappingSetIds()));
+                mappingSearchRequest.getMappingSetIds(),
+                mappingSearchRequest.getInferred()));
         solrQuery = configureFacets(solrQuery, mappingSearchRequest.getFacets());
         solrQuery = constructSortedFields(solrQuery, mappingSearchRequest);
 
@@ -80,11 +81,18 @@ public class SolrQueryBuilder {
 
 
     private static String[] constructFilterQueries(List<MappingSearchRequest.ColumnFilter> queryFilters,
-                                                   List<String> mappingSetIds) {
+                                                   List<String> mappingSetIds,
+                                                   Boolean inferred) {
         List<String> filterQueriesList = queryFilters.stream()
                 .map(SolrQueryBuilder::constructFilterClause)
                 .filter(clause -> !clause.isEmpty())
                 .collect(Collectors.toList());
+
+        // Tri-state inferred/asserted filter. is_inferred is a denormalised boolean (ADR-0008);
+        // an exact term match, never the substring columnFilter path which is wrong for a boolean.
+        if (inferred != null) {
+            filterQueriesList.add(MappingEnum.IS_INFERRED.getField() + ":" + inferred);
+        }
 
         if (mappingSetIds != null && !mappingSetIds.isEmpty()) {
             String field = MappingEnum.MAPPING_SET_ID.getField();

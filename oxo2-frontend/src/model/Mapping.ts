@@ -167,7 +167,8 @@ export interface MappingResponse {
     subject_id_prefix?: string;
 
     asserted_mappings?: string;
-    explanation?: string
+    explanation?: string;
+    is_inferred?: boolean;
 }
 
 
@@ -192,6 +193,7 @@ export interface Mapping {
     mappingSetTitle?: string;
     mappingSetVersion?: string;
     mappingSource?: string;
+    isInferred?: boolean;
     mappingTool?: string;
     mappingToolVersion?: string;
     matchString?: string;

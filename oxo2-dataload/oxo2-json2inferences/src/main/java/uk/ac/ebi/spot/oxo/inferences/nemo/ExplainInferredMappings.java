@@ -354,6 +354,7 @@ public class ExplainInferredMappings {
                         + sourceMappingSetId)
                 .mappingSetSource(sources)
                 .mappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL)
+                .isInferred(true)
                 .build();
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -468,6 +469,8 @@ public class ExplainInferredMappings {
                         .explanationLength(explanationLength(inferredMapping, lengthMemo))
                         .distance(calculateMappingDistance(inferredMapping))
                         .mappingSetId(inferredMappingSetId)
+                        .mappingSource(sourceMappingSetId)
+                        .isInferred(true)
                         .build();
 
                     if (seqWriter == null) {

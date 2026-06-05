@@ -1,5 +1,6 @@
-import {useMemo, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
+import {ToggleButton, ToggleButtonGroup} from "@mui/material";
 import {AdvancedFieldQuery} from "../../model/Search";
 import {emptyFacetedMapping, FacetedMapping, fetchMappings, fromJson} from "./MappingResultsSlice";
 import {useQuery} from "@tanstack/react-query";
@@ -39,6 +40,16 @@ export function AdvancedResultsTable({
         { id: 'subject_id', desc: false }
     ]);
 
+    // Tri-state inferred/asserted filter for the result rows: null = all, true = inferred only,
+    // false = asserted only. Backed by the denormalised is_inferred flag (ADR-0008); mirrors the
+    // control in NormalResultsTable.
+    const [inferred, setInferred] = useState<boolean | null>(null);
+
+    const handleInferredChange = useCallback((next: boolean | null) => {
+        setInferred(next);
+        setPagination((previous) => ({ ...previous, pageIndex: 0 }));
+    }, []);
+
     const mappingSetIdsKey = mappingSetIds.join(",");
     const advancedKey = JSON.stringify(advancedFieldQueries);
     const { data, isLoading, isError } = useQuery({
@@ -51,6 +62,7 @@ export function AdvancedResultsTable({
             sorting,
             mappingSetIdsKey,
             advancedKey,
+            inferred,
         ],
         queryFn: () =>
             fetchMappings(
@@ -60,7 +72,8 @@ export function AdvancedResultsTable({
                 columnFilters,
                 sorting,
                 mappingSetIds,
-                advancedFieldQueries.length > 0 ? advancedFieldQueries : undefined
+                advancedFieldQueries.length > 0 ? advancedFieldQueries : undefined,
+                inferred
             ),
         staleTime: Infinity,
     });
@@ -119,6 +132,24 @@ export function AdvancedResultsTable({
             {
                 accessorKey: "mappingJustification",
                 header: "Mapping Justification",
+            },
+            {
+                // Asserted vs inferred row, backed by the denormalised is_inferred flag (ADR-0008).
+                // Column-level filtering of this field is driven by the toolbar tri-state control,
+                // not the per-column filter input, so the inline filter is disabled here.
+                accessorKey: "isInferred",
+                header: "Type",
+                enableColumnFilter: false,
+                Cell: ({ row }) =>
+                    row.original.isInferred ? (
+                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">
+                            Inferred
+                        </span>
+                    ) : (
+                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">
+                            Asserted
+                        </span>
+                    ),
             },
             {
                 accessorKey: "mappingProvider",
@@ -224,6 +255,24 @@ export function AdvancedResultsTable({
         onColumnVisibilityChange: setColumnVisibility,
         enableHiding: true,
         enableTopToolbar: true, // Show toolbar so user can access column visibility menu
+        renderTopToolbarCustomActions: () => (
+            <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={inferred === null ? "all" : inferred ? "inferred" : "asserted"}
+                onChange={(_event, value) => {
+                    // exclusive ToggleButtonGroup yields null when the active button is re-clicked;
+                    // ignore that so the control stays a true tri-state with an always-set value.
+                    if (value === null) return;
+                    handleInferredChange(value === "all" ? null : value === "inferred");
+                }}
+                aria-label="Filter by mapping type"
+            >
+                <ToggleButton value="all">All</ToggleButton>
+                <ToggleButton value="asserted">Asserted</ToggleButton>
+                <ToggleButton value="inferred">Inferred</ToggleButton>
+            </ToggleButtonGroup>
+        ),
         muiTableBodyRowProps: ({ row }) => ({
             onClick: () => {
                 const mapping = row.original;

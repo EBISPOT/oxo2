@@ -543,6 +543,7 @@
   <field name="asserted_mappings" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="distance" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="explanation_length" type="pint" multiValued="false" indexed="true" stored="true"/>
+  <field name="is_inferred" type="boolean" indexed="true" stored="true" default="false"/>
   <field name="explanation" type="text_general" multiValued="false" indexed="false" stored="true"/>
   <field name="object_iri" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_iri" type="string" multiValued="false" indexed="true" stored="true"/>

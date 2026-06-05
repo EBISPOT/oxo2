@@ -4,6 +4,7 @@ export interface MappingSetResponse {
     mapping_set_description?: string;
     creator_label?: string[];
     mapping_provider?: string;
+    is_inferred?: boolean;
 }
 
 export interface MappingSet {
@@ -12,6 +13,7 @@ export interface MappingSet {
     mappingSetDescription: string;
     creatorLabel: string[];
     mappingProvider: string;
+    isInferred: boolean;
 }
 
 export function fromMappingSetResponse(r: MappingSetResponse): MappingSet {
@@ -21,5 +23,6 @@ export function fromMappingSetResponse(r: MappingSetResponse): MappingSet {
         mappingSetDescription: r.mapping_set_description ?? '',
         creatorLabel: r.creator_label ?? [],
         mappingProvider: r.mapping_provider ?? '',
+        isInferred: r.is_inferred ?? false,
     };
 }

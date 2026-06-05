@@ -26,6 +26,9 @@ public class MappingSearchRequest {
 
     private List<FieldQuery> advancedFieldQueries;
 
+    // Tri-state inferred/asserted filter: null = both, true = inferred only, false = asserted only.
+    private Boolean inferred;
+
 
     public List<String> getQueries() {
         return queries;
@@ -115,6 +118,14 @@ public class MappingSearchRequest {
         this.advancedFieldQueries = advancedFieldQueries;
     }
 
+    public Boolean getInferred() {
+        return inferred;
+    }
+
+    public void setInferred(Boolean inferred) {
+        this.inferred = inferred;
+    }
+
     @Override
     public String toString() {
         return "MappingSearchRequest{" +
@@ -129,6 +140,7 @@ public class MappingSearchRequest {
                 ", size=" + size +
                 ", mappingSetIds=" + mappingSetIds +
                 ", advancedFieldQueries=" + advancedFieldQueries +
+                ", inferred=" + inferred +
                 '}';
     }
 

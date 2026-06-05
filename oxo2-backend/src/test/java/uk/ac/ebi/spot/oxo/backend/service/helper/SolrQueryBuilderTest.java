@@ -445,4 +445,55 @@ class SolrQueryBuilderTest {
                 MappingFacetEnum.MAPPING_SET_ID.getValue(),
                 MappingFacetEnum.PREDICATE_ID.getValue());
     }
+
+    // ---------- inferred (is_inferred) filter ----------
+
+    @Test
+    void inferredTrueAddsExactIsInferredFilter() {
+        MappingSearchRequest request = baseRequest();
+        request.setInferred(true);
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        // Exact term match on the denormalised boolean (ADR-0008) — never a *value* substring,
+        // which would be invalid for a Solr boolean field.
+        assertThat(solrQuery.getFilterQueries())
+                .containsExactly(MappingEnum.IS_INFERRED.getField() + ":true");
+    }
+
+    @Test
+    void inferredFalseAddsExactIsInferredFilter() {
+        MappingSearchRequest request = baseRequest();
+        request.setInferred(false);
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.getFilterQueries())
+                .containsExactly(MappingEnum.IS_INFERRED.getField() + ":false");
+    }
+
+    @Test
+    void inferredNullProducesNoExtraFq() {
+        MappingSearchRequest request = baseRequest();
+        request.setInferred(null);
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.getFilterQueries()).isEmpty();
+    }
+
+    @Test
+    void inferredFilterCombinesWithMappingSetIds() {
+        MappingSearchRequest request = baseRequest();
+        request.setInferred(true);
+        request.setMappingSetIds(List.of("set-1"));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        String field = MappingEnum.MAPPING_SET_ID.getField();
+        String mappingSetClause = "(" + field + ":\"" + ClientUtils.escapeQueryChars("set-1") + "\")";
+        assertThat(solrQuery.getFilterQueries()).containsExactlyInAnyOrder(
+                MappingEnum.IS_INFERRED.getField() + ":true",
+                mappingSetClause);
+    }
 }

@@ -48,6 +48,27 @@ function MappingSetSelectorInner({
         () => [
             { accessorKey: "mappingSetTitle", header: "Title", size: 200, filterFn: "contains" },
             {
+                // Asserted vs inferred set, backed by the denormalised is_inferred flag (ADR-0008).
+                // Client-side select filter over the already-fetched sets: default (no selection) =
+                // all, matching the tri-state default in the results view.
+                id: "isInferred",
+                accessorFn: (row) => (row.isInferred ? "Inferred" : "Asserted"),
+                header: "Type",
+                size: 120,
+                filterVariant: "select",
+                filterSelectOptions: ["Asserted", "Inferred"],
+                Cell: ({ row }) =>
+                    row.original.isInferred ? (
+                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">
+                            Inferred
+                        </span>
+                    ) : (
+                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">
+                            Asserted
+                        </span>
+                    ),
+            },
+            {
                 accessorKey: "mappingSetId",
                 header: "Mapping Set Id",
                 size: 250,

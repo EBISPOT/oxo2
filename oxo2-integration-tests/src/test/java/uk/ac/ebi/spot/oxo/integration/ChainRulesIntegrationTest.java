@@ -138,5 +138,21 @@ public class ChainRulesIntegrationTest {
                 "Solr " + SolrCheck.MAPPINGSETS_COLLECTION + " asserted-set numFound differs for rule " + rule);
         assertEquals(mappingSets.get("inferred").asInt(), actualMappingSetsInferred,
                 "Solr " + SolrCheck.MAPPINGSETS_COLLECTION + " inferred-set numFound differs for rule " + rule);
+
+        // ADR-0008: the denormalised is_inferred flag must agree with which set a document lives
+        // in — asserted-set docs are is_inferred:false, inferred-set docs is_inferred:true. Compared
+        // against the per-set counts already verified above, so this needs no extra golden data.
+        assertEquals(actualMappingsAsserted,
+                SolrCheck.numFound(SolrCheck.MAPPINGS_COLLECTION, SolrCheck.mappingSetIdForRule(rule), false),
+                "Asserted-set mappings must all be is_inferred:false for rule " + rule);
+        assertEquals(actualMappingsInferred,
+                SolrCheck.numFound(SolrCheck.MAPPINGS_COLLECTION, SolrCheck.inferredMappingSetIdForRule(rule), true),
+                "Inferred-set mappings must all be is_inferred:true for rule " + rule);
+        assertEquals(actualMappingSetsAsserted,
+                SolrCheck.numFound(SolrCheck.MAPPINGSETS_COLLECTION, SolrCheck.mappingSetIdForRule(rule), false),
+                "Asserted mapping-set must be is_inferred:false for rule " + rule);
+        assertEquals(actualMappingSetsInferred,
+                SolrCheck.numFound(SolrCheck.MAPPINGSETS_COLLECTION, SolrCheck.inferredMappingSetIdForRule(rule), true),
+                "Inferred mapping-set must be is_inferred:true for rule " + rule);
     }
 }

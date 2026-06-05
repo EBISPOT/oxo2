@@ -37,7 +37,13 @@ A SSSOM-defined enumeration.
 
 - **Asserted mapping** — a mapping that came directly from the input SSSOM file. Contrast with *inferred mapping*. Represented by `ChainRulesEnum.ASSERTED`.
 - **Inferred mapping** — a mapping derived by applying SSSOM chaining rules over an existing mapping set. Modelled as 
-`InferredMapping` in `oxo2-shared`. Inferred mappings carry the chain rule that produced them and a link to the explanation chain.
+`InferredMapping` in `oxo2-shared`. Inferred mappings carry the chain rule that produced them and a link to the explanation chain. 
+Narrower than the SSSOM notion of a *derived* mapping: a `semapv:LexicalMatching` mapping is derived but, having come from an input 
+file, is *asserted* in OxO — *inferred* means produced specifically by OxO chaining. Distinguished from asserted by the `is_inferred` flag.
+- **Inferred mapping set** — the mapping set that holds the inferred mappings OxO derives from a single asserted source set; OxO 
+produces exactly one per asserted set (inference scope is per mapping set — see § Cross-cutting constraints). Carries `is_inferred` 
+and links back to its asserted origin via `mapping_set_source`. The `is_inferred` flag (on both mapping and mapping-set documents) is 
+the canonical signal for filtering inferred vs asserted through the API.
 - **Chain rule** — a SSSOM-defined rule that derives a new mapping from existing ones (e.g. transitivity, inverse, generalisation). 
 Implemented in OxO2 as `ChainRulesEnum` (`RCE`, `T`, `RI`, `RG`, `RCE-N` families) and as Nemo rules in `oxo2-json2inferences/chain-rules.rls`. 
 See the SSSOM chaining-rules spec linked in § External surfaces.
@@ -66,6 +72,10 @@ Decisions that bind multiple modules. Each ADR captures one decision and its con
 See [ADR-0001](docs/adr/0001-inference-scope-per-mapping-set.md). Affects `oxo2-dataload` (per-set Nemo invocations, within-set parallelism).
 - **Solr is the sole data store** — no relational database; both mappings and mapping sets live in Solr collections `oxo2-mappings` 
 and `oxo2-mappingsets`. See [ADR-0002](docs/adr/0002-solr-as-sole-data-store.md). Affects `oxo2-dataload` (denormalised documents at load time) and `oxo2-backend` (query patterns constrained by Solr).
+- **Inferred-vs-asserted is a denormalised `is_inferred` flag** — both mappings and mapping sets carry a boolean `is_inferred`, set 
+once at dataload from OxO provenance, as the single queryable signal for inferred-vs-asserted; the SSSOM provenance fields 
+(`mapping_source`, `mapping_set_source`) stay authoritative for export but are not the filter flag. See [ADR-0008](docs/adr/0008-is-inferred-flag.md). 
+Affects `oxo2-dataload` (writers set the flag), `oxo2-shared` (model field), and `oxo2-backend` (tri-state API filter).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **OxO2 is backwards compatible with OxO v1** — API surface answers v1's questions even where SSSOM terms are richer. 

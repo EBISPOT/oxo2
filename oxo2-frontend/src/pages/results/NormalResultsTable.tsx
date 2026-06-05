@@ -10,7 +10,7 @@ import {
     useMaterialReactTable,
 } from 'material-react-table';
 import {Mapping} from "../../model/Mapping.ts";
-import {IconButton, Tooltip} from "@mui/material";
+import {IconButton, Tooltip, ToggleButton, ToggleButtonGroup} from "@mui/material";
 import {EyeIcon} from "@heroicons/react/24/solid";
 import {EntityRefCell, CopyButton} from "../../components/mapping/EntityRefCell";
 import {ColumnFilterPopover, type FilterFieldDef} from "../../components/mapping/ColumnFilterPopover";
@@ -76,6 +76,15 @@ export function NormalResultsTable({ queries, mappingSetIds }: { queries: string
         { id: 'subject_label', desc: false }
     ]);
 
+    // Tri-state inferred/asserted filter for the result rows: null = all, true = inferred only,
+    // false = asserted only. Backed by the denormalised is_inferred flag (ADR-0008).
+    const [inferred, setInferred] = useState<boolean | null>(null);
+
+    const handleInferredChange = useCallback((next: boolean | null) => {
+        setInferred(next);
+        setPagination((previous) => ({ ...previous, pageIndex: 0 }));
+    }, []);
+
     const handleFilterChange = useCallback((field: string, value: string) => {
         setFieldFilters((previous) => ({ ...previous, [field]: value }));
     }, []);
@@ -116,6 +125,7 @@ export function NormalResultsTable({ queries, mappingSetIds }: { queries: string
             columnFiltersForBackend,
             sorting,
             mappingSetIdsKey,
+            inferred,
         ],
         queryFn: () =>
             fetchMappings(
@@ -125,7 +135,8 @@ export function NormalResultsTable({ queries, mappingSetIds }: { queries: string
                 columnFiltersForBackend,
                 sorting,
                 mappingSetIds,
-                undefined
+                undefined,
+                inferred
             ),
         staleTime: Infinity,
     });
@@ -214,6 +225,23 @@ export function NormalResultsTable({ queries, mappingSetIds }: { queries: string
                     </span>
                 ),
                 Cell: ({ row }) => <span className="break-all">{row.original.mappingJustification}</span>,
+            },
+            {
+                id: "is_inferred",
+                accessorFn: (row) => row.isInferred,
+                header: "Type",
+                enableSorting: false,
+                size: 110,
+                Cell: ({ row }) =>
+                    row.original.isInferred ? (
+                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">
+                            Inferred
+                        </span>
+                    ) : (
+                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">
+                            Asserted
+                        </span>
+                    ),
             },
             {
                 id: "mapping_provider",
@@ -341,6 +369,24 @@ export function NormalResultsTable({ queries, mappingSetIds }: { queries: string
         },
         enableHiding: true,
         enableTopToolbar: true,
+        renderTopToolbarCustomActions: () => (
+            <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={inferred === null ? "all" : inferred ? "inferred" : "asserted"}
+                onChange={(_event, value) => {
+                    // exclusive ToggleButtonGroup yields null when the active button is re-clicked;
+                    // ignore that so the control stays a true tri-state with an always-set value.
+                    if (value === null) return;
+                    handleInferredChange(value === "all" ? null : value === "inferred");
+                }}
+                aria-label="Filter by mapping type"
+            >
+                <ToggleButton value="all">All</ToggleButton>
+                <ToggleButton value="asserted">Asserted</ToggleButton>
+                <ToggleButton value="inferred">Inferred</ToggleButton>
+            </ToggleButtonGroup>
+        ),
     });
 
     return (
