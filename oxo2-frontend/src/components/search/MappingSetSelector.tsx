@@ -46,11 +46,12 @@ function MappingSetSelectorInner({
 
     const columns = useMemo<MRT_ColumnDef<MappingSet>[]>(
         () => [
-            { accessorKey: "mappingSetTitle", header: "Title", size: 200 },
+            { accessorKey: "mappingSetTitle", header: "Title", size: 200, filterFn: "contains" },
             {
                 accessorKey: "mappingSetId",
                 header: "Mapping Set Id",
                 size: 250,
+                filterFn: "contains",
                 Cell: ({ cell }) => (
                     <div style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
                         {cell.getValue<string>()}
@@ -61,6 +62,7 @@ function MappingSetSelectorInner({
                 accessorKey: "mappingSetDescription",
                 header: "Description",
                 size: 350,
+                filterFn: "contains",
                 Cell: ({ cell }) => (
                     <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
                         {cell.getValue<string>()}
@@ -71,9 +73,16 @@ function MappingSetSelectorInner({
                 accessorKey: "creatorLabel",
                 header: "Creator",
                 size: 150,
+                // creatorLabel is a string[]; filter against the same comma-joined text the
+                // cell renders so a substring matches any one creator regardless of order.
+                filterFn: (row, _columnId, filterValue) =>
+                    (row.original.creatorLabel ?? [])
+                        .join(", ")
+                        .toLowerCase()
+                        .includes(String(filterValue).toLowerCase()),
                 Cell: ({ cell }) => <span>{(cell.getValue<string[]>() ?? []).join(", ")}</span>,
             },
-            { accessorKey: "mappingProvider", header: "Provider", size: 150 },
+            { accessorKey: "mappingProvider", header: "Provider", size: 150, filterFn: "contains" },
         ],
         []
     );
@@ -100,14 +109,19 @@ function MappingSetSelectorInner({
         enableTopToolbar: false,
         enableBottomToolbar: false,
         enableColumnActions: false,
-        enableColumnFilters: false,
+        // Client-side per-column filtering over the already-fetched mapping sets. The
+        // top toolbar is hidden, so there is no filter-toggle button; show the filter
+        // input row by default (initialState.showColumnFilters) so every field is
+        // filterable straight away. Filter state stays internal to MRT, so typing here
+        // never re-renders the parent Search component (see the React.memo note above).
+        enableColumnFilters: true,
         enableSorting: true,
         enablePagination: false,
         enableStickyHeader: true,
         muiTableHeadCellProps: {
             sx: { fontWeight: "bold", fontSize: "14px" },
         },
-        initialState: { density: "compact" },
+        initialState: { density: "compact", showColumnFilters: true },
     });
 
     return <MaterialReactTable table={table} />;
