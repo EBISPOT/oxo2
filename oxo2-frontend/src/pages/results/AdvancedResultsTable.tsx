@@ -1,6 +1,8 @@
 import {useCallback, useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {ToggleButton, ToggleButtonGroup} from "@mui/material";
+import {InferenceType, DEFAULT_INFERENCE_TYPES} from "../../model/InferenceType";
+import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
+import {InferenceTypeFilter} from "../../components/mapping/InferenceTypeFilter";
 import {AdvancedFieldQuery} from "../../model/Search";
 import {emptyFacetedMapping, FacetedMapping, fetchMappings, fromJson} from "./MappingResultsSlice";
 import {useQuery} from "@tanstack/react-query";
@@ -40,13 +42,12 @@ export function AdvancedResultsTable({
         { id: 'subject_id', desc: false }
     ]);
 
-    // Tri-state inferred/asserted filter for the result rows: null = all, true = inferred only,
-    // false = asserted only. Backed by the denormalised is_inferred flag (ADR-0008); mirrors the
-    // control in NormalResultsTable.
-    const [inferred, setInferred] = useState<boolean | null>(null);
+    // Multi-select inference-type filter for the result rows (ADR-0011); defaults to
+    // {Asserted, SSSOM inference}. Mirrors the control in NormalResultsTable.
+    const [inferenceTypes, setInferenceTypes] = useState<InferenceType[]>(DEFAULT_INFERENCE_TYPES);
 
-    const handleInferredChange = useCallback((next: boolean | null) => {
-        setInferred(next);
+    const handleInferenceTypesChange = useCallback((next: InferenceType[]) => {
+        setInferenceTypes(next);
         setPagination((previous) => ({ ...previous, pageIndex: 0 }));
     }, []);
 
@@ -62,7 +63,7 @@ export function AdvancedResultsTable({
             sorting,
             mappingSetIdsKey,
             advancedKey,
-            inferred,
+            inferenceTypes.join(","),
         ],
         queryFn: () =>
             fetchMappings(
@@ -73,7 +74,7 @@ export function AdvancedResultsTable({
                 sorting,
                 mappingSetIds,
                 advancedFieldQueries.length > 0 ? advancedFieldQueries : undefined,
-                inferred
+                inferenceTypes
             ),
         staleTime: Infinity,
     });
@@ -134,22 +135,12 @@ export function AdvancedResultsTable({
                 header: "Mapping Justification",
             },
             {
-                // Asserted vs inferred row, backed by the denormalised is_inferred flag (ADR-0008).
-                // Column-level filtering of this field is driven by the toolbar tri-state control,
-                // not the per-column filter input, so the inline filter is disabled here.
-                accessorKey: "isInferred",
+                // Inference type (ADR-0011). Filtering of this field is driven by the toolbar
+                // multi-select, not the per-column filter input, so the inline filter is disabled.
+                accessorKey: "inferenceType",
                 header: "Type",
                 enableColumnFilter: false,
-                Cell: ({ row }) =>
-                    row.original.isInferred ? (
-                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">
-                            Inferred
-                        </span>
-                    ) : (
-                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">
-                            Asserted
-                        </span>
-                    ),
+                Cell: ({ row }) => <InferenceTypeBadge value={row.original.inferenceType} />,
             },
             {
                 accessorKey: "mappingProvider",
@@ -256,22 +247,7 @@ export function AdvancedResultsTable({
         enableHiding: true,
         enableTopToolbar: true, // Show toolbar so user can access column visibility menu
         renderTopToolbarCustomActions: () => (
-            <ToggleButtonGroup
-                size="small"
-                exclusive
-                value={inferred === null ? "all" : inferred ? "inferred" : "asserted"}
-                onChange={(_event, value) => {
-                    // exclusive ToggleButtonGroup yields null when the active button is re-clicked;
-                    // ignore that so the control stays a true tri-state with an always-set value.
-                    if (value === null) return;
-                    handleInferredChange(value === "all" ? null : value === "inferred");
-                }}
-                aria-label="Filter by mapping type"
-            >
-                <ToggleButton value="all">All</ToggleButton>
-                <ToggleButton value="asserted">Asserted</ToggleButton>
-                <ToggleButton value="inferred">Inferred</ToggleButton>
-            </ToggleButtonGroup>
+            <InferenceTypeFilter value={inferenceTypes} onChange={handleInferenceTypesChange} />
         ),
         muiTableBodyRowProps: ({ row }) => ({
             onClick: () => {

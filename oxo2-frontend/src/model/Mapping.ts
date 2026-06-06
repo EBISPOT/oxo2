@@ -1,3 +1,5 @@
+import { InferenceType } from "./InferenceType";
+
 export enum MappingFields {
     authorId = "authorId",
     authorLabel = "authorLabel",
@@ -168,7 +170,7 @@ export interface MappingResponse {
 
     asserted_mappings?: string;
     explanation?: string;
-    is_inferred?: boolean;
+    inference_type?: string;
 }
 
 
@@ -193,7 +195,7 @@ export interface Mapping {
     mappingSetTitle?: string;
     mappingSetVersion?: string;
     mappingSource?: string;
-    isInferred?: boolean;
+    inferenceType?: InferenceType;
     mappingTool?: string;
     mappingToolVersion?: string;
     matchString?: string;

@@ -18,6 +18,9 @@ interface Node {
         predicate: string;
         object: string;
         chainRule: string;
+        // Source mapping set of an asserted leaf (ADR-0010/0012): which set this premise came from.
+        // Set only on asserted nodes; surfaces cross-set provenance in the explanation graph.
+        mappingSet?: string;
         width?: number;
         height?: number;
     };
@@ -92,8 +95,12 @@ function estimateNodeHeight(node: Node): number {
     const chainRuleHeight = node.type === 'inferred' && node.data.chainRule
         ? CHAIN_RULE_LABEL_HEIGHT
         : 0;
+    // Asserted nodes carry an extra source-mapping-set line.
+    const sourceLabelHeight = node.type === 'asserted' && node.data.mappingSet
+        ? NODE_LINE_HEIGHT
+        : 0;
 
-    return Math.max(MIN_NODE_HEIGHT, labelHeight + NODE_VERTICAL_PADDING + chainRuleHeight);
+    return Math.max(MIN_NODE_HEIGHT, labelHeight + NODE_VERTICAL_PADDING + chainRuleHeight + sourceLabelHeight);
 }
 
 const layoutElements = (nodes: Node[], edges: Edge[], direction = 'BT') => {
@@ -198,7 +205,8 @@ function buildGraphData(mapping: InferredMapping): GraphData {
                 predicate,
                 object,
                 chainRule: isAsserted ? ''
-                    : (current.chainRuleApplications?.chainRule?.chainRuleAbbreviated ?? '').replace(/[<>?]/g, '').replace(/ - /, ' ← ')
+                    : (current.chainRuleApplications?.chainRule?.chainRuleAbbreviated ?? '').replace(/[<>?]/g, '').replace(/ - /, ' ← '),
+                mappingSet: isAsserted ? (current.mappingSetId ?? '') : ''
             },
             position: {
                 x: 0,
@@ -234,6 +242,7 @@ interface CustomNodeData {
     predicate: string;
     object: string;
     chainRule?: string;
+    mappingSet?: string;
     width?: number;
     height?: number;
 }
@@ -283,6 +292,22 @@ function CustomNodeAsserted({ data }: { data: CustomNodeData }) {
             </div>
             <div className="mapping-node-badge mapping-node-badge-asserted">Asserted</div>
             <MappingNodeContent data={data} />
+            {data.mappingSet && (
+                <div
+                    className="mapping-node-source"
+                    title={data.mappingSet}
+                    style={{
+                        maxWidth: data.width ? data.width - 24 : 260,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        fontSize: "11px",
+                        color: "#555",
+                    }}
+                >
+                    from {data.mappingSet}
+                </div>
+            )}
         </div>
     );
 }

@@ -7,6 +7,7 @@ import Header from "./components/common/Header";
 import Home from "./pages/home/Home";
 import MappingResults from "./pages/results/MappingResults";
 import MappingDetails from "./pages/results/MappingDetails";
+import InferencesPage from "./pages/results/InferencesPage";
 import { useLocation } from "react-router-dom";
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -34,6 +35,10 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/search/:curies" element={<MappingResults /> } />
                 <Route path="/mapping/:id" element={<MappingDetailsWrapper /> } />
+                {/* Resolvable inferred-set surface (ADR-0012): /inferences = cross-set SSSOM set;
+                    /inferences/<encoded source id> = per-source OWL set. */}
+                <Route path="/inferences" element={<InferencesPage /> } />
+                <Route path="/inferences/*" element={<InferencesPage /> } />
             </Routes>
             <Footer />
           </div>

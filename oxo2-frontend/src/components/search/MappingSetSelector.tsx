@@ -8,6 +8,8 @@ import {
 } from "material-react-table";
 import { fetchMappingSets } from "../../pages/results/MappingSetsSlice";
 import { MappingSet } from "../../model/MappingSet";
+import { INFERENCE_TYPE_LABELS, INFERENCE_TYPE_ORDER, inferenceTypeLabel } from "../../model/InferenceType";
+import { InferenceTypeBadge } from "../mapping/InferenceTypeBadge";
 
 /**
  * Mapping-set picker for the search forms. There are hundreds of mapping sets, so this
@@ -48,25 +50,16 @@ function MappingSetSelectorInner({
         () => [
             { accessorKey: "mappingSetTitle", header: "Title", size: 200, filterFn: "contains" },
             {
-                // Asserted vs inferred set, backed by the denormalised is_inferred flag (ADR-0008).
-                // Client-side select filter over the already-fetched sets: default (no selection) =
-                // all, matching the tri-state default in the results view.
-                id: "isInferred",
-                accessorFn: (row) => (row.isInferred ? "Inferred" : "Asserted"),
+                // Inference type (ADR-0011). Client-side select filter over the already-fetched sets;
+                // the accessor returns the display label so the select options match. Default (no
+                // selection) = all.
+                id: "inferenceType",
+                accessorFn: (row) => inferenceTypeLabel(row.inferenceType),
                 header: "Type",
-                size: 120,
+                size: 150,
                 filterVariant: "select",
-                filterSelectOptions: ["Asserted", "Inferred"],
-                Cell: ({ row }) =>
-                    row.original.isInferred ? (
-                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">
-                            Inferred
-                        </span>
-                    ) : (
-                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">
-                            Asserted
-                        </span>
-                    ),
+                filterSelectOptions: INFERENCE_TYPE_ORDER.map((type) => INFERENCE_TYPE_LABELS[type]),
+                Cell: ({ row }) => <InferenceTypeBadge value={row.original.inferenceType} />,
             },
             {
                 accessorKey: "mappingSetId",
