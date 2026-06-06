@@ -5,7 +5,7 @@ set -e
 
 SCRIPT_DIR=$(dirname $(readlink -f $0))
 
-echo Running json2ttlNextflow.sh
+echo Running json2nquadsNextflow.sh
 
 # Check if the required arguments are provided
 if [ "$#" -ne 2 ]; then
@@ -27,4 +27,4 @@ if [ ! -f "$JAR_FILE" ]; then
 fi
 
 java -cp "$JAR_FILE" \
-     uk.ac.ebi.spot.oxo.inferences.nemo.MainDispatcher json2ttl -f "$INPUT_FILE" -p "$OUTPUT_FILE"
+     uk.ac.ebi.spot.oxo.inferences.nemo.MainDispatcher json2nquads -f "$INPUT_FILE" -p "$OUTPUT_FILE"

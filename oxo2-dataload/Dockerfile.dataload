@@ -62,16 +62,13 @@ ENV PATH="${PATH}:/opt/nextflow:/opt/nemo:/opt/solr" \
 
 RUN mkdir -p /opt/oxo
 
-COPY     ./oxo2-dataload/oxo2-json2inferences/chain-rules.rls \
+COPY     ./oxo2-dataload/oxo2-json2inferences/owl.rls \
+         ./oxo2-dataload/oxo2-json2inferences/sssom.rls \
          ./oxo2-dataload/oxo2-json2inferences/explanations2json.sh \
          ./oxo2-dataload/oxo2-json2inferences/explanations2json.nf \
          ./oxo2-dataload/oxo2-json2inferences/explanations2jsonNextflow.sh \
          ./oxo2-dataload/oxo2-json2inferences/inferences2trace.sh \
-         ./oxo2-dataload/oxo2-json2inferences/inferMappings.sh \
-         ./oxo2-dataload/oxo2-json2inferences/inferMappings.nf \
-         ./oxo2-dataload/oxo2-json2inferences/json2ttl.sh \
-         ./oxo2-dataload/oxo2-json2inferences/json2ttl.nf \
-         ./oxo2-dataload/oxo2-json2inferences/json2ttlNextflow.sh \
+         ./oxo2-dataload/oxo2-json2inferences/json2nquadsNextflow.sh \
          ./oxo2-dataload/oxo2-json2inferences/mergeChainFiles.sh \
          ./oxo2-dataload/oxo2-json2inferences/nemoInferMappingsNextflow.sh \
          ./oxo2-dataload/oxo2-json2inferences/nemoExplainMappingsNextflow.sh \
@@ -96,8 +93,8 @@ COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/downloadMappings.nextflow \
          ./oxo2-dataload/downloadMappings.nf \
          ./oxo2-dataload/determineInferencesAndExplanations.nextflow \
-         ./oxo2-dataload/determineInferencesAndExplanations.nf \
          ./oxo2-dataload/inferAndExplainMappings.nf \
+         ./oxo2-dataload/inferSssomCrossSet.nf \
          ./oxo2-dataload/json2solr.sh \
          ./oxo2-dataload/loadData.nextflow \
          ./oxo2-dataload/sssom2json.sh \

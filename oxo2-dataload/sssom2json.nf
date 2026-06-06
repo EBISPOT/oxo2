@@ -23,7 +23,7 @@ workflow {
 // filenames from mappingSetId, so two TSVs declaring the same id (or simply
 // running concurrently) would collide at publish time. We rename the JAR's
 // output to the input TSV's basename inside the task workdir to guarantee
-// publish-time uniqueness; downstream consumers (json2ttl.nf, json2solr.sh)
+// publish-time uniqueness; downstream consumers (inferAndExplainMappings.nf, json2solr.sh)
 // match files by *.json glob, not by exact name.
 process SSSOM2JSON {
     tag "${tsv_file.baseName}"
