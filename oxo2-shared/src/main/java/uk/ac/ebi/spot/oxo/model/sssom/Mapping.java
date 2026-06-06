@@ -166,8 +166,8 @@ public record Mapping (
         int distance,
         @JsonProperty(EXPLANATION_LENGTH)
         int explanationLength,
-        @JsonProperty(IS_INFERRED)
-        boolean isInferred,
+        @JsonProperty(INFERENCE_TYPE)
+        InferenceType inferenceType,
         @JsonIgnore
         Optional<InferredMapping> explanation,
         @JsonProperty(EXPLANATION)
@@ -266,7 +266,7 @@ public record Mapping (
         // Extension
         private int distance = 1;
         private int explanationLength = 0;
-        private boolean isInferred = false;
+        private InferenceType inferenceType = InferenceType.ASSERTED;
         private Optional<InferredMapping> explanation = Optional.empty();
         private Optional<String> explanationAsString = Optional.empty();
         private List<InferredMapping> assertedMappings = new ArrayList<>();
@@ -471,10 +471,10 @@ public record Mapping (
             return this;
         }
 
-        @Field(IS_INFERRED)
-        @JsonProperty(IS_INFERRED)
-        public Builder isInferred(boolean isInferred) {
-            this.isInferred = isInferred;
+        @Field(INFERENCE_TYPE)
+        @JsonProperty(INFERENCE_TYPE)
+        public Builder inferenceType(InferenceType inferenceType) {
+            this.inferenceType = inferenceType;
             return this;
         }
 
@@ -1181,7 +1181,7 @@ public record Mapping (
                     assertedMappingsAsString,
                     distance,
                     explanationLength,
-                    isInferred,
+                    inferenceType,
                     explanation,
                     explanationAsString,
                     mappingId,

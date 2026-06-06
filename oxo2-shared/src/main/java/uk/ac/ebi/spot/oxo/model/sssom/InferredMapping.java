@@ -33,6 +33,8 @@ public class InferredMapping {
     private Optional<String> mappingTool;
     @JsonProperty(MAPPING_SET_ID)
     private String mappingSetId;
+    @JsonProperty(MAPPING_ID)
+    private String mappingId;
     @JsonProperty(OBJECT_IRI)
     private Uri objectIRI;
     @JsonProperty(OBJECT_ID)
@@ -114,6 +116,14 @@ public class InferredMapping {
         this.mappingSetId = mappingSetId;
     }
 
+    public String getMappingId() {
+        return mappingId;
+    }
+
+    public void setMappingId(String mappingId) {
+        this.mappingId = mappingId;
+    }
+
     public Optional<EntityReference> getObjectId() {
         return objectId;
     }
@@ -189,6 +199,7 @@ public class InferredMapping {
         mapping.mappingTool().ifPresent(this::setMappingTool);
         mapping.mappingJustification().ifPresent(this::setMappingJustification);
         this.setMappingSetId(mapping.mappingSetId().asStringIRI());
+        this.setMappingId(mapping.mappingId() == null ? null : mapping.mappingId().toString());
         mapping.subjectId().ifPresent(e -> this.setSubjectId(e.getDataAsString()));
         mapping.subjectLabel().ifPresent(this::setSubjectLabel);
         mapping.predicateId().ifPresent(e -> this.setPredicateId(e.getDataAsString()));

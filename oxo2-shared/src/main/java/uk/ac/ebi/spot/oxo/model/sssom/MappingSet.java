@@ -94,8 +94,8 @@ public record MappingSet (
         Optional<String> subjectSourceVersion,
         @JsonProperty(SUBJECT_TYPE)
         Optional<EntityTypeEnum> subjectType,
-        @JsonProperty(IS_INFERRED)
-        boolean isInferred) {
+        @JsonProperty(INFERENCE_TYPE)
+        InferenceType inferenceType) {
 
     public static MappingSet.Builder builder() {
         return new MappingSet.Builder();
@@ -122,7 +122,7 @@ public record MappingSet (
         private Optional<Uri> mappingProvider = Optional.empty();
         private Optional<String> mappingTool = Optional.empty();
         private Optional<String> mappingToolVersion = Optional.empty();
-        private boolean isInferred = false;
+        private InferenceType inferenceType = InferenceType.ASSERTED;
         private Optional<Date> mappingDate = Optional.empty();
         private Optional<Date> publicationDate = Optional.empty();
         private SortedSet<EntityReference> subjectMatchField = new TreeSet<>();
@@ -375,9 +375,9 @@ public record MappingSet (
             return this;
         }
 
-        @JsonProperty(IS_INFERRED)
-        public Builder isInferred(boolean isInferred) {
-            this.isInferred = isInferred;
+        @JsonProperty(INFERENCE_TYPE)
+        public Builder inferenceType(InferenceType inferenceType) {
+            this.inferenceType = inferenceType;
             return this;
         }
 
@@ -535,7 +535,7 @@ public record MappingSet (
                     subjectSource,
                     subjectSourceVersion,
                     subjectType,
-                    isInferred
+                    inferenceType
             );
         }
     }

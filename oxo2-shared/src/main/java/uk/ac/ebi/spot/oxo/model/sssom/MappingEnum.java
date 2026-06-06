@@ -67,7 +67,7 @@ public enum MappingEnum {
     DISTANCE(MappingConstants.DISTANCE),
     EXPLANATION_LENGTH(MappingConstants.EXPLANATION_LENGTH),
     EXPLANATION(MappingConstants.EXPLANATION),
-    IS_INFERRED(MappingConstants.IS_INFERRED),
+    INFERENCE_TYPE(MappingConstants.INFERENCE_TYPE),
     MAPPING_ID(MappingConstants.MAPPING_ID),
     OBJECT_ID_PREFIX(MappingConstants.OBJECT_ID_PREFIX),
     OBJECT_IRI(MappingConstants.OBJECT_IRI),
@@ -99,7 +99,7 @@ public enum MappingEnum {
 
             // Extension
             MappingEnum.DISTANCE.getField(),
-            MappingEnum.IS_INFERRED.getField(),
+            MappingEnum.INFERENCE_TYPE.getField(),
 //            MappingEnum.EXPLANATION.getField(),
             MappingEnum.OBJECT_IRI.getField(),
             MappingEnum.PREDICATE_IRI.getField(),

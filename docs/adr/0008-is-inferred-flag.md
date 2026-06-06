@@ -1,6 +1,6 @@
 # ADR-0008: A denormalised `is_inferred` flag distinguishes inferred from asserted
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR-0011](0011-inference-type-replaces-is-inferred.md) — the boolean `is_inferred` is replaced by the three-valued `inference_type` field.
 - **Date**: 2026-06-05
 
 ## Context

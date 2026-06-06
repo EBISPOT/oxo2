@@ -9,8 +9,9 @@ For *per-module* shape, vocabulary, and surfaces see each module's `CONTEXT.md`.
 ## Purpose
 
 OxO2 is a SSSOM-compliant ontology mapping service. It ingests SSSOM mapping sets from external sources, derives inferred 
-mappings by applying the SSSOM chaining rules via the Nemo rules engine, indexes mappings and their explanations into Apache Solr, 
-and serves them via a REST API consumed by a React frontend.
+mappings in two reasoning phases via the Nemo rules engine — OWL rules per mapping set and SSSOM chaining rules across all 
+mapping sets — indexes mappings and their explanations into Apache Solr, and serves them via a REST API consumed by a React 
+frontend.
 
 ## Glossary
 
@@ -22,7 +23,7 @@ multiple modules. Terms from borrowed technologies (Nemo, Solr, Nextflow) are no
 - **Mapping** — a single assertion that a subject entity corresponds to an object entity under some predicate, with metadata about 
 how the assertion was justified. Modelled in `oxo2-shared` as `Mapping`.
 - **MappingSet** — a curated collection of `Mapping`s sharing provenance, licence, and other set-level metadata. The unit of 
-ingestion and the unit over which chaining rules are applied. Modelled as `MappingSet`.
+ingestion and the scope of phase-1 (OWL) reasoning. Modelled as `MappingSet`.
 - **EntityReference** — a typed reference to an entity (typically a CURIE) used as the subject or object of a `Mapping`. Modelled as `EntityReference`.
 - **predicate_id**, **subject_id**, **object_id** — the three components that identify what a mapping asserts: which entity (subject) 
 is related, by which relation (predicate), to which other entity (object).
@@ -35,18 +36,26 @@ A SSSOM-defined enumeration.
 
 ### OxO2 cross-cutting vocabulary
 
-- **Asserted mapping** — a mapping that came directly from the input SSSOM file. Contrast with *inferred mapping*. Represented by `ChainRulesEnum.ASSERTED`.
-- **Inferred mapping** — a mapping derived by applying SSSOM chaining rules over an existing mapping set. Modelled as 
-`InferredMapping` in `oxo2-shared`. Inferred mappings carry the chain rule that produced them and a link to the explanation chain. 
-Narrower than the SSSOM notion of a *derived* mapping: a `semapv:LexicalMatching` mapping is derived but, having come from an input 
-file, is *asserted* in OxO — *inferred* means produced specifically by OxO chaining. Distinguished from asserted by the `is_inferred` flag.
-- **Inferred mapping set** — the mapping set that holds the inferred mappings OxO derives from a single asserted source set; OxO 
-produces exactly one per asserted set (inference scope is per mapping set — see § Cross-cutting constraints). Carries `is_inferred` 
-and links back to its asserted origin via `mapping_set_source`. The `is_inferred` flag (on both mapping and mapping-set documents) is 
-the canonical signal for filtering inferred vs asserted through the API.
-- **Chain rule** — a SSSOM-defined rule that derives a new mapping from existing ones (e.g. transitivity, inverse, generalisation). 
-Implemented in OxO2 as `ChainRulesEnum` (`RCE`, `T`, `RI`, `RG`, `RCE-N` families) and as Nemo rules in `oxo2-json2inferences/chain-rules.rls`. 
-See the SSSOM chaining-rules spec linked in § External surfaces.
+- **Asserted mapping** — a mapping that came directly from an input SSSOM file (`inference_type = ASSERTED`). Contrast with *inferred mapping*; represented in explanation chains by `ChainRulesEnum.ASSERTED`.
+- **Inferred mapping** — a mapping derived by OxO's two-phase reasoning (see § Cross-cutting constraints), not present in any 
+input file. Modelled as `InferredMapping` in `oxo2-shared`. Inferred mappings carry the chain rule that produced them and a link 
+to the explanation chain. Narrower than the SSSOM notion of a *derived* mapping: a `semapv:LexicalMatching` mapping is derived 
+but, having come from an input file, is *asserted* in OxO — *inferred* means produced specifically by OxO reasoning. Every 
+mapping's origin is recorded in the `inference_type` field as one of `ASSERTED`, `OWL_INFERENCE`, or `SSSOM_INFERENCE`.
+- **OWL inference** — an inferred mapping produced by **phase 1** (OWL reasoning, `owl.rls`): the rules that derive 
+`rdfs:subClassOf` / `rdfs:subPropertyOf` (`RCE-N1`–`RCE-N4`, plus subClassOf/subPropertyOf transitivity), applied **per mapping 
+set**. `inference_type = OWL_INFERENCE`. A last-resort signal — hidden in the default UI filter.
+- **SSSOM inference** — an inferred mapping produced by **phase 2** (SSSOM reasoning, `sssom.rls`): transitivity and role chains 
+over the strong mapping/equivalence predicates, applied **across all mapping sets**. `inference_type = SSSOM_INFERENCE`. Shown 
+alongside asserted mappings by default.
+- **Inferred mapping set** — a mapping set holding OxO-derived inferred mappings. There are two kinds: one **OWL-inference set 
+per source set** (phase 1), identified by `https://www.ebi.ac.uk/oxo2/inferences/<URLEncoded(source id)>` and linked to its origin 
+via `mapping_set_source`; and a **single SSSOM-inference set** (phase 2) at `https://www.ebi.ac.uk/oxo2/inferences`, whose 
+`mapping_set_source` is the union of all contributing sources. Both carry `inference_type`; their IRIs resolve to an OxO2 
+mapping-set view (see [ADR-0012](docs/adr/0012-resolvable-inference-set-iris.md)).
+- **Chain rule** — a rule that derives a new mapping from existing ones (e.g. transitivity, inverse, role chain). Implemented in 
+OxO2 as `ChainRulesEnum` (`RCE`, `T`, `RI`, `RG`, `RCE-N` families) and as Nemo rules split across `oxo2-json2inferences/owl.rls` 
+(phase 1) and `oxo2-json2inferences/sssom.rls` (phase 2). See the SSSOM chaining-rules spec linked in § External surfaces.
 - **Explanation** — the derivation step that justifies a single inferred mapping: which chain rule fired and which input mappings it consumed.
 - **Explanation chain** — the full derivation tree for an inferred mapping, recording every chain-rule application back to asserted mappings.
 - **Facts to trace** — the set of inferred mappings whose explanation chains still need to be computed. Produced by the inference stage, 
@@ -68,14 +77,27 @@ and Jackson serialization. The vocabulary library every other module depends on.
 
 Decisions that bind multiple modules. Each ADR captures one decision and its consequences; this list points at where each one bites.
 
-- **Inference scope is per mapping set** — chaining rules apply over a single mapping set, never across sets. SSSOM-spec conformance. 
-See [ADR-0001](docs/adr/0001-inference-scope-per-mapping-set.md). Affects `oxo2-dataload` (per-set Nemo invocations, within-set parallelism).
+- **Reasoning is two-phase** — phase 1 (OWL rules: `rdfs:subClassOf`/`subPropertyOf` derivation) runs **per mapping set**; phase 2 
+(SSSOM rules: transitivity + role chains over strong mapping/equivalence predicates) runs **across all mapping sets** for 
+findability. The phases are independent (phase 2 sees only asserted mappings). See 
+[ADR-0009](docs/adr/0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md) (supersedes ADR-0001). Affects `oxo2-dataload` (two 
+Nemo passes: `owl.rls` per set, `sssom.rls` over the whole corpus).
 - **Solr is the sole data store** — no relational database; both mappings and mapping sets live in Solr collections `oxo2-mappings` 
 and `oxo2-mappingsets`. See [ADR-0002](docs/adr/0002-solr-as-sole-data-store.md). Affects `oxo2-dataload` (denormalised documents at load time) and `oxo2-backend` (query patterns constrained by Solr).
-- **Inferred-vs-asserted is a denormalised `is_inferred` flag** — both mappings and mapping sets carry a boolean `is_inferred`, set 
-once at dataload from OxO provenance, as the single queryable signal for inferred-vs-asserted; the SSSOM provenance fields 
-(`mapping_source`, `mapping_set_source`) stay authoritative for export but are not the filter flag. See [ADR-0008](docs/adr/0008-is-inferred-flag.md). 
-Affects `oxo2-dataload` (writers set the flag), `oxo2-shared` (model field), and `oxo2-backend` (tri-state API filter).
+- **Origin is a denormalised `inference_type` field** — both mappings and mapping sets carry `inference_type` (`ASSERTED` / 
+`OWL_INFERENCE` / `SSSOM_INFERENCE`), set once at dataload from OxO provenance, as the single queryable origin signal; the SSSOM 
+provenance fields (`mapping_source`, `mapping_set_source`) stay authoritative for export but are not the filter. The API filter is 
+multi-select (absent = all); the UI defaults to {Asserted, SSSOM inference} and ranks Asserted > SSSOM > OWL. See 
+[ADR-0011](docs/adr/0011-inference-type-replaces-is-inferred.md) (supersedes ADR-0008). Affects `oxo2-dataload` (writers set it), 
+`oxo2-shared` (`InferenceType` enum), `oxo2-backend` (filter + relevance boost), and `oxo2-frontend` (labels, default, ranking).
+- **Inference provenance is carried as `urn:uuid` named graphs** — Nemo facts are N-Quads `<s> <p> <o> <urn:uuid:mapping_id> .` 
+so the trace attributes each premise to its exact asserted mapping and source set; inferred conclusions use the nil UUID. See 
+[ADR-0010](docs/adr/0010-carry-mapping-provenance-via-nquads.md). Affects `oxo2-dataload` (N-Quads emit, rule arity, explanation 
+builder) and `oxo2-mappings` (`mapping_id` becomes `indexed`).
+- **Inference-set IRIs are resolvable under the OxO2 base** — inference sets live under 
+`https://www.ebi.ac.uk/oxo2/inferences[/…]` and resolve to an OxO2 mapping-set view. See 
+[ADR-0012](docs/adr/0012-resolvable-inference-set-iris.md). Affects `oxo2-dataload` (set ids), `oxo2-backend` (`GET 
+/api/v2/mapping-sets/{id}`), and `oxo2-frontend` (`/inferences` route).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **OxO2 is backwards compatible with OxO v1** — API surface answers v1's questions even where SSSOM terms are richer. 
@@ -99,10 +121,11 @@ SSSOM mapping set URLs
         │
         ▼
 [oxo2-json2inferences]
-   ├─ json2ttl       ──► per-set TTL facts
-   ├─ nmo infer      ──► inferred mappings
+   ├─ json2nquads    ──► N-Quads facts (mapping_id as urn:uuid graph)
+   ├─ phase 1: nmo infer owl.rls   (per set)   ──► OWL inferences
+   ├─ phase 2: nmo infer sssom.rls (all sets)  ──► SSSOM inferences
    ├─ split + nmo trace (chunked)
-   └─ explanations2json  ──► per-set explanation chain files
+   └─ explanations2json  ──► explanation chain files (provenance via mapping_id)
         │
         ▼
 [oxo2-solr-dataload-client]  ──►  Solr: oxo2-mappings + oxo2-mappingsets
@@ -111,7 +134,7 @@ SSSOM mapping set URLs
 [oxo2-backend]  /api/v2/mappings, /api/v2/mapping-sets
         │
         ▼
-[oxo2-frontend]  /search/:curies, /mapping/:id
+[oxo2-frontend]  /search/:curies, /mapping/:id, /inferences
 ```
 
 Detail per stage lives in `oxo2-dataload/CONTEXT.md` § Module notes.

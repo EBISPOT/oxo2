@@ -1,6 +1,6 @@
 # ADR-0005: Inferences are stored in their own per mapping set, mapping set
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR-0012](0012-resolvable-inference-set-iris.md) — per-source inference sets survive for phase-1 (OWL), but the id scheme moves to resolvable IRIs under the OxO2 base and phase-2 (SSSOM) uses a single cross-set set.
 - **Date**: 2026-05-01
 
 ## Context
