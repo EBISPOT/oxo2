@@ -16,6 +16,7 @@ import uk.ac.ebi.spot.oxo.inferences.nemo.helpers.NemoHelper;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.NemoInferences;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.OXOInferenceConstants;
 import uk.ac.ebi.spot.oxo.model.sssom.ChainRulesEnum;
+import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.InferredMapping;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingSet;
@@ -48,13 +49,36 @@ public class ExplainInferredMappings {
             return;
         }
 
+        // ADR-0009/0011: which reasoning phase produced this trace, stamped on every inferred
+        // mapping and on the inferred mapping set. Required.
+        InferenceType inferenceType;
+        try {
+            inferenceType = InferenceType.fromCode(cmd.getOptionValue("inferenceType"));
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid --inferenceType: {}", cmd.getOptionValue("inferenceType"), e);
+            formatter.printHelp("ExplainInferredMappings", options);
+            System.exit(1);
+            return;
+        }
+        if (inferenceType == null || inferenceType == InferenceType.ASSERTED) {
+            logger.error("--inferenceType is required and must be OWL_INFERENCE or SSSOM_INFERENCE.");
+            formatter.printHelp("ExplainInferredMappings", options);
+            System.exit(1);
+            return;
+        }
+
+        // ADR-0009: phase 2 (SSSOM, cross-set) lands every inference in the single
+        // https://www.ebi.ac.uk/oxo2/inferences set, with the source-set union recovered
+        // from the per-leaf mapping_id provenance rather than from a single source set.
+        boolean crossSet = cmd.hasOption("crossSet");
+
         boolean singleFileMode = cmd.hasOption("inputFile") && cmd.hasOption("outputFile");
         boolean directoryMode = cmd.hasOption("nemoInferencesDirectory") && cmd.hasOption("outputDirectory");
 
         if (singleFileMode) {
             String sourceMappingSetId = cmd.getOptionValue("sourceMappingSetId");
-            if (sourceMappingSetId == null || sourceMappingSetId.isBlank()) {
-                logger.error("--sourceMappingSetId is required in single-file mode.");
+            if (!crossSet && (sourceMappingSetId == null || sourceMappingSetId.isBlank())) {
+                logger.error("--sourceMappingSetId is required in single-file mode unless --crossSet is set.");
                 formatter.printHelp("ExplainInferredMappings", options);
                 System.exit(1);
                 return;
@@ -67,7 +91,7 @@ public class ExplainInferredMappings {
                 return;
             }
             processSingleFile(cmd.getOptionValue("inputFile"), cmd.getOptionValue("outputFile"),
-                    mappingSetOutputFile, sourceMappingSetId);
+                    mappingSetOutputFile, sourceMappingSetId, inferenceType, crossSet);
         } else if (directoryMode) {
             String mappingSetJsonDir = cmd.getOptionValue("mappingSetJsonDir");
             String mappingSetOutputDirectory = cmd.getOptionValue("mappingSetOutputDirectory");
@@ -84,7 +108,7 @@ public class ExplainInferredMappings {
                 return;
             }
             processDirectory(cmd.getOptionValue("nemoInferencesDirectory"), cmd.getOptionValue("outputDirectory"),
-                    mappingSetOutputDirectory, mappingSetJsonDir);
+                    mappingSetOutputDirectory, mappingSetJsonDir, inferenceType);
         } else {
             logger.error("Invalid arguments. Provide either (-i inputFile -f outputFile -m mappingSetOutputFile -s sourceMappingSetId) for single file mode or (-n nemoInferencesDirectory -o outputDirectory -q mappingSetOutputDirectory -d mappingSetJsonDir) for directory mode.");
             formatter.printHelp("ExplainInferredMappings", getOptions());
@@ -97,9 +121,14 @@ public class ExplainInferredMappings {
      * Each invocation creates its own Solr client connection.
      */
     private static void processSingleFile(String inputFilePath, String outputFilePath,
-                                           String mappingSetOutputFilePath, String sourceMappingSetId) {
-        logger.info("Single file mode - Input: {}, Output: {}, MappingSet output: {}, Source mapping set: {}",
-                inputFilePath, outputFilePath, mappingSetOutputFilePath, sourceMappingSetId);
+                                           String mappingSetOutputFilePath, String sourceMappingSetId,
+                                           InferenceType inferenceType, boolean crossSet) {
+        String inferredMappingSetId = crossSet
+                ? OXOInferenceConstants.PHASE2_INFERENCES_SET_ID
+                : OXOInferenceConstants.inferredMappingSetIdFor(sourceMappingSetId);
+        logger.info("Single file mode - Input: {}, Output: {}, MappingSet output: {}, Source mapping set: {}, inferred set: {}, inferenceType: {}, crossSet: {}",
+                inputFilePath, outputFilePath, mappingSetOutputFilePath, sourceMappingSetId,
+                inferredMappingSetId, inferenceType, crossSet);
 
         File inputFile = new File(inputFilePath);
         if (!inputFile.exists() || !inputFile.isFile()) {
@@ -124,24 +153,29 @@ public class ExplainInferredMappings {
 
             logger.info("Converting to inferred mappings...");
             Set<InferredMapping> inferredMappings = NemoHelper.fromNemoInferencesToInferredMappings(
-                    nemoInferences, solrClient, sourceMappingSetId);
+                    nemoInferences, solrClient, inferredMappingSetId);
             if (inferredMappings.isEmpty()) {
                 logger.warn("No inferred mappings were generated for file: {}", inputFilePath);
             } else {
                 logger.info("Generated {} inferred mappings", inferredMappings.size());
             }
 
+            // For the cross-set phase, the inferred set's source is the union of every source
+            // set that contributed an asserted premise, recovered per leaf during the walk.
+            SortedSet<Uri> contributingSources = new TreeSet<>();
+
             logger.info("Creating mappings and streaming to file: {}", outputFilePath);
-            long writtenCount = streamMappingsToJson(inferredMappings, solrClient, sourceMappingSetId,
-                    outputFilePath);
+            long writtenCount = streamMappingsToJson(inferredMappings, solrClient, inferredMappingSetId,
+                    inferenceType, crossSet, sourceMappingSetId, contributingSources, outputFilePath);
             logger.info("Wrote {} mappings", writtenCount);
 
             if (writtenCount > 0) {
                 logger.info("Writing inferred MappingSet metadata to file: {}", mappingSetOutputFilePath);
-                writeInferredMappingSet(sourceMappingSetId, mappingSetOutputFilePath);
+                writeInferredMappingSet(inferredMappingSetId, sourceMappingSetId, contributingSources,
+                        inferenceType, crossSet, mappingSetOutputFilePath);
             } else {
-                logger.warn("Skipping inferred MappingSet emission because no inferred mappings were produced for source set {}",
-                        sourceMappingSetId);
+                logger.warn("Skipping inferred MappingSet emission because no inferred mappings were produced for inferred set {}",
+                        inferredMappingSetId);
             }
             logger.info("Successfully completed processing for file: {}", inputFilePath);
 
@@ -167,9 +201,10 @@ public class ExplainInferredMappings {
      * Uses a single shared Solr client for all files.
      */
     private static void processDirectory(String nemoInferencesToParseDirectory, String outputDirectory,
-                                          String mappingSetOutputDirectory, String mappingSetJsonDirectory) {
-        logger.info("Directory mode - Input: {}, Output: {}, MappingSet output: {}, MappingSet JSON dir: {}",
-                nemoInferencesToParseDirectory, outputDirectory, mappingSetOutputDirectory, mappingSetJsonDirectory);
+                                          String mappingSetOutputDirectory, String mappingSetJsonDirectory,
+                                          InferenceType inferenceType) {
+        logger.info("Directory mode (per-set, inferenceType {}) - Input: {}, Output: {}, MappingSet output: {}, MappingSet JSON dir: {}",
+                inferenceType, nemoInferencesToParseDirectory, outputDirectory, mappingSetOutputDirectory, mappingSetJsonDirectory);
 
         File inputDir = new File(nemoInferencesToParseDirectory);
         if (!inputDir.exists() || !inputDir.isDirectory()) {
@@ -236,6 +271,7 @@ public class ExplainInferredMappings {
                         continue;
                     }
                     logger.info("Resolved source mapping set ID: {}", sourceMappingSetId);
+                    String inferredMappingSetId = OXOInferenceConstants.inferredMappingSetIdFor(sourceMappingSetId);
 
                     logger.info("Reading inferences from file...");
                     NemoInferences nemoInferences = NemoInferenceReader.readInferences(inputFilePath);
@@ -247,7 +283,7 @@ public class ExplainInferredMappings {
 
                     logger.info("Converting to inferred mappings...");
                     Set<InferredMapping> inferredMappings = NemoHelper.fromNemoInferencesToInferredMappings(
-                            nemoInferences, solrClient, sourceMappingSetId);
+                            nemoInferences, solrClient, inferredMappingSetId);
                     if (inferredMappings.isEmpty()) {
                         logger.warn("No inferred mappings were generated for file: {}", inputFilePath);
                     } else {
@@ -256,9 +292,14 @@ public class ExplainInferredMappings {
 
                     String outputFilePath = new File(outputDir, baseName + ".json").getAbsolutePath();
 
+                    // Directory mode is per-set phase 1: the inferred set's source is the single
+                    // resolved source set, so the cross-set union collector is unused here.
+                    SortedSet<Uri> contributingSources = new TreeSet<>();
+
                     logger.info("Creating mappings and streaming to file: {}", outputFilePath);
                     long writtenCount = streamMappingsToJson(inferredMappings, solrClient,
-                            sourceMappingSetId, outputFilePath);
+                            inferredMappingSetId, inferenceType, false, sourceMappingSetId,
+                            contributingSources, outputFilePath);
                     logger.info("Wrote {} mappings", writtenCount);
 
                     if (writtenCount > 0) {
@@ -268,7 +309,8 @@ public class ExplainInferredMappings {
                         String mappingSetOutputFilePath = new File(mappingSetOutputDir,
                                 mappingSetBaseName + ".json").getAbsolutePath();
                         logger.info("Writing inferred MappingSet metadata to file: {}", mappingSetOutputFilePath);
-                        writeInferredMappingSet(sourceMappingSetId, mappingSetOutputFilePath);
+                        writeInferredMappingSet(inferredMappingSetId, sourceMappingSetId, contributingSources,
+                                inferenceType, false, mappingSetOutputFilePath);
                     }
 
                     logger.info("Successfully completed processing for file: {}", inputFilePath);
@@ -342,19 +384,35 @@ public class ExplainInferredMappings {
      * containing a single MappingSet, matching the format produced by
      * sssom2json so the same json2solr loader can index it.
      */
-    private static void writeInferredMappingSet(String sourceMappingSetId, String outputFilePath) throws IOException {
-        String inferredMappingSetId = OXOInferenceConstants.inferredMappingSetIdFor(sourceMappingSetId);
-        SortedSet<Uri> sources = new TreeSet<>();
-        sources.add(new Uri(sourceMappingSetId));
+    private static void writeInferredMappingSet(String inferredMappingSetId, String sourceMappingSetId,
+                                                SortedSet<Uri> contributingSources, InferenceType inferenceType,
+                                                boolean crossSet, String outputFilePath) throws IOException {
+        String mappingSetTitle;
+        String mappingSetDescription;
+        SortedSet<Uri> sources;
+        if (crossSet) {
+            // Phase 2 (ADR-0009): a single set whose source is the union of every set that
+            // contributed an asserted premise, recovered from the per-leaf mapping_id provenance.
+            sources = contributingSources;
+            mappingSetTitle = "OxO2 SSSOM cross-set inferences";
+            mappingSetDescription = "Inferred mappings derived via SEMAPV:MappingChaining across all "
+                    + "mapping sets (SSSOM reasoning).";
+        } else {
+            // Phase 1 (ADR-0009): one inferred set per source set (OWL reasoning).
+            sources = new TreeSet<>();
+            sources.add(new Uri(sourceMappingSetId));
+            mappingSetTitle = "Inferences from " + sourceMappingSetId;
+            mappingSetDescription = "Inferred mappings derived via OWL reasoning over asserted mappings in "
+                    + sourceMappingSetId;
+        }
 
         MappingSet mappingSet = MappingSet.builder()
                 .mappingSetId(inferredMappingSetId)
-                .mappingSetTitle("Inferences from " + sourceMappingSetId)
-                .mappingSetDescription("Inferred mappings derived via SEMAPV:MappingChaining over asserted mappings in "
-                        + sourceMappingSetId)
+                .mappingSetTitle(mappingSetTitle)
+                .mappingSetDescription(mappingSetDescription)
                 .mappingSetSource(sources)
                 .mappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL)
-                .isInferred(true)
+                .inferenceType(inferenceType)
                 .build();
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -382,14 +440,16 @@ public class ExplainInferredMappings {
      */
     public static long streamMappingsToJson(Set<InferredMapping> inferredMappings,
                                              DataloadSolr solrClient,
+                                             String inferredMappingSetId,
+                                             InferenceType inferenceType,
+                                             boolean crossSet,
                                              String sourceMappingSetId,
+                                             SortedSet<Uri> contributingSourcesOut,
                                              String outputFilePath) throws IOException {
         if (inferredMappings == null || inferredMappings.isEmpty()) {
             logger.warn("No inferred mappings to process");
             return 0;
         }
-
-        String inferredMappingSetId = OXOInferenceConstants.inferredMappingSetIdFor(sourceMappingSetId);
 
         // Per-run memos for the two recursive walks over the InferredMapping DAG.
         // NemoHelper.determineInferencesLeadingToConclusion guarantees one object
@@ -448,7 +508,18 @@ public class ExplainInferredMappings {
                     EntityDetails objectDetails = solrClient.queryEntityDetailsForIRI(OBJECT_IRI,
                             inferredMapping.getObjectIRI().asStringIRI(), OBJECT_ID, OBJECT_LABEL);
 
-                    Mapping mapping = new Mapping.Builder()
+                    List<InferredMapping> assertedEvidence =
+                            determineAssertedMappingsForExplanation(inferredMapping, assertedMemo);
+                    // Accumulate the source-set union for the cross-set inferred set metadata: every
+                    // asserted leaf carries its own source set in mappingSetId (ADR-0010).
+                    for (InferredMapping assertedLeaf : assertedEvidence) {
+                        String leafSource = assertedLeaf.getMappingSetId();
+                        if (leafSource != null && !leafSource.isBlank()) {
+                            contributingSourcesOut.add(new Uri(leafSource));
+                        }
+                    }
+
+                    Mapping.Builder mappingBuilder = new Mapping.Builder()
                         .subjectIRI(inferredMapping.getSubjectIRI().asStringIRI())
                         .subjectId((subjectDetails != null && subjectDetails.getCurie() != null) ?
                                 subjectDetails.getCurie() : "")
@@ -465,13 +536,18 @@ public class ExplainInferredMappings {
                         .mappingJustification(OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION)
                         .mappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL)
                         .explanation(inferredMapping)
-                        .assertedMappings(determineAssertedMappingsForExplanation(inferredMapping, assertedMemo))
+                        .assertedMappings(assertedEvidence)
                         .explanationLength(explanationLength(inferredMapping, lengthMemo))
                         .distance(calculateMappingDistance(inferredMapping))
                         .mappingSetId(inferredMappingSetId)
-                        .mappingSource(sourceMappingSetId)
-                        .isInferred(true)
-                        .build();
+                        .inferenceType(inferenceType.getCode());
+                    // Phase 1 records the single source set. In phase 2 a mapping can draw on several
+                    // sets (captured in the explanation and the set-level source union), so a single
+                    // mappingSource would be lossy — leave it unset.
+                    if (!crossSet && sourceMappingSetId != null && !sourceMappingSetId.isBlank()) {
+                        mappingBuilder.mappingSource(sourceMappingSetId);
+                    }
+                    Mapping mapping = mappingBuilder.build();
 
                     if (seqWriter == null) {
                         seqWriter = objectMapper.writer().writeValuesAsArray(outputFile);
@@ -648,6 +724,20 @@ public class ExplainInferredMappings {
                 "Source mapping set ID (URI) whose chain file is being processed (single-file mode).");
         sourceMappingSetId.setRequired(false);
         options.addOption(sourceMappingSetId);
+
+        // Phase selector (ADR-0009/0011): stamped on every inferred mapping and the inferred set.
+        Option inferenceType = new Option("t", "inferenceType", true,
+                "Inference type stamped on the inferred mappings/set: OWL_INFERENCE (phase 1, per-set) "
+                        + "or SSSOM_INFERENCE (phase 2, cross-set). Required.");
+        inferenceType.setRequired(false);
+        options.addOption(inferenceType);
+
+        Option crossSet = new Option("x", "crossSet", false,
+                "Cross-set (phase 2) mode: land all inferences in the single "
+                        + "https://www.ebi.ac.uk/oxo2/inferences set with a source-set union. "
+                        + "Single-file mode only; --sourceMappingSetId is not required.");
+        crossSet.setRequired(false);
+        options.addOption(crossSet);
 
         return options;
     }

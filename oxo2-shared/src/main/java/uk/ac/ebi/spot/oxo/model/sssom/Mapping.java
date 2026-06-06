@@ -471,10 +471,14 @@ public record Mapping (
             return this;
         }
 
+        // Bound from Solr (string field) by SolrJ getBeans and from JSON by Jackson; both pass
+        // the code string. SolrJ cannot convert a Solr string to a Java enum, so — as with
+        // mappingCardinality — the @Field setter takes String and converts via InferenceType.fromCode.
         @Field(INFERENCE_TYPE)
         @JsonProperty(INFERENCE_TYPE)
-        public Builder inferenceType(InferenceType inferenceType) {
-            this.inferenceType = inferenceType;
+        public Builder inferenceType(String inferenceType) {
+            if (inferenceType != null && !inferenceType.isBlank())
+                this.inferenceType = InferenceType.fromCode(inferenceType);
             return this;
         }
 

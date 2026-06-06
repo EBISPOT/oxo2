@@ -26,15 +26,23 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import uk.ac.ebi.spot.oxo.inferences.ApplicablePredicatesEnum;
+import uk.ac.ebi.spot.oxo.inferences.nemo.model.OXOInferenceConstants;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
-// To do: Skip negation.
+/**
+ * Converts SSSOM-as-JSON mappings to N-Quads facts for Nemo (ADR-0010). Each applicable
+ * mapping becomes a quad {@code <s> <p> <o> <urn:uuid:mapping_id> .} whose graph term carries
+ * the mapping's {@code mapping_id}. Nemo imports N-Quads in graph-first order, so the
+ * {@code mapping_id} is the first term of every fact — that is how the rulesets and the trace
+ * walker recover the source-mapping provenance for cross-set inference.
+ *
+ * <p>Replaces the prior triple ({@code .ttl}) emitter: triples carried no provenance, so the
+ * source mapping set of an asserted premise could not be recovered after chaining across sets.
+ */
+public class JSON2NQuads {
 
-
-public class JSON2Turtle {
-
-    private static final Logger logger = LoggerFactory.getLogger(JSON2Turtle.class);
+    private static final Logger logger = LoggerFactory.getLogger(JSON2NQuads.class);
 
     public static void main(String[] args) {
         Options options = getOptions();
@@ -46,7 +54,7 @@ public class JSON2Turtle {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             logger.error("Error parsing command line arguments", e);
-            formatter.printHelp("JSON2Turtle", options);
+            formatter.printHelp("JSON2NQuads", options);
             System.exit(1);
             return;
         }
@@ -59,31 +67,17 @@ public class JSON2Turtle {
         // Validate that either directory mode or file mode is used, but not both or neither
         boolean hasDirMode = (inputDirectory != null && outputDir != null);
         boolean hasFileMode = (inputFile != null && outputFile != null);
-        
+
         if (!hasDirMode && !hasFileMode) {
             logger.error("Either inputDir/outputDir OR inputFile/outputFile must be provided");
-            formatter.printHelp("JSON2Turtle", options);
+            formatter.printHelp("JSON2NQuads", options);
             System.exit(1);
             return;
         }
-        
+
         if (hasDirMode && hasFileMode) {
             logger.error("Cannot use both directory mode (inputDir/outputDir) and file mode (inputFile/outputFile) simultaneously");
-            formatter.printHelp("JSON2Turtle", options);
-            System.exit(1);
-            return;
-        }
-        
-        if (hasDirMode && (inputDirectory == null || outputDir == null)) {
-            logger.error("Both inputDir and outputDir must be provided for directory mode");
-            formatter.printHelp("JSON2Turtle", options);
-            System.exit(1);
-            return;
-        }
-        
-        if (hasFileMode && (inputFile == null || outputFile == null)) {
-            logger.error("Both inputFile and outputFile must be provided for file mode");
-            formatter.printHelp("JSON2Turtle", options);
+            formatter.printHelp("JSON2NQuads", options);
             System.exit(1);
             return;
         }
@@ -97,25 +91,25 @@ public class JSON2Turtle {
             } else {
                 logger.info("Input File: {}", inputFile);
                 logger.info("Output File: {}", outputFile);
-                generateTTLfromJSON(Paths.get(inputFile), Paths.get(outputFile));
+                generateNQuadsFromJSON(Paths.get(inputFile), Paths.get(outputFile));
             }
         } catch (Exception e) {
             logger.error("Error processing mappings", e);
             System.exit(0);
         }
         long endTime = System.currentTimeMillis();
-        logger.info("Processing took {} s", (endTime - startTime)/1000);
+        logger.info("Processing took {} s", (endTime - startTime) / 1000);
     }
 
     /**
-     * Converts a single JSON file to a TTL (Turtle) file.
-     * Reads mappings from the JSON file and writes valid triples to the TTL file.
-     * 
-     * @param jsonFile Path to the input JSON file
-     * @param outputFile Path to the output TTL file
+     * Converts a single JSON file to an N-Quads file. Reads mappings from the JSON file and
+     * writes one quad {@code <s> <p> <o> <urn:uuid:mapping_id> .} per applicable mapping.
+     *
+     * @param jsonFile   Path to the input JSON file
+     * @param outputFile Path to the output N-Quads file
      * @throws IOException if an I/O error occurs
      */
-    private static void generateTTLfromJSON(Path jsonFile, Path outputFile) throws IOException {
+    private static void generateNQuadsFromJSON(Path jsonFile, Path outputFile) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
 
         logger.info("Processing file: {}", jsonFile);
@@ -128,12 +122,22 @@ public class JSON2Turtle {
             while (parser.nextToken() != JsonToken.END_ARRAY) {
                 JsonNode mappingNode = objectMapper.readTree(parser);
                 String predicateIRI = mappingNode.get(MappingEnum.PREDICATE_IRI.getField()).asText();
-                if (isApplicablePredicate(predicateIRI)) {
-                    String subjectIRI = mappingNode.get(MappingEnum.SUBJECT_IRI.getField()).asText();
-                    String objectIRI = mappingNode.get(MappingEnum.OBJECT_IRI.getField()).asText();
+                if (!isApplicablePredicate(predicateIRI)) {
+                    continue;
+                }
+                String subjectIRI = mappingNode.get(MappingEnum.SUBJECT_IRI.getField()).asText();
+                String objectIRI = mappingNode.get(MappingEnum.OBJECT_IRI.getField()).asText();
+                JsonNode mappingIdNode = mappingNode.get(MappingEnum.MAPPING_ID.getField());
+                String mappingId = mappingIdNode == null ? null : mappingIdNode.asText();
 
-                    if (!isSkipOnPredicateModifier(mappingNode) && areURIsValid(subjectIRI, predicateIRI, objectIRI))
-                        writer.write(String.format("<%s> <%s> <%s> .\n", subjectIRI, predicateIRI, objectIRI));
+                if (mappingId == null || mappingId.isBlank()) {
+                    logger.warn("Skipping mapping with no mapping_id: <{}> <{}> <{}>", subjectIRI, predicateIRI, objectIRI);
+                    continue;
+                }
+
+                if (!isSkipOnPredicateModifier(mappingNode) && areURIsValid(subjectIRI, predicateIRI, objectIRI)) {
+                    writer.write(String.format("<%s> <%s> <%s> <%s%s> .\n",
+                            subjectIRI, predicateIRI, objectIRI, OXOInferenceConstants.URN_UUID_PREFIX, mappingId));
                 }
             }
         }
@@ -143,15 +147,10 @@ public class JSON2Turtle {
      * There is no indication from SSSOM that there is an intent to reason on for example negation.
      * Moreover, SSSOM gives no guidance as to the impact of negation on chain_rules. For this reason we exclude it from
      * all reasoning tasks.
-     *
-     * @param jsonNode
-     * @return
      */
     private static boolean isSkipOnPredicateModifier(JsonNode jsonNode) {
         JsonNode predicateModifier = jsonNode.get(MappingEnum.PREDICATE_MODIFIER.getField());
-        if (predicateModifier != null)
-            return true;
-        else  return false;
+        return predicateModifier != null;
     }
 
     private static void processMappings(String inputDirectory, String outputDirectory) throws IOException {
@@ -161,9 +160,10 @@ public class JSON2Turtle {
                     .collect(Collectors.toList());
 
             for (Path jsonFile : jsonFiles) {
-                String outputFile = outputDirectory + File.separator + jsonFile.getFileName().toString().replace(".json", ".ttl");
+                String outputFile = outputDirectory + File.separator
+                        + jsonFile.getFileName().toString().replace(".json", ".nq");
                 try {
-                    generateTTLfromJSON(jsonFile, Paths.get(outputFile));
+                    generateNQuadsFromJSON(jsonFile, Paths.get(outputFile));
                 } catch (Exception e) {
                     logger.error("Error processing file: {}", jsonFile, e);
                 }
@@ -174,10 +174,8 @@ public class JSON2Turtle {
     }
 
     private static boolean areURIsValid(String subjectIRI, String predicateIRI, String objectIRI) {
-        if (!StringUtils.isURIValid(subjectIRI) || !StringUtils.isURIValid(predicateIRI)
-                || !StringUtils.isURIValid(objectIRI))
-            return false;
-        return true;
+        return StringUtils.isURIValid(subjectIRI) && StringUtils.isURIValid(predicateIRI)
+                && StringUtils.isURIValid(objectIRI);
     }
 
     private static boolean isApplicablePredicate(String predicateIRI) {
@@ -196,7 +194,7 @@ public class JSON2Turtle {
         inputDirectory.setRequired(false);
         options.addOption(inputDirectory);
 
-        Option outputDirectory = new Option("o", "outputDir", true, "Output directory for turtle files");
+        Option outputDirectory = new Option("o", "outputDir", true, "Output directory for N-Quads files");
         outputDirectory.setRequired(false);
         options.addOption(outputDirectory);
 
@@ -204,9 +202,9 @@ public class JSON2Turtle {
         inputFile.setRequired(false);
         options.addOption(inputFile);
 
-        Option outputFile = new Option("p", "outputFile", true, "Output TTL file");
+        Option outputFile = new Option("p", "outputFile", true, "Output N-Quads file");
         outputFile.setRequired(false);
-        options.addOption(outputFile);        
+        options.addOption(outputFile);
 
         return options;
     }

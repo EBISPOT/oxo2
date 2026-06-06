@@ -472,7 +472,7 @@
   <fieldType name="uuid" class="solr.UUIDField" indexed="true" stored="true"/>
   <field name="_text_" type="text_general" multiValued="true" indexed="true" stored="false"/>
   <field name="_version_" type="plong" indexed="false" stored="false"/>
-  <field name="mapping_id" type="uuid" multiValued="false" indexed="false" stored="true"/>
+  <field name="mapping_id" type="uuid" multiValued="false" indexed="true" stored="true"/>
   <field name="author_id" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="author_label" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="comment" type="text_general" multiValued="false" indexed="true" stored="true"/>
@@ -543,7 +543,7 @@
   <field name="asserted_mappings" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="distance" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="explanation_length" type="pint" multiValued="false" indexed="true" stored="true"/>
-  <field name="is_inferred" type="boolean" indexed="true" stored="true" default="false"/>
+  <field name="inference_type" type="string" indexed="true" stored="true" default="ASSERTED"/>
   <field name="explanation" type="text_general" multiValued="false" indexed="false" stored="true"/>
   <field name="object_iri" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_iri" type="string" multiValued="false" indexed="true" stored="true"/>

@@ -37,6 +37,17 @@ public class DataloadSolr {
     private final Map<String, List<Mapping>> spoMappingsCache = new ConcurrentHashMap<>();
 
     /**
+     * Cache of asserted mappings keyed by their bare {@code mapping_id} (UUID string).
+     * Populated by {@link #prefetchMappingsByIds} and read by {@link #queryByMappingId}.
+     * Used to recover the provenance (source mapping set, curie/labels) of an asserted
+     * premise from the {@code mapping_id} carried in the Nemo trace (ADR-0010).
+     */
+    private final Map<String, Mapping> mappingByIdCache = new ConcurrentHashMap<>();
+
+    /** {@code mapping_id}s known to have no Solr document, pinned so we don't re-query them. */
+    private final Set<String> missingMappingIds = ConcurrentHashMap.newKeySet();
+
+    /**
      * Chunk size for batched prefetch via the Solr {@code terms} query parser.
      * The {@code terms} parser sidesteps {@code maxBooleanClauses}, and the
      * request is sent as POST so Jetty's URI cap doesn't apply — the only real
@@ -124,6 +135,111 @@ public class DataloadSolr {
 
             spoMappingsCache.put(cacheKey, mappings);
             return mappings;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Look up a single asserted mapping by its bare {@code mapping_id} (UUID string).
+     * This is the exact-provenance lookup used by the chain walker (ADR-0010): the
+     * {@code mapping_id} carried by an asserted premise in the Nemo trace uniquely
+     * identifies the asserted mapping, so — unlike the (s,p,o) lookup it replaces — no
+     * source-set scoping heuristic is needed and cross-set provenance is recovered exactly.
+     *
+     * @return the asserted {@link Mapping}, or {@code null} if no document matches.
+     */
+    public Mapping queryByMappingId(String mappingId) {
+        if (mappingId == null || mappingId.isBlank()) {
+            return null;
+        }
+        Mapping cached = mappingByIdCache.get(mappingId);
+        if (cached != null) {
+            return cached;
+        }
+        if (missingMappingIds.contains(mappingId)) {
+            return null;
+        }
+        try {
+            SolrQuery query = new SolrQuery();
+            query.setQuery(String.format("{!term f=%s}%s", MappingEnum.MAPPING_ID.getField(), mappingId));
+            query.setRows(1);
+
+            QueryResponse response = solrMappingClient.query(query);
+            List<Mapping.Builder> builders = response.getBeans(Mapping.Builder.class);
+            if (builders.isEmpty()) {
+                missingMappingIds.add(mappingId);
+                return null;
+            }
+            Mapping mapping = builders.get(0).build();
+            mappingByIdCache.put(mappingId, mapping);
+            return mapping;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Bulk-populate {@link #mappingByIdCache} for a set of bare {@code mapping_id}s in
+     * batched {@code {!terms f=mapping_id}} queries (sent as POST to dodge the URI cap),
+     * mirroring {@link #prefetchEntityDetails}. After this returns, {@link #queryByMappingId}
+     * is a cache hit for every supplied id (or a pinned miss for ids with no document).
+     */
+    public void prefetchMappingsByIds(Collection<String> mappingIds) {
+        if (mappingIds == null || mappingIds.isEmpty()) {
+            return;
+        }
+
+        Set<String> toFetch = new HashSet<>();
+        for (String mappingId : mappingIds) {
+            if (mappingId == null || mappingId.isBlank()) continue;
+            if (!mappingByIdCache.containsKey(mappingId) && !missingMappingIds.contains(mappingId)) {
+                toFetch.add(mappingId);
+            }
+        }
+        if (toFetch.isEmpty()) {
+            return;
+        }
+
+        List<String> fetchList = new ArrayList<>(toFetch);
+        int totalChunks = (fetchList.size() + PREFETCH_CHUNK_SIZE - 1) / PREFETCH_CHUNK_SIZE;
+        logger.info("Prefetch mappings by id: {} distinct mapping_ids in {} chunk(s) of up to {}",
+                fetchList.size(), totalChunks, PREFETCH_CHUNK_SIZE);
+        long batchStart = System.currentTimeMillis();
+        for (int i = 0; i < fetchList.size(); i += PREFETCH_CHUNK_SIZE) {
+            List<String> chunk = fetchList.subList(i, Math.min(i + PREFETCH_CHUNK_SIZE, fetchList.size()));
+            int chunkIndex = (i / PREFETCH_CHUNK_SIZE) + 1;
+            long chunkStart = System.currentTimeMillis();
+            int docsReturned = fetchMappingIdChunk(chunk);
+            logger.info("Prefetch mappings by id: chunk {}/{} ({} ids) -> {} docs in {} ms",
+                    chunkIndex, totalChunks, chunk.size(), docsReturned,
+                    System.currentTimeMillis() - chunkStart);
+        }
+        logger.info("Prefetch mappings by id: complete in {} ms", System.currentTimeMillis() - batchStart);
+    }
+
+    private int fetchMappingIdChunk(List<String> chunk) {
+        try {
+            SolrQuery query = new SolrQuery();
+            query.setQuery("{!terms f=" + MappingEnum.MAPPING_ID.getField() + "}" + String.join(",", chunk));
+            // One document per mapping_id, but size generously to be safe.
+            query.setRows(chunk.size() * 2);
+
+            QueryResponse response = solrMappingClient.query(query, SolrRequest.METHOD.POST);
+            List<Mapping.Builder> builders = response.getBeans(Mapping.Builder.class);
+            for (Mapping.Builder builder : builders) {
+                Mapping mapping = builder.build();
+                if (mapping.mappingId() != null) {
+                    mappingByIdCache.put(mapping.mappingId().toString(), mapping);
+                }
+            }
+            // Pin a miss for any id with no returned document so we don't re-query it.
+            for (String mappingId : chunk) {
+                if (!mappingByIdCache.containsKey(mappingId)) {
+                    missingMappingIds.add(mappingId);
+                }
+            }
+            return builders.size();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
