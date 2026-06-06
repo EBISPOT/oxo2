@@ -29,10 +29,17 @@ OxO2 modules:
 A REST API rooted at `/api/v2/`:
 
 - **`GET /api/v2/mappings/{subjectId}`** — list mappings whose subject is `subjectId` (URL-decoded). Paged.
-- **`POST /api/v2/mappings/search`** — faceted mapping search. Body: `MappingSearchRequest` (filters, facets, sort, paging). 
-Returns `FacetedMappingResponse`.
+- **`POST /api/v2/mappings/search`** — faceted mapping search. Body: `MappingSearchRequest` (filters, facets,
+sort, paging, and a multi-select `inferenceType` filter — [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)).
+Results carry a soft multiplicative edismax ranking (asserted &gt; SSSOM &gt; OWL inference; shorter chains
+higher). Returns `FacetedMappingResponse`.
 - **`GET /api/v2/mapping-sets`** — list all mapping sets (up to 10 000), returning `MappingSetSummary` (id, title, 
-description, creator labels, provider). Sorted by title.
+description, creator labels, provider, `inference_type`, source-set union). Sorted by title; optional multi-select
+`?inferenceType` filter.
+- **`GET /api/v2/mapping-sets/by-id?mappingSetId=<IRI>`** — fetch a single mapping set by id, backing the frontend
+inferred-set resolution surface ([ADR-0012](../docs/adr/0012-resolvable-inference-set-iris.md)). A query parameter,
+not a path variable, because a mapping-set id is a full IRI and Tomcat rejects the encoded slashes a path variable
+would require.
 
 Backwards compatibility with OxO v1 is *behavioural* ([ADR-0004](../docs/adr/0004-backwards-compatible-with-oxo-v1.md)) — the endpoints above use OxO2/SSSOM-shaped JSON; 
 the design constraint is that v1 questions remain answerable.
@@ -56,6 +63,16 @@ and `queryMappingSets(...)` over `oxo2-mappingsets`.
 Queries are built directly with SolrJ `SolrQuery`. There is no JPA, no repository abstraction, no caching layer between 
 controllers and Solr — this is deliberate ([ADR-0002](../docs/adr/0002-solr-as-sole-data-store.md)). Field names come from constants in `oxo2-shared` (`MappingEnum`, 
 `MappingSetConstants`) so the dataload and backend stay aligned.
+
+#### Inference-type filter and ranking
+
+The `inferenceType` filter (search body, and the mapping-sets `?inferenceType` param) becomes an OR of exact
+`inference_type:<CODE>` term matches; an absent/empty list means all types. Ranking is a **multiplicative**
+edismax `boost` (`SolrQueryBuilder.RANKING_BOOST`), not an additive `bq`: an additive boost is skewed by term
+idf (ASSERTED is common, SSSOM rare) and would invert the intended order. The tier multiplier (asserted 3 &gt;
+SSSOM 2 &gt; OWL 1) is multiplied by a distance factor bounded to `[1.0, 1.4]` (shorter chains higher), kept under
+the 1.5× adjacent-tier ratio so it can never flip the tiers. See
+[ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md).
 
 #### Column-filter matching
 

@@ -16,12 +16,15 @@ The cross-cutting terms `inferred mapping`, `chain rule`, `explanation`, `explan
 
 Module-local artifact names worth knowing:
 
-- **Per-set TTL fact file** — RDF triples generated from a mapping set's JSON, fed to Nemo as input. Produced by `json2ttl.{sh,nf}`.
-- **Inferences file** — Nemo's output for a mapping set: the derived inferred mappings before tracing. Produced by `inferMappings.{sh,nf}`.
-- **Trace chunk** — a slice of the per-set facts-to-trace file (default `trace_chunk_size = 100 000`), used as the parallelism 
-unit for `nmo trace`. See `inferAndExplainMappings.nf`.
-- **Chain file** — per-set or per-chunk JSON file containing explanation chains. Chunk-level chain files are merged 
-into the per-set chain file by `mergeChainFiles.sh`.
+- **Per-set N-Quads fact file** — `<s> <p> <o> <urn:uuid:mapping_id> .` quads generated from a mapping set's JSON,
+  fed to Nemo as input. The `mapping_id` graph term carries source-mapping provenance through Nemo
+  ([ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)). Produced by `json2nquadsNextflow.sh`.
+- **Cross-set corpus** — the concatenation of every set's N-Quads into one file; the input to phase-2 (SSSOM,
+  cross-set) reasoning. Produced by `inferSssomCrossSet.nf`.
+- **Trace chunk** — a slice of the facts-to-trace file (default `trace_chunk_size = 100 000`), used as the
+  parallelism unit for `nmo trace`. See `inferAndExplainMappings.nf` / `inferSssomCrossSet.nf`.
+- **Chain file** — per-chunk/per-set (phase 1) or the single cross-set (phase 2) JSON file of explanation chains;
+  per-chunk files are merged by `mergeChainFiles.sh`.
 
 ## Depends on
 
@@ -33,8 +36,9 @@ External:
 Internal (sub-modules):
 - `oxo2-downloader` — fetches SSSOM TSVs from the URLs listed in `OXO2_CONFIG`.
 - `oxo2-sssom2json` — TSV → JSON conversion.
-- `oxo2-json2inferences` — JSON → TTL → Nemo infer → trace → explanations JSON. Contains `chain-rules.rls` (Nemo rules 
-implementing the SSSOM chaining-rules spec).
+- `oxo2-json2inferences` — JSON → N-Quads → Nemo infer → trace → explanations JSON. Contains the two rulesets
+  `owl.rls` (phase 1, per-set OWL reasoning) and `sssom.rls` (phase 2, cross-set SSSOM reasoning), split per
+  [ADR-0009](../docs/adr/0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md).
 - `oxo2-solr-dataload-client` — Solr indexer; caches `EntityDetails` and `<s, p, o>` triples during load.
 - `oxo2-dataload-testing` — test utilities and fixtures.
 
@@ -71,17 +75,23 @@ configured `directory` is extracted — no GitHub API, see [ADR-0007](../docs/ad
 **2. SSSOM → JSON** — `sssom2json.nf` (logic in `oxo2-sssom2json`). Parses each SSSOM TSV into OxO2's JSON representation of 
 `MappingSet` and its `Mapping`s, using the types in `oxo2-shared`.
 
-**3. Inference and explanation** — `determineInferencesAndExplanations.nextflow` → `inferAndExplainMappings.nf` (logic in 
-`oxo2-json2inferences`). For each mapping set, in sequence per set ([ADR-0001](../docs/adr/0001-inference-scope-per-mapping-set.md)):
-   - `json2ttl` — convert per-set JSON to TTL facts.
-   - Nemo infer — run `nmo` with `chain-rules.rls` to produce inferred mappings.
-   - Split + parallel trace — `splitInferencesToTrace` chunks the facts-to-trace file (`trace_chunk_size` mappings per chunk, 
-default 100 000), runs `nmo trace` in parallel across chunks, then `mergeChainFiles.sh` recombines per-chunk chain JSONs into 
-one per-set chain file.
-   - `explanations2json` — convert Nemo's trace output to OxO2's explanation-chain JSON shape.
+**3. Inference (both phases)** — `determineInferencesAndExplanations.nextflow` runs `json2nquads` (per-set JSON →
+N-Quads carrying `mapping_id`, [ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)) then two
+reasoning phases ([ADR-0009](../docs/adr/0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md)):
+   - **Phase 1 — OWL, per set** (`inferAndExplainMappings.nf`): `nmo` runs `owl.rls` over each set's N-Quads to
+     derive subsumption (subClassOf/subPropertyOf) within that set → a per-source inferred set.
+   - **Phase 2 — SSSOM, cross-set** (`inferSssomCrossSet.nf`): every set's N-Quads is concatenated into one
+     corpus over which `nmo` runs `sssom.rls` (strong-predicate transitivity + role chains) to derive mappings
+     that may chain across sets → the single `https://www.ebi.ac.uk/oxo2/inferences` set.
+   - Both phases split the facts-to-trace file into chunks, run `nmo trace` in parallel, and `mergeChainFiles.sh`
+     recombines per-chunk chain JSONs (per-set for phase 1, one file for phase 2).
 
-**4. Solr load** — `json2solr.sh` (logic in `oxo2-solr-dataload-client`). Indexes mapping-set, mapping, and explanation-chain 
-JSON into the two Solr collections. The Solr client caches `EntityDetails` and `<s, p, o>` triples to avoid redundant lookups during load.
+**4. Solr load + explanation** — `json2solr.sh` (logic in `oxo2-solr-dataload-client`) indexes the asserted
+mapping-set and mapping JSON first, because `explanations2json` then queries Solr by `mapping_id` to recover each
+asserted premise's source set. `explanations2json` runs once per phase (`--inferenceType OWL_INFERENCE` /
+`SSSOM_INFERENCE`, [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)), converting Nemo's trace
+output to OxO2 explanation-chain JSON; the inferred mappings/sets are then indexed. The Solr client caches
+`EntityDetails` and by-id mapping lookups to avoid redundant queries during load.
 
 ### Configuration
 
@@ -95,6 +105,11 @@ JSON into the two Solr collections. The Solr client caches `EntityDetails` and `
 
 `solr-config/oxo2-mappings/` and `solr-config/oxo2-mappingsets/` hold the Solr collection configs. `copySolrConfig.sh` deploys 
 them to `$SOLR_HOME` for local runs.
+
+> **Reindex required (ADR-0011):** the schemas changed — `is_inferred` (boolean) became `inference_type`
+> (string, default `ASSERTED`) on both cores, and `mapping_id` is now `indexed="true"` on `oxo2-mappings`
+> (the explanation step looks up asserted premises by it). An existing index must be rebuilt; a normal
+> `loadData.nextflow` run does a fresh load and so reindexes automatically.
 
 ### Input validation
 
