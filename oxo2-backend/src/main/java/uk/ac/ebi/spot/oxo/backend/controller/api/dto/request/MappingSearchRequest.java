@@ -1,5 +1,6 @@
 package uk.ac.ebi.spot.oxo.backend.controller.api.dto.request;
 
+import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.List;
@@ -26,8 +27,10 @@ public class MappingSearchRequest {
 
     private List<FieldQuery> advancedFieldQueries;
 
-    // Tri-state inferred/asserted filter: null = both, true = inferred only, false = asserted only.
-    private Boolean inferred;
+    // Multi-select inference-type filter (ADR-0011): null/empty = all types; otherwise restrict to
+    // the listed types (ASSERTED / OWL_INFERENCE / SSSOM_INFERENCE). Replaces the old tri-state
+    // boolean `inferred`.
+    private List<InferenceType> inferenceType;
 
 
     public List<String> getQueries() {
@@ -118,12 +121,12 @@ public class MappingSearchRequest {
         this.advancedFieldQueries = advancedFieldQueries;
     }
 
-    public Boolean getInferred() {
-        return inferred;
+    public List<InferenceType> getInferenceType() {
+        return inferenceType;
     }
 
-    public void setInferred(Boolean inferred) {
-        this.inferred = inferred;
+    public void setInferenceType(List<InferenceType> inferenceType) {
+        this.inferenceType = inferenceType;
     }
 
     @Override
@@ -140,7 +143,7 @@ public class MappingSearchRequest {
                 ", size=" + size +
                 ", mappingSetIds=" + mappingSetIds +
                 ", advancedFieldQueries=" + advancedFieldQueries +
-                ", inferred=" + inferred +
+                ", inferenceType=" + inferenceType +
                 '}';
     }
 

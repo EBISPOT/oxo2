@@ -10,6 +10,7 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingFacetEnum;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest.ColumnFilter;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
+import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.Arrays;
@@ -188,7 +189,8 @@ class SolrQueryBuilderTest {
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
-        assertThat(solrQuery.get(SolrConstants.DEF_TYPE)).isNull();
+        // All paths now run under edismax so the inference ranking (ADR-0011) applies uniformly.
+        assertThat(solrQuery.get(SolrConstants.DEF_TYPE)).isEqualTo(SolrConstants.EDISMAX);
         assertThat(solrQuery.getQuery()).contains(MappingEnum.SUBJECT_ID.getField() + ":\"")
                 .doesNotContain("ignored");
     }
@@ -214,7 +216,8 @@ class SolrQueryBuilderTest {
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
-        assertThat(solrQuery.get(SolrConstants.DEF_TYPE)).isNull();
+        // All paths now run under edismax so the inference ranking (ADR-0011) applies uniformly.
+        assertThat(solrQuery.get(SolrConstants.DEF_TYPE)).isEqualTo(SolrConstants.EDISMAX);
         assertThat(solrQuery.getQuery())
                 .contains(MappingEnum.SUBJECT_LABEL.getField() + ":\"diabetes\"")
                 .contains(MappingEnum.OBJECT_LABEL.getField() + ":\"diabetes\"")
@@ -446,36 +449,36 @@ class SolrQueryBuilderTest {
                 MappingFacetEnum.PREDICATE_ID.getValue());
     }
 
-    // ---------- inferred (is_inferred) filter ----------
+    // ---------- inference_type filter ----------
 
     @Test
-    void inferredTrueAddsExactIsInferredFilter() {
+    void inferenceTypeSingleAddsOrClause() {
         MappingSearchRequest request = baseRequest();
-        request.setInferred(true);
+        request.setInferenceType(List.of(InferenceType.ASSERTED));
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
-        // Exact term match on the denormalised boolean (ADR-0008) — never a *value* substring,
-        // which would be invalid for a Solr boolean field.
+        // Exact term match(es) on the denormalised inference_type string (ADR-0011), OR-joined.
         assertThat(solrQuery.getFilterQueries())
-                .containsExactly(MappingEnum.IS_INFERRED.getField() + ":true");
+                .containsExactly("(" + MappingEnum.INFERENCE_TYPE.getField() + ":ASSERTED)");
     }
 
     @Test
-    void inferredFalseAddsExactIsInferredFilter() {
+    void inferenceTypeMultipleOrsCodes() {
         MappingSearchRequest request = baseRequest();
-        request.setInferred(false);
+        request.setInferenceType(List.of(InferenceType.ASSERTED, InferenceType.SSSOM_INFERENCE));
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
+        String field = MappingEnum.INFERENCE_TYPE.getField();
         assertThat(solrQuery.getFilterQueries())
-                .containsExactly(MappingEnum.IS_INFERRED.getField() + ":false");
+                .containsExactly("(" + field + ":ASSERTED OR " + field + ":SSSOM_INFERENCE)");
     }
 
     @Test
-    void inferredNullProducesNoExtraFq() {
+    void inferenceTypeNullProducesNoExtraFq() {
         MappingSearchRequest request = baseRequest();
-        request.setInferred(null);
+        request.setInferenceType(null);
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
@@ -483,9 +486,19 @@ class SolrQueryBuilderTest {
     }
 
     @Test
-    void inferredFilterCombinesWithMappingSetIds() {
+    void inferenceTypeEmptyProducesNoExtraFq() {
         MappingSearchRequest request = baseRequest();
-        request.setInferred(true);
+        request.setInferenceType(Collections.emptyList());
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.getFilterQueries()).isEmpty();
+    }
+
+    @Test
+    void inferenceTypeFilterCombinesWithMappingSetIds() {
+        MappingSearchRequest request = baseRequest();
+        request.setInferenceType(List.of(InferenceType.SSSOM_INFERENCE));
         request.setMappingSetIds(List.of("set-1"));
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
@@ -493,7 +506,28 @@ class SolrQueryBuilderTest {
         String field = MappingEnum.MAPPING_SET_ID.getField();
         String mappingSetClause = "(" + field + ":\"" + ClientUtils.escapeQueryChars("set-1") + "\")";
         assertThat(solrQuery.getFilterQueries()).containsExactlyInAnyOrder(
-                MappingEnum.IS_INFERRED.getField() + ":true",
+                "(" + MappingEnum.INFERENCE_TYPE.getField() + ":SSSOM_INFERENCE)",
                 mappingSetClause);
+    }
+
+    // ---------- soft inference ranking (edismax bq/bf, ADR-0011) ----------
+
+    @Test
+    void rankingAppliesMultiplicativeEdismaxBoost() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.get(SolrConstants.DEF_TYPE)).isEqualTo(SolrConstants.EDISMAX);
+        String boost = solrQuery.get(SolrConstants.BOOST);
+        String field = MappingEnum.INFERENCE_TYPE.getField();
+        // Multiplicative tier (3/2/1) × distance recip — idf-independent so ASSERTED outranks SSSOM.
+        assertThat(boost)
+                .startsWith("mul(")
+                .contains("termfreq(" + field + ",'ASSERTED'),3")
+                .contains("termfreq(" + field + ",'SSSOM_INFERENCE'),2")
+                // Distance factor bounded to [1.0, 1.4] so it can't invert the tier order.
+                .contains("sum(1,div(0.4,sum(def(distance,1),1)))");
     }
 }

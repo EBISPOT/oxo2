@@ -22,9 +22,11 @@ Inference mapping sets are identified by **resolvable IRIs** under the OxO2 base
 - **Phase-1 per-source OWL-inference sets**: `https://www.ebi.ac.uk/oxo2/inferences/<URLEncoded(source id)>`
 
 These IRIs resolve to an OxO2 mapping-set view: a new frontend route (`/inferences` and an `/inferences/*`
-splat, so an encoded source id survives as one path segment) backed by a new `GET /api/v2/mapping-sets/{id}`
-endpoint. The phase-2 set's `mapping_set_source` is the **union** of all contributing source sets; per-mapping
-`mapping_source` follows each mapping's own explanation leaves.
+splat, so an encoded source id survives as one path segment) backed by a new
+`GET /api/v2/mapping-sets/by-id?mappingSetId=<IRI>` endpoint. The id is a query parameter, not a path
+variable, because a mapping-set id is a full IRI and Tomcat rejects the encoded slashes (`%2F`) a path
+variable would require. The phase-2 set's `mapping_set_source` is the **union** of all contributing source
+sets; per-mapping `mapping_source` follows each mapping's own explanation leaves.
 
 ## Consequences
 

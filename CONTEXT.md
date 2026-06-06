@@ -97,7 +97,7 @@ builder) and `oxo2-mappings` (`mapping_id` becomes `indexed`).
 - **Inference-set IRIs are resolvable under the OxO2 base** — inference sets live under 
 `https://www.ebi.ac.uk/oxo2/inferences[/…]` and resolve to an OxO2 mapping-set view. See 
 [ADR-0012](docs/adr/0012-resolvable-inference-set-iris.md). Affects `oxo2-dataload` (set ids), `oxo2-backend` (`GET 
-/api/v2/mapping-sets/{id}`), and `oxo2-frontend` (`/inferences` route).
+/api/v2/mapping-sets/by-id?mappingSetId=<IRI>`), and `oxo2-frontend` (`/inferences` route).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **OxO2 is backwards compatible with OxO v1** — API surface answers v1's questions even where SSSOM terms are richer. 

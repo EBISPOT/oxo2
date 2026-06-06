@@ -2,6 +2,7 @@ package uk.ac.ebi.spot.oxo.backend.controller.api.v2;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,11 +15,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.MappingSetSummary;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
+import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingSetConstants.*;
 
@@ -30,46 +33,107 @@ public class MappingSetController {
 
     private static final int MAX_ROWS = 10_000;
     private static final String TITLE_SORT_FIELD = MAPPING_SET_TITLE + "_str";
+    private static final String[] SUMMARY_FIELDS = {
+            MAPPING_SET_ID, MAPPING_SET_TITLE, MAPPING_SET_DESCRIPTION,
+            CREATOR_LABEL, MAPPING_PROVIDER, INFERENCE_TYPE, MAPPING_SET_SOURCE
+    };
 
     @Autowired
     private OxOSolrClient solrClient;
 
     @GetMapping
     public ResponseEntity<List<MappingSetSummary>> listMappingSets(
-            @RequestParam(required = false) Boolean inferred) {
+            @RequestParam(required = false) List<String> inferenceType) {
         try {
             SolrQuery solrQuery = new SolrQuery("*:*");
             solrQuery.setRows(MAX_ROWS);
-            solrQuery.setFields(
-                    MAPPING_SET_ID,
-                    MAPPING_SET_TITLE,
-                    MAPPING_SET_DESCRIPTION,
-                    CREATOR_LABEL,
-                    MAPPING_PROVIDER,
-                    IS_INFERRED);
-            // Tri-state filter: null = all sets, true = inferred only, false = asserted only (ADR-0008).
-            if (inferred != null) {
-                solrQuery.addFilterQuery(IS_INFERRED + ":" + inferred);
+            solrQuery.setFields(SUMMARY_FIELDS);
+            // Multi-select inference-type filter (ADR-0011): absent/empty = all sets; otherwise
+            // restrict to the listed types (ASSERTED / OWL_INFERENCE / SSSOM_INFERENCE).
+            String inferenceTypeFilter = inferenceTypeFilterClause(inferenceType);
+            if (inferenceTypeFilter != null) {
+                solrQuery.addFilterQuery(inferenceTypeFilter);
             }
             solrQuery.addSort(TITLE_SORT_FIELD, SolrQuery.ORDER.asc);
 
             QueryResponse response = solrClient.queryMappingSets(solrQuery);
             List<MappingSetSummary> summaries = new ArrayList<>(response.getResults().size());
             for (SolrDocument doc : response.getResults()) {
-                summaries.add(new MappingSetSummary(
-                        asString(doc.getFieldValue(MAPPING_SET_ID)),
-                        asString(doc.getFieldValue(MAPPING_SET_TITLE)),
-                        asString(doc.getFieldValue(MAPPING_SET_DESCRIPTION)),
-                        asStringList(doc.getFieldValues(CREATOR_LABEL)),
-                        asString(doc.getFieldValue(MAPPING_PROVIDER)),
-                        Boolean.TRUE.equals(doc.getFieldValue(IS_INFERRED))
-                ));
+                summaries.add(toSummary(doc));
             }
             return ResponseEntity.ok(summaries);
         } catch (Exception e) {
             logger.error("Error listing mapping sets", e);
             return ResponseEntity.status(500).build();
         }
+    }
+
+    /**
+     * Fetch a single mapping set by id. Backs the frontend inferred-set resolution surface
+     * (e.g. resolving https://www.ebi.ac.uk/oxo2/inferences and per-source inferred sets), so the
+     * response carries inference_type and the source-set union (ADR-0012).
+     *
+     * <p>The id is taken as a query parameter, not a path variable: mapping_set_id is a full IRI,
+     * and Tomcat rejects the encoded slashes ({@code %2F}) an IRI path variable would require.
+     * Spring already URL-decodes the query parameter value, so no manual decode is needed.
+     */
+    @GetMapping("/by-id")
+    public ResponseEntity<MappingSetSummary> getMappingSet(@RequestParam String mappingSetId) {
+        try {
+            SolrQuery solrQuery = new SolrQuery();
+            solrQuery.setQuery(MAPPING_SET_ID + ":\"" + ClientUtils.escapeQueryChars(mappingSetId) + "\"");
+            solrQuery.setRows(1);
+            solrQuery.setFields(SUMMARY_FIELDS);
+
+            QueryResponse response = solrClient.queryMappingSets(solrQuery);
+            if (response.getResults().isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(toSummary(response.getResults().get(0)));
+        } catch (Exception e) {
+            logger.error("Error fetching mapping set {}", mappingSetId, e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    private static MappingSetSummary toSummary(SolrDocument doc) {
+        return new MappingSetSummary(
+                asString(doc.getFieldValue(MAPPING_SET_ID)),
+                asString(doc.getFieldValue(MAPPING_SET_TITLE)),
+                asString(doc.getFieldValue(MAPPING_SET_DESCRIPTION)),
+                asStringList(doc.getFieldValues(CREATOR_LABEL)),
+                asString(doc.getFieldValue(MAPPING_PROVIDER)),
+                asString(doc.getFieldValue(INFERENCE_TYPE)),
+                asStringList(doc.getFieldValues(MAPPING_SET_SOURCE))
+        );
+    }
+
+    /**
+     * Build an OR-of-exact-terms filter clause over inference_type, or null if no valid type was
+     * supplied. Values are validated against {@link InferenceType} (the codes are safe enum names),
+     * so unknown values are ignored rather than injected into the query.
+     */
+    private static String inferenceTypeFilterClause(List<String> inferenceType) {
+        if (inferenceType == null || inferenceType.isEmpty()) {
+            return null;
+        }
+        List<String> codes = new ArrayList<>();
+        for (String value : inferenceType) {
+            if (value == null || value.isBlank()) continue;
+            try {
+                codes.add(InferenceType.fromCode(value.trim()).getCode());
+            } catch (IllegalArgumentException e) {
+                logger.warn("Ignoring unknown inferenceType filter value: {}", value);
+            }
+        }
+        if (codes.isEmpty()) {
+            return null;
+        }
+        String clause = codes.stream()
+                .distinct()
+                .map(code -> INFERENCE_TYPE + ":" + code)
+                .collect(Collectors.joining(" OR "));
+        return "(" + clause + ")";
     }
 
     private static String asString(Object value) {
