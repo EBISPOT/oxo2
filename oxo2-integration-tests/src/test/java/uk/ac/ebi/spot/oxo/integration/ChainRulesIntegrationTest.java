@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
+import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,85 +21,82 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Full-pipeline integration test for SSSOM chain-rule fixtures.
+ * Full-pipeline integration test for the two-phase reasoning fixtures (ADR-0009).
  *
- * One pipeline run (loadData.nextflow) per JVM invocation; one dynamic test per rule.
- * See oxo2-integration-tests/CONTEXT.md for the env-var contract and operational
- * consequences (this run replaces the dev's local Solr state).
+ * Each fixture is run through loadData.nextflow in <b>isolation</b> — one pipeline pass over only
+ * that fixture's set(s) — so a phase-2 (cross-set) rule's single {@code oxo2/inferences} output
+ * belongs to exactly that fixture and can be asserted per-rule. Because each pass wipes
+ * {@code $OXO2_DATA} and the Solr collections, the per-fixture run and its assertions are
+ * interleaved: a fixture's golden-file + Solr assertions run before the next fixture's pass.
+ * JUnit executes dynamic containers (and their children) in encounter order, which guarantees that
+ * interleaving.
+ *
+ * See oxo2-integration-tests/CONTEXT.md for the env-var contract and operational consequences.
  */
 public class ChainRulesIntegrationTest {
 
     private static List<RuleFixtures.Fixture> fixtures;
 
     @BeforeAll
-    static void runPipeline() throws Exception {
+    static void discoverFixtures() throws Exception {
         Env.requireAll();
         fixtures = RuleFixtures.discover();
         if (fixtures.isEmpty()) {
-            throw new IllegalStateException("No rule fixtures discovered under " + RuleFixtures.fixturesDir());
+            throw new IllegalStateException("No fixtures discovered under " + RuleFixtures.rulesDir()
+                    + " or " + RuleFixtures.crossSetDir());
         }
-        Pipeline.runLoadDataNextflow();
     }
 
     @TestFactory
-    Collection<DynamicNode> perRuleTests() {
+    Collection<DynamicNode> perFixtureTests() {
         List<DynamicNode> nodes = new ArrayList<>();
         for (RuleFixtures.Fixture fixture : fixtures) {
-            nodes.add(DynamicContainer.dynamicContainer(fixture.rule, ruleAssertions(fixture)));
+            nodes.add(DynamicContainer.dynamicContainer(fixture.name, fixtureTests(fixture)));
         }
         return nodes;
     }
 
-    private List<DynamicTest> ruleAssertions(RuleFixtures.Fixture fixture) {
-        String baseName = fixture.baseName();
+    private List<DynamicTest> fixtureTests(RuleFixtures.Fixture fixture) {
         List<DynamicTest> tests = new ArrayList<>();
-        tests.add(DynamicTest.dynamicTest("inferredMappings.ttl", () -> compareTextLayer(
-                ArtifactPaths.expectedInferredTtl(baseName),
-                ArtifactPaths.actualInferredTtl(baseName),
-                Canonicalisers::readTtl)));
-        tests.add(DynamicTest.dynamicTest("inferenceChains.json", () -> compareTextLayer(
-                ArtifactPaths.expectedChainJson(baseName),
-                ArtifactPaths.actualChainJson(baseName),
-                Canonicalisers::readJson)));
-        tests.add(DynamicTest.dynamicTest("solr/mapping explained.json", () -> compareTextLayer(
-                ArtifactPaths.expectedExplainedJson(baseName),
-                ArtifactPaths.actualExplainedJson(baseName),
-                Canonicalisers::readExplainedJson)));
-        tests.add(DynamicTest.dynamicTest("solr/mappingSet.json", () -> compareTextLayer(
-                ArtifactPaths.expectedMappingSetJson(baseName),
-                ArtifactPaths.actualMappingSetJson(baseName),
-                Canonicalisers::readJson)));
-        tests.add(DynamicTest.dynamicTest("Solr numFound", () -> compareSolrNumFound(fixture.rule)));
+        // First child: the isolated pipeline pass for this fixture. Runs before the assertions in
+        // the same container, and before any later fixture's pass wipes the shared state.
+        tests.add(DynamicTest.dynamicTest("pipeline", () ->
+                Pipeline.runLoadDataNextflow(ConfigGenerator.generate(fixture))));
+        for (ArtifactPaths.LayerArtifact artifact : ArtifactPaths.artifactsFor(fixture)) {
+            tests.add(DynamicTest.dynamicTest(artifact.label(), () -> compareLayer(artifact)));
+        }
+        tests.add(DynamicTest.dynamicTest("Solr numFound", () -> compareNumFound(fixture)));
         return tests;
     }
 
-    @FunctionalInterface
-    private interface Reader {
-        String read(Path path) throws IOException;
-    }
-
-    private void compareTextLayer(Path expected, Path actual, Reader reader) throws IOException {
+    private void compareLayer(ArtifactPaths.LayerArtifact artifact) throws IOException {
+        Path expected = artifact.expected();
+        Path actual = artifact.actual();
         boolean expectedExists = Files.isRegularFile(expected);
         boolean actualExists = Files.isRegularFile(actual);
         if (!expectedExists && !actualExists) {
-            // Both absent — nothing for this layer in this rule. Pass silently.
+            // Layer not exercised by this fixture (e.g. a phase-2 rule produces no per-set output).
             return;
         }
         if (!expectedExists) {
-            throw new AssertionError(
-                    "Expected file missing: " + expected +
-                    "\nActual: " + actual +
-                    "\nRun `mvn -pl oxo2-integration-tests -am exec:java@captureExpected` to baseline.");
+            throw new AssertionError("Expected file missing: " + expected + "\nActual: " + actual +
+                    "\nRun `mvn -pl oxo2-integration-tests exec:java@captureExpected` to baseline.");
         }
         if (!actualExists) {
-            throw new AssertionError(
-                    "Actual file missing (pipeline did not produce it): " + actual +
+            throw new AssertionError("Actual file missing (pipeline did not produce it): " + actual +
                     "\nExpected: " + expected);
         }
         String expectedText = trimTrailingNewline(Files.readString(expected, StandardCharsets.UTF_8));
-        String actualText = trimTrailingNewline(reader.read(actual));
-        assertEquals(expectedText, actualText,
-                "Layer drift: " + actual + " differs from " + expected);
+        String actualText = trimTrailingNewline(readCanonical(actual, artifact.layer()));
+        assertEquals(expectedText, actualText, "Layer drift: " + actual + " differs from " + expected);
+    }
+
+    static String readCanonical(Path actual, ArtifactPaths.Layer layer) throws IOException {
+        return switch (layer) {
+            case TTL -> Canonicalisers.readTtl(actual);
+            case JSON -> Canonicalisers.readJson(actual);
+            case EXPLAINED -> Canonicalisers.readExplainedJson(actual);
+        };
     }
 
     private static String trimTrailingNewline(String text) {
@@ -106,53 +104,25 @@ public class ChainRulesIntegrationTest {
         return text;
     }
 
-    private void compareSolrNumFound(String rule) throws IOException, InterruptedException {
-        Path numFoundPath = ArtifactPaths.expectedNumFound();
+    private void compareNumFound(RuleFixtures.Fixture fixture) throws IOException, InterruptedException {
+        Path numFoundPath = ArtifactPaths.expectedNumFound(fixture.name);
         assertTrue(Files.isRegularFile(numFoundPath),
                 "Expected numFound.json missing: " + numFoundPath +
-                "\nRun `mvn -pl oxo2-integration-tests -am exec:java@captureExpected` to baseline.");
+                "\nRun `mvn -pl oxo2-integration-tests exec:java@captureExpected` to baseline.");
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(numFoundPath.toFile());
-        JsonNode counts = root.get(rule);
-        assertTrue(counts != null && counts.isObject(),
-                "Expected numFound.json has no entry for rule " + rule);
 
-        int actualMappingsAsserted = SolrCheck.numFound(SolrCheck.MAPPINGS_COLLECTION,
-                SolrCheck.mappingSetIdForRule(rule));
-        int actualMappingsInferred = SolrCheck.numFound(SolrCheck.MAPPINGS_COLLECTION,
-                SolrCheck.inferredMappingSetIdForRule(rule));
-        int actualMappingSetsAsserted = SolrCheck.numFound(SolrCheck.MAPPINGSETS_COLLECTION,
-                SolrCheck.mappingSetIdForRule(rule));
-        int actualMappingSetsInferred = SolrCheck.numFound(SolrCheck.MAPPINGSETS_COLLECTION,
-                SolrCheck.inferredMappingSetIdForRule(rule));
-
-        JsonNode mappings = counts.path(SolrCheck.MAPPINGS_COLLECTION);
-        JsonNode mappingSets = counts.path(SolrCheck.MAPPINGSETS_COLLECTION);
-        assertTrue(mappings.isObject() && mappingSets.isObject(),
-                "Expected numFound.json entry for " + rule + " missing nested collection objects");
-        assertEquals(mappings.get("asserted").asInt(), actualMappingsAsserted,
-                "Solr " + SolrCheck.MAPPINGS_COLLECTION + " asserted-set numFound differs for rule " + rule);
-        assertEquals(mappings.get("inferred").asInt(), actualMappingsInferred,
-                "Solr " + SolrCheck.MAPPINGS_COLLECTION + " inferred-set numFound differs for rule " + rule);
-        assertEquals(mappingSets.get("asserted").asInt(), actualMappingSetsAsserted,
-                "Solr " + SolrCheck.MAPPINGSETS_COLLECTION + " asserted-set numFound differs for rule " + rule);
-        assertEquals(mappingSets.get("inferred").asInt(), actualMappingSetsInferred,
-                "Solr " + SolrCheck.MAPPINGSETS_COLLECTION + " inferred-set numFound differs for rule " + rule);
-
-        // ADR-0008: the denormalised is_inferred flag must agree with which set a document lives
-        // in — asserted-set docs are is_inferred:false, inferred-set docs is_inferred:true. Compared
-        // against the per-set counts already verified above, so this needs no extra golden data.
-        assertEquals(actualMappingsAsserted,
-                SolrCheck.numFound(SolrCheck.MAPPINGS_COLLECTION, SolrCheck.mappingSetIdForRule(rule), false),
-                "Asserted-set mappings must all be is_inferred:false for rule " + rule);
-        assertEquals(actualMappingsInferred,
-                SolrCheck.numFound(SolrCheck.MAPPINGS_COLLECTION, SolrCheck.inferredMappingSetIdForRule(rule), true),
-                "Inferred-set mappings must all be is_inferred:true for rule " + rule);
-        assertEquals(actualMappingSetsAsserted,
-                SolrCheck.numFound(SolrCheck.MAPPINGSETS_COLLECTION, SolrCheck.mappingSetIdForRule(rule), false),
-                "Asserted mapping-set must be is_inferred:false for rule " + rule);
-        assertEquals(actualMappingSetsInferred,
-                SolrCheck.numFound(SolrCheck.MAPPINGSETS_COLLECTION, SolrCheck.inferredMappingSetIdForRule(rule), true),
-                "Inferred mapping-set must be is_inferred:true for rule " + rule);
+        for (String collection : new String[]{SolrCheck.MAPPINGS_COLLECTION, SolrCheck.MAPPINGSETS_COLLECTION}) {
+            JsonNode collectionCounts = root.path(collection);
+            assertTrue(collectionCounts.isObject(),
+                    "numFound.json for " + fixture.name + " has no object for collection " + collection);
+            for (InferenceType type : InferenceType.values()) {
+                String code = type.getCode();
+                int expected = collectionCounts.path(code).asInt();
+                int actual = SolrCheck.numFoundByInferenceType(collection, code);
+                assertEquals(expected, actual,
+                        "Solr " + collection + " " + code + " count differs for fixture " + fixture.name);
+            }
+        }
     }
 }

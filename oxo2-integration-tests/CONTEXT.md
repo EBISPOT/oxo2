@@ -4,27 +4,34 @@ See [`/CONTEXT.md`](../CONTEXT.md) for the project-wide glossary and cross-cutti
 
 ## Purpose
 
-End-to-end integration tests that exercise the full `loadData.nextflow` pipeline against per-rule SSSOM
-fixtures and assert against expected output at four layers (Nemo inferred TTL, Nemo explanation
-chain JSON, OxO2 explained JSON, and Solr). The same pipeline run populates Solr with the
-test mapping sets, so downstream backend / frontend integration tests can read the resulting
-state without re-running anything.
+End-to-end integration tests that exercise the full `loadData.nextflow` pipeline against minimal SSSOM
+fixtures and assert against expected output at four layers (Nemo inferred TTL, Nemo explanation chain
+JSON, OxO2 explained JSON, and Solr counts). Under the two-phase reasoning model
+([ADR-0009](../docs/adr/0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md)) each fixture is run
+**in isolation** — its own `loadData.nextflow` pass over only its set(s) — so a phase-2 (cross-set)
+rule's single `oxo2/inferences` output belongs to exactly that fixture and can be asserted per-rule.
+The final pass leaves Solr populated for downstream backend / frontend work.
 
-v1 scope: 22 per-rule minimal fixtures under `testcases/minimal/rules/`, one per active
-`ChainRulesEnum` entry whose corresponding rule in `chain-rules.rls` is uncommented.
+Scope: one minimal single-set fixture per active `ChainRulesEnum` rule under `testcases/minimal/rules/`
+(phase-1 OWL rules live in `owl.rls`, phase-2 SSSOM rules in `sssom.rls`), plus cross-set fixtures under
+`testcases/minimal/crossset/<name>/` whose mappings only chain when phase-2 reasons over them together.
 
 ## Vocabulary introduced here
 
-- **Rule fixture** — a minimal SSSOM TSV at `testcases/minimal/rules/<RULE>.sssom.tsv` designed
-  to trigger one chain rule (and accept whatever cascade Nemo derives — see Q4 in the design
-  notes below).
-- **Expected output layer** — one of the four assertion targets per fixture (inferred TTL, Nemo
-  chain JSON, explained JSON, Solr `numFound`). All mirrored under
-  `testcases_expected_output/minimal/rules/`.
-- **Capture mode** — running `mvn ... exec:java@captureExpected` instead of `mvn ... verify`.
-  Same pipeline run; the harness writes canonicalised actual output to the expected paths
-  instead of asserting against them. Used to baseline a new fixture or refresh after an
-  intentional behaviour change.
+- **Rule fixture** — a minimal single-set SSSOM TSV at `testcases/minimal/rules/<RULE>.sssom.tsv`
+  designed to trigger one chain rule (and accept whatever cascade Nemo derives).
+- **Cross-set fixture** — a directory `testcases/minimal/crossset/<name>/` of two or more SSSOM TSVs
+  whose mappings only chain when phase-2 reasons over them together, proving cross-set inference with
+  per-leaf `mapping_id` provenance (the inferred set's `mapping_set_source` is the union of the
+  contributing sets).
+- **Expected output layer** — an assertion target for a fixture: phase-1 per-set inferred TTL / chain
+  JSON / explained JSON / mappingSet JSON (named by source set), the phase-2 cross-set equivalents
+  (the single `inferences-*` files), and the per-`inference_type` Solr `numFound`. All mirrored per
+  fixture under `testcases_expected_output/minimal/<fixture>/`. `ArtifactPaths.artifactsFor(fixture)`
+  is the single source of truth for the path list.
+- **Capture mode** — running `mvn ... exec:java@captureExpected` instead of `mvn ... verify`. Runs the
+  same per-fixture isolated passes but writes canonicalised actual output to the expected paths
+  instead of asserting. Used to baseline a new fixture or refresh after an intentional change.
 
 ## Depends on
 
@@ -62,12 +69,12 @@ Reuses the same env vars as `loadData.nextflow`. The harness fails fast if any i
 
 ### Operational consequences
 
-- The integration-test run **destroys** the developer's local `oxo2-mappings` and
-  `oxo2-mappingsets` Solr collections — same contract as `loadData.nextflow` today
-  (and intentionally so: the test's job is to *be* the dev's Solr fixture).
-- Running `mvn -pl oxo2-integration-tests verify` invokes the full pipeline once.
-  Use the `-Doxo2.it.rule=T1` filter (with `generateConfig` / `captureExpected` /
-  Failsafe) to scope to one fixture during debugging.
+- The integration-test run **destroys** the developer's local `oxo2-mappings` and `oxo2-mappingsets`
+  Solr collections, repeatedly: each fixture is a fresh isolated `loadData.nextflow` pass that wipes
+  `$OXO2_DATA` and the collections. The final fixture's data is what remains in Solr afterwards.
+- Because every fixture is its own pipeline pass, a full `mvn -pl oxo2-integration-tests verify` runs
+  the pipeline once per fixture (tens of minutes). Use `-Doxo2.it.rule=<name>` (with `generateConfig`
+  / `captureExpected` / Failsafe) to scope to one fixture during debugging.
 
 ### Pipeline resource overrides
 
@@ -104,17 +111,30 @@ mvn -pl oxo2-integration-tests -am verify -Doxo2.it.rule=T1
 
 ### Layer comparison strategy
 
-| Layer | Source path | Comparator |
+`ArtifactPaths.artifactsFor(fixture)` enumerates the layer artifacts; phase-1 rules populate the
+per-set paths, phase-2 and cross-set fixtures populate the cross-set paths. A layer absent on both the
+actual and expected side passes silently. Paths below are relative to `$OXO2_DATA/inferences/` (actual)
+and `testcases_expected_output/minimal/<fixture>/` (expected).
+
+| Layer | Path — phase 1 (per source set) / phase 2 (cross-set) | Comparator |
 |---|---|---|
-| Inferred TTL | `$OXO2_DATA/inferences/inferredMappings/<set>.ttl` | Expand commas, sort N-Triples lexically, text-equal. |
-| Nemo chain JSON | `$OXO2_DATA/inferences/inferenceChains/<set>-chains.json` | Jackson tree, recursive key + array sort, text-equal. |
-| OxO2 explained JSON | `$OXO2_DATA/inferences/solr/mapping/<set>-explained.json` | Deserialise via `InferredMapping`, recursively unwrap embedded `asserted_mappings` / `explanation` JSON strings, sort by `(subject, predicate, object)`, deep-equal. |
-| Solr | Solr collections `oxo2-mappings` / `oxo2-mappingsets` | `q=mapping_set_id:"<set>"&rows=0` → `numFound` matches `numFound.json`. |
+| Inferred TTL | `inferredMappings/<set>.ttl` / `crossSet/inferences.ttl` | Expand commas, sort N-Triples lexically, text-equal. |
+| Nemo chain JSON | `inferenceChains/<set>-chains.json` / `inferenceChainsCrossSet/inferences-chains.json` | Jackson tree, recursive key + array sort, text-equal. |
+| OxO2 explained JSON | `solr/mapping/<set>-explained.json` / `solr/mapping/inferences-explained.json` | Recursively unwrap embedded `asserted_mappings` / `explanation` JSON strings, then recursive key + array sort, text-equal. |
+| MappingSet JSON | `solr/mappingSet/<set>-mappingSet.json` / `solr/mappingSet/inferences-mappingSet.json` | Jackson tree, recursive key + array sort, text-equal. |
+| Solr | `oxo2-mappings` / `oxo2-mappingsets` | per-`inference_type` `numFound` (ASSERTED / OWL_INFERENCE / SSSOM_INFERENCE) matches `numFound.json`. |
 
 ### Known gaps
 
-- **Two unenum'd transitivity rules deferred**: `chain-rules.rls` defines transitivity for
-  `oboInOwl:hasDbXref` (line 44) and `skos:relatedMatch` (line 45) without matching
-  `ChainRulesEnum` entries. These rules are intentionally **not covered** by the v1
-  fixture set — extending coverage requires first deciding whether to add enum entries
-  or remove the rules.
+- **Per-fixture isolation is slow**: each fixture is a full `loadData.nextflow` pass, so a complete
+  `verify` runs the pipeline once per fixture (tens of minutes). This is the cost of asserting phase-2
+  (cross-set) rules per-fixture; scope with `-Doxo2.it.rule=<name>` while iterating.
+- **Weak predicates are negative-tested only for `closeMatch`**: `oboInOwl:hasDbXref`,
+  `skos:relatedMatch`, `skos:closeMatch`, `rdfs:seeAlso`, and `rdf:type` are deliberately excluded
+  from chaining (ADR-0009). `RCE_WEAK_NOCHAIN` is an explicit guard fixture: its
+  `equivalentClass`+`closeMatch` chain matches the RCE1 role-chain pattern but the `strongPredicate`
+  guard suppresses it, so it asserts zero inferences. The other weak predicates have no dedicated
+  fixture and are covered only by every fixture's exact-count `numFound` assertion.
+- **Synthetic-IRI distance is degenerate**: `distance` is derived from OBO-style `PREFIX_NUMBER` IRIs,
+  which the `ex:A`-style test IRIs don't match, so fixtures record a constant placeholder distance.
+  This is deterministic (captured in the golden) and never affects real OBO data.

@@ -6,6 +6,8 @@
 %! Facts are N-Quads `<s> <p> <o> <urn:uuid:mapping_id> .` (ADR-0010); Nemo imports them in
 %! graph-first order, so the mapping_id is the first term. Inferred conclusions carry the nil
 %! UUID. Rules are named (#[name(...)]) so the Nemo trace identifies them by name, not body text.
+%! These are define at: https://mapping-commons.github.io/sssom/dev/chaining-rules/ under rules that
+%! "Rules that should probably not be inferred (OWL)".
 
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .

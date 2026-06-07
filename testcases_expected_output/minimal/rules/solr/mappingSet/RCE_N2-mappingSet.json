@@ -1,8 +1,0 @@
-[ {
-  "is_inferred" : true,
-  "mapping_set_description" : "Inferred mappings derived via SEMAPV:MappingChaining over asserted mappings in https://w3id.org/oxo2/test/minimal/rules/RCE_N2",
-  "mapping_set_id" : "https://www.ebi.ac.uk/spot/oxo/inferences/https%3A%2F%2Fw3id.org%2Foxo2%2Ftest%2Fminimal%2Frules%2FRCE_N2",
-  "mapping_set_source" : [ "https://w3id.org/oxo2/test/minimal/rules/RCE_N2" ],
-  "mapping_set_title" : "Inferences from https://w3id.org/oxo2/test/minimal/rules/RCE_N2",
-  "mapping_tool" : "OxO Inferences"
-} ]

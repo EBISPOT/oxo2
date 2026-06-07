@@ -1,0 +1,8 @@
+# mapping_set_id: https://w3id.org/oxo2/test/minimal/crossset/cross-exact-match/setA
+# mapping_set_title: Cross-set fixture set A
+# license: https://creativecommons.org/publicdomain/zero/1.0/
+# curie_map:
+#   ex: https://w3id.org/oxo2/test/ex/
+#   skos: http://www.w3.org/2004/02/skos/core#
+subject_id	subject_label	predicate_id	object_id	object_label
+ex:A	Entity A	skos:exactMatch	ex:B	Entity B

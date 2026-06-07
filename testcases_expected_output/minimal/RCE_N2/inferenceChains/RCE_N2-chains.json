@@ -1,0 +1,29 @@
+{
+  "finalConclusion" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, <https://w3id.org/oxo2/test/ex/C>)" ],
+  "inferences" : [ {
+    "conclusion" : "assertedMapping(<urn:uuid:4f798fad-1ac0-3c46-999f-ef17e09daaa0>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#equivalentClass>, <https://w3id.org/oxo2/test/ex/C>)",
+    "premises" : [ ],
+    "rule" : "Asserted",
+    "ruleName" : null
+  }, {
+    "conclusion" : "assertedMapping(<urn:uuid:582f7af9-e7c7-32ee-b70d-85c477a5db71>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ ],
+    "rule" : "Asserted",
+    "ruleName" : null
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, <https://w3id.org/oxo2/test/ex/C>)",
+    "premises" : [ "mapping(<urn:uuid:4f798fad-1ac0-3c46-999f-ef17e09daaa0>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#equivalentClass>, <https://w3id.org/oxo2/test/ex/C>)", "mapping(<urn:uuid:582f7af9-e7c7-32ee-b70d-85c477a5db71>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) :- mapping(?id1, ?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?b), mapping(?id2, ?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?c) .",
+    "ruleName" : "RCE-N2"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:4f798fad-1ac0-3c46-999f-ef17e09daaa0>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#equivalentClass>, <https://w3id.org/oxo2/test/ex/C>)",
+    "premises" : [ "assertedMapping(<urn:uuid:4f798fad-1ac0-3c46-999f-ef17e09daaa0>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#equivalentClass>, <https://w3id.org/oxo2/test/ex/C>)" ],
+    "rule" : "mapping(?id, ?s, ?p, ?o) :- assertedMapping(?id, ?s, ?p, ?o) .",
+    "ruleName" : null
+  }, {
+    "conclusion" : "mapping(<urn:uuid:582f7af9-e7c7-32ee-b70d-85c477a5db71>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ "assertedMapping(<urn:uuid:582f7af9-e7c7-32ee-b70d-85c477a5db71>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(?id, ?s, ?p, ?o) :- assertedMapping(?id, ?s, ?p, ?o) .",
+    "ruleName" : null
+  } ]
+}
