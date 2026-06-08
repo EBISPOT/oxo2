@@ -1,1 +1,0 @@
-<https://w3id.org/oxo2/test/ex/A> <http://www.w3.org/2004/02/skos/core#closeMatch> <https://w3id.org/oxo2/test/ex/C> .

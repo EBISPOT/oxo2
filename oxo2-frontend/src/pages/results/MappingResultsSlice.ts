@@ -8,6 +8,7 @@ import {
     ChainRuleResponse,
     ChainRule/*, MappingFields*/
 } from '../../model/Mapping';
+import { InferenceType, asInferenceType } from '../../model/InferenceType';
 import { post } from '../../app/api';
 
 export interface FacetedMappingResponse {
@@ -66,8 +67,9 @@ interface SearchRequest {
     sortedFields: string[];
     mappingSetIds?: string[];
     advancedFieldQueries?: AdvancedFieldQueryRequest[];
-    // Tri-state inferred/asserted filter: omitted = both, true = inferred only, false = asserted only.
-    inferred?: boolean;
+    // Multi-select inference-type filter (ADR-0011): omitted/empty = all types; otherwise restrict
+    // to the listed codes (ASSERTED / OWL_INFERENCE / SSSOM_INFERENCE).
+    inferenceType?: string[];
 }
 
 export enum SearchStatus {
@@ -247,7 +249,7 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
                 subjectIdPrefix: item.subject_id_prefix,
                 assertedMappings: fromAssertedMappingString(item.asserted_mappings),
                 explanation: fromExplanationString(item.explanation),
-                isInferred: item.is_inferred ?? false,
+                inferenceType: asInferenceType(item.inference_type),
             };
         }),
         totalElements: json.mappings.totalElements,
@@ -261,20 +263,20 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
 export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10, columnFilters: any[],
                               sorting: any[], mappingSetIds?: string[],
                               advancedFieldQueries?: AdvancedFieldQueryRequest[],
-                              inferred?: boolean | null): Promise<FacetedMappingResponse> {
+                              inferenceType?: InferenceType[]): Promise<FacetedMappingResponse> {
     const requestBody: SearchRequest = {
         queries: queries,
         page: page,
         size: pageSize,
         queryFields: [],
         fieldList: ['mapping_set_id', 'mapping_set_title', 'subject_id', 'subject_label', 'subject_id_prefix', 'predicate_id', 'predicate_label',
-            'predicate_modifier', 'object_id', 'object_label', 'object_id_prefix', 'mapping_justification', 'mapping_provider', 'is_inferred', 'asserted_mappings', 'explanation'],
+            'predicate_modifier', 'object_id', 'object_label', 'object_id_prefix', 'mapping_justification', 'mapping_provider', 'inference_type', 'asserted_mappings', 'explanation'],
         facets: ['object_id_prefix', 'subject_id_prefix'],
         columnFilters: columnFilters,
         sortedFields: sorting,
         ...(mappingSetIds && mappingSetIds.length > 0 ? { mappingSetIds } : {}),
         ...(advancedFieldQueries && advancedFieldQueries.length > 0 ? { advancedFieldQueries } : {}),
-        ...(inferred !== undefined && inferred !== null ? { inferred } : {}),
+        ...(inferenceType && inferenceType.length > 0 ? { inferenceType } : {}),
     };
 
     const searchResponse = post<SearchRequest, FacetedMappingResponse>(

@@ -1,0 +1,19 @@
+{
+  "finalConclusion" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <https://w3id.org/semapv/vocab/crossSpeciesExactMatch>, <https://w3id.org/oxo2/test/ex/A>)" ],
+  "inferences" : [ {
+    "conclusion" : "assertedMapping(<urn:uuid:4dfbe169-331f-32e3-bccf-a9f8514b3cfa>, <https://w3id.org/oxo2/test/ex/A>, <https://w3id.org/semapv/vocab/crossSpeciesExactMatch>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ ],
+    "rule" : "Asserted",
+    "ruleName" : null
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <https://w3id.org/semapv/vocab/crossSpeciesExactMatch>, <https://w3id.org/oxo2/test/ex/A>)",
+    "premises" : [ "mapping(<urn:uuid:4dfbe169-331f-32e3-bccf-a9f8514b3cfa>, <https://w3id.org/oxo2/test/ex/A>, <https://w3id.org/semapv/vocab/crossSpeciesExactMatch>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <https://w3id.org/semapv/vocab/crossSpeciesExactMatch>, ?a) :- mapping(?id1, ?a, <https://w3id.org/semapv/vocab/crossSpeciesExactMatch>, ?b) .",
+    "ruleName" : "RI3"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:4dfbe169-331f-32e3-bccf-a9f8514b3cfa>, <https://w3id.org/oxo2/test/ex/A>, <https://w3id.org/semapv/vocab/crossSpeciesExactMatch>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ "assertedMapping(<urn:uuid:4dfbe169-331f-32e3-bccf-a9f8514b3cfa>, <https://w3id.org/oxo2/test/ex/A>, <https://w3id.org/semapv/vocab/crossSpeciesExactMatch>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(?id, ?s, ?p, ?o) :- assertedMapping(?id, ?s, ?p, ?o) .",
+    "ruleName" : null
+  } ]
+}

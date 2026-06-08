@@ -1,6 +1,6 @@
 # ADR-0001: Inference scope is per mapping set
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR-0009](0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md) — per-set scope is retained for phase-1 (OWL) reasoning, but phase-2 (SSSOM) reasoning now runs across all mapping sets.
 - **Date**: 2026-05-12
 
 ## Context

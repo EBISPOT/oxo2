@@ -10,7 +10,10 @@ import {
     useMaterialReactTable,
 } from 'material-react-table';
 import {Mapping} from "../../model/Mapping.ts";
-import {IconButton, Tooltip, ToggleButton, ToggleButtonGroup} from "@mui/material";
+import {InferenceType, DEFAULT_INFERENCE_TYPES} from "../../model/InferenceType";
+import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
+import {InferenceTypeFilter} from "../../components/mapping/InferenceTypeFilter";
+import {IconButton, Tooltip} from "@mui/material";
 import {EyeIcon} from "@heroicons/react/24/solid";
 import {EntityRefCell, CopyButton} from "../../components/mapping/EntityRefCell";
 import {ColumnFilterPopover, type FilterFieldDef} from "../../components/mapping/ColumnFilterPopover";
@@ -59,7 +62,8 @@ const OBJECT_SORT_FIELDS: SortFieldDef[] = [
  * set. Field-level filtering is offered via per-column popovers; the Advanced tab
  * remains the home for exhaustive per-field filtering (see AdvancedResultsTable).
  */
-export function NormalResultsTable({ queries, mappingSetIds }: { queries: string[]; mappingSetIds: string[] }) {
+export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTypes = DEFAULT_INFERENCE_TYPES }:
+    { queries: string[]; mappingSetIds: string[]; initialInferenceTypes?: InferenceType[] }) {
     const navigate = useNavigate();
 
     const [pagination, setPagination] = useState<MRT_PaginationState>({
@@ -76,12 +80,12 @@ export function NormalResultsTable({ queries, mappingSetIds }: { queries: string
         { id: 'subject_label', desc: false }
     ]);
 
-    // Tri-state inferred/asserted filter for the result rows: null = all, true = inferred only,
-    // false = asserted only. Backed by the denormalised is_inferred flag (ADR-0008).
-    const [inferred, setInferred] = useState<boolean | null>(null);
+    // Multi-select inference-type filter for the result rows (ADR-0011); defaults to
+    // {Asserted, SSSOM inference} (OWL inference hidden until requested).
+    const [inferenceTypes, setInferenceTypes] = useState<InferenceType[]>(initialInferenceTypes);
 
-    const handleInferredChange = useCallback((next: boolean | null) => {
-        setInferred(next);
+    const handleInferenceTypesChange = useCallback((next: InferenceType[]) => {
+        setInferenceTypes(next);
         setPagination((previous) => ({ ...previous, pageIndex: 0 }));
     }, []);
 
@@ -125,7 +129,7 @@ export function NormalResultsTable({ queries, mappingSetIds }: { queries: string
             columnFiltersForBackend,
             sorting,
             mappingSetIdsKey,
-            inferred,
+            inferenceTypes.join(","),
         ],
         queryFn: () =>
             fetchMappings(
@@ -136,7 +140,7 @@ export function NormalResultsTable({ queries, mappingSetIds }: { queries: string
                 sorting,
                 mappingSetIds,
                 undefined,
-                inferred
+                inferenceTypes
             ),
         staleTime: Infinity,
     });
@@ -227,21 +231,12 @@ export function NormalResultsTable({ queries, mappingSetIds }: { queries: string
                 Cell: ({ row }) => <span className="break-all">{row.original.mappingJustification}</span>,
             },
             {
-                id: "is_inferred",
-                accessorFn: (row) => row.isInferred,
+                id: "inference_type",
+                accessorFn: (row) => row.inferenceType,
                 header: "Type",
                 enableSorting: false,
-                size: 110,
-                Cell: ({ row }) =>
-                    row.original.isInferred ? (
-                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">
-                            Inferred
-                        </span>
-                    ) : (
-                        <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">
-                            Asserted
-                        </span>
-                    ),
+                size: 130,
+                Cell: ({ row }) => <InferenceTypeBadge value={row.original.inferenceType} />,
             },
             {
                 id: "mapping_provider",
@@ -370,22 +365,7 @@ export function NormalResultsTable({ queries, mappingSetIds }: { queries: string
         enableHiding: true,
         enableTopToolbar: true,
         renderTopToolbarCustomActions: () => (
-            <ToggleButtonGroup
-                size="small"
-                exclusive
-                value={inferred === null ? "all" : inferred ? "inferred" : "asserted"}
-                onChange={(_event, value) => {
-                    // exclusive ToggleButtonGroup yields null when the active button is re-clicked;
-                    // ignore that so the control stays a true tri-state with an always-set value.
-                    if (value === null) return;
-                    handleInferredChange(value === "all" ? null : value === "inferred");
-                }}
-                aria-label="Filter by mapping type"
-            >
-                <ToggleButton value="all">All</ToggleButton>
-                <ToggleButton value="asserted">Asserted</ToggleButton>
-                <ToggleButton value="inferred">Inferred</ToggleButton>
-            </ToggleButtonGroup>
+            <InferenceTypeFilter value={inferenceTypes} onChange={handleInferenceTypesChange} />
         ),
     });
 

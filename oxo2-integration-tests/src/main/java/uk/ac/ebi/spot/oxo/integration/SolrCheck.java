@@ -13,9 +13,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 /**
- * Queries Solr's `oxo2-mappings` and `oxo2-mappingsets` collections for the numFound of
- * documents whose `mapping_set_id` matches the test fixture's set id. Uses the standard
- * Solr HTTP select endpoint to avoid pulling SolrJ as a heavyweight dependency here.
+ * Queries Solr's `oxo2-mappings` and `oxo2-mappingsets` collections for document counts by
+ * `inference_type` (ADR-0011). Because each fixture is loaded in isolation (one pipeline pass over
+ * only its set(s)), a whole-collection count by inference_type is exactly that fixture's
+ * asserted / OWL-inferred / SSSOM-inferred totals — no per-set-id scoping needed.
  */
 public final class SolrCheck {
 
@@ -29,17 +30,11 @@ public final class SolrCheck {
 
     private SolrCheck() {}
 
-    public static int numFound(String collection, String mappingSetId) throws IOException, InterruptedException {
-        return numFoundForQuery(collection, "mapping_set_id:\"" + mappingSetId + "\"");
-    }
-
-    /** numFound restricted to documents in the given set that carry the given is_inferred flag.
-     *  Verifies ADR-0008: an asserted set's documents are is_inferred:false, an inferred set's
-     *  documents is_inferred:true. */
-    public static int numFound(String collection, String mappingSetId, boolean inferred)
+    /** Document count in a collection carrying the given inference_type code (ASSERTED /
+     *  OWL_INFERENCE / SSSOM_INFERENCE). Codes are safe enum names, so no escaping is needed. */
+    public static int numFoundByInferenceType(String collection, String inferenceTypeCode)
             throws IOException, InterruptedException {
-        return numFoundForQuery(collection,
-                "mapping_set_id:\"" + mappingSetId + "\" AND is_inferred:" + inferred);
+        return numFoundForQuery(collection, "inference_type:" + inferenceTypeCode);
     }
 
     private static int numFoundForQuery(String collection, String query)
@@ -60,21 +55,5 @@ public final class SolrCheck {
             throw new IOException("No numFound in Solr response from " + url + ": " + response.body());
         }
         return numFoundNode.asInt();
-    }
-
-    /** Returns the canonical mapping_set_id baked into rule fixtures. Must match what
-     *  the TSVs use. Single source of truth. */
-    public static String mappingSetIdForRule(String rule) {
-        return "https://w3id.org/oxo2/test/minimal/rules/" + rule;
-    }
-
-    /** Inferred-mapping-set id produced by explanations2json.nf. Pattern verified against
-     *  Solr facet on $OXO2_DATA/inferences/solr/mappingSet/*-mappingSet.json content:
-     *  the inferred set id is the asserted mapping_set_id URL-encoded and prefixed with
-     *  the oxo inferences namespace. */
-    public static String inferredMappingSetIdForRule(String rule) {
-        String asserted = mappingSetIdForRule(rule);
-        return "https://www.ebi.ac.uk/spot/oxo/inferences/" +
-                URLEncoder.encode(asserted, StandardCharsets.UTF_8);
     }
 }

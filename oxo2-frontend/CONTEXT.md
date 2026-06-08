@@ -35,6 +35,9 @@ Routes (`App.tsx`):
 - **`/search/:curies`** → `MappingResults` — paged, faceted mapping results for the given CURIE(s).
 - **`/mapping/:id`** → `MappingDetails` (via `MappingDetailsWrapper` to pass state through router) — detail view for a 
 single mapping including inferred-mapping graph.
+- **`/inferences`** and **`/inferences/*`** → `InferencesPage` — resolution surface for inferred mapping sets: the
+cross-set `https://www.ebi.ac.uk/oxo2/inferences` set, and per-source OWL sets via the `*` splat. Fetches the set
+via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/adr/0012-resolvable-inference-set-iris.md)).
 - **`/docs`** → `Documentation`.
 - **`/about`** → `About`.
 
@@ -48,6 +51,15 @@ single mapping including inferred-mapping graph.
 - `src/pages/` — top-level views (`home/`, `results/`, `documentation/`, `about/`).
 - `src/components/` — reusable widgets: `search/Search.tsx`, `search/AdvancedSearch.tsx`, `paging/Paging.tsx`, 
 `mapping/MappingItem.tsx`, `mapping/InferredMappingGraph.tsx`, `common/Header.tsx`, `common/Footer.tsx`, `infoCard/`, `error/`.
+
+### Inference type (ADR-0011)
+
+`src/model/InferenceType.ts` is the single source of truth for the 3-valued inference type (ASSERTED /
+SSSOM_INFERENCE / OWL_INFERENCE): code→label map, display order, the default filter selection
+(`{Asserted, SSSOM inference}` — OWL hidden until requested), and badge colours. Shared components
+`mapping/InferenceTypeBadge.tsx` (3-way badge) and `mapping/InferenceTypeFilter.tsx` (multi-select toggle) are
+reused by both result tables and the mapping-set selector. `mapping/InferredMappingGraph.tsx` labels each
+asserted leaf with its source mapping set, surfacing cross-set provenance.
 
 ### State management
 

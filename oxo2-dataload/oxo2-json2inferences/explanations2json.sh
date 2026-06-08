@@ -30,7 +30,9 @@ if [ ! -f "$JAR_FILE" ]; then
   exit 1
 fi
 
+# Directory mode is the per-set phase 1 (OWL) batch path; stamp OWL_INFERENCE accordingly.
 java $JAVA_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=explanations-heapdump.hprof -cp "$JAR_FILE" \
      uk.ac.ebi.spot.oxo.inferences.nemo.MainDispatcher explanations2json \
      -n "$NEMO_INFERENCES_DIR" -o "$OUTPUT_DIR" \
-     -q "$MAPPING_SET_OUTPUT_DIR" -d "$MAPPING_SET_JSON_DIR"
+     -q "$MAPPING_SET_OUTPUT_DIR" -d "$MAPPING_SET_JSON_DIR" \
+     -t OWL_INFERENCE

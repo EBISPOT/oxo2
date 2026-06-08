@@ -1,0 +1,394 @@
+[ {
+  "asserted_mappings" : [ {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "a04f7b60-a2e6-32ca-b5ea-7710be265bb6",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+    "object_id" : "EX:B",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "object_label" : "Entity B",
+    "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+    "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+    "subject_id" : "EX:A",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "subject_label" : "Entity A"
+  } ],
+  "distance" : -1,
+  "explanation" : {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "(?b, <SEMAPV:crossSpeciesBroadMatch>, ?a) <- (?a, <SEMAPV:crossSpeciesNarrowMatch>, ?b)",
+        "chain_rule_long_form" : "(?b, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, ?a) <- (?a, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?b)",
+        "chain_rule_name" : "RI4"
+      },
+      "premises" : [ {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "Asserted",
+            "chain_rule_long_form" : "Asserted",
+            "chain_rule_name" : "Asserted"
+          }
+        },
+        "distance" : 1,
+        "mapping_id" : "a04f7b60-a2e6-32ca-b5ea-7710be265bb6",
+        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+        "object_id" : "EX:B",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "object_label" : "Entity B",
+        "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+        "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+        "subject_id" : "EX:A",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+        "subject_label" : "Entity A"
+      } ]
+    },
+    "distance" : 1,
+    "mapping_justification" : "SEMAPV:MappingChaining",
+    "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+    "mapping_tool" : "OxO Inferences",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "predicate_id" : "SEMAPV:crossSpeciesBroadMatch",
+    "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesBroadMatch",
+    "subject_id" : "EX:B",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "subject_label" : "Entity B"
+  },
+  "explanation_length" : 2,
+  "inference_type" : "SSSOM_INFERENCE",
+  "mapping_id" : "b70ab7fe-4fd7-3292-a411-231c7bdd2fcf",
+  "mapping_justification" : "SEMAPV:MappingChaining",
+  "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+  "mapping_tool" : "OxO Inferences",
+  "object_iri" : "https://w3id.org/oxo2/test/ex/A",
+  "predicate_id" : "SEMAPV:crossSpeciesBroadMatch",
+  "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesBroadMatch",
+  "subject_id" : "EX:B",
+  "subject_id_prefix" : "EX",
+  "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+  "subject_label" : "Entity B"
+}, {
+  "asserted_mappings" : [ {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "a04f7b60-a2e6-32ca-b5ea-7710be265bb6",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+    "object_id" : "EX:B",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "object_label" : "Entity B",
+    "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+    "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+    "subject_id" : "EX:A",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "subject_label" : "Entity A"
+  }, {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "c94d8c6e-5e70-3ba5-833b-da102c01b63d",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+    "object_id" : "EX:C",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "object_label" : "Entity C",
+    "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+    "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+    "subject_id" : "EX:B",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "subject_label" : "Entity B"
+  } ],
+  "distance" : -1,
+  "explanation" : {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "(?a, <SEMAPV:crossSpeciesNarrowMatch>, ?c) <- (?a, <SEMAPV:crossSpeciesNarrowMatch>, ?b), (?b, <SEMAPV:crossSpeciesNarrowMatch>, ?c)",
+        "chain_rule_long_form" : "(?a, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?c) <- (?a, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?b), (?b, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?c)",
+        "chain_rule_name" : "T8"
+      },
+      "premises" : [ {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "Asserted",
+            "chain_rule_long_form" : "Asserted",
+            "chain_rule_name" : "Asserted"
+          }
+        },
+        "distance" : 1,
+        "mapping_id" : "a04f7b60-a2e6-32ca-b5ea-7710be265bb6",
+        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+        "object_id" : "EX:B",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "object_label" : "Entity B",
+        "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+        "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+        "subject_id" : "EX:A",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+        "subject_label" : "Entity A"
+      }, {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "Asserted",
+            "chain_rule_long_form" : "Asserted",
+            "chain_rule_name" : "Asserted"
+          }
+        },
+        "distance" : 1,
+        "mapping_id" : "c94d8c6e-5e70-3ba5-833b-da102c01b63d",
+        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+        "object_id" : "EX:C",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+        "object_label" : "Entity C",
+        "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+        "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+        "subject_id" : "EX:B",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "subject_label" : "Entity B"
+      } ]
+    },
+    "distance" : 1,
+    "mapping_justification" : "SEMAPV:MappingChaining",
+    "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+    "mapping_tool" : "OxO Inferences",
+    "object_id" : "EX:C",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "object_label" : "Entity C",
+    "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+    "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+    "subject_id" : "EX:A",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "subject_label" : "Entity A"
+  },
+  "explanation_length" : 3,
+  "inference_type" : "SSSOM_INFERENCE",
+  "mapping_id" : "85462254-1533-3d9b-acf5-90d60d5a7df9",
+  "mapping_justification" : "SEMAPV:MappingChaining",
+  "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+  "mapping_tool" : "OxO Inferences",
+  "object_id" : "EX:C",
+  "object_id_prefix" : "EX",
+  "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+  "object_label" : "Entity C",
+  "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+  "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+  "subject_id" : "EX:A",
+  "subject_id_prefix" : "EX",
+  "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+  "subject_label" : "Entity A"
+}, {
+  "asserted_mappings" : [ {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "a04f7b60-a2e6-32ca-b5ea-7710be265bb6",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+    "object_id" : "EX:B",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "object_label" : "Entity B",
+    "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+    "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+    "subject_id" : "EX:A",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "subject_label" : "Entity A"
+  }, {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "c94d8c6e-5e70-3ba5-833b-da102c01b63d",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+    "object_id" : "EX:C",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "object_label" : "Entity C",
+    "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+    "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+    "subject_id" : "EX:B",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "subject_label" : "Entity B"
+  } ],
+  "distance" : -1,
+  "explanation" : {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "(?b, <SEMAPV:crossSpeciesBroadMatch>, ?a) <- (?a, <SEMAPV:crossSpeciesNarrowMatch>, ?b)",
+        "chain_rule_long_form" : "(?b, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, ?a) <- (?a, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?b)",
+        "chain_rule_name" : "RI4"
+      },
+      "premises" : [ {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "(?a, <SEMAPV:crossSpeciesNarrowMatch>, ?c) <- (?a, <SEMAPV:crossSpeciesNarrowMatch>, ?b), (?b, <SEMAPV:crossSpeciesNarrowMatch>, ?c)",
+            "chain_rule_long_form" : "(?a, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?c) <- (?a, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?b), (?b, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?c)",
+            "chain_rule_name" : "T8"
+          },
+          "premises" : [ {
+            "chain_rule_applications" : {
+              "chain_rule" : {
+                "chain_rule_abbreviated" : "Asserted",
+                "chain_rule_long_form" : "Asserted",
+                "chain_rule_name" : "Asserted"
+              }
+            },
+            "distance" : 1,
+            "mapping_id" : "a04f7b60-a2e6-32ca-b5ea-7710be265bb6",
+            "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+            "object_id" : "EX:B",
+            "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+            "object_label" : "Entity B",
+            "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+            "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+            "subject_id" : "EX:A",
+            "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+            "subject_label" : "Entity A"
+          }, {
+            "chain_rule_applications" : {
+              "chain_rule" : {
+                "chain_rule_abbreviated" : "Asserted",
+                "chain_rule_long_form" : "Asserted",
+                "chain_rule_name" : "Asserted"
+              }
+            },
+            "distance" : 1,
+            "mapping_id" : "c94d8c6e-5e70-3ba5-833b-da102c01b63d",
+            "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+            "object_id" : "EX:C",
+            "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+            "object_label" : "Entity C",
+            "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+            "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+            "subject_id" : "EX:B",
+            "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+            "subject_label" : "Entity B"
+          } ]
+        },
+        "distance" : 1,
+        "mapping_justification" : "SEMAPV:MappingChaining",
+        "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+        "mapping_tool" : "OxO Inferences",
+        "object_id" : "EX:C",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+        "object_label" : "Entity C",
+        "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+        "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+        "subject_id" : "EX:A",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+        "subject_label" : "Entity A"
+      } ]
+    },
+    "distance" : 1,
+    "mapping_justification" : "SEMAPV:MappingChaining",
+    "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+    "mapping_tool" : "OxO Inferences",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "predicate_id" : "SEMAPV:crossSpeciesBroadMatch",
+    "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesBroadMatch",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/C"
+  },
+  "explanation_length" : 4,
+  "inference_type" : "SSSOM_INFERENCE",
+  "mapping_id" : "e687d6c2-3f87-3918-9d02-e77beeac647c",
+  "mapping_justification" : "SEMAPV:MappingChaining",
+  "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+  "mapping_tool" : "OxO Inferences",
+  "object_iri" : "https://w3id.org/oxo2/test/ex/A",
+  "predicate_id" : "SEMAPV:crossSpeciesBroadMatch",
+  "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesBroadMatch",
+  "subject_iri" : "https://w3id.org/oxo2/test/ex/C"
+}, {
+  "asserted_mappings" : [ {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "c94d8c6e-5e70-3ba5-833b-da102c01b63d",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+    "object_id" : "EX:C",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "object_label" : "Entity C",
+    "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+    "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+    "subject_id" : "EX:B",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "subject_label" : "Entity B"
+  } ],
+  "distance" : -1,
+  "explanation" : {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "(?b, <SEMAPV:crossSpeciesBroadMatch>, ?a) <- (?a, <SEMAPV:crossSpeciesNarrowMatch>, ?b)",
+        "chain_rule_long_form" : "(?b, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, ?a) <- (?a, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?b)",
+        "chain_rule_name" : "RI4"
+      },
+      "premises" : [ {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "Asserted",
+            "chain_rule_long_form" : "Asserted",
+            "chain_rule_name" : "Asserted"
+          }
+        },
+        "distance" : 1,
+        "mapping_id" : "c94d8c6e-5e70-3ba5-833b-da102c01b63d",
+        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T8",
+        "object_id" : "EX:C",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+        "object_label" : "Entity C",
+        "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
+        "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
+        "subject_id" : "EX:B",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "subject_label" : "Entity B"
+      } ]
+    },
+    "distance" : 1,
+    "mapping_justification" : "SEMAPV:MappingChaining",
+    "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+    "mapping_tool" : "OxO Inferences",
+    "object_id" : "EX:B",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "object_label" : "Entity B",
+    "predicate_id" : "SEMAPV:crossSpeciesBroadMatch",
+    "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesBroadMatch",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/C"
+  },
+  "explanation_length" : 2,
+  "inference_type" : "SSSOM_INFERENCE",
+  "mapping_id" : "47475676-efc8-3038-9b89-67c3de6ed024",
+  "mapping_justification" : "SEMAPV:MappingChaining",
+  "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+  "mapping_tool" : "OxO Inferences",
+  "object_id" : "EX:B",
+  "object_id_prefix" : "EX",
+  "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+  "object_label" : "Entity B",
+  "predicate_id" : "SEMAPV:crossSpeciesBroadMatch",
+  "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesBroadMatch",
+  "subject_iri" : "https://w3id.org/oxo2/test/ex/C"
+} ]

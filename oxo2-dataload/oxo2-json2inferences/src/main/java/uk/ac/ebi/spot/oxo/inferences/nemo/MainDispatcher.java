@@ -22,8 +22,8 @@ public class MainDispatcher {
 
         try {
             switch (command) {
-                case "json2ttl":
-                    JSON2Turtle.main(remainingArgs);
+                case "json2nquads":
+                    JSON2NQuads.main(remainingArgs);
                     break;
                 case "inferences2trace":
                     uk.ac.ebi.spot.oxo.inferences.nemo.Inferences2Trace.main(remainingArgs);
@@ -56,7 +56,7 @@ public class MainDispatcher {
     private static void printUsage() {
         System.out.println("Usage: java -jar oxo2-json2inferences/target/oxo2-json2inferences-1.0.0-SNAPSHOT.jar <command> [args...]");
         System.out.println("Available commands:");
-        System.out.println("  json2ttl  - Creates .ttl file from mappings in .json. ");
+        System.out.println("  json2nquads  - Creates .nq (N-Quads) file from mappings in .json, carrying mapping_id. ");
         System.out.println("  inferences2trace  - Creates a file of inferences to trace in the format expected by Nemo.");
         System.out.println("  explanations2json - Creates a .json file of inferred mappings with their explanations.");
         System.out.println("  mergeChainFiles  - Merges per-chunk Nemo chain trace JSON files into one per-mapping-set file.");

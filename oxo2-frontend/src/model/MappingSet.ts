@@ -1,10 +1,13 @@
+import { InferenceType, asInferenceType } from "./InferenceType";
+
 export interface MappingSetResponse {
     mapping_set_id: string;
     mapping_set_title?: string;
     mapping_set_description?: string;
     creator_label?: string[];
     mapping_provider?: string;
-    is_inferred?: boolean;
+    inference_type?: string;
+    mapping_set_source?: string[];
 }
 
 export interface MappingSet {
@@ -13,7 +16,8 @@ export interface MappingSet {
     mappingSetDescription: string;
     creatorLabel: string[];
     mappingProvider: string;
-    isInferred: boolean;
+    inferenceType: InferenceType;
+    mappingSetSource: string[];
 }
 
 export function fromMappingSetResponse(r: MappingSetResponse): MappingSet {
@@ -23,6 +27,7 @@ export function fromMappingSetResponse(r: MappingSetResponse): MappingSet {
         mappingSetDescription: r.mapping_set_description ?? '',
         creatorLabel: r.creator_label ?? [],
         mappingProvider: r.mapping_provider ?? '',
-        isInferred: r.is_inferred ?? false,
+        inferenceType: asInferenceType(r.inference_type),
+        mappingSetSource: r.mapping_set_source ?? [],
     };
 }

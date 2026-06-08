@@ -9,6 +9,7 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.FieldQuery;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingFacetEnum;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
+import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
@@ -21,6 +22,28 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingEnum.MINIMAL_LIST_OF_FIELDS;
 public class SolrQueryBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(SolrQueryBuilder.class);
+
+    /**
+     * Soft ranking (ADR-0011) as a MULTIPLICATIVE edismax boost function, so a highly relevant
+     * inferred mapping can still outrank a weakly matching asserted one. Multiplicative — not an
+     * additive {@code bq} — because the tier boost must be independent of term idf: ASSERTED is
+     * common (low idf) and SSSOM_INFERENCE rare (high idf), so an additive {@code bq} would
+     * actually boost SSSOM more than ASSERTED, inverting the intended order.
+     *
+     * <p>Tier multiplier ASSERTED (3) &gt; SSSOM_INFERENCE (2) &gt; OWL_INFERENCE (1), multiplied by
+     * a distance factor 1 + 0.4/(distance+1). The distance factor is bounded to [1.0, 1.4]
+     * (distance 0 -> 1.4, large -> 1.0): a within-tier tie-breaker that favours shorter chains but
+     * is always smaller than the 1.5x adjacent-tier ratio, so it can never invert the tier order
+     * (an SSSOM doc with distance 0 must not outrank an asserted doc at equal relevance). Missing
+     * distance (asserted docs) defaults to 1.
+     */
+    private static final String RANKING_BOOST =
+            "mul("
+                + "if(termfreq(" + MappingEnum.INFERENCE_TYPE.getField() + ",'"
+                    + InferenceType.ASSERTED.getCode() + "'),3,"
+                + "if(termfreq(" + MappingEnum.INFERENCE_TYPE.getField() + ",'"
+                    + InferenceType.SSSOM_INFERENCE.getCode() + "'),2,1)),"
+                + "sum(1,div(0.4,sum(def(distance,1),1))))";
 
     private static final Map<MappingEnum, String> textGeneralToDocValues = Map.of(
         MappingEnum.OBJECT_LABEL, textGeneralFieldAsString(MappingEnum.OBJECT_LABEL),
@@ -59,8 +82,7 @@ public class SolrQueryBuilder {
         if (advancedFieldQueries != null && !advancedFieldQueries.isEmpty()) {
             solrQuery.setQuery(constructAdvancedQuery(advancedFieldQueries));
         } else if (queryFields != null && !queryFields.isEmpty()) {
-            // Override path: caller pinned the fields — preserve legacy edismax behavior.
-            solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
+            // Override path: caller pinned the fields via qf.
             solrQuery.setQuery(constructUsingQueryFields(mappingSearchRequest.getQueries()));
             solrQuery.set(QF, constructQueryFields(queryFields));
         } else {
@@ -68,11 +90,17 @@ public class SolrQueryBuilder {
             solrQuery.setQuery(constructClassifiedQuery(mappingSearchRequest.getQueries()));
         }
 
+        // ADR-0011: every path uses edismax so the soft inference-type + distance ranking applies
+        // uniformly. The fielded queries on the advanced/classified paths carry their own field
+        // selectors, which edismax parses unchanged; qf (set above) only affects the queryFields path.
+        solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
+        applyInferenceRanking(solrQuery);
+
         solrQuery.setFields(constructFieldList(mappingSearchRequest.getFieldList()));
         solrQuery.setFilterQueries(constructFilterQueries(
                 mappingSearchRequest.getColumnFilters(),
                 mappingSearchRequest.getMappingSetIds(),
-                mappingSearchRequest.getInferred()));
+                mappingSearchRequest.getInferenceType()));
         solrQuery = configureFacets(solrQuery, mappingSearchRequest.getFacets());
         solrQuery = constructSortedFields(solrQuery, mappingSearchRequest);
 
@@ -82,16 +110,26 @@ public class SolrQueryBuilder {
 
     private static String[] constructFilterQueries(List<MappingSearchRequest.ColumnFilter> queryFilters,
                                                    List<String> mappingSetIds,
-                                                   Boolean inferred) {
+                                                   List<InferenceType> inferenceTypes) {
         List<String> filterQueriesList = queryFilters.stream()
                 .map(SolrQueryBuilder::constructFilterClause)
                 .filter(clause -> !clause.isEmpty())
                 .collect(Collectors.toList());
 
-        // Tri-state inferred/asserted filter. is_inferred is a denormalised boolean (ADR-0008);
-        // an exact term match, never the substring columnFilter path which is wrong for a boolean.
-        if (inferred != null) {
-            filterQueriesList.add(MappingEnum.IS_INFERRED.getField() + ":" + inferred);
+        // Multi-select inference-type filter (ADR-0011). inference_type is a denormalised string
+        // whose values are the InferenceType codes (safe enum names, no escaping needed); absent or
+        // empty means all types. An OR of exact term matches, never the substring columnFilter path.
+        if (inferenceTypes != null && !inferenceTypes.isEmpty()) {
+            String field = MappingEnum.INFERENCE_TYPE.getField();
+            String clause = inferenceTypes.stream()
+                    .filter(Objects::nonNull)
+                    .map(InferenceType::getCode)
+                    .distinct()
+                    .map(code -> field + ":" + code)
+                    .collect(Collectors.joining(" OR "));
+            if (!clause.isEmpty()) {
+                filterQueriesList.add("(" + clause + ")");
+            }
         }
 
         if (mappingSetIds != null && !mappingSetIds.isEmpty()) {
@@ -311,5 +349,15 @@ public class SolrQueryBuilder {
     private static SolrQuery configureFacets(SolrQuery solrQuery, Set<MappingFacetEnum> facets) {
         facets.forEach(f ->  solrQuery.addFacetField(f.getValue()));
         return solrQuery;
+    }
+
+    /**
+     * Apply the soft inference-type + distance ranking (ADR-0011) as a multiplicative edismax
+     * {@code boost} function. Requires {@code defType=edismax}. The boost multiplies the relevance
+     * score, so every tier still appears — asserted/SSSOM just float up, and within the inferred
+     * results shorter chains rank above longer ones — without a hard filter or sort.
+     */
+    private static void applyInferenceRanking(SolrQuery solrQuery) {
+        solrQuery.set(SolrConstants.BOOST, RANKING_BOOST);
     }
 }

@@ -5,7 +5,7 @@ set -e
 
 SCRIPT_DIR=$(dirname $(readlink -f $0))
 
-echo Running json2ttlNextflow.sh
+echo Running nemoInferMappingsNextflow.sh
 
 # Check if the required arguments are provided
 if [ "$#" -ne 4 ]; then

@@ -6,12 +6,16 @@ import org.apache.jena.riot.RDFParser;
 import org.apache.jena.riot.system.StreamRDFBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.spot.oxo.inferences.nemo.model.OXOInferenceConstants;
 
 import java.io.*;
 
 /**
  * Reads a .ttl file of inferred mappings and writes them in the {@code ;}-separated
- * {@code mapping(<s>,<p>,<o>);...} format expected by nmo's --trace-input-file.
+ * 4-arity {@code mapping(<urn:uuid:000...0>,<s>,<p>,<o>);...} format expected by nmo's
+ * {@code --trace-input-file} (ADR-0010). The {@code mapping_id} graph term is the nil UUID
+ * because every inferred conclusion in {@code owl.rls}/{@code sssom.rls} carries it, so this
+ * is the atom that actually exists in the materialised model and can be traced.
  *
  * Streams triples directly from the parser to the output writer rather than loading the
  * entire Model into memory: ncbitaxon's inferred TTL OOM-killed the previous Model-based
@@ -87,6 +91,8 @@ public class Inferences2Trace {
             try {
                 if (!first) writer.write(';');
                 writer.write("mapping(<");
+                writer.write(OXOInferenceConstants.NIL_MAPPING_ID_IRI);
+                writer.write(">,<");
                 writer.write(s);
                 writer.write(">,<");
                 writer.write(p);

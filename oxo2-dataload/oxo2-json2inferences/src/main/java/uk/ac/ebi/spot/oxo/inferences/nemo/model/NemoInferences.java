@@ -55,6 +55,15 @@ public class NemoInferences {
         @JsonProperty("rule")
         private String rule;
 
+        /**
+         * The {@code #[name("...")]} attribute of the rule that produced this conclusion,
+         * emitted by nmo in the {@code --trace-output} JSON (ADR-0009/0010). Matches a
+         * {@link uk.ac.ebi.spot.oxo.model.sssom.ChainRulesEnum#getName()} for the named
+         * chain rules; absent for the unnamed seed rule and for {@code "Asserted"} EDB facts.
+         */
+        @JsonProperty("ruleName")
+        private String ruleName;
+
         @JsonProperty("conclusion")
         private String conclusion;
 
@@ -63,6 +72,14 @@ public class NemoInferences {
 
         public String getRule() {
             return rule;
+        }
+
+        public String getRuleName() {
+            return ruleName;
+        }
+
+        public void setRuleName(String ruleName) {
+            this.ruleName = ruleName;
         }
 
         @Override

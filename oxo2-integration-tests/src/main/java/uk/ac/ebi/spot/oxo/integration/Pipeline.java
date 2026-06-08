@@ -24,8 +24,9 @@ public final class Pipeline {
 
     private Pipeline() {}
 
-    public static void runLoadDataNextflow() throws IOException, InterruptedException {
-        Path config = ConfigGenerator.generate();
+    /** Runs loadData.nextflow against the given OXO2_CONFIG, in isolation (the run wipes
+     *  $OXO2_DATA and the Solr collections, then loads only the sets that config lists). */
+    public static void runLoadDataNextflow(Path config) throws IOException, InterruptedException {
         Path repoRoot = Env.repoRoot();
         Path loadDataScript = repoRoot.resolve("oxo2-dataload").resolve("loadData.nextflow");
         if (!Files.isExecutable(loadDataScript)) {

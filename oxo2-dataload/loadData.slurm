@@ -52,6 +52,8 @@ export OXO2_INFERENCES
 mkdir -p "$NXF_WORK" "$NXF_HOME" "$NXF_TEMP" "$NXF_CACHE_DIR" "$NXF_SINGULARITY_CACHEDIR" "$NXF_LOGS"
 mkdir -p "$OXO2_DATA/sssom" "$OXO2_DATA/sssom-as-json" "$OXO2_DATA/assertedMappings"
 mkdir -p "$OXO2_INFERENCES/inferredMappings" "$OXO2_INFERENCES/inferencesToTrace" "$OXO2_INFERENCES/inferenceChains" "$OXO2_INFERENCES/solr/mapping" "$OXO2_INFERENCES/solr/mappingSet"
+# Phase 2 (ADR-0009) cross-set working + output directories.
+mkdir -p "$OXO2_INFERENCES/crossSet" "$OXO2_INFERENCES/inferenceChainsCrossSet"
 mkdir -p "$OXO2_DATA/tmp"
 mkdir -p "$NEXTFLOW_DIR/logs"
 mkdir -p "$SOLR_HOME"
@@ -64,12 +66,14 @@ rm -rf "$NXF_TEMP"/*
 rm -rf "$NXF_CACHE_DIR"/*
 #rm -rf "$NXF_SINGULARITY_CACHEDIR"/*
 rm -rf "$NXF_LOGS"/* "$NXF_LOGS"/.*[!.]*
-rm -rf "$OXO2_DATA/sssom"/*
-rm -rf "$OXO2_DATA/sssom-as-json"/*
+#rm -rf "$OXO2_DATA/sssom"/*
+#rm -rf "$OXO2_DATA/sssom-as-json"/*
 rm -rf "$OXO2_DATA/assertedMappings"/*
 rm -rf "$OXO2_INFERENCES/inferredMappings"/*
 rm -rf "$OXO2_INFERENCES/inferencesToTrace"/*
 rm -rf "$OXO2_INFERENCES/inferenceChains"/*
+rm -rf "$OXO2_INFERENCES/crossSet"/*
+rm -rf "$OXO2_INFERENCES/inferenceChainsCrossSet"/*
 rm -rf "$OXO2_INFERENCES/solr"/*
 rm -rf "$OXO2_DATA/tmp"/*
 rm -rf "$SOLR_HOME"/*
@@ -279,34 +283,36 @@ if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr (via hostname)"; then
 fi
 
 # --- Stage 1: Download mappings ---
-start_time=$(date +%s)
-echo "###################" downloadMappings...
-nextflow -log "$NXF_LOGS/downloadMappings.nextflow.log" \
-    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
-    run "$SCRIPT_DIR/downloadMappings.nf" \
-    -profile "$NF_PROFILE" \
-    -with-trace    "$NXF_LOGS/downloadMappings-trace.txt" \
-    -with-report   "$NXF_LOGS/downloadMappings-report.html" \
-    -with-timeline "$NXF_LOGS/downloadMappings-timeline.html"
-end_time=$(date +%s)
-echo "Download took: $((end_time - start_time)) seconds"
+#start_time=$(date +%s)
+#echo "###################" downloadMappings...
+#nextflow -log "$NXF_LOGS/downloadMappings.nextflow.log" \
+#    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+#    run "$SCRIPT_DIR/downloadMappings.nf" \
+#    -profile "$NF_PROFILE" \
+#    -with-trace    "$NXF_LOGS/downloadMappings-trace.txt" \
+#    -with-report   "$NXF_LOGS/downloadMappings-report.html" \
+#    -with-timeline "$NXF_LOGS/downloadMappings-timeline.html"
+#end_time=$(date +%s)
+#echo "Download took: $((end_time - start_time)) seconds"
 
 # --- Stage 2: SSSOM to JSON ---
-start_time=$(date +%s)
-echo "###################" sssom2json...
-nextflow -log "$NXF_LOGS/sssom2json.nextflow.log" \
-    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
-    run "$SCRIPT_DIR/sssom2json.nf" \
-    -profile "$NF_PROFILE" \
-    -with-trace    "$NXF_LOGS/sssom2json-trace.txt" \
-    -with-report   "$NXF_LOGS/sssom2json-report.html" \
-    -with-timeline "$NXF_LOGS/sssom2json-timeline.html"
-end_time=$(date +%s)
-echo "SSSOM to JSON took: $((end_time - start_time)) seconds"
+#start_time=$(date +%s)
+#echo "###################" sssom2json...
+#nextflow -log "$NXF_LOGS/sssom2json.nextflow.log" \
+#    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+#    run "$SCRIPT_DIR/sssom2json.nf" \
+#    -profile "$NF_PROFILE" \
+#    -with-trace    "$NXF_LOGS/sssom2json-trace.txt" \
+#    -with-report   "$NXF_LOGS/sssom2json-report.html" \
+#    -with-timeline "$NXF_LOGS/sssom2json-timeline.html"
+#end_time=$(date +%s)
+#echo "SSSOM to JSON took: $((end_time - start_time)) seconds"
 
-# --- Stage 3: Infer and explain mappings ---
+# --- Stage 3: Infer mappings (two-phase reasoning, ADR-0009) ---
+# Phase 1: OWL reasoning per mapping set (owl.rls) -> per-set inferenceChains, plus the
+#          per-set N-Quads that phase 2 concatenates.
 start_time=$(date +%s)
-echo "###################" inferAndExplainMappings...
+echo "###################" "inferAndExplainMappings (phase 1: per-set OWL)..."
 nextflow -log "$NXF_LOGS/inferAndExplainMappings.nextflow.log" \
     -c "$SCRIPT_DIR/nextflow/nextflow.config" \
     run "$SCRIPT_DIR/inferAndExplainMappings.nf" \
@@ -315,7 +321,22 @@ nextflow -log "$NXF_LOGS/inferAndExplainMappings.nextflow.log" \
     -with-report   "$NXF_LOGS/inferAndExplainMappings-report.html" \
     -with-timeline "$NXF_LOGS/inferAndExplainMappings-timeline.html"
 end_time=$(date +%s)
-echo "Infer and explain took: $((end_time - start_time)) seconds"
+echo "Phase 1 (OWL per-set) inference took: $((end_time - start_time)) seconds"
+
+# Phase 2: SSSOM reasoning across all mapping sets (sssom.rls). Concatenates every set's
+#          N-Quads into one corpus and traces -> the single cross-set inferenceChainsCrossSet
+#          file. Depends on phase 1 having published assertedMappings/*.nq.
+start_time=$(date +%s)
+echo "###################" "inferSssomCrossSet (phase 2: cross-set SSSOM)..."
+nextflow -log "$NXF_LOGS/inferSssomCrossSet.nextflow.log" \
+    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+    run "$SCRIPT_DIR/inferSssomCrossSet.nf" \
+    -profile "$NF_PROFILE" \
+    -with-trace    "$NXF_LOGS/inferSssomCrossSet-trace.txt" \
+    -with-report   "$NXF_LOGS/inferSssomCrossSet-report.html" \
+    -with-timeline "$NXF_LOGS/inferSssomCrossSet-timeline.html"
+end_time=$(date +%s)
+echo "Phase 2 (SSSOM cross-set) inference took: $((end_time - start_time)) seconds"
 
 # --- Stage 4: Index mappings to Solr ---
 start_time=$(date +%s)
@@ -342,19 +363,43 @@ for core in oxo2-mappings oxo2-mappingsets; do
 done
 echo "Solr indexing verified successfully."
 
-# --- Stage 5: Explanations to JSON ---
+# --- Stage 5: Explanations to JSON (two-phase reasoning, ADR-0009) ---
+# Runs after the asserted data is indexed (Stage 4): explanations2json queries Solr for entity
+# details and per-leaf provenance, so the asserted mappings must already be in Solr. SOLR_URL is
+# read from the environment (exported above), so no --solr_url param is needed.
+#
+# Phase 1: per-set OWL inferences. Resolves the source set per chain file and emits one inferred
+#          set per source (OWL_INFERENCE).
 start_time=$(date +%s)
-echo "###################" explanations2json...
+echo "###################" "explanations2json (phase 1: per-set OWL)..."
 (cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/explanations2json.nextflow.log" \
     -c "$SCRIPT_DIR/nextflow/nextflow.config" \
     run "$SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf" \
     -profile "$NF_PROFILE" \
-    --solr_url "$SOLR_URL" \
+    --input_dir "$OXO2_INFERENCES/inferenceChains" \
+    --inference_type OWL_INFERENCE \
     -with-trace    "$NXF_LOGS/explanations2json-trace.txt" \
     -with-report   "$NXF_LOGS/explanations2json-report.html" \
     -with-timeline "$NXF_LOGS/explanations2json-timeline.html")
 end_time=$(date +%s)
-echo "Explanations to JSON took: $((end_time - start_time)) seconds"
+echo "Explanations to JSON (phase 1) took: $((end_time - start_time)) seconds"
+
+# Phase 2: cross-set SSSOM inferences. A single chains file -> the single oxo2/inferences set
+#          (SSSOM_INFERENCE); the source-set union is recovered per-leaf from mapping_id.
+start_time=$(date +%s)
+echo "###################" "explanations2json (phase 2: cross-set SSSOM)..."
+(cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/explanations2jsonCrossSet.nextflow.log" \
+    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+    run "$SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf" \
+    -profile "$NF_PROFILE" \
+    --input_dir "$OXO2_INFERENCES/inferenceChainsCrossSet" \
+    --inference_type SSSOM_INFERENCE \
+    --cross_set true \
+    -with-trace    "$NXF_LOGS/explanations2jsonCrossSet-trace.txt" \
+    -with-report   "$NXF_LOGS/explanations2jsonCrossSet-report.html" \
+    -with-timeline "$NXF_LOGS/explanations2jsonCrossSet-timeline.html")
+end_time=$(date +%s)
+echo "Explanations to JSON (phase 2) took: $((end_time - start_time)) seconds"
 
 # --- Stage 6: Index inferred mappings and mapping sets to Solr ---
 echo "###################" json2solr inferred mappings...

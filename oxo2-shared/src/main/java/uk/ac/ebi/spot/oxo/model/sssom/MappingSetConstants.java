@@ -14,7 +14,7 @@ public final class MappingSetConstants {
     public static final String CREATOR_LABEL           = MappingConstants.CREATOR_LABEL;
     public static final String CREATOR_ID              = MappingConstants.CREATOR_ID;
     public static final String MAPPING_PROVIDER        = MappingConstants.MAPPING_PROVIDER;
-    public static final String IS_INFERRED             = MappingConstants.IS_INFERRED;
+    public static final String INFERENCE_TYPE          = MappingConstants.INFERENCE_TYPE;
 
     private MappingSetConstants() {}
 }

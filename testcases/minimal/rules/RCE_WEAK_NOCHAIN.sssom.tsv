@@ -1,0 +1,10 @@
+# mapping_set_id: https://w3id.org/oxo2/test/minimal/rules/RCE_WEAK_NOCHAIN
+# mapping_set_title: Negative fixture - weak predicate closeMatch is not propagated by the RCE role chains
+# license: https://creativecommons.org/publicdomain/zero/1.0/
+# curie_map:
+#   ex: https://w3id.org/oxo2/test/ex/
+#   OWL: http://www.w3.org/2002/07/owl#
+#   skos: http://www.w3.org/2004/02/skos/core#
+subject_id	subject_label	predicate_id	object_id	object_label
+ex:A	Entity A	OWL:equivalentClass	ex:B	Entity B
+ex:B	Entity B	skos:closeMatch	ex:C	Entity C

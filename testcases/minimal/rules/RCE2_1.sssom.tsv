@@ -1,10 +1,10 @@
 # mapping_set_id: https://w3id.org/oxo2/test/minimal/rules/RCE2_1
-# mapping_set_title: Test fixture for chain rule RCE2_1
+# mapping_set_title: Test fixture for chain rule RCE2-1 (strong predicate propagates over an equivalentClass identity edge)
 # license: https://creativecommons.org/publicdomain/zero/1.0/
 # curie_map:
 #   ex: https://w3id.org/oxo2/test/ex/
 #   OWL: http://www.w3.org/2002/07/owl#
 #   skos: http://www.w3.org/2004/02/skos/core#
 subject_id	subject_label	predicate_id	object_id	object_label
-ex:A	Entity A	skos:closeMatch	ex:B	Entity B
+ex:A	Entity A	skos:broadMatch	ex:B	Entity B
 ex:B	Entity B	OWL:equivalentClass	ex:C	Entity C
