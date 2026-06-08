@@ -530,4 +530,40 @@ class SolrQueryBuilderTest {
                 // Distance factor bounded to [1.0, 1.4] so it can't invert the tier order.
                 .contains("sum(1,div(0.4,sum(def(distance,1),1)))");
     }
+
+    // ---------- same-SPO grouping (ADR-0013) ----------
+
+    @Test
+    void groupBySpoAddsGroupingParamsAndSpoKeyTiebreaker() {
+        MappingSearchRequest request = baseRequest();
+        request.setGroupBySpo(true);
+        SortedField sort = new SortedField();
+        sort.setId(MappingEnum.SUBJECT_LABEL);
+        sort.setDesc(false);
+        request.setSortedFields(List.of(sort));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.get(SolrConstants.GROUP)).isEqualTo("true");
+        assertThat(solrQuery.get(SolrConstants.GROUP_FIELD)).isEqualTo(MappingEnum.SPO_KEY.getField());
+        assertThat(solrQuery.get(SolrConstants.GROUP_NGROUPS)).isEqualTo("true");
+        assertThat(solrQuery.get(SolrConstants.GROUP_SORT)).isEqualTo("score desc");
+        assertThat(solrQuery.get(SolrConstants.GROUP_LIMIT))
+                .isEqualTo(String.valueOf(SolrConstants.GROUP_MEMBER_LIMIT));
+        // spo_key is appended after the user's sort as a total-order tiebreaker for stable paging.
+        SolrQuery.SortClause lastSort = solrQuery.getSorts().get(solrQuery.getSorts().size() - 1);
+        assertThat(lastSort.getItem()).isEqualTo(MappingEnum.SPO_KEY.getField());
+        assertThat(lastSort.getOrder()).isEqualTo(SolrQuery.ORDER.asc);
+    }
+
+    @Test
+    void groupBySpoFalseAddsNoGroupingParams() {
+        MappingSearchRequest request = baseRequest();
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.get(SolrConstants.GROUP)).isNull();
+        assertThat(solrQuery.getSorts())
+                .noneMatch(clause -> clause.getItem().equals(MappingEnum.SPO_KEY.getField()));
+    }
 }

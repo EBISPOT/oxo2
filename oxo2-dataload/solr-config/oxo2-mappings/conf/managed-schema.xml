@@ -526,6 +526,10 @@
   <field name="subject_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_label_str" type="string" multiValued="false" indexed="true" stored="false"/>
   <field name="subject_label_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
+  <!-- Grouping key for collapsing same-SPO mappings into one result-view row (ADR-0013): a hash of
+       subject_id + predicate_id + predicate_modifier + object_id. Derived at serialization time by
+       Mapping.spoKey(); docValues for grouping, not stored (never retrieved). -->
+  <field name="spo_key" type="string" multiValued="false" indexed="true" stored="false" docValues="true"/>
   <field name="subject_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_source" type="string" multiValued="false" indexed="true" stored="true"/>

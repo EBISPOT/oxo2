@@ -10,7 +10,7 @@ import {
     useMaterialReactTable,
 } from 'material-react-table';
 import {Mapping} from "../../model/Mapping.ts";
-import {InferenceType, DEFAULT_INFERENCE_TYPES} from "../../model/InferenceType";
+import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {InferenceTypeFilter} from "../../components/mapping/InferenceTypeFilter";
 import {IconButton, Tooltip} from "@mui/material";
@@ -56,10 +56,40 @@ const OBJECT_SORT_FIELDS: SortFieldDef[] = [
     {field: "object_iri", label: "IRI"},
 ];
 
+// Same-SPO grouping helpers (ADR-0013). A grouped representative carries all its members (including
+// itself) in groupMembers; an ungrouped row falls back to the single mapping.
+function groupMembersOf(mapping: Mapping): Mapping[] {
+    return mapping.groupMembers && mapping.groupMembers.length > 0 ? mapping.groupMembers : [mapping];
+}
+
+// Distinct inference types present in the group, in display order — for the stacked Type badges.
+function groupInferenceTypes(mapping: Mapping): InferenceType[] {
+    const members = groupMembersOf(mapping);
+    return INFERENCE_TYPE_ORDER.filter(type => members.some(member => asInferenceType(member.inferenceType) === type));
+}
+
+// The shared value of a per-mapping field across the group, or null when members differ ("Multiple").
+function sharedValue(mapping: Mapping, pick: (member: Mapping) => string | undefined): string | null {
+    const members = groupMembersOf(mapping);
+    const distinct = new Set(members.map(member => (pick(member) || '').trim()));
+    return distinct.size <= 1 ? (pick(mapping) || '') : null;
+}
+
+// Deep-link to the flat Advanced view filtered to this exact triple (the "+N more" overflow target).
+function advancedHrefForTriple(mapping: Mapping): string {
+    const params = new URLSearchParams();
+    params.append('af', `subject_id=${mapping.subjectId}`);
+    params.append('af', `predicate_id=${mapping.predicateId}`);
+    params.append('af', `object_id=${mapping.objectId}`);
+    return `/search/_advanced?${params.toString()}`;
+}
+
 /**
  * Default ("Search" tab) results: a compact, readable table of Subject / Predicate /
  * Object (each an id › label › IRI cell) plus mapping justification, provider, and
- * set. Field-level filtering is offered via per-column popovers; the Advanced tab
+ * set. Same-SPO mappings are collapsed into one expandable row (ADR-0013): the parent shows the
+ * representative triple with the distinct inference types and a member count, and the row expands to
+ * the underlying mappings. Field-level filtering is offered via per-column popovers; the Advanced tab
  * remains the home for exhaustive per-field filtering (see AdvancedResultsTable).
  */
 export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTypes = DEFAULT_INFERENCE_TYPES }:
@@ -140,7 +170,8 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
                 sorting,
                 mappingSetIds,
                 undefined,
-                inferenceTypes
+                inferenceTypes,
+                true // group same-SPO mappings into one row (ADR-0013)
             ),
         staleTime: Infinity,
     });
@@ -228,7 +259,12 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
                         />
                     </span>
                 ),
-                Cell: ({ row }) => <span className="break-all">{row.original.mappingJustification}</span>,
+                Cell: ({ row }) => {
+                    const shared = sharedValue(row.original, (member) => member.mappingJustification);
+                    return shared === null
+                        ? <span className="italic text-gray-500">Multiple</span>
+                        : <span className="break-all">{shared}</span>;
+                },
             },
             {
                 id: "inference_type",
@@ -236,7 +272,21 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
                 header: "Type",
                 enableSorting: false,
                 size: 130,
-                Cell: ({ row }) => <InferenceTypeBadge value={row.original.inferenceType} />,
+                Cell: ({ row }) => {
+                    const groupSize = row.original.groupSize ?? 1;
+                    return (
+                        <div className="flex flex-col gap-0.5">
+                            <div className="flex flex-wrap gap-1">
+                                {groupInferenceTypes(row.original).map((type) => (
+                                    <InferenceTypeBadge key={type} value={type} />
+                                ))}
+                            </div>
+                            {groupSize > 1 && (
+                                <span className="text-xs text-gray-500">{groupSize} mappings</span>
+                            )}
+                        </div>
+                    );
+                },
             },
             {
                 id: "mapping_provider",
@@ -254,7 +304,12 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
                         />
                     </span>
                 ),
-                Cell: ({ row }) => <span className="break-all">{row.original.mappingProvider}</span>,
+                Cell: ({ row }) => {
+                    const shared = sharedValue(row.original, (member) => member.mappingProvider);
+                    return shared === null
+                        ? <span className="italic text-gray-500">Multiple</span>
+                        : <span className="break-all">{shared}</span>;
+                },
             },
             {
                 id: "mapping_set",
@@ -262,17 +317,23 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
                 header: "Mapping set",
                 enableSorting: false,
                 size: 220,
-                Cell: ({ row }) => (
-                    <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="font-semibold break-words">{row.original.mappingSetTitle || "—"}</span>
-                        {row.original.mappingSetId && (
-                            <div className="flex items-start text-xs text-gray-500">
-                                <span className="break-all">{row.original.mappingSetId}</span>
-                                <CopyButton value={row.original.mappingSetId} title="Copy mapping set id" />
-                            </div>
-                        )}
-                    </div>
-                ),
+                Cell: ({ row }) => {
+                    // One row can span several sets; show "Multiple sets" rather than a misleading single set.
+                    if (sharedValue(row.original, (member) => member.mappingSetId) === null) {
+                        return <span className="italic text-gray-500">Multiple sets</span>;
+                    }
+                    return (
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="font-semibold break-words">{row.original.mappingSetTitle || "—"}</span>
+                            {row.original.mappingSetId && (
+                                <div className="flex items-start text-xs text-gray-500">
+                                    <span className="break-all">{row.original.mappingSetId}</span>
+                                    <CopyButton value={row.original.mappingSetId} title="Copy mapping set id" />
+                                </div>
+                            )}
+                        </div>
+                    );
+                },
             },
         ],
         [handleFilterChange, handleSortChange]
@@ -289,6 +350,63 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
         enableDensityToggle: false,
         manualPagination: true,
         manualSorting: true,
+        // Same-SPO grouping (ADR-0013): only rows backing more than one mapping can expand; the detail
+        // panel lists the underlying members.
+        enableExpanding: true,
+        getRowCanExpand: (row) => (row.original.groupSize ?? 1) > 1,
+        renderDetailPanel: ({ row }) => {
+            const members = groupMembersOf(row.original);
+            const total = row.original.groupSize ?? members.length;
+            const overflow = total - members.length;
+            return (
+                <div className="px-4 py-2">
+                    <div className="text-sm font-medium mb-2">{total} mappings for this triple</div>
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="text-left text-gray-500">
+                                <th className="py-1 pr-4 font-medium">Type</th>
+                                <th className="py-1 pr-4 font-medium">Mapping justification</th>
+                                <th className="py-1 pr-4 font-medium">Mapping provider</th>
+                                <th className="py-1 pr-4 font-medium">Mapping set</th>
+                                <th className="py-1" />
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {members.map((member, index) => (
+                                <tr key={member.mappingId || index} className="border-t border-gray-200 align-top">
+                                    <td className="py-1 pr-4"><InferenceTypeBadge value={member.inferenceType} /></td>
+                                    <td className="py-1 pr-4 break-all">{member.mappingJustification}</td>
+                                    <td className="py-1 pr-4 break-all">{member.mappingProvider}</td>
+                                    <td className="py-1 pr-4">
+                                        <div className="font-semibold break-words">{member.mappingSetTitle || "—"}</div>
+                                        {member.mappingSetId && (
+                                            <div className="text-xs text-gray-500 break-all">{member.mappingSetId}</div>
+                                        )}
+                                    </td>
+                                    <td className="py-1">
+                                        <Tooltip title="View mapping details">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => navigate(`/mapping/${encodeURIComponent(member.mappingId)}`, { state: { mapping: member } })}
+                                            >
+                                                <EyeIcon className="h-4 w-4" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {overflow > 0 && (
+                        <div className="mt-2 text-sm">
+                            <a className="text-[#d4522c] hover:underline" href={advancedHrefForTriple(row.original)}>
+                                +{overflow} more — view all in Advanced search
+                            </a>
+                        </div>
+                    )}
+                </div>
+            );
+        },
         enableRowActions: true,
         positionActionsColumn: 'last',
         renderRowActions: ({ row }) => (
