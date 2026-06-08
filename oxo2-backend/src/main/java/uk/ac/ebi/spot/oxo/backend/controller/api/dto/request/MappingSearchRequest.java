@@ -32,6 +32,10 @@ public class MappingSearchRequest {
     // boolean `inferred`.
     private List<InferenceType> inferenceType;
 
+    // Collapse same-SPO mappings into one row via Solr result grouping (ADR-0013). Default false;
+    // the normal/inferences result tables opt in, the Advanced tab stays flat.
+    private boolean groupBySpo = false;
+
 
     public List<String> getQueries() {
         return queries;
@@ -129,6 +133,14 @@ public class MappingSearchRequest {
         this.inferenceType = inferenceType;
     }
 
+    public boolean isGroupBySpo() {
+        return groupBySpo;
+    }
+
+    public void setGroupBySpo(boolean groupBySpo) {
+        this.groupBySpo = groupBySpo;
+    }
+
     @Override
     public String toString() {
         return "MappingSearchRequest{" +
@@ -144,6 +156,7 @@ public class MappingSearchRequest {
                 ", mappingSetIds=" + mappingSetIds +
                 ", advancedFieldQueries=" + advancedFieldQueries +
                 ", inferenceType=" + inferenceType +
+                ", groupBySpo=" + groupBySpo +
                 '}';
     }
 

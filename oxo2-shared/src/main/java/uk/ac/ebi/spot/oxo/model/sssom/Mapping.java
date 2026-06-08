@@ -172,6 +172,10 @@ public record Mapping (
         Optional<InferredMapping> explanation,
         @JsonProperty(EXPLANATION)
         Optional<String> explanationAsString,
+        // Result-view grouping (ADR-0013): on a grouped query the representative carries its group's
+        // members + true size as {"total":N,"members":[...]}; empty/absent otherwise.
+        @JsonProperty(GROUP_MEMBERS)
+        Optional<String> groupMembersAsString,
         @JsonProperty(MAPPING_ID)
         UUID mappingId,
         @JsonProperty(OBJECT_ID_PREFIX)
@@ -194,6 +198,28 @@ public record Mapping (
     @Override
     public int compareTo(Mapping o) {
         return this.mappingId.compareTo(o.mappingId);
+    }
+
+    /**
+     * Same-SPO grouping key (ADR-0013): a UUID hash of subject_id + predicate_id + predicate_modifier
+     * + object_id (IDs only — labels/IRIs vary across sets for the same entity; mapping set,
+     * justification and inference_type are the axes we collapse). predicate_modifier is included so a
+     * relation and its negation never share a key. Unit separators between components prevent
+     * ("ab","c") and ("a","bc") from colliding. Derived, not stored: emitted as the Solr
+     * {@code spo_key} field at dataload and present in API responses as a stable per-triple row key.
+     */
+    @JsonProperty(SPO_KEY)
+    public String spoKey() {
+        StringBuilder keyAsString = new StringBuilder();
+        subjectId.ifPresent(reference -> keyAsString.append(reference.getDataAsString()));
+        keyAsString.append('\u001f');
+        predicateId.ifPresent(reference -> keyAsString.append(reference.getDataAsString()));
+        keyAsString.append('\u001f');
+        predicateModifier.ifPresent(modifier -> keyAsString.append(modifier.value()));
+        keyAsString.append('\u001f');
+        objectId.ifPresent(reference -> keyAsString.append(reference.getDataAsString()));
+        byte[] bytes = keyAsString.toString().getBytes(StandardCharsets.UTF_8);
+        return UUID.nameUUIDFromBytes(bytes).toString();
     }
 
 
@@ -271,6 +297,7 @@ public record Mapping (
         private Optional<String> explanationAsString = Optional.empty();
         private List<InferredMapping> assertedMappings = new ArrayList<>();
         private Optional<String> assertedMappingsAsString = Optional.empty();
+        private Optional<String> groupMembersAsString = Optional.empty();
         private Optional<String> objectIdPrefix = Optional.empty();
         private Optional<Uri> objectIRI = Optional.empty();
         private Optional<String> predicateIdPrefix = Optional.empty();
@@ -1127,6 +1154,24 @@ public record Mapping (
             }
         }
 
+        // Result-view grouping (ADR-0013): the backend sets this on a grouped query's representative.
+        @JsonProperty(GROUP_MEMBERS)
+        public Builder groupMembersAsString(String groupMembersAsString) {
+            if (groupMembersAsString != null && !groupMembersAsString.isBlank())
+                this.groupMembersAsString = Optional.of(groupMembersAsString);
+            else
+                this.groupMembersAsString = Optional.empty();
+            return this;
+        }
+
+        // spo_key is a derived, output-only property (see Mapping#spoKey()). Accept and ignore it on
+        // input so deserialising a serialised Mapping — e.g. the dataload's own JSON, read back by the
+        // inference stage — doesn't fail on the extra field.
+        @JsonProperty(SPO_KEY)
+        public Builder spoKey(String ignoredSpoKey) {
+            return this;
+        }
+
         public Mapping build() {
             if (this.mappingId == null)
                 this.mappingId = generateMappingUuid();
@@ -1188,6 +1233,7 @@ public record Mapping (
                     inferenceType,
                     explanation,
                     explanationAsString,
+                    groupMembersAsString,
                     mappingId,
                     objectIdPrefix,
                     objectIRI,

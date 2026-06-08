@@ -171,6 +171,9 @@ export interface MappingResponse {
     asserted_mappings?: string;
     explanation?: string;
     inference_type?: string;
+    // Result-view grouping (ADR-0013): on a grouped query the representative carries its group's
+    // members + true size as a JSON string {"total":N,"members":[...]}.
+    group_members?: string;
 }
 
 
@@ -232,4 +235,8 @@ export interface Mapping {
     subjectIdPrefix?: string;
     assertedMappings?: InferredMapping[];
     explanation?: InferredMapping | undefined
+    // Result-view grouping (ADR-0013): the underlying same-SPO mappings (including this
+    // representative) and the group's true total size. Absent on ungrouped rows.
+    groupMembers?: Mapping[];
+    groupSize?: number;
 }

@@ -74,6 +74,19 @@ SSSOM 2 &gt; OWL 1) is multiplied by a distance factor bounded to `[1.0, 1.4]` (
 the 1.5× adjacent-tier ratio so it can never flip the tiers. See
 [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md).
 
+#### Same-SPO grouping
+
+When the request sets `groupBySpo` (the normal/inferences result tables do; the Advanced tab does not),
+`SolrQueryBuilder` adds Solr result grouping on the `spo_key` field — `group=true`, `group.ngroups=true`,
+`group.limit`, `group.sort=score desc` (the representative is the highest inference-tier member, via the
+boost above), and `spo_key` is appended as the final sort key so paging is a stable total order. The page
+total becomes the **group count** (`getNGroups`), so a page is N triples not N documents. `OxOSolrClient`
+turns each group's top document into the representative row and attaches its members + true size as a
+`group_members` JSON string (`{"total":N,"members":[...]}`), serialised with the app `ObjectMapper`, leaving
+the `FacetedMappingResponse` / `Page<Mapping>` shape unchanged. Grouping sits on top of the filters, so a
+group's members reflect only what passed the inference-type filter. See
+[ADR-0013](../docs/adr/0013-group-same-spo-mappings-in-result-views.md).
+
 #### Column-filter matching
 
 `POST /api/v2/mappings/search` `columnFilters` use "contains" semantics. Label fields

@@ -60,6 +60,13 @@ OxO2 as `ChainRulesEnum` (`RCE`, `T`, `RI`, `RG`, `RCE-N` families) and as Nemo 
 - **Explanation chain** — the full derivation tree for an inferred mapping, recording every chain-rule application back to asserted mappings.
 - **Facts to trace** — the set of inferred mappings whose explanation chains still need to be computed. Produced by the inference stage, 
 consumed by the trace stage. Lives as per-set files split into chunks for parallel tracing (see § Cross-cutting constraints).
+- **Mapping group** — the set of mappings that share the same `subject_id`, `predicate_id`, `predicate_modifier`, and `object_id`: one 
+asserted *meaning* of a triple, collapsed into a single row in the Search and Inferences result views (see § Cross-cutting constraints). 
+Identified by the denormalised `spo_key` field. A relation and its negation (`predicate_modifier = Not`) form **different** groups. 
+_Avoid_: collapsed row, duplicate mappings, SPO group.
+- **Representative mapping** — the member of a **mapping group** shown as its parent row: the highest inference-tier member (`ASSERTED` 
+over `SSSOM_INFERENCE` over `OWL_INFERENCE`, shorter chains first). Its subject/predicate/object are the ones displayed; the remaining 
+members are reached by expanding the row.
 
 ## Module map
 
@@ -98,6 +105,12 @@ builder) and `oxo2-mappings` (`mapping_id` becomes `indexed`).
 `https://www.ebi.ac.uk/oxo2/inferences[/…]` and resolve to an OxO2 mapping-set view. See 
 [ADR-0012](docs/adr/0012-resolvable-inference-set-iris.md). Affects `oxo2-dataload` (set ids), `oxo2-backend` (`GET 
 /api/v2/mapping-sets/by-id?mappingSetId=<IRI>`), and `oxo2-frontend` (`/inferences` route).
+- **Same-SPO mappings are grouped in result views** — the Search and Inferences tables collapse mappings sharing 
+(`subject_id`, `predicate_id`, `predicate_modifier`, `object_id`) into one *mapping group* row, via the denormalised Solr `spo_key` 
+field and Solr result grouping. Grouping is presentation-layer, layered on top of the inference-type filter, and a page counts groups 
+not documents (`group.ngroups`); the Advanced tab stays flat. See [ADR-0013](docs/adr/0013-group-same-spo-mappings-in-result-views.md). 
+Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` (grouped query path + `group_members` transport), and 
+`oxo2-frontend` (expandable rows, paging over groups).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **OxO2 is backwards compatible with OxO v1** — API surface answers v1's questions even where SSSOM terms are richer. 

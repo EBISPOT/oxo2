@@ -70,6 +70,8 @@ interface SearchRequest {
     // Multi-select inference-type filter (ADR-0011): omitted/empty = all types; otherwise restrict
     // to the listed codes (ASSERTED / OWL_INFERENCE / SSSOM_INFERENCE).
     inferenceType?: string[];
+    // Collapse same-SPO mappings into one row (ADR-0013). The normal/inferences result tables set this.
+    groupBySpo?: boolean;
 }
 
 export enum SearchStatus {
@@ -186,13 +188,25 @@ export function fromChainRuleResponse(chainRule: ChainRuleResponse ): ChainRule 
     return undefined;
 }
 
-export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping {
-    if (!json || !json.mappings || !json.mappings.content || !json.facets) {
-        return emptyFacetedMapping;
+// Parse a representative's group_members payload ({"total":N,"members":[...]}) into the member
+// Mapping[] and the group's true size (ADR-0013). Absent/blank → no grouping fields. Members carry no
+// group_members of their own, so fromMappingResponse does not recurse.
+export function fromGroupMembersString(groupMembersAsString?: string):
+    { groupMembers?: Mapping[]; groupSize?: number } {
+    if (!groupMembersAsString ||
+        (typeof groupMembersAsString === 'string' && groupMembersAsString.trim() === '')) {
+        return {};
     }
+    const parsed = JSON.parse(groupMembersAsString);
+    const members = Array.isArray(parsed?.members) ? parsed.members : [];
     return {
-        mappings: json.mappings.content.map(item => {
-            return {
+        groupMembers: members.map((member: MappingResponse) => fromMappingResponse(member)),
+        groupSize: typeof parsed?.total === 'number' ? parsed.total : members.length,
+    };
+}
+
+export function fromMappingResponse(item: MappingResponse): Mapping {
+    return {
                 authorId: item.author_id || '',
                 authorLabel: item.author_label || '',
                 comment: item.comment || '',
@@ -250,8 +264,16 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
                 assertedMappings: fromAssertedMappingString(item.asserted_mappings),
                 explanation: fromExplanationString(item.explanation),
                 inferenceType: asInferenceType(item.inference_type),
-            };
-        }),
+                ...fromGroupMembersString(item.group_members),
+    };
+}
+
+export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping {
+    if (!json || !json.mappings || !json.mappings.content || !json.facets) {
+        return emptyFacetedMapping;
+    }
+    return {
+        mappings: json.mappings.content.map(fromMappingResponse),
         totalElements: json.mappings.totalElements,
         totalPages: json.mappings.totalPages,
         number: json.mappings.number,
@@ -263,7 +285,8 @@ export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping
 export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10, columnFilters: any[],
                               sorting: any[], mappingSetIds?: string[],
                               advancedFieldQueries?: AdvancedFieldQueryRequest[],
-                              inferenceType?: InferenceType[]): Promise<FacetedMappingResponse> {
+                              inferenceType?: InferenceType[],
+                              groupBySpo: boolean = false): Promise<FacetedMappingResponse> {
     const requestBody: SearchRequest = {
         queries: queries,
         page: page,
@@ -277,6 +300,7 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
         ...(mappingSetIds && mappingSetIds.length > 0 ? { mappingSetIds } : {}),
         ...(advancedFieldQueries && advancedFieldQueries.length > 0 ? { advancedFieldQueries } : {}),
         ...(inferenceType && inferenceType.length > 0 ? { inferenceType } : {}),
+        ...(groupBySpo ? { groupBySpo } : {}),
     };
 
     const searchResponse = post<SearchRequest, FacetedMappingResponse>(

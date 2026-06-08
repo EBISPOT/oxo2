@@ -111,6 +111,12 @@ them to `$SOLR_HOME` for local runs.
 > (the explanation step looks up asserted premises by it). An existing index must be rebuilt; a normal
 > `loadData.nextflow` run does a fresh load and so reindexes automatically.
 
+> **Reindex required (ADR-0013):** `oxo2-mappings` gained a `spo_key` field (the same-SPO grouping key:
+> a hash of subject_id + predicate_id + predicate_modifier + object_id). No pipeline code changed — it is
+> a derived `Mapping.spoKey()` accessor that every serialised mapping document (asserted and inferred)
+> carries automatically, so a normal `loadData.nextflow` run populates it. `stored="false"`, so it is never
+> returned in query results.
+
 ### Input validation
 
 Remote filenames sourced from registries (FTP listings, and TAR entries — including the GitHub archive

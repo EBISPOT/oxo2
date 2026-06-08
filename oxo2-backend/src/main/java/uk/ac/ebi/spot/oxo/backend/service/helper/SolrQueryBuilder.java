@@ -104,7 +104,29 @@ public class SolrQueryBuilder {
         solrQuery = configureFacets(solrQuery, mappingSearchRequest.getFacets());
         solrQuery = constructSortedFields(solrQuery, mappingSearchRequest);
 
+        if (mappingSearchRequest.isGroupBySpo()) {
+            applySpoGrouping(solrQuery);
+        }
+
         return solrQuery;
+    }
+
+    /**
+     * Same-SPO grouping (ADR-0013): collapse documents sharing {@code spo_key} into one
+     * representative row. {@code group.sort=score desc} makes the representative the highest
+     * inference-tier member (the {@link #RANKING_BOOST}); the main sort (set above) still orders the
+     * groups, and {@code spo_key} is appended as a total-order tiebreaker so paging is stable across
+     * requests. {@code group.ngroups} makes the result total a group count (a page is N groups), and
+     * {@code group.limit} caps the member documents inlined per group. Grouping sits on top of the
+     * existing filters, so a group's members reflect only what passed the inference-type filter.
+     */
+    private static void applySpoGrouping(SolrQuery solrQuery) {
+        solrQuery.set(SolrConstants.GROUP, true);
+        solrQuery.set(SolrConstants.GROUP_FIELD, MappingEnum.SPO_KEY.getField());
+        solrQuery.set(SolrConstants.GROUP_NGROUPS, true);
+        solrQuery.set(SolrConstants.GROUP_LIMIT, SolrConstants.GROUP_MEMBER_LIMIT);
+        solrQuery.set(SolrConstants.GROUP_SORT, "score desc");
+        solrQuery.addSort(MappingEnum.SPO_KEY.getField(), SolrQuery.ORDER.asc);
     }
 
 

@@ -57,6 +57,10 @@ public class MappingConstants {
 
     // Extensions
     public static final String ASSERTED_MAPPINGS = "asserted_mappings";
+    // Result-view grouping (ADR-0013): spo_key is the same-SPO group key (derived, not deserialised);
+    // group_members carries a representative row's underlying members as {"total":N,"members":[...]}.
+    public static final String SPO_KEY = "spo_key";
+    public static final String GROUP_MEMBERS = "group_members";
     public static final String CHAIN_RULE = "chain_rule";
     public static final String CHAIN_RULE_APPLICATIONS = "chain_rule_applications";
     public static final String DISTANCE = "distance";

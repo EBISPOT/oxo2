@@ -8,4 +8,15 @@ public class SolrConstants {
     // ASSERTED is common (low idf) and SSSOM rare (high idf), so an additive bq would invert the
     // intended order.
     public final static String BOOST = "boost";
+
+    // Result grouping for same-SPO collapse (ADR-0013). group=true collapses documents sharing
+    // spo_key; group.ngroups makes the total a group count (a page is N groups); group.sort picks
+    // the representative (highest inference tier, via the score boost); group.limit caps the number
+    // of member documents returned per group.
+    public final static String GROUP = "group";
+    public final static String GROUP_FIELD = "group.field";
+    public final static String GROUP_NGROUPS = "group.ngroups";
+    public final static String GROUP_LIMIT = "group.limit";
+    public final static String GROUP_SORT = "group.sort";
+    public final static int GROUP_MEMBER_LIMIT = 20;
 }
