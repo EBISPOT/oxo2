@@ -21,7 +21,7 @@ params.rules_definition = file("${params.script_dir}/oxo2-json2inferences/owl.rl
 // per-chunk tracing (~66 ms/fact) approaches the 4 h walltime: 50k keeps the heaviest
 // set (ncbitaxon) at ~1 h/chunk while cutting its chunk count (and reasoning passes)
 // ~5x versus 10k.
-params.trace_chunk_size = 20000
+params.trace_chunk_size = 50000
 
 workflow {
     json_files = channel.fromPath("${params.json_input_dir}/*.json")

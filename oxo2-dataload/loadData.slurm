@@ -66,8 +66,8 @@ rm -rf "$NXF_TEMP"/*
 rm -rf "$NXF_CACHE_DIR"/*
 #rm -rf "$NXF_SINGULARITY_CACHEDIR"/*
 rm -rf "$NXF_LOGS"/* "$NXF_LOGS"/.*[!.]*
-rm -rf "$OXO2_DATA/sssom"/*
-rm -rf "$OXO2_DATA/sssom-as-json"/*
+#rm -rf "$OXO2_DATA/sssom"/*
+#rm -rf "$OXO2_DATA/sssom-as-json"/*
 rm -rf "$OXO2_DATA/assertedMappings"/*
 rm -rf "$OXO2_INFERENCES/inferredMappings"/*
 rm -rf "$OXO2_INFERENCES/inferencesToTrace"/*
@@ -283,30 +283,30 @@ if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr (via hostname)"; then
 fi
 
 # --- Stage 1: Download mappings ---
-start_time=$(date +%s)
-echo "###################" downloadMappings...
-nextflow -log "$NXF_LOGS/downloadMappings.nextflow.log" \
-    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
-    run "$SCRIPT_DIR/downloadMappings.nf" \
-    -profile "$NF_PROFILE" \
-    -with-trace    "$NXF_LOGS/downloadMappings-trace.txt" \
-    -with-report   "$NXF_LOGS/downloadMappings-report.html" \
-    -with-timeline "$NXF_LOGS/downloadMappings-timeline.html"
-end_time=$(date +%s)
-echo "Download took: $((end_time - start_time)) seconds"
+#start_time=$(date +%s)
+#echo "###################" downloadMappings...
+#nextflow -log "$NXF_LOGS/downloadMappings.nextflow.log" \
+#    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+#    run "$SCRIPT_DIR/downloadMappings.nf" \
+#    -profile "$NF_PROFILE" \
+#    -with-trace    "$NXF_LOGS/downloadMappings-trace.txt" \
+#    -with-report   "$NXF_LOGS/downloadMappings-report.html" \
+#    -with-timeline "$NXF_LOGS/downloadMappings-timeline.html"
+#end_time=$(date +%s)
+#echo "Download took: $((end_time - start_time)) seconds"
 
 # --- Stage 2: SSSOM to JSON ---
-start_time=$(date +%s)
-echo "###################" sssom2json...
-nextflow -log "$NXF_LOGS/sssom2json.nextflow.log" \
-    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
-    run "$SCRIPT_DIR/sssom2json.nf" \
-    -profile "$NF_PROFILE" \
-    -with-trace    "$NXF_LOGS/sssom2json-trace.txt" \
-    -with-report   "$NXF_LOGS/sssom2json-report.html" \
-    -with-timeline "$NXF_LOGS/sssom2json-timeline.html"
-end_time=$(date +%s)
-echo "SSSOM to JSON took: $((end_time - start_time)) seconds"
+#start_time=$(date +%s)
+#echo "###################" sssom2json...
+#nextflow -log "$NXF_LOGS/sssom2json.nextflow.log" \
+#    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+#    run "$SCRIPT_DIR/sssom2json.nf" \
+#    -profile "$NF_PROFILE" \
+#    -with-trace    "$NXF_LOGS/sssom2json-trace.txt" \
+#    -with-report   "$NXF_LOGS/sssom2json-report.html" \
+#    -with-timeline "$NXF_LOGS/sssom2json-timeline.html"
+#end_time=$(date +%s)
+#echo "SSSOM to JSON took: $((end_time - start_time)) seconds"
 
 # --- Stage 3: Infer mappings (two-phase reasoning, ADR-0009) ---
 # Phase 1: OWL reasoning per mapping set (owl.rls) -> per-set inferenceChains, plus the
