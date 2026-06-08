@@ -37,7 +37,9 @@ function MappingSetSelectorInner({
 }) {
     const { data: mappingSets = [], isLoading: mappingSetsLoading } = useQuery({
         queryKey: ["fetchMappingSets"],
-        queryFn: fetchMappingSets,
+        // Wrap in a closure so React Query's QueryFunctionContext is not passed as the
+        // `inferenceType` argument (it is not an array, so fetchMappingSets would throw on .forEach).
+        queryFn: () => fetchMappingSets(),
         staleTime: Infinity,
     });
 
