@@ -14,8 +14,14 @@ params.script_dir = params.script_dir ?: "${projectDir}"
 // Phase 1 reasons with the OWL ruleset (subsumption via equivalence, per set).
 params.rules_definition = file("${params.script_dir}/oxo2-json2inferences/owl.rls")
 
-// Mappings per tracing chunk. Smaller = more parallelism / more per-chunk overhead.
-params.trace_chunk_size = 100000
+// Mappings per tracing chunk. Each chunk is a fresh nmo run that re-imports and
+// re-materialises the entire set before tracing only its slice (~316 s of fixed
+// reasoning per chunk on ncbitaxon), so smaller chunks multiply that redundant
+// reasoning while only buying finer trace-step parallelism. Larger is cheaper until
+// per-chunk tracing (~66 ms/fact) approaches the 4 h walltime: 50k keeps the heaviest
+// set (ncbitaxon) at ~1 h/chunk while cutting its chunk count (and reasoning passes)
+// ~5x versus 10k.
+params.trace_chunk_size = 20000
 
 workflow {
     json_files = channel.fromPath("${params.json_input_dir}/*.json")
