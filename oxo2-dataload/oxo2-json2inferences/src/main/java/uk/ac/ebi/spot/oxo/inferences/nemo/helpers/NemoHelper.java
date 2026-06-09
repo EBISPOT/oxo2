@@ -10,8 +10,6 @@ import uk.ac.ebi.spot.oxo.model.sssom.*;
 
 import java.util.*;
 
-import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
-
 /**
  * Turns an nmo {@code --trace-output} provenance tree (parsed into {@link NemoInferences})
  * into a DAG of {@link InferredMapping}s for explanation (ADR-0009/0010).
@@ -34,10 +32,11 @@ public class NemoHelper {
     public static Set<InferredMapping> fromNemoInferencesToInferredMappings(
             NemoInferences nemoInferences, DataloadSolr solrClient, String inferredMappingSetId) {
 
-        // Walk every atom in the trace once to collect distinct subject/predicate/object IRIs
-        // and asserted mapping_ids, then bulk-populate the Solr caches in batched queries.
-        // Without this, each leaf would issue sequential single-keyed Solr round-trips.
-        prefetchEntityDetailsForChains(nemoInferences, solrClient);
+        // Walk every atom in the trace once to collect the asserted mapping_ids, then bulk-load
+        // those mappings in batched queries. Entity details (curie/label) for every
+        // subject/predicate/object IRI are derived from those mappings as they load, so no
+        // separate per-IRI Solr round-trips are needed.
+        prefetchAssertedMappingsForChains(nemoInferences, solrClient);
 
         Set<InferredMapping> inferredMappings = new HashSet<>();
         // Memoize InferredMapping per conclusion string so shared sub-chains in the inference
@@ -76,51 +75,38 @@ public class NemoHelper {
         return inferredMappings;
     }
 
-    private static void prefetchEntityDetailsForChains(NemoInferences nemoInferences, DataloadSolr solrClient) {
-        Set<String> subjectIris = new HashSet<>();
-        Set<String> predicateIris = new HashSet<>();
-        Set<String> objectIris = new HashSet<>();
+    private static void prefetchAssertedMappingsForChains(NemoInferences nemoInferences, DataloadSolr solrClient) {
         Set<String> assertedMappingIds = new HashSet<>();
 
         if (nemoInferences.getFinalConclusion() != null) {
             nemoInferences.getFinalConclusion().forEach(atom ->
-                    collectFromAtom(atom, subjectIris, predicateIris, objectIris, assertedMappingIds));
+                    collectAssertedMappingId(atom, assertedMappingIds));
         }
         if (nemoInferences.getInferences() != null) {
             for (NemoInferences.NemoInference inference : nemoInferences.getInferences()) {
-                collectFromAtom(inference.getConclusion(), subjectIris, predicateIris, objectIris, assertedMappingIds);
+                collectAssertedMappingId(inference.getConclusion(), assertedMappingIds);
                 if (inference.getPremises() != null) {
                     for (String premise : inference.getPremises()) {
-                        collectFromAtom(premise, subjectIris, predicateIris, objectIris, assertedMappingIds);
+                        collectAssertedMappingId(premise, assertedMappingIds);
                     }
                 }
             }
         }
 
         long start = System.currentTimeMillis();
-        solrClient.prefetchEntityDetails(SUBJECT_IRI, subjectIris, SUBJECT_ID, SUBJECT_LABEL);
-        solrClient.prefetchEntityDetails(PREDICATE_IRI, predicateIris, PREDICATE_ID, PREDICATE_LABEL);
-        solrClient.prefetchEntityDetails(OBJECT_IRI, objectIris, OBJECT_ID, OBJECT_LABEL);
-        logger.info("Prefetched entity details for {} subject / {} predicate / {} object IRIs in {} ms",
-                subjectIris.size(), predicateIris.size(), objectIris.size(),
-                System.currentTimeMillis() - start);
-
+        // Loads the asserted mappings and, as a side effect, indexes the curie/label of every
+        // subject/predicate/object IRI they carry — the source for enrichEntityDetails below.
         solrClient.prefetchMappingsByIds(assertedMappingIds);
+        logger.info("Prefetched {} asserted mappings in {} ms",
+                assertedMappingIds.size(), System.currentTimeMillis() - start);
     }
 
-    private static void collectFromAtom(String atom,
-                                        Set<String> subjectIris,
-                                        Set<String> predicateIris,
-                                        Set<String> objectIris,
-                                        Set<String> assertedMappingIds) {
+    private static void collectAssertedMappingId(String atom, Set<String> assertedMappingIds) {
         String[] parts = parseAtomIris(atom);
         if (parts == null) return;
         if (!OXOInferenceConstants.isInferredIdTerm(parts[0])) {
             assertedMappingIds.add(OXOInferenceConstants.toBareMappingId(parts[0]));
         }
-        subjectIris.add(parts[1]);
-        predicateIris.add(parts[2]);
-        objectIris.add(parts[3]);
     }
 
     /**
@@ -252,7 +238,7 @@ public class NemoHelper {
 
     private static void updateSubject(InferredMapping inferredMapping, DataloadSolr solrClient) {
         EntityDetails details = solrClient.queryEntityDetailsForIRI(
-                SUBJECT_IRI, inferredMapping.getSubjectIRI().asStringIRI(), SUBJECT_ID, SUBJECT_LABEL);
+                inferredMapping.getSubjectIRI().asStringIRI());
         if (details != null) {
             if (details.isCuriePresent()) inferredMapping.setSubjectId(details.getCurie());
             if (details.isLabelPresent()) inferredMapping.setSubjectLabel(details.getLabel());
@@ -266,8 +252,7 @@ public class NemoHelper {
             inferredMapping.setPredicateId(predicateCurie.get());
             return;
         }
-        EntityDetails details = solrClient.queryEntityDetailsForIRI(
-                PREDICATE_IRI, predicateIri, PREDICATE_ID, PREDICATE_LABEL);
+        EntityDetails details = solrClient.queryEntityDetailsForIRI(predicateIri);
         if (details != null) {
             if (details.isCuriePresent()) inferredMapping.setPredicateId(details.getCurie());
             if (details.isLabelPresent()) inferredMapping.setPredicateLabel(details.getLabel());
@@ -276,7 +261,7 @@ public class NemoHelper {
 
     private static void updateObject(InferredMapping inferredMapping, DataloadSolr solrClient) {
         EntityDetails details = solrClient.queryEntityDetailsForIRI(
-                OBJECT_IRI, inferredMapping.getObjectIRI().asStringIRI(), OBJECT_ID, OBJECT_LABEL);
+                inferredMapping.getObjectIRI().asStringIRI());
         if (details != null) {
             if (details.isCuriePresent()) inferredMapping.setObjectId(details.getCurie());
             if (details.isLabelPresent()) inferredMapping.setObjectLabel(details.getLabel());

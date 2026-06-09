@@ -9,7 +9,8 @@ Chaining facts were bare RDF triples `<s> <p> <o>` imported into Nemo via `turtl
 explicitly kept facts to `(subject, predicate, object)` to keep the rules simple. Provenance — which asserted
 mapping (and therefore which source set) produced a given premise — was reconstructed *after* inference by
 re-querying Solr for the `(subject, predicate, object)` triple **scoped to the single source set** and taking
-the first match (`NemoHelper.createInferredMapping` → `DataloadSolr.querySubjectPredicateObjectIRI`).
+the first match. (That triple-match lookup has since been removed from `DataloadSolr` in favour of the exact
+`mapping_id` lookup this ADR introduces.)
 
 With cross-set inference ([ADR-0009](0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md)) there is no
 single source set to scope by, and one triple may be asserted in many sets — so triple-matching can no longer

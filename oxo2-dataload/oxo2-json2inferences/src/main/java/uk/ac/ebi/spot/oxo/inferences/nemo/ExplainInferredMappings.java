@@ -27,8 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
-
 public class ExplainInferredMappings {
     private static final Logger logger = LoggerFactory.getLogger(ExplainInferredMappings.class);
 
@@ -488,8 +486,8 @@ public class ExplainInferredMappings {
                         continue;
                     }
 
-                    EntityDetails subjectDetails = solrClient.queryEntityDetailsForIRI(SUBJECT_IRI,
-                            inferredMapping.getSubjectIRI().asStringIRI(), SUBJECT_ID, SUBJECT_LABEL);
+                    EntityDetails subjectDetails = solrClient.queryEntityDetailsForIRI(
+                            inferredMapping.getSubjectIRI().asStringIRI());
                     String predicateIri = inferredMapping.getPredicateIRI().asStringIRI();
                     Optional<String> predicateCurie = PrefixMap.toCurie(predicateIri);
                     String predicateId;
@@ -498,15 +496,14 @@ public class ExplainInferredMappings {
                         predicateId = predicateCurie.get();
                         predicateLabel = "";
                     } else {
-                        EntityDetails predicateDetails = solrClient.queryEntityDetailsForIRI(PREDICATE_IRI,
-                                predicateIri, PREDICATE_ID, PREDICATE_LABEL);
+                        EntityDetails predicateDetails = solrClient.queryEntityDetailsForIRI(predicateIri);
                         predicateId = (predicateDetails != null && predicateDetails.getCurie() != null) ?
                                 predicateDetails.getCurie() : "";
                         predicateLabel = (predicateDetails != null && predicateDetails.getLabel() != null) ?
                                 predicateDetails.getLabel() : "";
                     }
-                    EntityDetails objectDetails = solrClient.queryEntityDetailsForIRI(OBJECT_IRI,
-                            inferredMapping.getObjectIRI().asStringIRI(), OBJECT_ID, OBJECT_LABEL);
+                    EntityDetails objectDetails = solrClient.queryEntityDetailsForIRI(
+                            inferredMapping.getObjectIRI().asStringIRI());
 
                     List<InferredMapping> assertedEvidence =
                             determineAssertedMappingsForExplanation(inferredMapping, assertedMemo);

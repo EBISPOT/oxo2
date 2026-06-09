@@ -5,12 +5,12 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.impl.HttpJdkSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
+import uk.ac.ebi.spot.oxo.model.sssom.Uri;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -32,9 +31,15 @@ public class DataloadSolr {
 
     private final int socketTimeoutMillis = envInt("OXO2_SOLR_SOCKET_TIMEOUT_MS", 60000);
 
-    private final Map<String, EntityDetails> entityDetailsCache = new ConcurrentHashMap<>();
-
-    private final Map<String, List<Mapping>> spoMappingsCache = new ConcurrentHashMap<>();
+    /**
+     * Entity details (curie + label) keyed by bare IRI, derived from the asserted
+     * {@link Mapping}s in {@link #mappingByIdCache} as they are loaded (see
+     * {@link #indexEntityDetails}). Every subject/predicate/object IRI in a Nemo trace
+     * appears as an endpoint or predicate of some asserted premise, so this index —
+     * populated purely from {@link #prefetchMappingsByIds}/{@link #queryByMappingId} —
+     * covers every IRI the chain walker asks about, with no separate Solr round-trip.
+     */
+    private final Map<String, EntityDetails> entityDetailsByIri = new ConcurrentHashMap<>();
 
     /**
      * Cache of asserted mappings keyed by their bare {@code mapping_id} (UUID string).
@@ -55,12 +60,6 @@ public class DataloadSolr {
      * overhead, which leaves plenty of room at 20k IRIs per chunk.
      */
     private static final int PREFETCH_CHUNK_SIZE = 20_000;
-
-    /**
-     * Smaller chunk for the SPO prefetch — each subject can have multiple
-     * Mapping documents, so we keep the response size manageable.
-     */
-    private static final int PREFETCH_TRIPLES_CHUNK_SIZE = 5_000;
 
     private static final Logger logger = LoggerFactory.getLogger(DataloadSolr.class);
 
@@ -87,65 +86,11 @@ public class DataloadSolr {
         }
     }
 
-    public List<Mapping> querySubjectPredicateObjectIRI(String subjectIRI, String predicateIRI, String objectIRI)  {
-        return querySubjectPredicateObjectIRI(subjectIRI, predicateIRI, objectIRI, null);
-    }
-
-    /**
-     * Like {@link #querySubjectPredicateObjectIRI(String, String, String)} but
-     * scoped to a single source mapping set via an {@code fq} on
-     * {@link MappingEnum#MAPPING_SET_ID}. If the in-set query returns no match
-     * for a triple that should exist in that set (i.e. data drift), logs a
-     * WARN and falls back to the unfiltered query so the chain enrichment
-     * keeps making progress.
-     */
-    public List<Mapping> querySubjectPredicateObjectIRI(String subjectIRI, String predicateIRI, String objectIRI,
-                                                        String mappingSetIdFilter)  {
-        String cacheKey = (mappingSetIdFilter == null ? "" : mappingSetIdFilter)
-                + '\1' + subjectIRI + '\0' + predicateIRI + '\0' + objectIRI;
-        List<Mapping> cached = spoMappingsCache.get(cacheKey);
-        if (cached != null) {
-            return cached;
-        }
-        try {
-            SolrQuery query = new SolrQuery();
-
-            query.setQuery(String.format("{!term f=%s}%s", MappingEnum.SUBJECT_IRI.getField(),subjectIRI));
-            query.addFilterQuery(String.format("{!term f=%s}%s", MappingEnum.PREDICATE_IRI.getField(), predicateIRI));
-            query.addFilterQuery(String.format("{!term f=%s}%s", MappingEnum.OBJECT_IRI.getField(), objectIRI));
-            if (mappingSetIdFilter != null && !mappingSetIdFilter.isBlank()) {
-                query.addFilterQuery(String.format("{!term f=%s}%s",
-                        MappingEnum.MAPPING_SET_ID.getField(), mappingSetIdFilter));
-            }
-
-            QueryResponse response = solrMappingClient.query(query);
-
-            List<Mapping.Builder> mappingBuilders = response.getBeans(Mapping.Builder.class);
-            List<Mapping> mappings = mappingBuilders.stream()
-                    .map(Mapping.Builder::build)
-                    .collect(Collectors.toList());
-
-            if (mappings.isEmpty() && mappingSetIdFilter != null && !mappingSetIdFilter.isBlank()) {
-                logger.warn("No asserted mapping found in source set {} for triple <{}> <{}> <{}>; falling back to unscoped lookup. This indicates pipeline drift between TTL and Solr.",
-                        mappingSetIdFilter, subjectIRI, predicateIRI, objectIRI);
-                List<Mapping> fallback = querySubjectPredicateObjectIRI(subjectIRI, predicateIRI, objectIRI);
-                spoMappingsCache.put(cacheKey, fallback);
-                return fallback;
-            }
-
-            spoMappingsCache.put(cacheKey, mappings);
-            return mappings;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     /**
      * Look up a single asserted mapping by its bare {@code mapping_id} (UUID string).
      * This is the exact-provenance lookup used by the chain walker (ADR-0010): the
      * {@code mapping_id} carried by an asserted premise in the Nemo trace uniquely
-     * identifies the asserted mapping, so — unlike the (s,p,o) lookup it replaces — no
-     * source-set scoping heuristic is needed and cross-set provenance is recovered exactly.
+     * identifies the asserted mapping, so cross-set provenance is recovered exactly.
      *
      * @return the asserted {@link Mapping}, or {@code null} if no document matches.
      */
@@ -173,6 +118,7 @@ public class DataloadSolr {
             }
             Mapping mapping = builders.get(0).build();
             mappingByIdCache.put(mappingId, mapping);
+            indexEntityDetails(mapping);
             return mapping;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -181,9 +127,10 @@ public class DataloadSolr {
 
     /**
      * Bulk-populate {@link #mappingByIdCache} for a set of bare {@code mapping_id}s in
-     * batched {@code {!terms f=mapping_id}} queries (sent as POST to dodge the URI cap),
-     * mirroring {@link #prefetchEntityDetails}. After this returns, {@link #queryByMappingId}
-     * is a cache hit for every supplied id (or a pinned miss for ids with no document).
+     * batched {@code {!terms f=mapping_id}} queries (sent as POST to dodge the URI cap).
+     * After this returns, {@link #queryByMappingId} is a cache hit for every supplied id
+     * (or a pinned miss for ids with no document), and {@link #entityDetailsByIri} carries
+     * the curie/label of every subject/predicate/object IRI those mappings reference.
      */
     public void prefetchMappingsByIds(Collection<String> mappingIds) {
         if (mappingIds == null || mappingIds.isEmpty()) {
@@ -231,6 +178,7 @@ public class DataloadSolr {
                 Mapping mapping = builder.build();
                 if (mapping.mappingId() != null) {
                     mappingByIdCache.put(mapping.mappingId().toString(), mapping);
+                    indexEntityDetails(mapping);
                 }
             }
             // Pin a miss for any id with no returned document so we don't re-query it.
@@ -245,242 +193,53 @@ public class DataloadSolr {
         }
     }
 
-    public EntityDetails queryEntityDetailsForIRI(String iriField, String iriValue, String curieField, String labelField)  {
-        String cacheKey = iriField + '\0' + iriValue;
-        EntityDetails cached = entityDetailsCache.get(cacheKey);
+    /**
+     * Look up the {@link EntityDetails} (curie + label) for a bare IRI. Served entirely from
+     * {@link #entityDetailsByIri}, which is derived from the asserted {@link Mapping}s loaded by
+     * {@link #prefetchMappingsByIds}/{@link #queryByMappingId} — no Solr round-trip. Returns an
+     * IRI-only {@link EntityDetails} when the IRI was not carried by any loaded asserted mapping.
+     */
+    public EntityDetails queryEntityDetailsForIRI(String iri) {
+        EntityDetails cached = entityDetailsByIri.get(iri);
         if (cached != null) {
             return cached;
         }
-        try {
-            SolrQuery query = new SolrQuery();
-            query.setQuery(String.format("%s:\"%s\"",iriField, iriValue));
-            query.setFields(curieField, iriField, labelField);
-
-            QueryResponse response = solrMappingClient.query(query);
-
-            SolrDocumentList docs = response.getResults();
-
-            EntityDetails entityDetails = new EntityDetails();
-            entityDetails.setIri(iriValue);
-
-            for (SolrDocument doc : docs) {
-                if (!entityDetails.isCuriePresent() && doc.getFieldValue(curieField) != null) {
-                    entityDetails.setCurie(doc.getFieldValue(curieField).toString());
-                }
-                if (!entityDetails.isLabelPresent() && doc.getFieldValue(labelField) != null) {
-                    entityDetails.setLabel(doc.getFieldValue(labelField).toString());
-                }
-                if (entityDetails.areAllFieldsPresent()) {
-                    break;
-                }
-            }
-
-            entityDetailsCache.put(cacheKey, entityDetails);
-            return entityDetails;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        EntityDetails entityDetails = new EntityDetails();
+        entityDetails.setIri(iri);
+        return entityDetails;
     }
 
     /**
-     * Bulk-populate {@link #entityDetailsCache} for a set of IRIs in one role
-     * (subject/predicate/object). Replaces N round-trips through
-     * {@link #queryEntityDetailsForIRI} with ~N/PREFETCH_CHUNK_SIZE batched
-     * Solr queries. After this returns, {@link #queryEntityDetailsForIRI}
-     * calls for any of the supplied IRIs hit the cache.
-     *
-     * <p>IRIs that already have a cache entry are skipped. IRIs that have no
-     * matching Solr document are still cached (with a bare IRI-only
-     * EntityDetails) so future lookups don't re-query.
+     * Harvest the subject/predicate/object curie+label of an asserted {@link Mapping} into
+     * {@link #entityDetailsByIri}, keyed by the corresponding IRI. Called whenever a mapping
+     * enters {@link #mappingByIdCache}. Curie and label are properties of the entity, independent
+     * of the role the IRI plays in a mapping, so the index is role-agnostic; the first non-blank
+     * value wins, mirroring the fill-from-any-document behaviour of the former entity-details
+     * Solr query.
      */
-    public void prefetchEntityDetails(String iriField, Collection<String> iris,
-                                       String curieField, String labelField) {
-        if (iris == null || iris.isEmpty()) {
-            return;
-        }
-
-        // Deduplicate and skip anything we've already cached.
-        Set<String> toFetch = new HashSet<>();
-        for (String iri : iris) {
-            if (iri == null || iri.isBlank()) continue;
-            if (!entityDetailsCache.containsKey(iriField + '\0' + iri)) {
-                toFetch.add(iri);
-            }
-        }
-        if (toFetch.isEmpty()) {
-            return;
-        }
-
-        List<String> fetchList = new ArrayList<>(toFetch);
-        int totalChunks = (fetchList.size() + PREFETCH_CHUNK_SIZE - 1) / PREFETCH_CHUNK_SIZE;
-        logger.info("Prefetch {}: {} distinct IRIs in {} chunk(s) of up to {}",
-                iriField, fetchList.size(), totalChunks, PREFETCH_CHUNK_SIZE);
-        long batchStart = System.currentTimeMillis();
-        for (int i = 0; i < fetchList.size(); i += PREFETCH_CHUNK_SIZE) {
-            List<String> chunk = fetchList.subList(i, Math.min(i + PREFETCH_CHUNK_SIZE, fetchList.size()));
-            int chunkIndex = (i / PREFETCH_CHUNK_SIZE) + 1;
-            long chunkStart = System.currentTimeMillis();
-            int docsReturned = fetchChunk(iriField, chunk, curieField, labelField);
-            logger.info("Prefetch {}: chunk {}/{} ({} IRIs) -> {} docs in {} ms",
-                    iriField, chunkIndex, totalChunks, chunk.size(), docsReturned,
-                    System.currentTimeMillis() - chunkStart);
-        }
-        logger.info("Prefetch {}: complete in {} ms", iriField,
-                System.currentTimeMillis() - batchStart);
+    private void indexEntityDetails(Mapping mapping) {
+        mapping.subjectIRI().map(Uri::asStringIRI).ifPresent(iri -> mergeEntityDetails(iri,
+                mapping.subjectId().map(EntityReference::getDataAsString).orElse(null),
+                mapping.subjectLabel().orElse(null)));
+        mapping.predicateIRI().map(Uri::asStringIRI).ifPresent(iri -> mergeEntityDetails(iri,
+                mapping.predicateId().map(EntityReference::getDataAsString).orElse(null),
+                mapping.predicateLabel().orElse(null)));
+        mapping.objectIRI().map(Uri::asStringIRI).ifPresent(iri -> mergeEntityDetails(iri,
+                mapping.objectId().map(EntityReference::getDataAsString).orElse(null),
+                mapping.objectLabel().orElse(null)));
     }
 
-    private int fetchChunk(String iriField, List<String> chunk,
-                            String curieField, String labelField) {
-        try {
-            SolrQuery query = new SolrQuery();
-            // The {!terms} parser is built for many-value lookups and avoids
-            // the maxBooleanClauses limit that an OR-chain would hit. IRIs in
-            // this codebase don't contain commas, so the default separator is
-            // safe.
-            query.setQuery("{!terms f=" + iriField + "}" + String.join(",", chunk));
-            query.setFields(iriField, curieField, labelField);
-            // Multiple Mappings can share an IRI; cap at a comfortable upper
-            // bound so a single batch can return all matches.
-            query.setRows(chunk.size() * 20);
-
-            // Use POST: the IRI list in {!terms} would blow past Jetty's default
-            // ~8 KB URI cap on a GET (HTTP 414) at this chunk size.
-            QueryResponse response = solrMappingClient.query(query, SolrRequest.METHOD.POST);
-            SolrDocumentList docs = response.getResults();
-
-            for (SolrDocument doc : docs) {
-                Object iriValueObj = doc.getFieldValue(iriField);
-                if (iriValueObj == null) continue;
-                String iri = iriValueObj.toString();
-                String cacheKey = iriField + '\0' + iri;
-
-                EntityDetails entityDetails = entityDetailsCache.computeIfAbsent(cacheKey, k -> {
-                    EntityDetails ed = new EntityDetails();
-                    ed.setIri(iri);
-                    return ed;
-                });
-                if (!entityDetails.isCuriePresent() && doc.getFieldValue(curieField) != null) {
-                    entityDetails.setCurie(doc.getFieldValue(curieField).toString());
-                }
-                if (!entityDetails.isLabelPresent() && doc.getFieldValue(labelField) != null) {
-                    entityDetails.setLabel(doc.getFieldValue(labelField).toString());
-                }
-            }
-
-            // Pin a bare entry for IRIs with no Solr match so we don't re-query
-            // them one-by-one later.
-            for (String iri : chunk) {
-                String cacheKey = iriField + '\0' + iri;
-                entityDetailsCache.computeIfAbsent(cacheKey, k -> {
-                    EntityDetails ed = new EntityDetails();
-                    ed.setIri(iri);
-                    return ed;
-                });
-            }
-            return docs.size();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    private void mergeEntityDetails(String iri, String curie, String label) {
+        EntityDetails entityDetails = entityDetailsByIri.computeIfAbsent(iri, key -> {
+            EntityDetails created = new EntityDetails();
+            created.setIri(iri);
+            return created;
+        });
+        if (!entityDetails.isCuriePresent() && curie != null && !curie.isBlank()) {
+            entityDetails.setCurie(curie);
         }
-    }
-
-    /**
-     * Bulk-populate {@link #spoMappingsCache} for a set of {@code <s,p,o>}
-     * triples. Issues batched queries on {@code subject_iri}, populating the
-     * cache for every triple actually returned, then pins an empty entry for
-     * any input triple Solr did not match. After this returns,
-     * {@link #querySubjectPredicateObjectIRI} is a cache hit for every triple.
-     *
-     * <p>Each input triple is a {@code String[3]} of {@code {s, p, o}}.
-     */
-    public void prefetchMappingsForTriples(Collection<String[]> triples) {
-        prefetchMappingsForTriples(triples, null);
-    }
-
-    /**
-     * Like {@link #prefetchMappingsForTriples(Collection)} but scoped to a
-     * single source mapping set via an {@code fq} on
-     * {@link MappingEnum#MAPPING_SET_ID}. The cache keys produced by this
-     * method include the filter, so they hit the cache used by
-     * {@link #querySubjectPredicateObjectIRI(String, String, String, String)}
-     * when called with the same filter.
-     */
-    public void prefetchMappingsForTriples(Collection<String[]> triples, String mappingSetIdFilter) {
-        if (triples == null || triples.isEmpty()) {
-            return;
-        }
-
-        String filterPrefix = (mappingSetIdFilter == null ? "" : mappingSetIdFilter) + '\1';
-        Set<String> distinctSubjects = new HashSet<>();
-        Set<String> distinctTripleKeys = new HashSet<>();
-        for (String[] t : triples) {
-            if (t == null || t.length != 3) continue;
-            if (t[0] == null || t[1] == null || t[2] == null) continue;
-            String key = filterPrefix + t[0] + '\0' + t[1] + '\0' + t[2];
-            if (spoMappingsCache.containsKey(key)) continue;
-            distinctSubjects.add(t[0]);
-            distinctTripleKeys.add(key);
-        }
-        if (distinctSubjects.isEmpty()) {
-            return;
-        }
-
-        List<String> fetchList = new ArrayList<>(distinctSubjects);
-        int totalChunks = (fetchList.size() + PREFETCH_TRIPLES_CHUNK_SIZE - 1) / PREFETCH_TRIPLES_CHUNK_SIZE;
-        logger.info("Prefetch SPO mappings (filter={}): {} distinct subjects covering {} triples in {} chunk(s) of up to {}",
-                mappingSetIdFilter, fetchList.size(), distinctTripleKeys.size(), totalChunks, PREFETCH_TRIPLES_CHUNK_SIZE);
-
-        long batchStart = System.currentTimeMillis();
-        int totalDocs = 0;
-        for (int i = 0; i < fetchList.size(); i += PREFETCH_TRIPLES_CHUNK_SIZE) {
-            List<String> chunk = fetchList.subList(i, Math.min(i + PREFETCH_TRIPLES_CHUNK_SIZE, fetchList.size()));
-            int chunkIndex = (i / PREFETCH_TRIPLES_CHUNK_SIZE) + 1;
-            long chunkStart = System.currentTimeMillis();
-            int docs = fetchSpoChunk(chunk, mappingSetIdFilter, filterPrefix);
-            totalDocs += docs;
-            logger.info("Prefetch SPO mappings: chunk {}/{} ({} subjects) -> {} docs in {} ms",
-                    chunkIndex, totalChunks, chunk.size(), docs,
-                    System.currentTimeMillis() - chunkStart);
-        }
-
-        // Pin empty entries for triples that didn't match any returned doc so
-        // querySubjectPredicateObjectIRI doesn't fall back to a one-off Solr GET.
-        int emptyMarked = 0;
-        for (String key : distinctTripleKeys) {
-            if (spoMappingsCache.putIfAbsent(key, java.util.Collections.emptyList()) == null) {
-                emptyMarked++;
-            }
-        }
-        logger.info("Prefetch SPO mappings: complete. {} docs cached, {} triples marked empty, {} ms total",
-                totalDocs, emptyMarked, System.currentTimeMillis() - batchStart);
-    }
-
-    private int fetchSpoChunk(List<String> subjectChunk, String mappingSetIdFilter, String filterPrefix) {
-        try {
-            SolrQuery query = new SolrQuery();
-            query.setQuery("{!terms f=" + MappingEnum.SUBJECT_IRI.getField() + "}"
-                    + String.join(",", subjectChunk));
-            if (mappingSetIdFilter != null && !mappingSetIdFilter.isBlank()) {
-                query.addFilterQuery(String.format("{!term f=%s}%s",
-                        MappingEnum.MAPPING_SET_ID.getField(), mappingSetIdFilter));
-            }
-            // Each subject can have multiple Mapping documents; size generously
-            // so a single batch returns all matches without paging.
-            query.setRows(subjectChunk.size() * 50);
-
-            QueryResponse response = solrMappingClient.query(query, SolrRequest.METHOD.POST);
-            List<Mapping.Builder> builders = response.getBeans(Mapping.Builder.class);
-            for (Mapping.Builder builder : builders) {
-                Mapping mapping = builder.build();
-                String s = mapping.subjectIRI().map(uk.ac.ebi.spot.oxo.model.sssom.Uri::asStringIRI).orElse(null);
-                String p = mapping.predicateIRI().map(uk.ac.ebi.spot.oxo.model.sssom.Uri::asStringIRI).orElse(null);
-                String o = mapping.objectIRI().map(uk.ac.ebi.spot.oxo.model.sssom.Uri::asStringIRI).orElse(null);
-                if (s == null || p == null || o == null) continue;
-                String key = filterPrefix + s + '\0' + p + '\0' + o;
-                spoMappingsCache.computeIfAbsent(key, k -> new ArrayList<>()).add(mapping);
-            }
-            return builders.size();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (!entityDetails.isLabelPresent() && label != null && !label.isBlank()) {
+            entityDetails.setLabel(label);
         }
     }
 
