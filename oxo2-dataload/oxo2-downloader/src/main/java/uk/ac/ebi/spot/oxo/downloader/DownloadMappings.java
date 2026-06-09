@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.spot.oxo.downloader.downloaders.FTPDownloader;
 import uk.ac.ebi.spot.oxo.downloader.downloaders.GitHubDownloader;
 import uk.ac.ebi.spot.oxo.downloader.downloaders.HTTPDowloader;
+import uk.ac.ebi.spot.oxo.downloader.downloaders.MappingCommonsRegistryDownloader;
 
 import java.io.File;
 import java.util.Collection;
@@ -89,6 +90,12 @@ public class DownloadMappings {
                     mappingRegistry.getDirectory().get(),
                     downloadDirectory));
 
+        } else if (mappingRegistry.getMappingCommonsRegistry().isPresent()) {
+            future = executorService.submit(new MappingCommonsRegistryDownloader.DownloadRegistryTask(
+                    executorService,
+                    mappingRegistry.getMappingCommonsRegistry().get(),
+                    mappingRegistry.getExclude(),
+                    downloadDirectory));
         } else if (mappingRegistry.getUrl().isPresent()) {
             future = executorService.submit(new HTTPDowloader.HTTPDownloadTask(
                     mappingRegistry.getUrl().get(),

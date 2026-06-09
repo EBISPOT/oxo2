@@ -119,14 +119,15 @@ public class JSON2NQuads {
             if (firstToken != JsonToken.START_ARRAY) {
                 return;
             }
+            long quadsWritten = 0;
             while (parser.nextToken() != JsonToken.END_ARRAY) {
                 JsonNode mappingNode = objectMapper.readTree(parser);
-                String predicateIRI = mappingNode.get(MappingEnum.PREDICATE_IRI.getField()).asText();
+                String predicateIRI = asTextOrEmpty(mappingNode, MappingEnum.PREDICATE_IRI.getField());
                 if (!isApplicablePredicate(predicateIRI)) {
                     continue;
                 }
-                String subjectIRI = mappingNode.get(MappingEnum.SUBJECT_IRI.getField()).asText();
-                String objectIRI = mappingNode.get(MappingEnum.OBJECT_IRI.getField()).asText();
+                String subjectIRI = asTextOrEmpty(mappingNode, MappingEnum.SUBJECT_IRI.getField());
+                String objectIRI = asTextOrEmpty(mappingNode, MappingEnum.OBJECT_IRI.getField());
                 JsonNode mappingIdNode = mappingNode.get(MappingEnum.MAPPING_ID.getField());
                 String mappingId = mappingIdNode == null ? null : mappingIdNode.asText();
 
@@ -138,9 +139,26 @@ public class JSON2NQuads {
                 if (!isSkipOnPredicateModifier(mappingNode) && areURIsValid(subjectIRI, predicateIRI, objectIRI)) {
                     writer.write(String.format("<%s> <%s> <%s> <%s%s> .\n",
                             subjectIRI, predicateIRI, objectIRI, OXOInferenceConstants.URN_UUID_PREFIX, mappingId));
+                    quadsWritten++;
                 }
             }
+            if (quadsWritten == 0) {
+                // Legitimate for sets whose mappings all use non-inference predicates (e.g. the
+                // ebi-text-mappings sets are skos:closeMatch) or that lack a valid subject/object
+                // IRI: they are still indexed as asserted mappings, they just do not enter the
+                // N-Quad inference corpus. Logged (rather than silently dropped) so the absence
+                // of a <set>.nq is explained.
+                logger.warn("No N-Quads generated for {}: every mapping was skipped (non-applicable "
+                        + "predicate, predicate modifier, or missing/invalid subject/predicate/object "
+                        + "IRI). The set is still indexed as asserted but will not participate in "
+                        + "inference.", jsonFile);
+            }
         }
+    }
+
+    private static String asTextOrEmpty(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        return value == null ? "" : value.asText();
     }
 
     /**

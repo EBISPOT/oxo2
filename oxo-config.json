@@ -5,25 +5,13 @@
       "url": "https://ftp.ebi.ac.uk/pub/databases/spot/evora/ictv_ncbitaxon_exact.sssom.tsv"
     },
     {
-      "id": "mondo_diseases",
-      "github_repository": "https://github.com/mapping-commons/disease-mappings"
-    },
-    {
-      "id": "microbial_traits",
-      "github_repository": "https://github.com/mapping-commons/microbial-trait-mappings"
-    },
-    {
-      "id": "lmha-obo-mappings",
-      "github_repository": "https://github.com/mapping-commons/lmha-obo-mappings"
-    },
-    {
-      "id": "mh_mapping_initiative",
-      "github_repository": "https://github.com/mapping-commons/mh_mapping_initiative"
-    },
-    {
-      "id": "phenotype",
-      "github_repository": "https://github.com/mapping-commons/phenotype",
-      "directory": "curation"
+      "id": "mapping_commons",
+      "mapping_commons_registry": "https://mapping-commons.github.io/data/mapping-specifications.json",
+      "exclude": [
+        "processed.sssom.tsv.gz",
+        "raw.sssom.tsv.gz",
+        "mappings.sssom.tsv.gz"
+      ]
     },
     {
       "id": "ols_mappings",

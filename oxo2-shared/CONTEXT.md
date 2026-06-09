@@ -32,6 +32,10 @@ All Java types under `uk.ac.ebi.spot.oxo.model.sssom`:
 
 - **Data records** — `Mapping`, `MappingSet`, `InferredMapping`, `EntityReference`, `Prefix`, `PrefixMap`, `CurieMap`, 
 `ChainRuleApplications`.
+- **`BioregistryPrefixMap`** — the Bioregistry prefix map, bundled as a resource snapshot
+(`src/main/resources/bioregistry.context.jsonld`, ~2260 prefixes). It is the fallback `curie_map` for SSSOM sets that
+declare no prefixes of their own — see [ADR-0015](../docs/adr/0015-default-prefix-map-and-metadata-synthesis-for-bare-sssom.md).
+Refresh the snapshot with `refresh-bioregistry-context.sh`; keep `BioregistryPrefixMapTest` green.
 - **SSSOM value wrappers** — `Uri`, `Date`, `Double` (SSSOM-shaped types with Jackson custom serialization).
 - **Enumerations** — `ChainRulesEnum`, `MappingCardinalityEnum`, `MappingEnum`, `MappingSetConstants`/`MappingConstants` (string keys), 
 `PredicateModifierEnum`, `EntityTypeEnum`, `SSSOMDataType`.

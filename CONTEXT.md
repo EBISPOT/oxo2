@@ -118,6 +118,22 @@ See [ADR-0004](docs/adr/0004-backwards-compatible-with-oxo-v1.md). Affects `oxo2
 - **GitHub registries are fetched via archive tarball** — GitHub mapping registries download as the default-branch archive 
 tarball over plain HTTP (no GitHub Contents API, no token), extracting only the configured directory; avoids the shared-NAT 
 60 req/hr API rate limit. See [ADR-0007](docs/adr/0007-github-registries-via-archive-tarball.md). Affects `oxo2-dataload` (downloader).
+- **Mapping Commons is ingested via its aggregated catalogue** — the `mapping_commons_registry` source type reads 
+`mapping-commons.github.io`'s `data/mapping-specifications.json` (a registry-of-registries already aggregated to one JSON array) 
+and downloads each `type=sssom` `content_url` — namespaced per source registry (distinct sets sharing a filename, e.g. the five 
+biopragmatics SeMRA-landscape `priority` views, kept and disambiguated by landscape name from the source `registry.yml` — 
+gene/cell/protein/anatomy/disease — falling back to Zenodo record id; only exact-duplicate URLs collapse), gunzipping `*.gz` — 
+dropping the FAIR-transform registry and any basenames in the entry's `exclude` list (the visible guard against the 
+closure-exploding SeMRA `processed`/`raw` assemblies). See [ADR-0014](docs/adr/0014-mapping-commons-registry-via-specifications-json.md). 
+Affects `oxo2-dataload` (downloader, default `oxo-config.json`).
+- **Bare SSSOM sets are recovered, not dropped** — a TSV with no metadata header and no external `.yml` (e.g. the 
+biopragmatics SeMRA landscape `priority` views) has its `MappingSet` synthesised from the per-row set-level columns, and 
+CURIEs expand against a bundled **Bioregistry** prefix-map snapshot (`oxo2-shared`'s `BioregistryPrefixMap`) used as the 
+fallback `curie_map` — applied only to sets that declare no prefixes of their own. The sssom2json output filename is the 
+input's sssom-root-relative path flattened, so same-basename sets across sub-directories don't collide. See 
+[ADR-0015](docs/adr/0015-default-prefix-map-and-metadata-synthesis-for-bare-sssom.md). Affects `oxo2-shared`, `oxo2-dataload` 
+(sssom2json). NB: recovering the `priority` views feeds the ~569 MB gene view into phase-2 — the closure-explosion guard 
+([ADR-0009](docs/adr/0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md)) is now load-bearing.
 - **Per-set chunked tracing** — when computing explanation chains, the per-set "facts to trace" file is split into chunks 
 (default `trace_chunk_size = 100 000`, in `inferAndExplainMappings.nf`) and traced in parallel. Tactical parallelism choice, not an ADR.
 

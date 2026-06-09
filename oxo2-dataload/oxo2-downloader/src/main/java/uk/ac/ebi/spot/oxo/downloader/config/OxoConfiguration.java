@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,6 +48,22 @@ public class OxoConfiguration {
 
         private final Optional<String> url;
 
+        /**
+         * URL of a Mapping Commons aggregated registry catalogue (the {@code mapping-specifications.json}
+         * published by {@code mapping-commons.github.io}): a flat JSON array of mapping-set entries, each
+         * carrying a {@code content_url} pointing at a SSSOM TSV. See ADR-0014.
+         */
+        @JsonProperty("mapping_commons_registry")
+        private final Optional<String> mappingCommonsRegistry;
+
+        /**
+         * Filenames (the basename of each entry's {@code content_url}, e.g. {@code processed.sssom.tsv.gz})
+         * to skip when consuming a {@code mapping_commons_registry}. Used to keep known closure-exploding
+         * SeMRA assemblies out of the corpus while still ingesting the curated views (see ADR-0014).
+         */
+        @JsonProperty("exclude")
+        private final List<String> exclude;
+
         public MappingRegistry(Builder builder) {
             this.id = builder.id;
             this.githubRepository = Optional.ofNullable(builder.githubRepository);
@@ -54,6 +71,10 @@ public class OxoConfiguration {
             this.ftpServer = Optional.ofNullable(builder.ftpServer);
             this.port = Optional.ofNullable(builder.port);
             this.url = Optional.ofNullable(builder.url);
+            this.mappingCommonsRegistry = Optional.ofNullable(builder.mappingCommonsRegistry);
+            this.exclude = builder.exclude == null
+                    ? Collections.emptyList()
+                    : List.copyOf(builder.exclude);
         }
 
         public String getId() {
@@ -80,6 +101,14 @@ public class OxoConfiguration {
             return url;
         }
 
+        public Optional<String> getMappingCommonsRegistry() {
+            return mappingCommonsRegistry;
+        }
+
+        public List<String> getExclude() {
+            return exclude;
+        }
+
         public String getPurl() {
             if (getUrl().isPresent()) {
                 return getUrl().get();
@@ -87,8 +116,11 @@ public class OxoConfiguration {
                 return "ftp://" + getFtpServer().get() + ":" + getPort().get() + "/" + getDirectory().get();
             } else if (getGithubRepository().isPresent()) {
                 return "https://github.com/" + getGithubRepository().get();
+            } else if (getMappingCommonsRegistry().isPresent()) {
+                return getMappingCommonsRegistry().get();
             } else {
-                throw new IllegalArgumentException("No URL or FTP server or GitHub repository found for registry " + id);
+                throw new IllegalArgumentException("No URL or FTP server or GitHub repository or Mapping Commons " +
+                        "registry found for registry " + id);
             }
         }
 
@@ -101,6 +133,8 @@ public class OxoConfiguration {
                     ", ftpServer=" + ftpServer +
                     ", port=" + port +
                     ", url=" + url +
+                    ", mappingCommonsRegistry=" + mappingCommonsRegistry +
+                    ", exclude=" + exclude +
                     '}';
         }
 
@@ -115,6 +149,10 @@ public class OxoConfiguration {
             private Integer port;
 
             private String url;
+
+            private String mappingCommonsRegistry;
+
+            private List<String> exclude;
 
             public Builder(@JsonProperty("id") String id) {
                 this.id = id;
@@ -149,6 +187,18 @@ public class OxoConfiguration {
             @JsonProperty("url")
             public Builder setUrl(String url) {
                 this.url = url;
+                return this;
+            }
+
+            @JsonProperty("mapping_commons_registry")
+            public Builder setMappingCommonsRegistry(String mappingCommonsRegistry) {
+                this.mappingCommonsRegistry = mappingCommonsRegistry;
+                return this;
+            }
+
+            @JsonProperty("exclude")
+            public Builder setExclude(List<String> exclude) {
+                this.exclude = exclude;
                 return this;
             }
 

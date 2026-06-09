@@ -13,6 +13,9 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_CARDINALIT
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_DATE;
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_JUSTIFICATION;
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_PROVIDER;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_SET_ID;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_SET_TITLE;
+import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_SET_VERSION;
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_SOURCE;
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_TOOL;
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.MAPPING_TOOL_VERSION;
@@ -54,11 +57,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -80,6 +85,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import uk.ac.ebi.spot.oxo.model.sssom.BioregistryPrefixMap;
 import uk.ac.ebi.spot.oxo.model.sssom.CurieMap;
 import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
@@ -191,8 +197,20 @@ public class TSV2JSON {
         }
 
         if (externalMappingSetBuilderOptional.isEmpty() && embeddedMappingSetBuilderOptional.isEmpty()) {
-            logger.error("Both external and embedded metadata are missing. See TSV file {}", file);
-            return;
+            // No embedded YAML header and no external .yml sidecar. Rather than dropping the
+            // set, synthesise its metadata from the per-row set-level columns and fall back to
+            // the bundled Bioregistry prefix map so the CURIEs still expand to IRIs (ADR-0015).
+            // This recovers bare published sets such as the biopragmatics SeMRA landscape
+            // `priority` views, which ship no metadata header at all.
+            embeddedMappingSetBuilderOptional = synthesizeMetadataFromColumns(file);
+            if (embeddedMappingSetBuilderOptional.isEmpty()) {
+                logger.error("Both external and embedded metadata are missing, and there are no "
+                        + "data rows to synthesise set metadata from. Skipping TSV file {}", file);
+                return;
+            }
+            logger.warn("No embedded or external SSSOM metadata for {}; synthesised set metadata "
+                    + "from row columns and applied the bundled Bioregistry prefix map as the "
+                    + "curie_map.", file);
         }
 
         // Pin the mappingSetId once before parsing; output filenames depend on it.
@@ -415,6 +433,46 @@ public class TSV2JSON {
         return mappingBuilder;
     }
 
+    /**
+     * Synthesise mapping-set metadata for a TSV that has no embedded YAML header and no external
+     * {@code .yml} sidecar. Some published sets ship a bare TSV whose set-level slots live in
+     * per-row columns (constant per set) and whose prefixes are implicitly the Bioregistry's —
+     * notably the biopragmatics SeMRA landscape {@code priority} views. We read the set-level
+     * slots from the first data row and apply the bundled Bioregistry prefix map as the
+     * {@code curie_map} so the row CURIEs expand to IRIs. See ADR-0015.
+     *
+     * @return a builder seeded from the first data row, or empty if the file has no data rows.
+     */
+    private static Optional<MappingSet.Builder> synthesizeMetadataFromColumns(File file) {
+        try (CSVParser parser = CSVParser.parse(file, java.nio.charset.StandardCharsets.UTF_8,
+                CSVFormat.TDF.builder().setCommentMarker('#').setHeader().build())) {
+            Iterator<CSVRecord> records = parser.iterator();
+            if (!records.hasNext()) {
+                return Optional.empty();
+            }
+            CSVRecord firstRecord = records.next();
+            MappingSet.Builder builder = MappingSet.builder();
+            SortedMap<String, String> defaultPrefixes = BioregistryPrefixMap.get();
+            builder.curieMap(defaultPrefixes);
+            if (firstRecord.isSet(MAPPING_SET_ID) && !firstRecord.get(MAPPING_SET_ID).isBlank()) {
+                builder.mappingSetId(firstRecord.get(MAPPING_SET_ID));
+            }
+            if (firstRecord.isSet(MAPPING_SET_TITLE) && !firstRecord.get(MAPPING_SET_TITLE).isBlank()) {
+                builder.mappingSetTitle(firstRecord.get(MAPPING_SET_TITLE));
+            }
+            if (firstRecord.isSet(MAPPING_SET_VERSION) && !firstRecord.get(MAPPING_SET_VERSION).isBlank()) {
+                builder.mappingSetVersion(firstRecord.get(MAPPING_SET_VERSION));
+            }
+            if (firstRecord.isSet(LICENSE) && !firstRecord.get(LICENSE).isBlank()) {
+                builder.license(firstRecord.get(LICENSE));
+            }
+            return Optional.of(builder);
+        } catch (IOException e) {
+            logger.error("Error while synthesising metadata from columns for TSV file {}", file, e);
+            return Optional.empty();
+        }
+    }
+
     private static Optional<MappingSet.Builder> readYamlHeader(File file)
             throws IOException {
         String yamlCommentsAsString = getCommentsFromTSVAsYaml(file);
@@ -504,6 +562,11 @@ public class TSV2JSON {
     }
 
     private static Optional<MappingSet.Builder> readYaml(String yaml) {
+        if (yaml == null || yaml.isBlank()) {
+            // No commented metadata header. Not an error: the caller falls back to an external
+            // .yml sidecar or to synthesising the set from the row columns.
+            return Optional.empty();
+        }
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         objectMapper.registerModule(new Jdk8Module());
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

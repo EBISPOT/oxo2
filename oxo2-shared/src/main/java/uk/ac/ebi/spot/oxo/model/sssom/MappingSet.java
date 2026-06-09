@@ -197,9 +197,26 @@ public record MappingSet (
             return this;
         }
 
+        /**
+         * {@code mapping_set_source} is multivalued in SSSOM, so a YAML metadata header may
+         * supply it either as a single scalar (pipe-delimited, the TSV convention) or as a
+         * sequence. Jackson hands us a {@link String} for the former and a {@link Collection}
+         * for the latter; accepting {@link Object} lets both bind to one property (mirroring
+         * {@link #creatorId(Object)}). The earlier String-only setter threw
+         * "Cannot deserialize String from Array" on sequence-valued headers (e.g. the
+         * biopragmatics SeMRA {@code mapping_set_source} lists), dropping the whole set.
+         */
         @JsonProperty(MAPPING_SET_SOURCE)
-        public Builder mappingSetSource(String mappingSetSource) {
-            this.mappingSetSource = StringUtils.splitStringToSortedSet(mappingSetSource, "\\|", Uri::new);
+        public Builder mappingSetSource(Object mappingSetSource) {
+            if (mappingSetSource instanceof String mappingSetSourceString) {
+                this.mappingSetSource =
+                        StringUtils.splitStringToSortedSet(mappingSetSourceString, "\\|", Uri::new);
+            } else if (mappingSetSource instanceof Collection<?> mappingSetSourceCollection) {
+                this.mappingSetSource = new TreeSet<>();
+                for (Object source : mappingSetSourceCollection) {
+                    this.mappingSetSource.add(new Uri(source.toString()));
+                }
+            }
             return this;
         }
 

@@ -69,15 +69,35 @@ Single execution path: `loadData.nextflow` invokes the stages below in order. Pe
 
 **1. Download** — `downloadMappings.nf` (calling logic in `oxo2-downloader`). Reads the SSSOM source list from `OXO2_CONFIG` 
 (an `oxo-config*.json` file) and downloads each mapping set's TSV to the dataload working directory. A registry may be a direct
-`url`, an `ftp_server`, or a `github_repository`; GitHub registries are fetched as the default-branch archive tarball and only the
-configured `directory` is extracted — no GitHub API, see [ADR-0007](../docs/adr/0007-github-registries-via-archive-tarball.md).
+`url`, an `ftp_server`, a `github_repository`, or a `mapping_commons_registry`:
+- `github_repository` registries are fetched as the default-branch archive tarball and only the configured `directory` is
+  extracted — no GitHub API, see [ADR-0007](../docs/adr/0007-github-registries-via-archive-tarball.md).
+- `mapping_commons_registry` registries point at a Mapping Commons aggregated catalogue
+  (`mapping-commons.github.io/data/mapping-specifications.json`): the downloader reads the JSON, keeps the `type=sssom` entries
+  (dropping the FAIR-transform registry and any `exclude`d basenames), and downloads each `content_url` into a per-source-registry
+  subdirectory, gunzipping `*.gz` to `.tsv`. Distinct sets that share a filename within a registry (e.g. the five biopragmatics
+  SeMRA-landscape `priority` views) are all kept and namespaced by landscape name — looked up best-effort from the source
+  `registry.yml`, falling back to the Zenodo record id; only exact-duplicate URLs collapse. See
+  [ADR-0014](../docs/adr/0014-mapping-commons-registry-via-specifications-json.md).
 
 **2. SSSOM → JSON** — `sssom2json.nf` (logic in `oxo2-sssom2json`). Parses each SSSOM TSV into OxO2's JSON representation of 
-`MappingSet` and its `Mapping`s, using the types in `oxo2-shared`.
+`MappingSet` and its `Mapping`s, using the types in `oxo2-shared`. Two robustness behaviours
+([ADR-0015](../docs/adr/0015-default-prefix-map-and-metadata-synthesis-for-bare-sssom.md)):
+- **Bare sets.** A TSV with no embedded YAML header and no external `.yml` (e.g. the biopragmatics SeMRA landscape
+  `priority` views) is not dropped: `TSV2JSON` synthesises the `MappingSet` from the first row's set-level columns
+  (`mapping_set_id`/`mapping_set_title`/`license`) and applies the bundled Bioregistry prefix map (`oxo2-shared`'s
+  `BioregistryPrefixMap`) as the fallback `curie_map` so the row CURIEs still expand to IRIs.
+- **Output naming.** Each output JSON is named by the input's path *relative to the sssom root*, flattened
+  (`mapping_commons/mapping-registry/gene/priority.sssom.tsv` → `mapping_commons.mapping-registry.gene.priority.sssom.json`),
+  so distinct sets that share a basename across sub-directories (the five landscape `priority.sssom.tsv` files) don't
+  collapse at the flat publish dir. Downstream stages treat the stem as an opaque unique key.
 
 **3. Inference (both phases)** — `determineInferencesAndExplanations.nextflow` runs `json2nquads` (per-set JSON →
 N-Quads carrying `mapping_id`, [ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)) then two
-reasoning phases ([ADR-0009](../docs/adr/0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md)):
+reasoning phases ([ADR-0009](../docs/adr/0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md)). A set whose
+mappings yield no quads — all using non-inference predicates (e.g. the `ebi-text-mappings` sets are `skos:closeMatch`)
+or lacking a subject/object IRI — produces no `.nq` and is logged (it is still indexed as asserted; it just does not
+enter the inference corpus):
    - **Phase 1 — OWL, per set** (`inferAndExplainMappings.nf`): `nmo` runs `owl.rls` over each set's N-Quads to
      derive subsumption (subClassOf/subPropertyOf) within that set → a per-source inferred set.
    - **Phase 2 — SSSOM, cross-set** (`inferSssomCrossSet.nf`): every set's N-Quads is concatenated into one
@@ -119,10 +139,12 @@ them to `$SOLR_HOME` for local runs.
 
 ### Input validation
 
-Remote filenames sourced from registries (FTP listings, and TAR entries — including the GitHub archive
-tarballs fetched per [ADR-0007](../docs/adr/0007-github-registries-via-archive-tarball.md)) are untrusted:
+Remote filenames sourced from registries (FTP listings, TAR entries — including the GitHub archive
+tarballs fetched per [ADR-0007](../docs/adr/0007-github-registries-via-archive-tarball.md) — and the
+filenames/registry-slugs derived from a `mapping_commons_registry` catalogue's `content_url`s per
+[ADR-0014](../docs/adr/0014-mapping-commons-registry-via-specifications-json.md)) are untrusted:
 they flow into `Paths.get`/`File` on disk and later into Bash interpolation in the Nextflow scripts, so an
-unsanitised name enables both path traversal and command injection. All three downloaders validate names
+unsanitised name enables both path traversal and command injection. All four downloaders validate names
 against the allowlist in
 [`SafeFilename`](oxo2-downloader/src/main/java/uk/ac/ebi/spot/oxo/downloader/util/SafeFilename.java)
 (`[A-Za-z0-9._-]+`, no leading `.` or `-`, no `.`/`..`, max 255 bytes) and skip+log offending files. The
