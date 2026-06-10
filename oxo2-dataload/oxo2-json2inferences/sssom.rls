@@ -1,9 +1,24 @@
 %! OxO2 Phase 2 — SSSOM reasoning rules, applied ACROSS ALL MAPPING SETS (ADR-0009).
 %!
-%! Transitivity and role chains over the STRONG mapping/equivalence predicates only. Subsumption
-%! (rdfs:subClassOf/subPropertyOf, handled per-set in owl.rls) and the weak/noisy predicates
-%! {skos:relatedMatch, oboInOwl:hasDbXref, skos:closeMatch, rdfs:seeAlso, rdf:type} never chain
-%! here (ADR-0009). The role chains RCE1/RCE2 propagate only predicates in strongPredicate/1.
+%! Transitivity, symmetry/inverse, and role chains over the STRONG mapping/equivalence predicates
+%! only. Subsumption (rdfs:subClassOf/subPropertyOf, handled per-set in owl.rls) and the weak/noisy
+%! predicates {skos:relatedMatch, oboInOwl:hasDbXref, skos:closeMatch, rdfs:seeAlso, rdf:type} never
+%! chain here (ADR-0009). The role chains RCE1/RCE2 propagate only predicates in strongPredicate/1.
+%!
+%! Predicate strength (ADR-0009). The identity predicates split by strength:
+%!   - STRICT identity : owl:equivalentClass, owl:equivalentProperty, owl:sameAs  (logical identity)
+%!   - WEAK identity   : skos:exactMatch  (interchangeable in practice, NOT logical identity)
+%! A role chain through a strict-identity bridge PRESERVES the propagated predicate. A chain through
+%! a skos:exactMatch bridge CAPS any identity conclusion at skos:exactMatch — it may never upgrade a
+%! weak exactMatch into a strict owl:* identity. Hierarchy and crossSpecies predicates always
+%! propagate unchanged (a separate axis, never capped, never upgraded into an identity predicate).
+%!
+%! Symmetry/inverse. The four equivalence predicates are symmetric (SYM-*). skos:broadMatch and
+%! skos:narrowMatch are inverses of each other (SSSOM RI1/RI2). The crossSpecies predicates carry
+%! their own inverses (SSSOM RI3/RI4/RI5). NOTE: symmetry of skos:exactMatch together with T10
+%! computes the full transitive closure of every exactMatch component (a clique per component) —
+%! sized and accepted against the loaded Mapping Commons corpus (largest component 434 nodes; the
+%! 685k giant lives only in the excluded raw/processed assemblies, not the loaded priority views).
 %!
 %! Facts are N-Quads `<s> <p> <o> <urn:uuid:mapping_id> .` (ADR-0010); Nemo imports them in
 %! graph-first order, so the mapping_id is the first term. Inferred conclusions carry the nil
@@ -23,17 +38,26 @@ mapping(?id, ?s, ?p, ?o) :- assertedMapping(?id, ?s, ?p, ?o) .
 % Projected triple view (id dropped) for the EDB-negation separation below (ADR-0010).
 assertedTriple(?s, ?p, ?o) :- assertedMapping(?id, ?s, ?p, ?o) .
 
-% The strong predicates that may chain across sets. RCE1/RCE2 propagate ONLY these; subsumption
-% and weak/noisy predicates are absent here, so they never propagate (ADR-0009).
-strongPredicate(owl:equivalentClass) .
-strongPredicate(owl:equivalentProperty) .
-strongPredicate(owl:sameAs) .
-strongPredicate(skos:exactMatch) .
-strongPredicate(skos:broadMatch) .
-strongPredicate(skos:narrowMatch) .
-strongPredicate(semapv:crossSpeciesExactMatch) .
-strongPredicate(semapv:crossSpeciesBroadMatch) .
-strongPredicate(semapv:crossSpeciesNarrowMatch) .
+% ---- Predicate strength classes ----
+% Strict identity: a role chain through one of these bridges PRESERVES the propagated predicate.
+identityPredicate(owl:equivalentClass) .
+identityPredicate(owl:equivalentProperty) .
+identityPredicate(owl:sameAs) .
+% Weak identity: a role chain through skos:exactMatch CAPS identity conclusions at skos:exactMatch.
+identityPredicate(skos:exactMatch) .
+
+% Hierarchy + crossSpecies: a separate axis. Propagated unchanged through any bridge — never capped,
+% never upgraded into an identity predicate.
+nonIdentityStrong(skos:broadMatch) .
+nonIdentityStrong(skos:narrowMatch) .
+nonIdentityStrong(semapv:crossSpeciesExactMatch) .
+nonIdentityStrong(semapv:crossSpeciesBroadMatch) .
+nonIdentityStrong(semapv:crossSpeciesNarrowMatch) .
+
+% The strong predicates that may chain across sets = identity ∪ hierarchy/crossSpecies. Subsumption
+% and the weak/noisy predicates are absent, so they never propagate (ADR-0009).
+strongPredicate(?p) :- identityPredicate(?p) .
+strongPredicate(?p) :- nonIdentityStrong(?p) .
 
 % ---- Transitivity, one rule per strong predicate ----
 #[name("T1")]
@@ -55,30 +79,56 @@ mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:exactMatch, ?c
 #[name("T11")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:narrowMatch, ?c) :- mapping(?id1, ?a, skos:narrowMatch, ?b), mapping(?id2, ?b, skos:narrowMatch, ?c) .
 
-% ---- Role chains over equivalence/exact-match identity edges (propagate strong predicates only) ----
-% RCE1: A (owl:equivalentClass|skos:exactMatch) B, B ?p C  =>  A ?p C
-#[name("RCE1-1")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
-    mapping(?id1, ?a, owl:equivalentClass, ?b), mapping(?id2, ?b, ?p, ?c), strongPredicate(?p) .
-#[name("RCE1-2")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
-    mapping(?id1, ?a, skos:exactMatch, ?b), mapping(?id2, ?b, ?p, ?c), strongPredicate(?p) .
+% ---- Symmetry of the equivalence predicates (OxO2 extension; SSSOM defines no RI rule for these) ----
+#[name("SYM-equivalentClass")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, owl:equivalentClass, ?a) :- mapping(?id1, ?a, owl:equivalentClass, ?b) .
+#[name("SYM-equivalentProperty")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, owl:equivalentProperty, ?a) :- mapping(?id1, ?a, owl:equivalentProperty, ?b) .
+#[name("SYM-sameAs")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, owl:sameAs, ?a) :- mapping(?id1, ?a, owl:sameAs, ?b) .
+#[name("SYM-exactMatch")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, skos:exactMatch, ?a) :- mapping(?id1, ?a, skos:exactMatch, ?b) .
 
-% RCE2: A ?p B, B (owl:equivalentClass|skos:exactMatch) C  =>  A ?p C
-#[name("RCE2-1")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
-    mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, owl:equivalentClass, ?c), strongPredicate(?p) .
-#[name("RCE2-2")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
-    mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, skos:exactMatch, ?c), strongPredicate(?p) .
+% ---- SKOS broad/narrow inverse (SSSOM RI1/RI2) ----
+#[name("RI1")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, skos:broadMatch, ?a) :- mapping(?id1, ?a, skos:narrowMatch, ?b) .
+#[name("RI2")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, skos:narrowMatch, ?a) :- mapping(?id1, ?a, skos:broadMatch, ?b) .
 
-% ---- Inverse rules for crossSpecies predicates ----
+% ---- crossSpecies inverse (SSSOM RI3/RI4/RI5) ----
 #[name("RI3")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, semapv:crossSpeciesExactMatch, ?a) :- mapping(?id1, ?a, semapv:crossSpeciesExactMatch, ?b) .
 #[name("RI4")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, semapv:crossSpeciesBroadMatch, ?a) :- mapping(?id1, ?a, semapv:crossSpeciesNarrowMatch, ?b) .
 #[name("RI5")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, semapv:crossSpeciesNarrowMatch, ?a) :- mapping(?id1, ?a, semapv:crossSpeciesBroadMatch, ?b) .
+
+% ---- Role chains over identity edges (ADR-0009) ----
+% RCE1 (leading bridge). Strict-identity bridge owl:equivalentClass PRESERVES the propagated predicate.
+#[name("RCE1-1")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
+    mapping(?id1, ?a, owl:equivalentClass, ?b), mapping(?id2, ?b, ?p, ?c), strongPredicate(?p) .
+% Weak bridge skos:exactMatch: identity conclusions CAP to skos:exactMatch (RCE1-2a); hierarchy and
+% crossSpecies predicates propagate unchanged (RCE1-2b). An exactMatch edge never yields owl:* identity.
+#[name("RCE1-2a")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:exactMatch, ?c) :-
+    mapping(?id1, ?a, skos:exactMatch, ?b), mapping(?id2, ?b, ?p, ?c), identityPredicate(?p) .
+#[name("RCE1-2b")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
+    mapping(?id1, ?a, skos:exactMatch, ?b), mapping(?id2, ?b, ?p, ?c), nonIdentityStrong(?p) .
+
+% RCE2 (trailing bridge). Strict-identity bridge owl:equivalentClass PRESERVES the propagated predicate.
+#[name("RCE2-1")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
+    mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, owl:equivalentClass, ?c), strongPredicate(?p) .
+% Weak bridge skos:exactMatch: identity conclusions CAP to skos:exactMatch (RCE2-2a); hierarchy and
+% crossSpecies predicates propagate unchanged (RCE2-2b).
+#[name("RCE2-2a")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:exactMatch, ?c) :-
+    mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, skos:exactMatch, ?c), identityPredicate(?p) .
+#[name("RCE2-2b")]
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
+    mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, skos:exactMatch, ?c), nonIdentityStrong(?p) .
 
 % Inferred = derivable but not asserted in ANY set (EDB negation over the projected triple).
 inferredMapping(?s, ?p, ?o) :- mapping(?id, ?s, ?p, ?o), ~assertedTriple(?s, ?p, ?o) .
