@@ -19,11 +19,21 @@ params.script_dir = params.script_dir ?: "${projectDir}"
 // Phase 2 reasons with the SSSOM ruleset (strong-predicate transitivity + role chains, cross-set).
 params.rules_definition = file("${params.script_dir}/oxo2-json2inferences/sssom.rls")
 
-// Single logical inferred set; drives the output file names (inferences-chains.json etc.).
-params.corpus_basename = "inferences"
-// The concatenated corpus is referenced by path (not channel) by the explain step, mirroring how
-// the per-set pipeline references its asserted facts.
-params.corpus_file = "${params.cross_set_dir}/${params.corpus_basename}.nq"
+// The single logical inferred set; drives the inferred-set output names (inferences.ttl,
+// inferences-chains.json, and downstream inferences-explained.json / inferences-mappingSet.json).
+// This is the reasoning OUTPUT, not the corpus it is derived from.
+params.inferred_set_basename = "inferences"
+
+// The concatenated asserted-mappings corpus (every phase-1 set's N-Quads), the reasoning INPUT.
+// Named distinctly from the inferred set because it holds asserted facts, not inferences. Referenced
+// by path (not channel) by the explain step, mirroring how the per-set pipeline references its
+// asserted facts.
+params.asserted_corpus_basename = "assertedCorpus"
+params.corpus_file = "${params.cross_set_dir}/${params.asserted_corpus_basename}.nq"
+
+// The inferred mappings selected for tracing (nmo --trace-input-file). An intermediate selection
+// list split into per-chunk files, not the inferred set itself.
+params.inferences_to_trace_basename = "inferencesToTrace"
 
 // Mappings per tracing chunk. Smaller = more parallelism / more per-chunk overhead.
 params.trace_chunk_size = 20000
@@ -52,13 +62,13 @@ process CONCAT_CORPUS {
     path nquads_files
 
     output:
-    path "${params.corpus_basename}.nq", optional: true
+    path "${params.asserted_corpus_basename}.nq", optional: true
 
     script:
     """
-    cat ${nquads_files} > "${params.corpus_basename}.nq"
-    if [ ! -s "${params.corpus_basename}.nq" ]; then
-        rm -f "${params.corpus_basename}.nq"
+    cat ${nquads_files} > "${params.asserted_corpus_basename}.nq"
+    if [ ! -s "${params.asserted_corpus_basename}.nq" ]; then
+        rm -f "${params.asserted_corpus_basename}.nq"
     fi
     """
 }
@@ -75,17 +85,17 @@ process INFER_CROSS_SET {
     path corpus
 
     output:
-    path "inferred/${params.corpus_basename}.ttl", optional: true
+    path "inferred/${params.inferred_set_basename}.ttl", optional: true
 
     script:
     """
     mkdir -p inferred
     "${params.script_dir}/oxo2-json2inferences/nemoInferMappingsNextflow.sh" "${params.rules_definition}" \
-        "${corpus}" "${params.corpus_basename}.ttl" inferred/
+        "${corpus}" "${params.inferred_set_basename}.ttl" inferred/
 
     # Remove if empty
-    if [ ! -s "inferred/${params.corpus_basename}.ttl" ]; then
-        rm -f "inferred/${params.corpus_basename}.ttl"
+    if [ ! -s "inferred/${params.inferred_set_basename}.ttl" ]; then
+        rm -f "inferred/${params.inferred_set_basename}.ttl"
     fi
     """
 }
@@ -100,10 +110,10 @@ process DETERMINE_CROSS_SET_TRACE {
     path inferred_ttl
 
     output:
-    path "${params.corpus_basename}.txt", optional: true
+    path "${params.inferences_to_trace_basename}.txt", optional: true
 
     script:
-    def output_file = "${params.corpus_basename}.txt"
+    def output_file = "${params.inferences_to_trace_basename}.txt"
     """
     "${params.script_dir}/oxo2-json2inferences/inferences2trace.sh" "${inferred_ttl}" "${output_file}"
 
@@ -122,12 +132,12 @@ process SPLIT_CROSS_SET_TRACE {
     path inferences_to_trace_file
 
     output:
-    path "${params.corpus_basename}-chunk*.txt", optional: true
+    path "${params.inferences_to_trace_basename}-chunk*.txt", optional: true
 
     script:
     """
     "${params.script_dir}/oxo2-json2inferences/splitInferencesToTrace.sh" \
-        "${inferences_to_trace_file}" ${params.trace_chunk_size} "${params.corpus_basename}"
+        "${inferences_to_trace_file}" ${params.trace_chunk_size} "${params.inferences_to_trace_basename}"
     """
 }
 
@@ -146,7 +156,7 @@ process EXPLAIN_CROSS_SET_CHUNK {
     """
     echo "[EXPLAIN_CROSS_SET_CHUNK] chunk=${chunk_file.name} trace_input_bytes=${chunk_file.size()} allocated_memory=${task.memory}"
     "${params.script_dir}/oxo2-json2inferences/nemoExplainMappingsNextflow.sh" "${params.rules_definition}" \
-        "${params.corpus_file}" "${params.corpus_basename}-reexport.ttl" "./" "${chunk_file}" "${output_file}"
+        "${params.corpus_file}" "${params.inferred_set_basename}-reexport.ttl" "./" "${chunk_file}" "${output_file}"
     """
 }
 
@@ -160,10 +170,10 @@ process MERGE_CROSS_SET_CHAIN {
     path chunk_chains_files
 
     output:
-    path "${params.corpus_basename}-chains.json", optional: true
+    path "${params.inferred_set_basename}-chains.json", optional: true
 
     script:
-    def output_file = "${params.corpus_basename}-chains.json"
+    def output_file = "${params.inferred_set_basename}-chains.json"
     def heap_mb = (task.memory.toMega() * 0.8) as long
     """
     export JAVA_OPTS="-Xmx${heap_mb}m \${JAVA_OPTS:-}"

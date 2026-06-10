@@ -250,7 +250,7 @@ Deduplicates and concatenates the per-chunk chain JSONs back into one per-mappin
 nmo chain-rules.rls \
     --param importfile=<asserted.ttl> \
     --param exportfile=<inferred.ttl> \
-    --trace-input-file <inferences.txt> \
+    --trace-input-file <inferencesToTrace.txt> \
     --trace-output <chains.json>
 ```
 
