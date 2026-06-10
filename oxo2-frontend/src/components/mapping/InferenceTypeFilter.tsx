@@ -2,7 +2,7 @@ import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { INFERENCE_TYPE_LABELS, INFERENCE_TYPE_ORDER, InferenceType } from "../../model/InferenceType";
 
 /**
- * Multi-select inference-type filter (ADR-0011): each of Asserted / SSSOM inference / OWL inference
+ * Multi-select inference-type filter (ADR-0011): each of Asserted / SSSOM inference
  * can be toggled independently. Replaces the old exclusive tri-state (all/asserted/inferred). An
  * empty selection means "no restriction" (the backend treats an absent/empty list as all types).
  */

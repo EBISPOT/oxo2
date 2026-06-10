@@ -1,11 +1,11 @@
-%! OxO2 Phase 2 — SSSOM reasoning rules, applied ACROSS ALL MAPPING SETS (ADR-0009).
+%! OxO2 SSSOM reasoning rules, applied ACROSS ALL MAPPING SETS (ADR-0016).
 %!
 %! Transitivity, symmetry/inverse, and role chains over the STRONG mapping/equivalence predicates
-%! only. Subsumption (rdfs:subClassOf/subPropertyOf, handled per-set in owl.rls) and the weak/noisy
+%! only. Subsumption (rdfs:subClassOf/subPropertyOf, no longer derived by OxO2) and the weak/noisy
 %! predicates {skos:relatedMatch, oboInOwl:hasDbXref, skos:closeMatch, rdfs:seeAlso, rdf:type} never
-%! chain here (ADR-0009). The role chains RCE1/RCE2 propagate only predicates in strongPredicate/1.
+%! chain here (ADR-0016). The role chains RCE1/RCE2 propagate only predicates in strongPredicate/1.
 %!
-%! Predicate strength (ADR-0009). The identity predicates split by strength:
+%! Predicate strength (ADR-0016). The identity predicates split by strength:
 %!   - STRICT identity : owl:equivalentClass, owl:equivalentProperty, owl:sameAs  (logical identity)
 %!   - WEAK identity   : skos:exactMatch  (interchangeable in practice, NOT logical identity)
 %! A role chain through a strict-identity bridge PRESERVES the propagated predicate. A chain through
@@ -55,7 +55,7 @@ nonIdentityStrong(semapv:crossSpeciesBroadMatch) .
 nonIdentityStrong(semapv:crossSpeciesNarrowMatch) .
 
 % The strong predicates that may chain across sets = identity ∪ hierarchy/crossSpecies. Subsumption
-% and the weak/noisy predicates are absent, so they never propagate (ADR-0009).
+% and the weak/noisy predicates are absent, so they never propagate (ADR-0016).
 strongPredicate(?p) :- identityPredicate(?p) .
 strongPredicate(?p) :- nonIdentityStrong(?p) .
 
@@ -103,7 +103,7 @@ mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, semapv:crossSpecies
 #[name("RI5")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, semapv:crossSpeciesNarrowMatch, ?a) :- mapping(?id1, ?a, semapv:crossSpeciesBroadMatch, ?b) .
 
-% ---- Role chains over identity edges (ADR-0009) ----
+% ---- Role chains over identity edges (ADR-0016) ----
 % RCE1 (leading bridge). Strict-identity bridge owl:equivalentClass PRESERVES the propagated predicate.
 #[name("RCE1-1")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-

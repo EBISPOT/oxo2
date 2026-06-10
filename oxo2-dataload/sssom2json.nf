@@ -41,7 +41,7 @@ workflow {
 // running concurrently) would collide at publish time. We rename the JAR's
 // output to the input's relative-path stem (computed in the workflow) inside the
 // task workdir to guarantee publish-time uniqueness; downstream consumers
-// (inferAndExplainMappings.nf, json2solr.sh) match files by *.json glob, not by exact name.
+// (inferSssomCrossSet.nf, json2solr.sh) match files by *.json glob, not by exact name.
 process SSSOM2JSON {
     tag "${stem}"
 

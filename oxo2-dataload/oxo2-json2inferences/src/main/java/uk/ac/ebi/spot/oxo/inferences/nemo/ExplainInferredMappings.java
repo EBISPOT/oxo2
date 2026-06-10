@@ -47,8 +47,8 @@ public class ExplainInferredMappings {
             return;
         }
 
-        // ADR-0009/0011: which reasoning phase produced this trace, stamped on every inferred
-        // mapping and on the inferred mapping set. Required.
+        // ADR-0011/0016: the inference type stamped on every inferred mapping and on the
+        // inferred mapping set. Required.
         InferenceType inferenceType;
         try {
             inferenceType = InferenceType.fromCode(cmd.getOptionValue("inferenceType"));
@@ -59,19 +59,18 @@ public class ExplainInferredMappings {
             return;
         }
         if (inferenceType == null || inferenceType == InferenceType.ASSERTED) {
-            logger.error("--inferenceType is required and must be OWL_INFERENCE or SSSOM_INFERENCE.");
+            logger.error("--inferenceType is required and must be SSSOM_INFERENCE.");
             formatter.printHelp("ExplainInferredMappings", options);
             System.exit(1);
             return;
         }
 
-        // ADR-0009: phase 2 (SSSOM, cross-set) lands every inference in the single
+        // ADR-0016: SSSOM cross-set reasoning lands every inference in the single
         // https://www.ebi.ac.uk/oxo2/inferences set, with the source-set union recovered
         // from the per-leaf mapping_id provenance rather than from a single source set.
         boolean crossSet = cmd.hasOption("crossSet");
 
         boolean singleFileMode = cmd.hasOption("inputFile") && cmd.hasOption("outputFile");
-        boolean directoryMode = cmd.hasOption("nemoInferencesDirectory") && cmd.hasOption("outputDirectory");
 
         if (singleFileMode) {
             String sourceMappingSetId = cmd.getOptionValue("sourceMappingSetId");
@@ -90,25 +89,8 @@ public class ExplainInferredMappings {
             }
             processSingleFile(cmd.getOptionValue("inputFile"), cmd.getOptionValue("outputFile"),
                     mappingSetOutputFile, sourceMappingSetId, inferenceType, crossSet);
-        } else if (directoryMode) {
-            String mappingSetJsonDir = cmd.getOptionValue("mappingSetJsonDir");
-            String mappingSetOutputDirectory = cmd.getOptionValue("mappingSetOutputDirectory");
-            if (mappingSetJsonDir == null || mappingSetJsonDir.isBlank()) {
-                logger.error("--mappingSetJsonDir is required in directory mode (used to resolve source mapping set IDs per chain file).");
-                formatter.printHelp("ExplainInferredMappings", options);
-                System.exit(1);
-                return;
-            }
-            if (mappingSetOutputDirectory == null || mappingSetOutputDirectory.isBlank()) {
-                logger.error("--mappingSetOutputDirectory is required in directory mode.");
-                formatter.printHelp("ExplainInferredMappings", options);
-                System.exit(1);
-                return;
-            }
-            processDirectory(cmd.getOptionValue("nemoInferencesDirectory"), cmd.getOptionValue("outputDirectory"),
-                    mappingSetOutputDirectory, mappingSetJsonDir, inferenceType);
         } else {
-            logger.error("Invalid arguments. Provide either (-i inputFile -f outputFile -m mappingSetOutputFile -s sourceMappingSetId) for single file mode or (-n nemoInferencesDirectory -o outputDirectory -q mappingSetOutputDirectory -d mappingSetJsonDir) for directory mode.");
+            logger.error("Invalid arguments. Provide -i inputFile -f outputFile -m mappingSetOutputFile (-x crossSet | -s sourceMappingSetId) for single-file mode.");
             formatter.printHelp("ExplainInferredMappings", getOptions());
             System.exit(1);
         }
@@ -122,7 +104,7 @@ public class ExplainInferredMappings {
                                            String mappingSetOutputFilePath, String sourceMappingSetId,
                                            InferenceType inferenceType, boolean crossSet) {
         String inferredMappingSetId = crossSet
-                ? OXOInferenceConstants.PHASE2_INFERENCES_SET_ID
+                ? OXOInferenceConstants.CROSS_SET_INFERENCES_SET_ID
                 : OXOInferenceConstants.inferredMappingSetIdFor(sourceMappingSetId);
         logger.info("Single file mode - Input: {}, Output: {}, MappingSet output: {}, Source mapping set: {}, inferred set: {}, inferenceType: {}, crossSet: {}",
                 inputFilePath, outputFilePath, mappingSetOutputFilePath, sourceMappingSetId,
@@ -158,7 +140,7 @@ public class ExplainInferredMappings {
                 logger.info("Generated {} inferred mappings", inferredMappings.size());
             }
 
-            // For the cross-set phase, the inferred set's source is the union of every source
+            // For cross-set inference, the inferred set's source is the union of every source
             // set that contributed an asserted premise, recovered per leaf during the walk.
             SortedSet<Uri> contributingSources = new TreeSet<>();
 
@@ -195,188 +177,6 @@ public class ExplainInferredMappings {
     }
 
     /**
-     * Process all files in a directory - used for sequential processing.
-     * Uses a single shared Solr client for all files.
-     */
-    private static void processDirectory(String nemoInferencesToParseDirectory, String outputDirectory,
-                                          String mappingSetOutputDirectory, String mappingSetJsonDirectory,
-                                          InferenceType inferenceType) {
-        logger.info("Directory mode (per-set, inferenceType {}) - Input: {}, Output: {}, MappingSet output: {}, MappingSet JSON dir: {}",
-                inferenceType, nemoInferencesToParseDirectory, outputDirectory, mappingSetOutputDirectory, mappingSetJsonDirectory);
-
-        File inputDir = new File(nemoInferencesToParseDirectory);
-        if (!inputDir.exists() || !inputDir.isDirectory()) {
-            logger.error("Input directory does not exist or is not a directory: {}", nemoInferencesToParseDirectory);
-            System.exit(1);
-            return;
-        }
-
-        File outputDir = new File(outputDirectory);
-        if (!outputDir.exists()) {
-            if (!outputDir.mkdirs()) {
-                logger.error("Failed to create output directory: {}", outputDir.getAbsolutePath());
-                System.exit(1);
-                return;
-            }
-        }
-
-        File mappingSetOutputDir = new File(mappingSetOutputDirectory);
-        if (!mappingSetOutputDir.exists()) {
-            if (!mappingSetOutputDir.mkdirs()) {
-                logger.error("Failed to create mappingSet output directory: {}", mappingSetOutputDir.getAbsolutePath());
-                System.exit(1);
-                return;
-            }
-        }
-
-        File mappingSetJsonDir = new File(mappingSetJsonDirectory);
-        if (!mappingSetJsonDir.exists() || !mappingSetJsonDir.isDirectory()) {
-            logger.error("MappingSet JSON directory does not exist or is not a directory: {}", mappingSetJsonDirectory);
-            System.exit(1);
-            return;
-        }
-
-        long startTime = System.currentTimeMillis();
-        DataloadSolr solrClient = null;
-        try {
-            solrClient = new DataloadSolr();
-
-            File[] inputFiles = inputDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".json") || name.toLowerCase().endsWith(".ttl"));
-            if (inputFiles == null || inputFiles.length == 0) {
-                logger.warn("No files found in input directory: {}", nemoInferencesToParseDirectory);
-                solrClient.close();
-                return;
-            }
-
-            logger.info("Found {} files to process", inputFiles.length);
-
-            int processedCount = 0;
-            int failedCount = 0;
-
-            for (File inputFile : inputFiles) {
-                try {
-                    String inputFilePath = inputFile.getAbsolutePath();
-                    logger.info("Processing file: {}", inputFilePath);
-
-                    String inputFileName = inputFile.getName();
-                    String baseName = inputFileName.substring(0, inputFileName.lastIndexOf('.'));
-
-                    String sourceMappingSetId = resolveSourceMappingSetId(mappingSetJsonDir, baseName);
-                    if (sourceMappingSetId == null) {
-                        logger.error("Could not resolve source mapping set ID for chain file {} (looked under {}). Skipping.",
-                                inputFile.getName(), mappingSetJsonDirectory);
-                        failedCount++;
-                        continue;
-                    }
-                    logger.info("Resolved source mapping set ID: {}", sourceMappingSetId);
-                    String inferredMappingSetId = OXOInferenceConstants.inferredMappingSetIdFor(sourceMappingSetId);
-
-                    logger.info("Reading inferences from file...");
-                    NemoInferences nemoInferences = NemoInferenceReader.readInferences(inputFilePath);
-                    if (nemoInferences == null) {
-                        logger.error("Failed to read inferences from file or file is empty: {}", inputFilePath);
-                        failedCount++;
-                        continue;
-                    }
-
-                    logger.info("Converting to inferred mappings...");
-                    Set<InferredMapping> inferredMappings = NemoHelper.fromNemoInferencesToInferredMappings(
-                            nemoInferences, solrClient, inferredMappingSetId);
-                    if (inferredMappings.isEmpty()) {
-                        logger.warn("No inferred mappings were generated for file: {}", inputFilePath);
-                    } else {
-                        logger.info("Generated {} inferred mappings", inferredMappings.size());
-                    }
-
-                    String outputFilePath = new File(outputDir, baseName + ".json").getAbsolutePath();
-
-                    // Directory mode is per-set phase 1: the inferred set's source is the single
-                    // resolved source set, so the cross-set union collector is unused here.
-                    SortedSet<Uri> contributingSources = new TreeSet<>();
-
-                    logger.info("Creating mappings and streaming to file: {}", outputFilePath);
-                    long writtenCount = streamMappingsToJson(inferredMappings, solrClient,
-                            inferredMappingSetId, inferenceType, false, sourceMappingSetId,
-                            contributingSources, outputFilePath);
-                    logger.info("Wrote {} mappings", writtenCount);
-
-                    if (writtenCount > 0) {
-                        String mappingSetBaseName = baseName.endsWith(CHAIN_FILE_SUFFIX)
-                                ? baseName.substring(0, baseName.length() - CHAIN_FILE_SUFFIX.length())
-                                : baseName;
-                        String mappingSetOutputFilePath = new File(mappingSetOutputDir,
-                                mappingSetBaseName + ".json").getAbsolutePath();
-                        logger.info("Writing inferred MappingSet metadata to file: {}", mappingSetOutputFilePath);
-                        writeInferredMappingSet(inferredMappingSetId, sourceMappingSetId, contributingSources,
-                                inferenceType, false, mappingSetOutputFilePath);
-                    }
-
-                    logger.info("Successfully completed processing for file: {}", inputFilePath);
-                    processedCount++;
-                } catch (Exception e) {
-                    logger.error("Error processing file: {}", inputFile.getAbsolutePath(), e);
-                    failedCount++;
-                }
-            }
-
-            logger.info("Processing complete. Successfully processed: {}, Failed: {}", processedCount, failedCount);
-            solrClient.close();
-        } catch (Exception e) {
-            if (solrClient != null) {
-                try {
-                    solrClient.close();
-                } catch (Throwable t) {
-                    logger.error("Error closing Solr", t);
-                }
-            }
-            logger.error("Error processing mappings", e);
-            System.exit(1);
-        }
-        long endTime = System.currentTimeMillis();
-
-        logger.info("Total processing took {} s", (endTime - startTime)/1000);
-        logger.info("Processing took {} s", (endTime - startTime)/1000);
-    }
-
-    /**
-     * Resolve the source mapping set ID for a chain file by reading the
-     * corresponding {@code <baseName-without-chains-suffix>.json} from the
-     * sssom-as-json mappingSet directory.
-     */
-    private static String resolveSourceMappingSetId(File mappingSetJsonDir, String chainFileBaseName) {
-        String sourceBaseName = chainFileBaseName.endsWith(CHAIN_FILE_SUFFIX)
-                ? chainFileBaseName.substring(0, chainFileBaseName.length() - CHAIN_FILE_SUFFIX.length())
-                : chainFileBaseName;
-        File mappingSetFile = new File(mappingSetJsonDir, sourceBaseName + ".json");
-        if (!mappingSetFile.exists() || !mappingSetFile.isFile()) {
-            logger.error("MappingSet JSON file not found: {}", mappingSetFile.getAbsolutePath());
-            return null;
-        }
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.registerModule(new Jdk8Module());
-            objectMapper.registerModule(new JavaTimeModule());
-            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            // sssom2json writes a JSON array containing a single MappingSet
-            List<MappingSet> mappingSets = objectMapper.readValue(mappingSetFile,
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, MappingSet.class));
-            if (mappingSets == null || mappingSets.isEmpty()) {
-                logger.error("MappingSet JSON file is empty or unparsable: {}", mappingSetFile.getAbsolutePath());
-                return null;
-            }
-            MappingSet mappingSet = mappingSets.get(0);
-            if (mappingSet.mappingSetId() == null) {
-                logger.error("MappingSet JSON has no mapping_set_id: {}", mappingSetFile.getAbsolutePath());
-                return null;
-            }
-            return mappingSet.mappingSetId().asStringIRI();
-        } catch (IOException e) {
-            logger.error("Error reading MappingSet JSON file: {}", mappingSetFile.getAbsolutePath(), e);
-            return null;
-        }
-    }
-
-    /**
      * Build and write a {@link MappingSet} record describing the inferred set
      * derived from the given source mapping set. Output is a JSON array
      * containing a single MappingSet, matching the format produced by
@@ -389,18 +189,18 @@ public class ExplainInferredMappings {
         String mappingSetDescription;
         SortedSet<Uri> sources;
         if (crossSet) {
-            // Phase 2 (ADR-0009): a single set whose source is the union of every set that
+            // Cross-set (ADR-0016): a single set whose source is the union of every set that
             // contributed an asserted premise, recovered from the per-leaf mapping_id provenance.
             sources = contributingSources;
             mappingSetTitle = "OxO2 SSSOM cross-set inferences";
             mappingSetDescription = "Inferred mappings derived via SEMAPV:MappingChaining across all "
                     + "mapping sets (SSSOM reasoning).";
         } else {
-            // Phase 1 (ADR-0009): one inferred set per source set (OWL reasoning).
+            // Single-source: one inferred set attributed to a single source set.
             sources = new TreeSet<>();
             sources.add(new Uri(sourceMappingSetId));
             mappingSetTitle = "Inferences from " + sourceMappingSetId;
-            mappingSetDescription = "Inferred mappings derived via OWL reasoning over asserted mappings in "
+            mappingSetDescription = "Inferred mappings derived via SSSOM reasoning over asserted mappings in "
                     + sourceMappingSetId;
         }
 
@@ -538,9 +338,9 @@ public class ExplainInferredMappings {
                         .distance(calculateMappingDistance(inferredMapping))
                         .mappingSetId(inferredMappingSetId)
                         .inferenceType(inferenceType.getCode());
-                    // Phase 1 records the single source set. In phase 2 a mapping can draw on several
-                    // sets (captured in the explanation and the set-level source union), so a single
-                    // mappingSource would be lossy — leave it unset.
+                    // Single-source inference records its one source set. In cross-set inference a
+                    // mapping can draw on several sets (captured in the explanation and the set-level
+                    // source union), so a single mappingSource would be lossy — leave it unset.
                     if (!crossSet && sourceMappingSetId != null && !sourceMappingSetId.isBlank()) {
                         mappingBuilder.mappingSource(sourceMappingSetId);
                     }
@@ -680,27 +480,6 @@ public class ExplainInferredMappings {
     private static Options getOptions() {
         Options options = new Options();
 
-        // Directory mode options (for sequential processing)
-        Option nemoInferencesDirectory = new Option("n", "nemoInferencesDirectory", true,
-                "The directory containing Nemo traces for inferred mappings");
-        nemoInferencesDirectory.setRequired(false);
-        options.addOption(nemoInferencesDirectory);
-
-        Option outputDirectory = new Option("o", "outputDirectory", true,
-                "Output directory of inferred mappings with explanations for each inferred mapping in JSON format.");
-        outputDirectory.setRequired(false);
-        options.addOption(outputDirectory);
-
-        Option mappingSetOutputDirectory = new Option("q", "mappingSetOutputDirectory", true,
-                "Output directory for inferred MappingSet JSON metadata, one per source mapping set.");
-        mappingSetOutputDirectory.setRequired(false);
-        options.addOption(mappingSetOutputDirectory);
-
-        Option mappingSetJsonDir = new Option("d", "mappingSetJsonDir", true,
-                "Directory containing source MappingSet JSON files (e.g. sssom-as-json/mappingSet) used to resolve source mapping set IDs per chain file.");
-        mappingSetJsonDir.setRequired(false);
-        options.addOption(mappingSetJsonDir);
-
         // Single file mode options (for Nextflow parallel processing)
         Option inputFile = new Option("i", "inputFile", true,
                 "Single input file to process (for parallel processing with Nextflow)");
@@ -722,15 +501,14 @@ public class ExplainInferredMappings {
         sourceMappingSetId.setRequired(false);
         options.addOption(sourceMappingSetId);
 
-        // Phase selector (ADR-0009/0011): stamped on every inferred mapping and the inferred set.
+        // Inference type (ADR-0011/0016): stamped on every inferred mapping and the inferred set.
         Option inferenceType = new Option("t", "inferenceType", true,
-                "Inference type stamped on the inferred mappings/set: OWL_INFERENCE (phase 1, per-set) "
-                        + "or SSSOM_INFERENCE (phase 2, cross-set). Required.");
+                "Inference type stamped on the inferred mappings/set: SSSOM_INFERENCE. Required.");
         inferenceType.setRequired(false);
         options.addOption(inferenceType);
 
         Option crossSet = new Option("x", "crossSet", false,
-                "Cross-set (phase 2) mode: land all inferences in the single "
+                "Cross-set mode: land all inferences in the single "
                         + "https://www.ebi.ac.uk/oxo2/inferences set with a source-set union. "
                         + "Single-file mode only; --sourceMappingSetId is not required.");
         crossSet.setRequired(false);

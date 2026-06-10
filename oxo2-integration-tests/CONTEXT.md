@@ -6,27 +6,20 @@ See [`/CONTEXT.md`](../CONTEXT.md) for the project-wide glossary and cross-cutti
 
 End-to-end integration tests that exercise the full `loadData.nextflow` pipeline against minimal SSSOM
 fixtures and assert against expected output at four layers (Nemo inferred TTL, Nemo explanation chain
-JSON, OxO2 explained JSON, and Solr counts). Under the two-phase reasoning model
-([ADR-0009](../docs/adr/0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md)) each fixture is run
-**in isolation** — its own `loadData.nextflow` pass over only its set(s) — so a phase-2 (cross-set)
-rule's single `oxo2/inferences` output belongs to exactly that fixture and can be asserted per-rule.
+JSON, OxO2 explained JSON, and Solr counts). Under the single-pass SSSOM reasoning model ([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)) each fixture is run **in isolation** — its own `loadData.nextflow` pass over only its set(s) — so the single cross-set `oxo2/inferences` output belongs to exactly that fixture and can be asserted per-rule.
 The final pass leaves Solr populated for downstream backend / frontend work.
 
-Scope: one minimal single-set fixture per active `ChainRulesEnum` rule under `testcases/minimal/rules/`
-(phase-1 OWL rules live in `owl.rls`, phase-2 SSSOM rules in `sssom.rls`), plus cross-set fixtures under
-`testcases/minimal/crossset/<name>/` whose mappings only chain when phase-2 reasons over them together.
+Scope: one minimal single-set fixture per active `ChainRulesEnum` rule under `testcases/minimal/rules/` (the SSSOM rules in `sssom.rls`), plus cross-set fixtures under `testcases/minimal/crossset/<name>/` whose mappings only chain when reasoned over together.
 
 ## Vocabulary introduced here
 
 - **Rule fixture** — a minimal single-set SSSOM TSV at `testcases/minimal/rules/<RULE>.sssom.tsv`
   designed to trigger one chain rule (and accept whatever cascade Nemo derives).
 - **Cross-set fixture** — a directory `testcases/minimal/crossset/<name>/` of two or more SSSOM TSVs
-  whose mappings only chain when phase-2 reasons over them together, proving cross-set inference with
+  whose mappings only chain when reasoned over together, proving cross-set inference with
   per-leaf `mapping_id` provenance (the inferred set's `mapping_set_source` is the union of the
   contributing sets).
-- **Expected output layer** — an assertion target for a fixture: phase-1 per-set inferred TTL / chain
-  JSON / explained JSON / mappingSet JSON (named by source set), the phase-2 cross-set equivalents
-  (the single `inferences-*` files), and the per-`inference_type` Solr `numFound`. All mirrored per
+- **Expected output layer** — an assertion target for a fixture: the cross-set inferred TTL / chain JSON / explained JSON / mappingSet JSON (the single `inferences-*` files) and the per-`inference_type` Solr `numFound`. All mirrored per
   fixture under `testcases_expected_output/minimal/<fixture>/`. `ArtifactPaths.artifactsFor(fixture)`
   is the single source of truth for the path list.
 - **Capture mode** — running `mvn ... exec:java@captureExpected` instead of `mvn ... verify`. Runs the
@@ -111,24 +104,21 @@ mvn -pl oxo2-integration-tests -am verify -Doxo2.it.rule=T1
 
 ### Layer comparison strategy
 
-`ArtifactPaths.artifactsFor(fixture)` enumerates the layer artifacts; phase-1 rules populate the
-per-set paths, phase-2 and cross-set fixtures populate the cross-set paths. A layer absent on both the
-actual and expected side passes silently. Paths below are relative to `$OXO2_DATA/inferences/` (actual)
+`ArtifactPaths.artifactsFor(fixture)` enumerates the layer artifacts; each fixture's single cross-set pass populates the cross-set paths. A layer absent on both the actual and expected side passes silently. Paths below are relative to `$OXO2_DATA/inferences/` (actual)
 and `testcases_expected_output/minimal/<fixture>/` (expected).
 
-| Layer | Path — phase 1 (per source set) / phase 2 (cross-set) | Comparator |
+| Layer | Path (cross-set) | Comparator |
 |---|---|---|
-| Inferred TTL | `inferredMappings/<set>.ttl` / `crossSet/inferences.ttl` | Expand commas, sort N-Triples lexically, text-equal. |
-| Nemo chain JSON | `inferenceChains/<set>-chains.json` / `inferenceChainsCrossSet/inferences-chains.json` | Jackson tree, recursive key + array sort, text-equal. |
-| OxO2 explained JSON | `solr/mapping/<set>-explained.json` / `solr/mapping/inferences-explained.json` | Recursively unwrap embedded `asserted_mappings` / `explanation` JSON strings, then recursive key + array sort, text-equal. |
-| MappingSet JSON | `solr/mappingSet/<set>-mappingSet.json` / `solr/mappingSet/inferences-mappingSet.json` | Jackson tree, recursive key + array sort, text-equal. |
-| Solr | `oxo2-mappings` / `oxo2-mappingsets` | per-`inference_type` `numFound` (ASSERTED / OWL_INFERENCE / SSSOM_INFERENCE) matches `numFound.json`. |
+| Inferred TTL | `crossSet/inferences.ttl` | Expand commas, sort N-Triples lexically, text-equal. |
+| Nemo chain JSON | `inferenceChainsCrossSet/inferences-chains.json` | Jackson tree, recursive key + array sort, text-equal. |
+| OxO2 explained JSON | `solr/mapping/inferences-explained.json` | Recursively unwrap embedded `asserted_mappings` / `explanation` JSON strings, then recursive key + array sort, text-equal. |
+| MappingSet JSON | `solr/mappingSet/inferences-mappingSet.json` | Jackson tree, recursive key + array sort, text-equal. |
+| Solr | `oxo2-mappings` / `oxo2-mappingsets` | per-`inference_type` `numFound` (ASSERTED / SSSOM_INFERENCE) matches `numFound.json`. |
 
 ### Known gaps
 
 - **Per-fixture isolation is slow**: each fixture is a full `loadData.nextflow` pass, so a complete
-  `verify` runs the pipeline once per fixture (tens of minutes). This is the cost of asserting phase-2
-  (cross-set) rules per-fixture; scope with `-Doxo2.it.rule=<name>` while iterating.
+  `verify` runs the pipeline once per fixture (tens of minutes). This is the cost of asserting cross-set rules per-fixture; scope with `-Doxo2.it.rule=<name>` while iterating.
 - **Weak predicates are negative-tested only for `closeMatch`**: `oboInOwl:hasDbXref`,
   `skos:relatedMatch`, `skos:closeMatch`, `rdfs:seeAlso`, and `rdf:type` are deliberately excluded
   from chaining (ADR-0009). `RCE_WEAK_NOCHAIN` is an explicit guard fixture: its

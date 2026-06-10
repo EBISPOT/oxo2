@@ -5,14 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Resolves the assertion-target artifacts for a fixture (ADR-0009 two-phase model), both on the
- * actual side (rooted at $OXO2_DATA/inferences) and the expected side (rooted per fixture at
+ * Resolves the assertion-target artifacts for a fixture (ADR-0016), both on the actual side
+ * (rooted at $OXO2_DATA/inferences) and the expected side (rooted per fixture at
  * testcases_expected_output/minimal/&lt;fixture&gt;/).
  *
- * Because each fixture runs in isolation, the same per-fixture expected subtree holds both the
- * phase-1 per-set output (one set of files per source set) and the phase-2 cross-set output (the
- * single inferences-* files for the whole run). A layer with no output is simply absent on both
- * sides and the comparator passes it silently.
+ * Because each fixture runs in isolation, its single SSSOM cross-set pass produces the one set of
+ * inferences-* files asserted here. A layer with no output is simply absent on both sides and the
+ * comparator passes it silently.
  */
 public final class ArtifactPaths {
 
@@ -37,23 +36,7 @@ public final class ArtifactPaths {
         Path expected = expectedRoot(fixture.name);
         List<LayerArtifact> artifacts = new ArrayList<>();
 
-        // Phase 1 (per-set OWL): one set of files per source set the fixture loads.
-        for (String set : fixture.setBaseNames()) {
-            artifacts.add(layer("inferredMappings/" + set + ".ttl",
-                    actual.resolve("inferredMappings").resolve(set + ".ttl"),
-                    expected.resolve("inferredMappings").resolve(set + ".ttl"), Layer.TTL));
-            artifacts.add(layer("inferenceChains/" + set + "-chains.json",
-                    actual.resolve("inferenceChains").resolve(set + "-chains.json"),
-                    expected.resolve("inferenceChains").resolve(set + "-chains.json"), Layer.JSON));
-            artifacts.add(layer("solr/mapping/" + set + "-explained.json",
-                    actual.resolve("solr").resolve("mapping").resolve(set + "-explained.json"),
-                    expected.resolve("solr").resolve("mapping").resolve(set + "-explained.json"), Layer.EXPLAINED));
-            artifacts.add(layer("solr/mappingSet/" + set + "-mappingSet.json",
-                    actual.resolve("solr").resolve("mappingSet").resolve(set + "-mappingSet.json"),
-                    expected.resolve("solr").resolve("mappingSet").resolve(set + "-mappingSet.json"), Layer.JSON));
-        }
-
-        // Phase 2 (cross-set SSSOM): a single inferences-* output for the whole isolated run.
+        // SSSOM cross-set inference: a single inferences-* output for the isolated run (ADR-0016).
         artifacts.add(layer("crossSet/inferences.ttl",
                 actual.resolve("crossSet").resolve("inferences.ttl"),
                 expected.resolve("crossSet").resolve("inferences.ttl"), Layer.TTL));

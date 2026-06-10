@@ -36,7 +36,7 @@ function App() {
                 <Route path="/search/:curies" element={<MappingResults /> } />
                 <Route path="/mapping/:id" element={<MappingDetailsWrapper /> } />
                 {/* Resolvable inferred-set surface (ADR-0012): /inferences = cross-set SSSOM set;
-                    /inferences/<encoded source id> = per-source OWL set. */}
+                    /inferences/<encoded source id> = a per-source inferred set. */}
                 <Route path="/inferences" element={<InferencesPage /> } />
                 <Route path="/inferences/*" element={<InferencesPage /> } />
             </Routes>

@@ -19,12 +19,10 @@ Module-local artifact names worth knowing:
 - **Per-set N-Quads fact file** — `<s> <p> <o> <urn:uuid:mapping_id> .` quads generated from a mapping set's JSON,
   fed to Nemo as input. The `mapping_id` graph term carries source-mapping provenance through Nemo
   ([ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)). Produced by `json2nquadsNextflow.sh`.
-- **Cross-set corpus** — the concatenation of every set's N-Quads into one file; the input to phase-2 (SSSOM,
-  cross-set) reasoning. Produced by `inferSssomCrossSet.nf`.
+- **Cross-set corpus** — the concatenation of every set's N-Quads into one file; the input to SSSOM cross-set reasoning. Produced by `inferSssomCrossSet.nf`.
 - **Trace chunk** — a slice of the facts-to-trace file (default `trace_chunk_size = 100 000`), used as the
-  parallelism unit for `nmo trace`. See `inferAndExplainMappings.nf` / `inferSssomCrossSet.nf`.
-- **Chain file** — per-chunk/per-set (phase 1) or the single cross-set (phase 2) JSON file of explanation chains;
-  per-chunk files are merged by `mergeChainFiles.sh`.
+  parallelism unit for `nmo trace`. See `inferSssomCrossSet.nf`.
+- **Chain file** — the JSON file of explanation chains; produced per trace chunk and merged into the single cross-set chain file by `mergeChainFiles.sh`.
 
 ## Depends on
 
@@ -36,9 +34,7 @@ External:
 Internal (sub-modules):
 - `oxo2-downloader` — fetches SSSOM TSVs from the URLs listed in `OXO2_CONFIG`.
 - `oxo2-sssom2json` — TSV → JSON conversion.
-- `oxo2-json2inferences` — JSON → N-Quads → Nemo infer → trace → explanations JSON. Contains the two rulesets
-  `owl.rls` (phase 1, per-set OWL reasoning) and `sssom.rls` (phase 2, cross-set SSSOM reasoning), split per
-  [ADR-0009](../docs/adr/0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md).
+- `oxo2-json2inferences` — JSON → N-Quads → Nemo infer → trace → explanations JSON. Contains the SSSOM ruleset `sssom.rls`, applied across all mapping sets per [ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md).
 - `oxo2-solr-dataload-client` — Solr indexer; caches `EntityDetails` and `<s, p, o>` triples during load.
 - `oxo2-dataload-testing` — test utilities and fixtures.
 
@@ -92,25 +88,21 @@ Single execution path: `loadData.nextflow` invokes the stages below in order. Pe
   so distinct sets that share a basename across sub-directories (the five landscape `priority.sssom.tsv` files) don't
   collapse at the flat publish dir. Downstream stages treat the stem as an opaque unique key.
 
-**3. Inference (both phases)** — `determineInferencesAndExplanations.nextflow` runs `json2nquads` (per-set JSON →
-N-Quads carrying `mapping_id`, [ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)) then two
-reasoning phases ([ADR-0009](../docs/adr/0009-two-phase-reasoning-owl-per-set-sssom-cross-set.md)). A set whose
-mappings yield no quads — all using non-inference predicates (e.g. the `ebi-text-mappings` sets are `skos:closeMatch`)
-or lacking a subject/object IRI — produces no `.nq` and is logged (it is still indexed as asserted; it just does not
-enter the inference corpus):
-   - **Phase 1 — OWL, per set** (`inferAndExplainMappings.nf`): `nmo` runs `owl.rls` over each set's N-Quads to
-     derive subsumption (subClassOf/subPropertyOf) within that set → a per-source inferred set.
-   - **Phase 2 — SSSOM, cross-set** (`inferSssomCrossSet.nf`): every set's N-Quads is concatenated into one
-     corpus over which `nmo` runs `sssom.rls` (strong-predicate transitivity + role chains) to derive mappings
-     that may chain across sets → the single `https://www.ebi.ac.uk/oxo2/inferences` set.
-   - Both phases split the facts-to-trace file into chunks, run `nmo trace` in parallel, and `mergeChainFiles.sh`
-     recombines per-chunk chain JSONs (per-set for phase 1, one file for phase 2).
+**3. Inference** — `determineInferencesAndExplanations.nextflow` runs the single SSSOM cross-set pass
+([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)) via `inferSssomCrossSet.nf`: `json2nquads`
+converts each set's JSON to N-Quads carrying `mapping_id`
+([ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)); every set's N-Quads is concatenated
+into one corpus; `nmo` runs `sssom.rls` (strong-predicate transitivity + role chains) over the whole corpus
+to derive mappings that may chain across sets → the single `https://www.ebi.ac.uk/oxo2/inferences` set; then
+the facts-to-trace file is split into chunks, `nmo trace` runs in parallel, and `mergeChainFiles.sh`
+recombines the per-chunk chain JSONs into one file. A set whose mappings yield no quads — all using
+non-inference predicates (e.g. the `ebi-text-mappings` sets are `skos:closeMatch`) or lacking a subject/object
+IRI — produces no `.nq` and is logged (it is still indexed as asserted; it just does not enter the inference
+corpus).
 
 **4. Solr load + explanation** — `json2solr.sh` (logic in `oxo2-solr-dataload-client`) indexes the asserted
 mapping-set and mapping JSON first, because `explanations2json` then queries Solr by `mapping_id` to recover each
-asserted premise's source set. `explanations2json` runs once per phase (`--inferenceType OWL_INFERENCE` /
-`SSSOM_INFERENCE`, [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)), converting Nemo's trace
-output to OxO2 explanation-chain JSON; the inferred mappings/sets are then indexed. The Solr client caches
+asserted premise's source set. `explanations2json` then runs (`--inference_type SSSOM_INFERENCE`, [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)), converting Nemo's trace output to OxO2 explanation-chain JSON; the inferred mappings/sets are then indexed. The Solr client caches
 `EntityDetails` and by-id mapping lookups to avoid redundant queries during load.
 
 ### Configuration
@@ -119,7 +111,7 @@ output to OxO2 explanation-chain JSON; the inferred mappings/sets are then index
 `oxo-config-evora.json`, `oxo-config-stress-test*.json`).
 - `OXO2_DATA` — working directory for downloads and intermediate artifacts.
 - `NEXTFLOW_DIR` — Nextflow workdir.
-- `params.trace_chunk_size` (default 100 000) — see `inferAndExplainMappings.nf`.
+- `params.trace_chunk_size` (default 20000) — see `inferSssomCrossSet.nf`.
 
 ### Solr config
 

@@ -21,11 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Full-pipeline integration test for the two-phase reasoning fixtures (ADR-0009).
+ * Full-pipeline integration test for the SSSOM cross-set reasoning fixtures (ADR-0016).
  *
  * Each fixture is run through loadData.nextflow in <b>isolation</b> — one pipeline pass over only
- * that fixture's set(s) — so a phase-2 (cross-set) rule's single {@code oxo2/inferences} output
- * belongs to exactly that fixture and can be asserted per-rule. Because each pass wipes
+ * that fixture's set(s) — so the single {@code oxo2/inferences} cross-set output belongs to exactly
+ * that fixture and can be asserted per-rule. Because each pass wipes
  * {@code $OXO2_DATA} and the Solr collections, the per-fixture run and its assertions are
  * interleaved: a fixture's golden-file + Solr assertions run before the next fixture's pass.
  * JUnit executes dynamic containers (and their children) in encounter order, which guarantees that
@@ -75,7 +75,7 @@ public class ChainRulesIntegrationTest {
         boolean expectedExists = Files.isRegularFile(expected);
         boolean actualExists = Files.isRegularFile(actual);
         if (!expectedExists && !actualExists) {
-            // Layer not exercised by this fixture (e.g. a phase-2 rule produces no per-set output).
+            // Layer not exercised by this fixture (absent on both sides).
             return;
         }
         if (!expectedExists) {

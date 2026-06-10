@@ -1,8 +1,0 @@
-[ {
-  "inference_type" : "OWL_INFERENCE",
-  "mapping_set_description" : "Inferred mappings derived via OWL reasoning over asserted mappings in https://w3id.org/oxo2/test/minimal/rules/RCE_N3",
-  "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences/https%3A%2F%2Fw3id.org%2Foxo2%2Ftest%2Fminimal%2Frules%2FRCE_N3",
-  "mapping_set_source" : [ "https://w3id.org/oxo2/test/minimal/rules/RCE_N3" ],
-  "mapping_set_title" : "Inferences from https://w3id.org/oxo2/test/minimal/rules/RCE_N3",
-  "mapping_tool" : "OxO Inferences"
-} ]

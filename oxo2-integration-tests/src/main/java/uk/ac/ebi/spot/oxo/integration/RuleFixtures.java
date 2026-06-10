@@ -9,17 +9,17 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Discovers test fixtures (ADR-0009 two-phase model). Each fixture is run through the pipeline in
- * <b>isolation</b> (its own {@code loadData.nextflow} pass over only its set(s)), so a phase-2
- * (cross-set) rule's single {@code oxo2/inferences} output belongs to exactly that fixture.
+ * Discovers test fixtures (ADR-0016). Each fixture is run through the pipeline in <b>isolation</b>
+ * (its own {@code loadData.nextflow} pass over only its set(s)), so the single {@code oxo2/inferences}
+ * cross-set output belongs to exactly that fixture.
  *
  * Two fixture shapes:
  * <ul>
  *   <li><b>Single-set rule fixture</b> — {@code testcases/minimal/rules/&lt;RULE&gt;.sssom.tsv}; one set,
- *       triggers one chain rule (phase 1 or phase 2).</li>
+ *       triggers one chain rule.</li>
  *   <li><b>Cross-set fixture</b> — {@code testcases/minimal/crossset/&lt;NAME&gt;/*.sssom.tsv}; two or more
- *       sets whose mappings only chain when reasoned over together (phase 2), proving cross-set
- *       inference with per-leaf {@code mapping_id} provenance.</li>
+ *       sets whose mappings only chain when reasoned over together, proving cross-set inference with
+ *       per-leaf {@code mapping_id} provenance.</li>
  * </ul>
  */
 public final class RuleFixtures {

@@ -68,7 +68,7 @@ interface SearchRequest {
     mappingSetIds?: string[];
     advancedFieldQueries?: AdvancedFieldQueryRequest[];
     // Multi-select inference-type filter (ADR-0011): omitted/empty = all types; otherwise restrict
-    // to the listed codes (ASSERTED / OWL_INFERENCE / SSSOM_INFERENCE).
+    // to the listed codes (ASSERTED / SSSOM_INFERENCE).
     inferenceType?: string[];
     // Collapse same-SPO mappings into one row (ADR-0013). The normal/inferences result tables set this.
     groupBySpo?: boolean;

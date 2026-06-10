@@ -1,1 +1,0 @@
-<https://w3id.org/oxo2/test/ex/A> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <https://w3id.org/oxo2/test/ex/C> .

@@ -10,7 +10,7 @@ echo Running explanations2jsonNextflow.sh
 # Check if the required arguments are provided
 if [ "$#" -lt 5 ]; then
   echo "Usage: $0 <input_file> <output_file> <mapping_set_output_file> <inference_type> <cross_set> [source_mapping_set_id]"
-  echo "  inference_type: OWL_INFERENCE | SSSOM_INFERENCE"
+  echo "  inference_type: SSSOM_INFERENCE"
   echo "  cross_set: true | false  (when true, source_mapping_set_id is not required)"
   exit 1
 fi
@@ -32,7 +32,7 @@ if [ ! -f "$JAR_FILE" ]; then
   exit 1
 fi
 
-# Phase 2 (cross-set) lands every inference in the single oxo2/inferences set and recovers the
+# Cross-set inference lands every inference in the single oxo2/inferences set and recovers the
 # source-set union from per-leaf mapping_id, so it takes -x instead of a single -s source.
 EXTRA_ARGS=(-t "$INFERENCE_TYPE")
 if [ "$CROSS_SET" = "true" ]; then

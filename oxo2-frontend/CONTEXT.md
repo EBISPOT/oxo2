@@ -54,10 +54,10 @@ via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/
 
 ### Inference type (ADR-0011)
 
-`src/model/InferenceType.ts` is the single source of truth for the 3-valued inference type (ASSERTED /
-SSSOM_INFERENCE / OWL_INFERENCE): code→label map, display order, the default filter selection
-(`{Asserted, SSSOM inference}` — OWL hidden until requested), and badge colours. Shared components
-`mapping/InferenceTypeBadge.tsx` (3-way badge) and `mapping/InferenceTypeFilter.tsx` (multi-select toggle) are
+`src/model/InferenceType.ts` is the single source of truth for the inference type (ASSERTED /
+SSSOM_INFERENCE): code→label map, display order, the default filter selection
+(`{Asserted, SSSOM inference}`), and badge colours. Shared components
+`mapping/InferenceTypeBadge.tsx` (badge) and `mapping/InferenceTypeFilter.tsx` (multi-select toggle) are
 reused by both result tables and the mapping-set selector. `mapping/InferredMappingGraph.tsx` labels each
 asserted leaf with its source mapping set, surfacing cross-set provenance.
 

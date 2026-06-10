@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Maven entry point for `exec:java@captureExpected` (ADR-0009 two-phase model). Runs loadData.nextflow
+ * Maven entry point for `exec:java@captureExpected` (ADR-0016). Runs loadData.nextflow
  * once per fixture in isolation, then writes the canonicalised actual output for that fixture to
  * testcases_expected_output/minimal/&lt;fixture&gt;/. Honours -Doxo2.it.rule=&lt;name&gt; to scope to one fixture.
  */

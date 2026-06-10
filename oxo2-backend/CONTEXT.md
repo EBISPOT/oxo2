@@ -31,7 +31,7 @@ A REST API rooted at `/api/v2/`:
 - **`GET /api/v2/mappings/{subjectId}`** — list mappings whose subject is `subjectId` (URL-decoded). Paged.
 - **`POST /api/v2/mappings/search`** — faceted mapping search. Body: `MappingSearchRequest` (filters, facets,
 sort, paging, and a multi-select `inferenceType` filter — [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)).
-Results carry a soft multiplicative edismax ranking (asserted &gt; SSSOM &gt; OWL inference; shorter chains
+Results carry a soft multiplicative edismax ranking (asserted &gt; SSSOM; shorter chains
 higher). Returns `FacetedMappingResponse`.
 - **`GET /api/v2/mapping-sets`** — list all mapping sets (up to 10 000), returning `MappingSetSummary` (id, title, 
 description, creator labels, provider, `inference_type`, source-set union). Sorted by title; optional multi-select

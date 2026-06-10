@@ -7,12 +7,9 @@ export SCRIPT_DIR
 echo OXO2_INFERENCES=$OXO2_INFERENCES
 echo SCRIPT_DIR=$SCRIPT_DIR
 
-# Create output directories
+# Create output directories. The single SSSOM pass (ADR-0016) converts each set's JSON to N-Quads,
+# concatenates them into one corpus, infers (sssom.rls) and traces -> a single inference-chains file.
 mkdir -p $OXO2_DATA/assertedMappings
-mkdir -p $OXO2_INFERENCES/inferredMappings
-mkdir -p $OXO2_INFERENCES/inferencesToTrace
-mkdir -p $OXO2_INFERENCES/inferenceChains
-# Phase 2 (cross-set) working + output directories.
 mkdir -p $OXO2_INFERENCES/crossSet
 mkdir -p $OXO2_INFERENCES/inferenceChainsCrossSet
 
@@ -23,27 +20,10 @@ if [ -n "${NF_EXTRA_CONFIG:-}" ]; then
     NF_EXTRA_CONFIG_ARG="-c ${NF_EXTRA_CONFIG}"
 fi
 
-# Phase 1 (ADR-0009): OWL reasoning per mapping set. JSON -> N-Quads -> Infer (owl.rls) -> Trace.
-# Per-file pipelining: each file flows through all stages independently. Also emits the per-set
-# N-Quads that phase 2 concatenates.
+# SSSOM reasoning across all mapping sets (ADR-0016): JSON -> N-Quads -> concatenate corpus ->
+# Infer (sssom.rls) -> Trace -> a single inference-chains file.
 start_time=$(date +%s)
-echo "Phase 1: per-set OWL inference + tracing (inferAndExplainMappings.nf)"
-(nextflow -log $NXF_LOGS/inferAndExplainMappings.nextflow.log \
-    -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
-    run $SCRIPT_DIR/inferAndExplainMappings.nf \
-    -profile ${NF_PROFILE:-standard} \
-    -with-trace    $NXF_LOGS/inferAndExplainMappings-trace.txt \
-    -with-report   $NXF_LOGS/inferAndExplainMappings-report.html \
-    -with-timeline $NXF_LOGS/inferAndExplainMappings-timeline.html)
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Phase 1 (OWL per-set) inference + tracing took: ${elapsed} seconds"
-
-# Phase 2 (ADR-0009): SSSOM reasoning across all mapping sets. Concatenate every set's N-Quads
-# into one corpus, infer (sssom.rls), trace -> a single cross-set inference-chains file. Depends on
-# phase 1 having published assertedMappings/*.nq.
-start_time=$(date +%s)
-echo "Phase 2: cross-set SSSOM inference + tracing (inferSssomCrossSet.nf)"
+echo "Inference: SSSOM reasoning across all mapping sets (inferSssomCrossSet.nf)"
 (nextflow -log $NXF_LOGS/inferSssomCrossSet.nextflow.log \
     -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
     run $SCRIPT_DIR/inferSssomCrossSet.nf \
@@ -53,4 +33,4 @@ echo "Phase 2: cross-set SSSOM inference + tracing (inferSssomCrossSet.nf)"
     -with-timeline $NXF_LOGS/inferSssomCrossSet-timeline.html)
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
-echo "Phase 2 (SSSOM cross-set) inference + tracing took: ${elapsed} seconds"
+echo "SSSOM cross-set inference + tracing took: ${elapsed} seconds"

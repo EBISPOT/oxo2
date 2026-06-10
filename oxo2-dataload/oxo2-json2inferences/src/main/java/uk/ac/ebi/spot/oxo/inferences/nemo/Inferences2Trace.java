@@ -14,7 +14,7 @@ import java.io.*;
  * Reads a .ttl file of inferred mappings and writes them in the {@code ;}-separated
  * 4-arity {@code mapping(<urn:uuid:000...0>,<s>,<p>,<o>);...} format expected by nmo's
  * {@code --trace-input-file} (ADR-0010). The {@code mapping_id} graph term is the nil UUID
- * because every inferred conclusion in {@code owl.rls}/{@code sssom.rls} carries it, so this
+ * because every inferred conclusion in {@code sssom.rls} carries it, so this
  * is the atom that actually exists in the materialised model and can be traced.
  *
  * Streams triples directly from the parser to the output writer rather than loading the

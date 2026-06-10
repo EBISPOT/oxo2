@@ -16,14 +16,14 @@ public class OXOInferenceConstants {
     public static final String OXO2_INFERENCES_BASE = "https://www.ebi.ac.uk/oxo2/inferences";
 
     /**
-     * Phase 2 (SSSOM, cross-set) inferences all land in a single inferred mapping set
-     * resolvable at the base IRI itself (ADR-0009, ADR-0012).
+     * SSSOM cross-set inferences all land in a single inferred mapping set resolvable at the
+     * base IRI itself (ADR-0016, ADR-0012).
      */
-    public static final String PHASE2_INFERENCES_SET_ID = OXO2_INFERENCES_BASE;
+    public static final String CROSS_SET_INFERENCES_SET_ID = OXO2_INFERENCES_BASE;
 
     /**
      * The nil UUID carried as the {@code mapping_id} graph term by every inferred
-     * conclusion in {@code owl.rls}/{@code sssom.rls} (ADR-0010). A {@code mapping(...)}
+     * conclusion in {@code sssom.rls} (ADR-0010). A {@code mapping(...)}
      * atom whose id term equals this is an inferred intermediate; any other id is the
      * real {@code mapping_id} of an asserted premise and is the provenance key.
      */
@@ -32,9 +32,9 @@ public class OXOInferenceConstants {
     public static final String NIL_MAPPING_ID_IRI = URN_UUID_PREFIX + NIL_MAPPING_ID;
 
     /**
-     * Phase 1 (OWL, per-set) inferences land in a per-source-set inferred mapping set
-     * nested under the base IRI (ADR-0009, ADR-0012), e.g.
-     * {@code https://www.ebi.ac.uk/oxo2/inferences/<URL-encoded source set id>}.
+     * A single-source inferred mapping set, nested under the base IRI (ADR-0012), e.g.
+     * {@code https://www.ebi.ac.uk/oxo2/inferences/<URL-encoded source set id>}. Used by the
+     * single-file explain path when a chain file is attributed to one source set.
      */
     public static String inferredMappingSetIdFor(String sourceMappingSetId) {
         if (sourceMappingSetId == null || sourceMappingSetId.isBlank()) {

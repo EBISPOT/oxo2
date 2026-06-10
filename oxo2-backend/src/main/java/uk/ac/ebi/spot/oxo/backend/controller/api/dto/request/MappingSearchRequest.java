@@ -28,7 +28,7 @@ public class MappingSearchRequest {
     private List<FieldQuery> advancedFieldQueries;
 
     // Multi-select inference-type filter (ADR-0011): null/empty = all types; otherwise restrict to
-    // the listed types (ASSERTED / OWL_INFERENCE / SSSOM_INFERENCE). Replaces the old tri-state
+    // the listed types (ASSERTED / SSSOM_INFERENCE). Replaces the old tri-state
     // boolean `inferred`.
     private List<InferenceType> inferenceType;
 

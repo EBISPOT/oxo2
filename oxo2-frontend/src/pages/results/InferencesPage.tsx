@@ -9,7 +9,7 @@ const INFERENCES_BASE = "https://www.ebi.ac.uk/oxo2/inferences";
 
 /**
  * Resolution surface for inferred mapping sets (ADR-0012). The route /inferences resolves the
- * single cross-set SSSOM set; /inferences/<encoded source id> resolves a per-source OWL set. The
+ * single cross-set SSSOM set; /inferences/<encoded source id> resolves a per-source inferred set. The
  * full mapping_set_id is reconstructed from the raw path tail so a percent-encoded source id
  * survives as one path segment.
  */
@@ -64,8 +64,7 @@ function InferencesPage() {
                     )}
                 </div>
             )}
-            {/* Show every inference type within the set: the OWL-hidden default would otherwise hide a
-                per-source OWL inference set entirely. */}
+            {/* Show every inference type within the set, regardless of the global default filter. */}
             <NormalResultsTable
                 queries={[]}
                 mappingSetIds={[mappingSetId]}

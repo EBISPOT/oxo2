@@ -158,40 +158,23 @@ mkdir -p $OXO2_INFERENCES/solr/mapping
 mkdir -p $OXO2_INFERENCES/solr/mappingSet
 
 start_time=$(date +%s)
-# Phase 1 (ADR-0009): per-set OWL inferences. Resolves the source set per chain file and emits one
-# inferred set per source (OWL_INFERENCE). Runs now (not during inference) because explanations2json
-# queries Solr for entity details and per-leaf provenance, so the asserted data must already be indexed.
-echo "Using Nextflow for parallel explanations2json (phase 1: per-set OWL)"
-(cd $NXF_LOGS && nextflow -log $NXF_LOGS/explanations2json.nextflow.log \
-    -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
-    run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf \
-    -profile $NF_PROFILE \
-    --input_dir "$OXO2_INFERENCES/inferenceChains" \
-    --inference_type OWL_INFERENCE \
-    -with-trace    $NXF_LOGS/explanations2json-trace.txt \
-    -with-report   $NXF_LOGS/explanations2json-report.html \
-    -with-timeline $NXF_LOGS/explanations2json-timeline.html)
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Nextflow Parallel Processing: explanations2json (phase 1) took: ${elapsed} seconds"
-
-start_time=$(date +%s)
-# Phase 2 (ADR-0009): cross-set SSSOM inferences. Single chains file -> the single
+# SSSOM inferences across all sets (ADR-0016): a single chains file -> the single
 # https://www.ebi.ac.uk/oxo2/inferences set (SSSOM_INFERENCE), source-set union recovered per-leaf.
-echo "Using Nextflow for explanations2json (phase 2: cross-set SSSOM)"
+# Runs now (not during inference) because explanations2json queries Solr for entity details and
+# per-leaf provenance, so the asserted data must already be indexed.
+echo "Using Nextflow for explanations2json (SSSOM, cross-set)"
 (cd $NXF_LOGS && nextflow -log $NXF_LOGS/explanations2jsonCrossSet.nextflow.log \
     -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
     run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf \
     -profile $NF_PROFILE \
     --input_dir "$OXO2_INFERENCES/inferenceChainsCrossSet" \
     --inference_type SSSOM_INFERENCE \
-    --cross_set true \
     -with-trace    $NXF_LOGS/explanations2jsonCrossSet-trace.txt \
     -with-report   $NXF_LOGS/explanations2jsonCrossSet-report.html \
     -with-timeline $NXF_LOGS/explanations2jsonCrossSet-timeline.html)
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
-echo "Nextflow Parallel Processing: explanations2json (phase 2) took: ${elapsed} seconds"
+echo "Nextflow Parallel Processing: explanations2json (SSSOM cross-set) took: ${elapsed} seconds"
 
 
 echo  "###################"  json2solr inferred mappings ...

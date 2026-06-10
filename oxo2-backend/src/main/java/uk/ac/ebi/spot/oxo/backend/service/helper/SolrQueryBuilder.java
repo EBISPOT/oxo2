@@ -30,7 +30,7 @@ public class SolrQueryBuilder {
      * common (low idf) and SSSOM_INFERENCE rare (high idf), so an additive {@code bq} would
      * actually boost SSSOM more than ASSERTED, inverting the intended order.
      *
-     * <p>Tier multiplier ASSERTED (3) &gt; SSSOM_INFERENCE (2) &gt; OWL_INFERENCE (1), multiplied by
+     * <p>Tier multiplier ASSERTED (3) &gt; SSSOM_INFERENCE (2), multiplied by
      * a distance factor 1 + 0.4/(distance+1). The distance factor is bounded to [1.0, 1.4]
      * (distance 0 -> 1.4, large -> 1.0): a within-tier tie-breaker that favours shorter chains but
      * is always smaller than the 1.5x adjacent-tier ratio, so it can never invert the tier order

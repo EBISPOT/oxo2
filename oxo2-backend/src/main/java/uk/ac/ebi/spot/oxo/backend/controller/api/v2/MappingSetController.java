@@ -49,7 +49,7 @@ public class MappingSetController {
             solrQuery.setRows(MAX_ROWS);
             solrQuery.setFields(SUMMARY_FIELDS);
             // Multi-select inference-type filter (ADR-0011): absent/empty = all sets; otherwise
-            // restrict to the listed types (ASSERTED / OWL_INFERENCE / SSSOM_INFERENCE).
+            // restrict to the listed types (ASSERTED / SSSOM_INFERENCE).
             String inferenceTypeFilter = inferenceTypeFilterClause(inferenceType);
             if (inferenceTypeFilter != null) {
                 solrQuery.addFilterQuery(inferenceTypeFilter);

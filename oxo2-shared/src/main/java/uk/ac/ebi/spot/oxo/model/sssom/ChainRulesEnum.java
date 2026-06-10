@@ -38,11 +38,6 @@ public enum ChainRulesEnum {
     T3("T3",
             "(?a, <http://www.w3.org/2002/07/owl#sameAs>, ?c) <- (?a, <http://www.w3.org/2002/07/owl#sameAs>, ?b), (?b, <http://www.w3.org/2002/07/owl#sameAs>, ?c)",
             "(?a, <OWL:sameAs>, ?c) <- (?a, <OWL:sameAs>, ?b), (?b, <OWL:sameAs>, ?c)"),
-    T4("T4",
-            "(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) <- (?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?b), (?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c)",
-            "(?a, <RDFS:subClassOf>, ?c) <- (?a, <RDFS:subClassOf>, ?b), (?b, <RDFS:subClassOf>, ?c)"),
-    T5("T5", "(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) <- (?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?b), (?b, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c)",
-            "(?a, <RDFS:subPropertyOf>, ?c) <- (?a, <RDFS:subPropertyOf>, ?b), (?b, <RDFS:subPropertyOf>, ?c)"),
     T6("T6",
             "(?a, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, ?c) <- (?a, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, ?b), (?b, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, ?c)",
             "(?a, <SEMAPV:crossSpeciesBroadMatch>, ?c) <- (?a, <SEMAPV:crossSpeciesBroadMatch>, ?b), (?b, <SEMAPV:crossSpeciesBroadMatch>, ?c)"),
@@ -70,22 +65,7 @@ public enum ChainRulesEnum {
     RI4("RI4", "(?b, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, ?a) <- (?a, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?b)",
             "(?b, <SEMAPV:crossSpeciesBroadMatch>, ?a) <- (?a, <SEMAPV:crossSpeciesNarrowMatch>, ?b)"),
     RI5("RI5", "(?b, <https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch>, ?a) <- (?a, <https://w3id.org/semapv/vocab/crossSpeciesBroadMatch>, ?b)",
-            "(?b, <SEMAPV:crossSpeciesNarrowMatch>, ?a) <- (?a, <SEMAPV:crossSpeciesBroadMatch>, ?b)"),
-    RG1("RG1", "(?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b)",
-            "(?a, <SKOS:exactMatch>, ?b) <- (?a, <OWL:equivalentClass>, ?b)"),
-    RG2("RG2", "(?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b) <- (?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?b)",
-            "(?a, <SKOS:broadMatch>, ?b) <- (?a, <RDFS:subClassOf>, ?b)"),
-    RCE_N1("RCE-N1", "(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b), (?b, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c)",
-            "(?a, <RDFS:subClassOf>, ?c) <- (?a, <OWL:equivalentClass>, ?b), (?b, <RDFS:subClassOf>, ?c)"),
-    RCE_N2("RCE-N2",
-            "(?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?c) <- (?a, <http://www.w3.org/2000/01/rdf-schema#subClassOf>, ?b), (?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?c)",
-            "(?a, <RDFS:subClassOf>, ?c) <- (?a, <RDFS:subClassOf>, ?b), (?b, <OWL:equivalentClass>, ?c)"),
-    RCE_N3("RCE-N3",
-            "(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) <- (?a, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?b), (?b, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c)",
-            "(?a, <RDFS:subPropertyOf>, ?c) <- (?a, <OWL:equivalentProperty>, ?b), (?b, <RDFS:subPropertyOf>, ?c)"),
-    RCE_N4("RCE-N4",
-            "(?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?c) <- (?a, <http://www.w3.org/2000/01/rdf-schema#subPropertyOf>, ?b), (?b, <http://www.w3.org/2002/07/owl#equivalentProperty>, ?c)",
-            "(?a, <RDFS:subPropertyOf>, ?c) <- (?a, <RDFS:subPropertyOf>, ?b), (?b, <OWL:equivalentProperty>, ?c)");
+            "(?b, <SEMAPV:crossSpeciesNarrowMatch>, ?a) <- (?a, <SEMAPV:crossSpeciesBroadMatch>, ?b)");
 
 
     @JsonProperty(CHAIN_RULE_NAME)

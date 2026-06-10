@@ -8,17 +8,14 @@ import com.fasterxml.jackson.annotation.JsonValue;
  *
  * <p>Replaces the former boolean {@code is_inferred} (see ADR-0011). Stored as the code string in the Solr
  * {@code inference_type} field on both {@code oxo2-mappings} and {@code oxo2-mappingsets}; the frontend maps
- * the codes to display labels ("Asserted" / "OWL inference" / "SSSOM inference").
+ * the codes to display labels ("Asserted" / "SSSOM inference").
  */
 public enum InferenceType {
 
     /** Came directly from an input SSSOM file. */
     ASSERTED,
 
-    /** Derived by phase-1 OWL reasoning ({@code owl.rls}), applied per mapping set (ADR-0009). */
-    OWL_INFERENCE,
-
-    /** Derived by phase-2 SSSOM reasoning ({@code sssom.rls}), applied across all mapping sets (ADR-0009). */
+    /** Derived by SSSOM reasoning ({@code sssom.rls}), applied across all mapping sets (ADR-0016). */
     SSSOM_INFERENCE;
 
     @JsonValue

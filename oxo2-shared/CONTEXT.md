@@ -41,9 +41,8 @@ Refresh the snapshot with `refresh-bioregistry-context.sh`; keep `BioregistryPre
 `PredicateModifierEnum`, `EntityTypeEnum`, `SSSOMDataType`.
 - **Utilities** — `StringUtils`, `KeyValuePairsAsString`.
 
-`ChainRulesEnum` deserves special attention: it enumerates the SSSOM chaining-rule families (`RCE1-*`, `RCE2-*`, `T1`–`T11`, 
-`RI1`–`RI5`, `RG1`–`RG2`, `RCE-N1`–`RCE-N4`) plus the `Asserted` baseline. Each rule carries its long-form and abbreviated 
-Nemo representations. This is the bridge between the SSSOM chaining-rules spec and the Nemo rules in `oxo2-json2inferences/chain-rules.rls`.
+`ChainRulesEnum` deserves special attention: it enumerates the SSSOM chaining-rule families (`RCE1-*`, `RCE2-*`, the `T*` transitivity rules, `RI1`–`RI5`) plus the `Asserted` baseline. Each rule carries its long-form and abbreviated 
+Nemo representations. This is the bridge between the SSSOM chaining-rules spec and the Nemo rules in `oxo2-json2inferences/sssom.rls`.
 
 ## Module notes
 

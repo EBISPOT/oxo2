@@ -1,6 +1,6 @@
 # ADR-0009: Two-phase reasoning — OWL rules per mapping set, SSSOM rules across all mapping sets
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR-0016](0016-single-pass-sssom-reasoning.md) — phase 1 (OWL/subsumption) is removed; OxO2 now runs a single SSSOM cross-set pass.
 - **Date**: 2026-06-06
 - **Supersedes**: [ADR-0001](0001-inference-scope-per-mapping-set.md)
 

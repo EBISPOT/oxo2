@@ -31,7 +31,7 @@ public final class SolrCheck {
     private SolrCheck() {}
 
     /** Document count in a collection carrying the given inference_type code (ASSERTED /
-     *  OWL_INFERENCE / SSSOM_INFERENCE). Codes are safe enum names, so no escaping is needed. */
+     *  SSSOM_INFERENCE). Codes are safe enum names, so no escaping is needed. */
     public static int numFoundByInferenceType(String collection, String inferenceTypeCode)
             throws IOException, InterruptedException {
         return numFoundForQuery(collection, "inference_type:" + inferenceTypeCode);

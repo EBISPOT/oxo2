@@ -111,7 +111,7 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
     ]);
 
     // Multi-select inference-type filter for the result rows (ADR-0011); defaults to
-    // {Asserted, SSSOM inference} (OWL inference hidden until requested).
+    // {Asserted, SSSOM inference}.
     const [inferenceTypes, setInferenceTypes] = useState<InferenceType[]>(initialInferenceTypes);
 
     const handleInferenceTypesChange = useCallback((next: InferenceType[]) => {

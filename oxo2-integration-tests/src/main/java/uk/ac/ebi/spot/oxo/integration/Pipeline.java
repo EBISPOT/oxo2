@@ -53,8 +53,8 @@ public final class Pipeline {
                 .inheritIO();
         processBuilder.environment().put("OXO2_CONFIG", config.toString());
         // Pick the test profile and layer in resource overrides sized for tiny fixtures.
-        // The standard profile asks 16 GB per INFER_MAPPINGS task against a 26 GB executor
-        // pool, which deadlocks the local scheduler on 22 fixtures.
+        // The standard profile asks 12 GB per INFER_CROSS_SET / EXPLAIN_CROSS_SET_CHUNK task
+        // against a 24 GB executor pool, which deadlocks the local scheduler across the fixtures.
         processBuilder.environment().put("NF_PROFILE", "test");
         processBuilder.environment().put("NF_EXTRA_CONFIG", testConfig.toString());
 
