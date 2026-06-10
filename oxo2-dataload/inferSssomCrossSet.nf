@@ -26,7 +26,7 @@ params.corpus_basename = "inferences"
 params.corpus_file = "${params.cross_set_dir}/${params.corpus_basename}.nq"
 
 // Mappings per tracing chunk. Smaller = more parallelism / more per-chunk overhead.
-params.trace_chunk_size = 5000
+params.trace_chunk_size = 20000
 
 workflow {
     nquads_files = channel.fromPath("${params.asserted_mappings_dir}/*.nq")
