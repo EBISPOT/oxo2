@@ -1,0 +1,8 @@
+{
+  "mapping_registries" : [
+    {
+      "id": "test_mondo",
+      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/mondo.ols.sssom.tsv"
+    }
+  ]
+}
