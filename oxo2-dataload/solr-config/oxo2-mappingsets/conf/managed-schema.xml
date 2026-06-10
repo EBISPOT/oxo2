@@ -451,7 +451,9 @@
   <field name="comment" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="creator_id" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="creator_label" type="text_general" multiValued="true" indexed="true" stored="true"/>
-  <field name="curie_map" type="string" multiValued="false" indexed="false" stored="true"/>
+  <!-- docValues disabled: semra-assembled sets embed the full bioregistry CURIE map (~120KB),
+       which exceeds the 32766-byte DocValues limit. Stored-only; never sorted/faceted. -->
+  <field name="curie_map" type="string" multiValued="false" indexed="false" stored="true" docValues="false"/>
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="issue_tracker" type="string" multiValued="false" indexed="false" stored="true"/>
   <field name="license" type="string" multiValued="false" indexed="true" stored="true"/>
