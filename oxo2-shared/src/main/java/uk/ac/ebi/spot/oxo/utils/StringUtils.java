@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -70,10 +71,14 @@ public class StringUtils {
         if (pattern.matcher(uri).find())
             return false;
         try {
-            URI asURI = new URI(uri);
-        } catch (Throwable t) {
-            logger.warn("Error while parsing URI: {} ", uri, t);
+            // An N-Quads IRI must be absolute (carry a scheme). Nemo's RDF reader rejects a
+            // scheme-less IRI ("No scheme found in an absolute IRI") and silently drops the whole
+            // triple, so reject it here — the skip is then logged and attributable at conversion
+            // time instead of vanishing mid-trace.
+            return new URI(uri).isAbsolute();
+        } catch (URISyntaxException e) {
+            logger.warn("Invalid URI, skipping: {}", uri, e);
+            return false;
         }
-        return true;
     }
 }
