@@ -1,8 +1,11 @@
 package uk.ac.ebi.spot.oxo.inferences;
 
 public enum ApplicablePredicatesEnum {
-    GO_HAS_DB_XREF("http://www.geneontology.org/formats/oboInOwl#hasDbXref"),
-    OBO_HAS_DB_XREF("http://purl.obolibrary.org/obo/hasDbXref"),
+    // Predicates whose mappings JSON2NQuads emits into the N-Quad inference corpus. Predicates not
+    // listed here are still indexed as asserted mappings (json2solr) but do not enter inference.
+    // oboInOwl#hasDbXref / obo#hasDbXref are intentionally excluded: sssom.rls has no rule that
+    // chains them (so they were inert in the corpus), and their objects are frequently bare
+    // database codes (IMDRF, GARD, …) with no IRI scheme, which Nemo's RDF reader silently drops.
     OWL_EQUIVALENT_CLASS("http://www.w3.org/2002/07/owl#equivalentClass"),
     OWL_EQUIVALENT_PROPERTY("http://www.w3.org/2002/07/owl#equivalentProperty"),
     OWL_SAME_AS("http://www.w3.org/2002/07/owl#sameAs"),
