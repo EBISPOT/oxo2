@@ -33,7 +33,7 @@ params.corpus_file = "${params.cross_set_dir}/${params.asserted_corpus_basename}
 params.inferences_to_trace_basename = "inferencesToTrace"
 
 // Mappings per tracing chunk. Smaller = more parallelism / more per-chunk overhead.
-params.trace_chunk_size = 20000
+params.trace_chunk_size = 10000
 
 workflow {
     json_files = channel.fromPath("${params.json_input_dir}/*.json")
