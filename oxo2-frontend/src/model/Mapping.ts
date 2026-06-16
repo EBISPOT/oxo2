@@ -32,7 +32,6 @@ export enum MappingFields {
     objectSource = "objectSource",
     objectSourceVersion = "objectSourceVersion",
     objectType = "objectType",
-    objectIdPrefix = "objectIdPrefix",
     other = "other",
     predicateId = "predicateId",
     predicateLabel = "predicateLabel",
@@ -51,7 +50,6 @@ export enum MappingFields {
     subjectSource = "subjectSource",
     subjectSourceVersion = "subjectSourceVersion",
     subjectType = "subjectType",
-    subjectIdPrefix = "subjectIdPrefix",
 
     assertedMappings = "assertedMappings",
     explanation = "explanation"
@@ -145,7 +143,6 @@ export interface MappingResponse {
     object_source?: string;
     object_source_version?: string;
     object_type?: string;
-    object_id_prefix?: string;
     other?: Record<string, string>;
     predicate_id?: string;
     predicate_iri?: string;
@@ -166,7 +163,6 @@ export interface MappingResponse {
     subject_source?: string;
     subject_source_version?: string;
     subject_type?: string;
-    subject_id_prefix?: string;
 
     asserted_mappings?: string;
     explanation?: string;
@@ -211,7 +207,6 @@ export interface Mapping {
     objectSource?: string;
     objectSourceVersion?: string;
     objectType?: string;
-    objectIdPrefix?: string;
     other?: Record<string, string>;
     predicateId: string;
     predicateIri: string;
@@ -232,7 +227,6 @@ export interface Mapping {
     subjectSource?: string;
     subjectSourceVersion?: string;
     subjectType?: string;
-    subjectIdPrefix?: string;
     assertedMappings?: InferredMapping[];
     explanation?: InferredMapping | undefined
     // Result-view grouping (ADR-0013): the underlying same-SPO mappings (including this

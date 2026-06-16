@@ -178,16 +178,10 @@ public record Mapping (
         Optional<String> groupMembersAsString,
         @JsonProperty(MAPPING_ID)
         UUID mappingId,
-        @JsonProperty(OBJECT_ID_PREFIX)
-        Optional<String> objectIdPrefix,
         @JsonProperty(OBJECT_IRI)
         Optional<Uri> objectIRI,
-        @JsonProperty(PREDICATE_ID_PREFIX)
-        Optional<String> predicateIdPrefix,
         @JsonProperty(PREDICATE_IRI)
         Optional<Uri> predicateIRI,
-        @JsonProperty(SUBJECT_ID_PREFIX)
-        Optional<String> subjectIdPrefix,
         @JsonProperty(SUBJECT_IRI)
         Optional<Uri> subjectIRI) implements Comparable<Mapping> {
 
@@ -298,11 +292,8 @@ public record Mapping (
         private List<InferredMapping> assertedMappings = new ArrayList<>();
         private Optional<String> assertedMappingsAsString = Optional.empty();
         private Optional<String> groupMembersAsString = Optional.empty();
-        private Optional<String> objectIdPrefix = Optional.empty();
         private Optional<Uri> objectIRI = Optional.empty();
-        private Optional<String> predicateIdPrefix = Optional.empty();
         private Optional<Uri> predicateIRI = Optional.empty();
-        private Optional<String> subjectIdPrefix = Optional.empty();
         private Optional<Uri> subjectIRI = Optional.empty();
 
         private UUID mappingId = null;
@@ -652,9 +643,6 @@ public record Mapping (
         public Builder objectId(String objectId) {
             if (objectId != null && !objectId.isBlank())
                 this.objectId = Optional.of(new EntityReference(objectId));
-            if (this.objectId.isPresent()) {
-                this.objectIdPrefix = StringUtils.extractPrefix(objectId);
-            }
             return this;
         }
 
@@ -663,7 +651,6 @@ public record Mapping (
             if (objectId != null && !objectId.isBlank())
                 this.objectId = Optional.of(new EntityReference(objectId));
             if (this.objectId.isPresent()) {
-                this.objectIdPrefix = StringUtils.extractPrefix(objectId);
                 if (optionalCurieMap.isPresent()) {
                     this.objectIRI = this.objectId.get().toUri(optionalCurieMap.get());
                 }
@@ -671,20 +658,9 @@ public record Mapping (
             return this;
         }
 
-        @JsonProperty(OBJECT_ID_PREFIX)
-        public Builder objectIdPrefix(String objectIdPrefix) {
-            if (objectIdPrefix != null && !objectIdPrefix.isBlank())
-                this.objectIdPrefix = Optional.of(objectIdPrefix);
-            return this;
-        }
-
-
         public Builder objectIRI(String objectId, Map<String, String> prefixMap) {
             if (objectId != null && !objectId.isBlank())
                 this.objectId = Optional.of(new EntityReference(objectId));
-            if (this.objectId.isPresent()) {
-                this.objectIdPrefix = StringUtils.extractPrefix(objectId);
-            }
             return this;
         }
 
@@ -836,12 +812,6 @@ public record Mapping (
             return this;
         }
 
-        public Builder predicatedIdPrefix(String predicatedIdPrefix) {
-            if (predicatedIdPrefix != null && !predicatedIdPrefix.isBlank())
-                this.predicateIdPrefix = Optional.of(predicatedIdPrefix);
-            return this;
-        }
-
         @Field(PREDICATE_IRI)
         @JsonProperty(PREDICATE_IRI)
         public Builder predicateIRI(String predicateIRI) {
@@ -957,8 +927,6 @@ public record Mapping (
         @JsonProperty(SUBJECT_ID)
         public Builder subjectId(String subjectId) {
             this.subjectId = Optional.of(new EntityReference(subjectId));
-            if (this.subjectId.isPresent())
-                this.subjectIdPrefix = StringUtils.extractPrefix(subjectId);
             return this;
         }
 
@@ -966,18 +934,10 @@ public record Mapping (
             if (subjectId != null && !subjectId.isBlank())
                 this.subjectId = Optional.of(new EntityReference(subjectId));
             if (this.subjectId.isPresent()) {
-                this.subjectIdPrefix = StringUtils.extractPrefix(subjectId);
                 if (optionalCurieMap.isPresent()) {
                     this.subjectIRI = this.subjectId.get().toUri(optionalCurieMap.get());
                 }
             }
-            return this;
-        }
-
-        @JsonProperty(SUBJECT_ID_PREFIX)
-        public Builder subjectIdPrefix(String subjectIdPrefix) {
-            if (subjectIdPrefix != null && !subjectIdPrefix.isBlank())
-                this.subjectIdPrefix = Optional.of(subjectIdPrefix);
             return this;
         }
 
@@ -1235,11 +1195,8 @@ public record Mapping (
                     explanationAsString,
                     groupMembersAsString,
                     mappingId,
-                    objectIdPrefix,
                     objectIRI,
-                    predicateIdPrefix,
                     predicateIRI,
-                    subjectIdPrefix,
                     subjectIRI
             );
         }
