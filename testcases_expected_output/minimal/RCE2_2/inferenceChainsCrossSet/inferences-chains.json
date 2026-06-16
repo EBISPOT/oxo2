@@ -1,5 +1,5 @@
 {
-  "finalConclusion" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/C>)" ],
+  "finalConclusion" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/C>)", "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/A>)", "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/A>)", "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2004/02/skos/core#exactMatch>, <https://w3id.org/oxo2/test/ex/B>)" ],
   "inferences" : [ {
     "conclusion" : "assertedMapping(<urn:uuid:53a8c431-fb57-392c-8cfc-6be7149b889f>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#exactMatch>, <https://w3id.org/oxo2/test/ex/C>)",
     "premises" : [ ],
@@ -11,10 +11,35 @@
     "rule" : "Asserted",
     "ruleName" : null
   }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/A>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <http://www.w3.org/2004/02/skos/core#narrowMatch>, ?a) :- mapping(?id1, ?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b) .",
+    "ruleName" : "RI2"
+  }, {
     "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/C>)",
-    "premises" : [ "mapping(<urn:uuid:53a8c431-fb57-392c-8cfc-6be7149b889f>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#exactMatch>, <https://w3id.org/oxo2/test/ex/C>)", "mapping(<urn:uuid:acd4ebe8-410d-3c3d-9fb1-b216ccc663ab>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/B>)", "strongPredicate(<http://www.w3.org/2004/02/skos/core#narrowMatch>)" ],
-    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :- mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c), strongPredicate(?p) .",
-    "ruleName" : "RCE2-2"
+    "premises" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/B>)", "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#exactMatch>, <https://w3id.org/oxo2/test/ex/C>)", "nonIdentityStrong(<http://www.w3.org/2004/02/skos/core#narrowMatch>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :- mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c), nonIdentityStrong(?p) .",
+    "ruleName" : "RCE2-2b"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/A>)",
+    "premises" : [ "mapping(<urn:uuid:acd4ebe8-410d-3c3d-9fb1-b216ccc663ab>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?a) :- mapping(?id1, ?a, <http://www.w3.org/2004/02/skos/core#narrowMatch>, ?b) .",
+    "ruleName" : "RI1"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#exactMatch>, <https://w3id.org/oxo2/test/ex/C>)",
+    "premises" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2004/02/skos/core#exactMatch>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?a) :- mapping(?id1, ?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b) .",
+    "ruleName" : "SYM-exactMatch"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/A>)",
+    "premises" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/A>)", "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2004/02/skos/core#exactMatch>, <https://w3id.org/oxo2/test/ex/B>)", "nonIdentityStrong(<http://www.w3.org/2004/02/skos/core#broadMatch>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :- mapping(?id1, ?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b), mapping(?id2, ?b, ?p, ?c), nonIdentityStrong(?p) .",
+    "ruleName" : "RCE1-2b"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2004/02/skos/core#exactMatch>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ "mapping(<urn:uuid:53a8c431-fb57-392c-8cfc-6be7149b889f>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#exactMatch>, <https://w3id.org/oxo2/test/ex/C>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?a) :- mapping(?id1, ?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b) .",
+    "ruleName" : "SYM-exactMatch"
   }, {
     "conclusion" : "mapping(<urn:uuid:53a8c431-fb57-392c-8cfc-6be7149b889f>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#exactMatch>, <https://w3id.org/oxo2/test/ex/C>)",
     "premises" : [ "assertedMapping(<urn:uuid:53a8c431-fb57-392c-8cfc-6be7149b889f>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#exactMatch>, <https://w3id.org/oxo2/test/ex/C>)" ],
@@ -26,7 +51,12 @@
     "rule" : "mapping(?id, ?s, ?p, ?o) :- assertedMapping(?id, ?s, ?p, ?o) .",
     "ruleName" : null
   }, {
-    "conclusion" : "strongPredicate(<http://www.w3.org/2004/02/skos/core#narrowMatch>)",
+    "conclusion" : "nonIdentityStrong(<http://www.w3.org/2004/02/skos/core#broadMatch>)",
+    "premises" : [ ],
+    "rule" : "Asserted",
+    "ruleName" : null
+  }, {
+    "conclusion" : "nonIdentityStrong(<http://www.w3.org/2004/02/skos/core#narrowMatch>)",
     "premises" : [ ],
     "rule" : "Asserted",
     "ruleName" : null

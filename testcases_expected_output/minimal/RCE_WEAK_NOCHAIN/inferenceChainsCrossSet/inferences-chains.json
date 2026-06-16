@@ -1,0 +1,19 @@
+{
+  "finalConclusion" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#equivalentClass>, <https://w3id.org/oxo2/test/ex/A>)" ],
+  "inferences" : [ {
+    "conclusion" : "assertedMapping(<urn:uuid:a52ef9d2-77cd-340d-93b6-71ba711578ce>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#equivalentClass>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ ],
+    "rule" : "Asserted",
+    "ruleName" : null
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#equivalentClass>, <https://w3id.org/oxo2/test/ex/A>)",
+    "premises" : [ "mapping(<urn:uuid:a52ef9d2-77cd-340d-93b6-71ba711578ce>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#equivalentClass>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?a) :- mapping(?id1, ?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b) .",
+    "ruleName" : "SYM-equivalentClass"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:a52ef9d2-77cd-340d-93b6-71ba711578ce>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#equivalentClass>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ "assertedMapping(<urn:uuid:a52ef9d2-77cd-340d-93b6-71ba711578ce>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#equivalentClass>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(?id, ?s, ?p, ?o) :- assertedMapping(?id, ?s, ?p, ?o) .",
+    "ruleName" : null
+  } ]
+}

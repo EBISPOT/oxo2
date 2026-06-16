@@ -1,5 +1,5 @@
 {
-  "finalConclusion" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/C>)" ],
+  "finalConclusion" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/C>)", "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/A>)", "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/A>)", "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/B>)" ],
   "inferences" : [ {
     "conclusion" : "assertedMapping(<urn:uuid:7bd73129-a496-32cf-89a2-28ddee2379b2>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/B>)",
     "premises" : [ ],
@@ -15,6 +15,21 @@
     "premises" : [ "mapping(<urn:uuid:7bd73129-a496-32cf-89a2-28ddee2379b2>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/B>)", "mapping(<urn:uuid:8a2f4ebf-b2a5-3c61-b82a-f694dc3d3bf5>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/C>)" ],
     "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?c) :- mapping(?id1, ?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b), mapping(?id2, ?b, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?c) .",
     "ruleName" : "T9"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/A>)",
+    "premises" : [ "mapping(<urn:uuid:7bd73129-a496-32cf-89a2-28ddee2379b2>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <http://www.w3.org/2004/02/skos/core#narrowMatch>, ?a) :- mapping(?id1, ?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b) .",
+    "ruleName" : "RI2"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/A>)",
+    "premises" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/C>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <http://www.w3.org/2004/02/skos/core#narrowMatch>, ?a) :- mapping(?id1, ?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b) .",
+    "ruleName" : "RI2"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2004/02/skos/core#narrowMatch>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ "mapping(<urn:uuid:8a2f4ebf-b2a5-3c61-b82a-f694dc3d3bf5>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/C>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <http://www.w3.org/2004/02/skos/core#narrowMatch>, ?a) :- mapping(?id1, ?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b) .",
+    "ruleName" : "RI2"
   }, {
     "conclusion" : "mapping(<urn:uuid:7bd73129-a496-32cf-89a2-28ddee2379b2>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/B>)",
     "premises" : [ "assertedMapping(<urn:uuid:7bd73129-a496-32cf-89a2-28ddee2379b2>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2004/02/skos/core#broadMatch>, <https://w3id.org/oxo2/test/ex/B>)" ],

@@ -123,7 +123,9 @@ and `testcases_expected_output/minimal/<fixture>/` (expected).
   `skos:relatedMatch`, `skos:closeMatch`, `rdfs:seeAlso`, and `rdf:type` are deliberately excluded
   from chaining (ADR-0009). `RCE_WEAK_NOCHAIN` is an explicit guard fixture: its
   `equivalentClass`+`closeMatch` chain matches the RCE1 role-chain pattern but the `strongPredicate`
-  guard suppresses it, so it asserts zero inferences. The other weak predicates have no dedicated
+  guard suppresses it: the weak `closeMatch` is never propagated to a chained inference. Its only
+  inference is the symmetric edge `B owl:equivalentClass A` of the strong asserted
+  `A owl:equivalentClass B` (`SSSOM_INFERENCE` numFound 1) — no longer a zero-inference fixture. The other weak predicates have no dedicated
   fixture and are covered only by every fixture's exact-count `numFound` assertion.
 - **Synthetic-IRI distance is degenerate**: `distance` is derived from OBO-style `PREFIX_NUMBER` IRIs,
   which the `ex:A`-style test IRIs don't match, so fixtures record a constant placeholder distance.

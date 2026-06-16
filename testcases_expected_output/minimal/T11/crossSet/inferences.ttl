@@ -1,1 +1,4 @@
 <https://w3id.org/oxo2/test/ex/A> <http://www.w3.org/2004/02/skos/core#narrowMatch> <https://w3id.org/oxo2/test/ex/C> .
+<https://w3id.org/oxo2/test/ex/B> <http://www.w3.org/2004/02/skos/core#broadMatch> <https://w3id.org/oxo2/test/ex/A> .
+<https://w3id.org/oxo2/test/ex/C> <http://www.w3.org/2004/02/skos/core#broadMatch> <https://w3id.org/oxo2/test/ex/A> .
+<https://w3id.org/oxo2/test/ex/C> <http://www.w3.org/2004/02/skos/core#broadMatch> <https://w3id.org/oxo2/test/ex/B> .

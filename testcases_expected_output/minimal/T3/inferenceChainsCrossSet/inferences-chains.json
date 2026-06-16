@@ -1,5 +1,5 @@
 {
-  "finalConclusion" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/C>)" ],
+  "finalConclusion" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/C>)", "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/A>)", "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/A>)", "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/B>)" ],
   "inferences" : [ {
     "conclusion" : "assertedMapping(<urn:uuid:4d70c1b4-e5e5-37a2-a517-e546946754f6>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/C>)",
     "premises" : [ ],
@@ -15,6 +15,21 @@
     "premises" : [ "mapping(<urn:uuid:4d70c1b4-e5e5-37a2-a517-e546946754f6>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/C>)", "mapping(<urn:uuid:8acc9dd2-5e84-39d9-a563-1d7a10e391e3>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/B>)" ],
     "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, <http://www.w3.org/2002/07/owl#sameAs>, ?c) :- mapping(?id1, ?a, <http://www.w3.org/2002/07/owl#sameAs>, ?b), mapping(?id2, ?b, <http://www.w3.org/2002/07/owl#sameAs>, ?c) .",
     "ruleName" : "T3"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/A>)",
+    "premises" : [ "mapping(<urn:uuid:8acc9dd2-5e84-39d9-a563-1d7a10e391e3>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/B>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <http://www.w3.org/2002/07/owl#sameAs>, ?a) :- mapping(?id1, ?a, <http://www.w3.org/2002/07/owl#sameAs>, ?b) .",
+    "ruleName" : "SYM-sameAs"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/A>)",
+    "premises" : [ "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/A>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/C>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <http://www.w3.org/2002/07/owl#sameAs>, ?a) :- mapping(?id1, ?a, <http://www.w3.org/2002/07/owl#sameAs>, ?b) .",
+    "ruleName" : "SYM-sameAs"
+  }, {
+    "conclusion" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, <https://w3id.org/oxo2/test/ex/C>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/B>)",
+    "premises" : [ "mapping(<urn:uuid:4d70c1b4-e5e5-37a2-a517-e546946754f6>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/C>)" ],
+    "rule" : "mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, <http://www.w3.org/2002/07/owl#sameAs>, ?a) :- mapping(?id1, ?a, <http://www.w3.org/2002/07/owl#sameAs>, ?b) .",
+    "ruleName" : "SYM-sameAs"
   }, {
     "conclusion" : "mapping(<urn:uuid:4d70c1b4-e5e5-37a2-a517-e546946754f6>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/C>)",
     "premises" : [ "assertedMapping(<urn:uuid:4d70c1b4-e5e5-37a2-a517-e546946754f6>, <https://w3id.org/oxo2/test/ex/B>, <http://www.w3.org/2002/07/owl#sameAs>, <https://w3id.org/oxo2/test/ex/C>)" ],
