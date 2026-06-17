@@ -63,14 +63,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:A",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
   "predicate_id" : "OWL:equivalentClass",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
   "spo_key" : "a52af3cb-26b1-35ef-a8f1-a2de777ca5d6",
   "subject_id" : "EX:B",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
   "subject_label" : "Entity B"
 }, {
@@ -181,14 +179,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:C",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/C",
   "object_label" : "Entity C",
   "predicate_id" : "OWL:equivalentClass",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
   "spo_key" : "5c2f8670-1e27-3d14-8a5e-1a9d0fb8d4cf",
   "subject_id" : "EX:A",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
   "subject_label" : "Entity A"
 }, {
@@ -315,14 +311,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:A",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
   "predicate_id" : "OWL:equivalentClass",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
   "spo_key" : "3ce15441-881e-3a01-9d9f-b546bb720ace",
   "subject_id" : "EX:C",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
   "subject_label" : "Entity C"
 }, {
@@ -390,14 +384,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:B",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/B",
   "object_label" : "Entity B",
   "predicate_id" : "OWL:equivalentClass",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
   "spo_key" : "8753d0db-389e-328d-aadc-108b42faa676",
   "subject_id" : "EX:C",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
   "subject_label" : "Entity C"
 } ]

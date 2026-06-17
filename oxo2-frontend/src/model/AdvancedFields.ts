@@ -43,8 +43,8 @@ export const GROUP_ORDER: AdvancedFieldGroup[] = [
 // Numeric / date fields are intentionally excluded — they need range/format-aware UI
 // (phase 2): mapping_date, publication_date, confidence, similarity_score, distance,
 // explanation_length. `explanation` is excluded because it's indexed=false in the
-// Solr schema. Internal fields excluded: mapping_id (uuid), *_id_prefix (faceting
-// helpers), chain_rule, chain_rule_applications, premises (computed structured).
+// Solr schema. Internal fields excluded: mapping_id (uuid), chain_rule,
+// chain_rule_applications, premises (computed structured).
 export const ADVANCED_FIELDS: AdvancedFieldDef[] = [
     // Subject
     { field: "subject_id", label: "Subject ID", group: "subject", type: "string" },

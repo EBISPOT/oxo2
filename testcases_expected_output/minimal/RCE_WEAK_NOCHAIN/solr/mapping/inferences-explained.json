@@ -63,14 +63,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:A",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
   "predicate_id" : "OWL:equivalentClass",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
   "spo_key" : "a52af3cb-26b1-35ef-a8f1-a2de777ca5d6",
   "subject_id" : "EX:B",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
   "subject_label" : "Entity B"
 } ]

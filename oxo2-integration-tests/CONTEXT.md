@@ -85,8 +85,11 @@ too large for fixtures this small and deadlocks the local executor on 22 fixture
 execution id is undefined, so the workflow is two steps:
 
 ```bash
-# One-time (or after upstream-module changes): populate the local Maven cache.
-mvn install -DskipTests
+# One-time, and ALWAYS after an oxo2-shared change: rebuild and install the dataload jars.
+# Use `clean`: the oxo2-sssom2json / oxo2-json2inferences shaded jars bundle oxo2-shared, and a
+# non-clean `install` can re-shade around a stale bundled Mapping.class, so the pipeline silently
+# runs old code (e.g. emitting fields the source no longer defines). `clean` forces a fresh shade.
+mvn clean install -DskipTests
 
 # Bootstrap or refresh expected outputs after intentional change.
 mvn -pl oxo2-integration-tests exec:java@captureExpected

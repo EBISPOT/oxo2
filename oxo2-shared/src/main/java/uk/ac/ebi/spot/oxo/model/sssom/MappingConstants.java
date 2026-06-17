@@ -68,12 +68,9 @@ public class MappingConstants {
     public static final String EXPLANATION = "explanation";
     public static final String INFERENCE_TYPE = "inference_type";
     public static final String MAPPING_ID = "mapping_id";
-    public static final String OBJECT_ID_PREFIX = "object_id_prefix";
     public static final String OBJECT_IRI = "object_iri";
-    public static final String PREDICATE_ID_PREFIX = "predicate_id_prefix";
     public static final String PREDICATE_IRI = "predicate_iri";
     public static final String PREMISES = "premises";
-    public static final String SUBJECT_ID_PREFIX = "subject_id_prefix";
     public static final String SUBJECT_IRI = "subject_iri";
 
 

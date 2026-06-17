@@ -63,14 +63,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:A",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
   "predicate_id" : "OWL:equivalentClass",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
   "spo_key" : "a52af3cb-26b1-35ef-a8f1-a2de777ca5d6",
   "subject_id" : "EX:B",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
   "subject_label" : "Entity B"
 }, {
@@ -213,14 +211,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:C",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/C",
   "object_label" : "Entity C",
   "predicate_id" : "SKOS:broadMatch",
   "predicate_iri" : "http://www.w3.org/2004/02/skos/core#broadMatch",
   "spo_key" : "80f665a3-841b-3687-8722-1f169594b252",
   "subject_id" : "EX:A",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
   "subject_label" : "Entity A"
 }, {
@@ -368,14 +364,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:A",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
   "predicate_id" : "SKOS:narrowMatch",
   "predicate_iri" : "http://www.w3.org/2004/02/skos/core#narrowMatch",
   "spo_key" : "0c81eb9e-7056-32b1-acc3-ee0080385193",
   "subject_id" : "EX:C",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
   "subject_label" : "Entity C"
 }, {
@@ -448,14 +442,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:B",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/B",
   "object_label" : "Entity B",
   "predicate_id" : "SKOS:narrowMatch",
   "predicate_iri" : "http://www.w3.org/2004/02/skos/core#narrowMatch",
   "spo_key" : "3d9ffa3e-53c8-3b50-84f8-a73ca165650f",
   "subject_id" : "EX:C",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
   "subject_label" : "Entity C"
 } ]

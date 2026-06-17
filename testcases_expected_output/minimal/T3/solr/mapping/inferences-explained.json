@@ -63,14 +63,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:B",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/B",
   "object_label" : "Entity B",
   "predicate_id" : "OWL:sameAs",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#sameAs",
   "spo_key" : "21b8036b-5c89-35e7-a0d2-6580644f568e",
   "subject_id" : "EX:C",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
   "subject_label" : "Entity C"
 }, {
@@ -181,14 +179,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:C",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/C",
   "object_label" : "Entity C",
   "predicate_id" : "OWL:sameAs",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#sameAs",
   "spo_key" : "5726bb68-46f2-3ae2-8ec0-5a36f222869d",
   "subject_id" : "EX:A",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
   "subject_label" : "Entity A"
 }, {
@@ -315,14 +311,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:A",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
   "predicate_id" : "OWL:sameAs",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#sameAs",
   "spo_key" : "0d15d7f5-0150-3862-825b-1faaff156cd4",
   "subject_id" : "EX:C",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
   "subject_label" : "Entity C"
 }, {
@@ -390,14 +384,12 @@
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
   "mapping_tool" : "OxO Inferences",
   "object_id" : "EX:A",
-  "object_id_prefix" : "EX",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
   "predicate_id" : "OWL:sameAs",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#sameAs",
   "spo_key" : "33cd3a7f-bb49-361d-8802-7c295ee45d9e",
   "subject_id" : "EX:B",
-  "subject_id_prefix" : "EX",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
   "subject_label" : "Entity B"
 } ]

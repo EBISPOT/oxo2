@@ -70,12 +70,9 @@ public enum MappingEnum {
     EXPLANATION(MappingConstants.EXPLANATION),
     INFERENCE_TYPE(MappingConstants.INFERENCE_TYPE),
     MAPPING_ID(MappingConstants.MAPPING_ID),
-    OBJECT_ID_PREFIX(MappingConstants.OBJECT_ID_PREFIX),
     OBJECT_IRI(MappingConstants.OBJECT_IRI),
-    PREDICATE_ID_PREFIX(MappingConstants.PREDICATE_ID_PREFIX),
     PREDICATE_IRI(MappingConstants.PREDICATE_IRI),
     PREMISES(MappingConstants.PREMISES),
-    SUBJECT_ID_PREFIX(MappingConstants.SUBJECT_ID_PREFIX),
     SUBJECT_IRI(MappingConstants.SUBJECT_IRI);
 
     private static final MappingEnum mappingEnum = MappingEnum.CONFIDENCE;
@@ -88,13 +85,11 @@ public enum MappingEnum {
             MappingEnum.MAPPING_SET_ID.getField(),
             MappingEnum.SUBJECT_ID.getField(),
             MappingEnum.SUBJECT_LABEL.getField(),
-            MappingEnum.SUBJECT_ID_PREFIX.getField(),
             MappingEnum.PREDICATE_ID.getField(),
             MappingEnum.PREDICATE_LABEL.getField(),
             MappingEnum.PREDICATE_MODIFIER.getField(),
             MappingEnum.OBJECT_ID.getField(),
             MappingEnum.OBJECT_LABEL.getField(),
-            MappingEnum.OBJECT_ID_PREFIX.getField(),
             MappingEnum.MAPPING_JUSTIFICATION.getField(),
             MappingEnum.MAPPING_TOOL.getField(),
 
