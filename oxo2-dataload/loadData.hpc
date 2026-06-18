@@ -39,7 +39,7 @@ fi
 # --- Configurable Slurm resources ---
 # 32G: main batch step hosts the Solr singularity instance, the Nextflow driver JVM,
 # and (when a stage runs inline) the worker JVM. 16G was not enough for NCBI taxon.
-HPC_TIME="${HPC_TIME:-48:00:00}"
+HPC_TIME="${HPC_TIME:-72:00:00}"
 HPC_MEM="${HPC_MEM:-32G}"
 # 8 CPUs: the main batch step runs Solr, the Nextflow driver, and inline json2solr indexing,
 # and at the end compresses $SOLR_HOME with pigz (parallel gzip), which scales with cores.
