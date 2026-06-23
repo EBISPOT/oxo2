@@ -50,6 +50,13 @@ public class MainDispatcher {
             logger.error("Total memory: {}", totalMemory);
             logger.error("Max memory: {}", maxMemory);
             logger.error("Available memory: {} ", availableMemory);
+
+            // Fail loudly. Without this, a fatal error (e.g. OutOfMemoryError from the chain
+            // merge) would be logged and then the JVM would exit 0, so the wrapper's `set -e`
+            // and Nextflow both see success while the expected output file is missing. Combined
+            // with `optional: true` outputs that silently dropped cross-set inferences instead of
+            // failing the run. Exit non-zero so the failure surfaces as a failed task.
+            System.exit(1);
         }
     }
 
