@@ -60,14 +60,16 @@ mkdir -p "$SOLR_HOME"
 
 # --- Clean directories from previous runs ---
 # (NXF_SINGULARITY_CACHEDIR excluded — only updated when a new image is available)
-rm -rf "$NXF_WORK"/*
+# >>> TEMP run-from-merge: keep NXF_WORK so the previous run's per-chunk chains survive <<<
+# rm -rf "$NXF_WORK"/*
 rm -rf "$NXF_HOME"/*
 rm -rf "$NXF_TEMP"/*
 rm -rf "$NXF_CACHE_DIR"/*
 rm -rf "$NXF_SINGULARITY_CACHEDIR"/*
 rm -rf "$NXF_LOGS"/* "$NXF_LOGS"/.*[!.]*
 rm -rf "$OXO2_DATA/sssom"/*
-rm -rf "$OXO2_DATA/sssom-as-json"/*
+# >>> TEMP run-from-merge: keep sssom-as-json so asserted mappings can be re-indexed <<<
+# rm -rf "$OXO2_DATA/sssom-as-json"/*
 rm -rf "$OXO2_DATA/assertedMappings"/*
 rm -rf "$OXO2_INFERENCES/crossSet"/*
 rm -rf "$OXO2_INFERENCES/inferenceChainsCrossSet"/*
@@ -279,6 +281,8 @@ if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr (via hostname)"; then
     exit 1
 fi
 
+# >>> TEMP run-from-merge: skip Stage 1 (download) + Stage 2 (sssom2json); reuse prior outputs <<<
+if false; then
 # --- Stage 1: Download mappings ---
 start_time=$(date +%s)
 echo "###################" downloadMappings...
@@ -304,21 +308,37 @@ nextflow -log "$NXF_LOGS/sssom2json.nextflow.log" \
     -with-timeline "$NXF_LOGS/sssom2json-timeline.html"
 end_time=$(date +%s)
 echo "SSSOM to JSON took: $((end_time - start_time)) seconds"
+fi  # >>> end TEMP run-from-merge skip of Stage 1 (download) + Stage 2 (sssom2json) <<<
 
-# --- Stage 3: Infer mappings (SSSOM reasoning across all sets, ADR-0016) ---
-# Convert each set's JSON to N-Quads, concatenate every set's N-Quads into one corpus, infer
-# (sssom.rls), and trace -> the single inferenceChainsCrossSet file.
+# --- Stage 3 (TEMP run-from-merge): merge existing chunk chains ONLY ---
+# Reuse the per-chunk inferencesToTrace-chunk*-chains.json the previous run left in NXF_WORK and
+# re-run just the (now streaming) merge. Skips INFER_CROSS_SET + EXPLAIN_CROSS_SET_CHUNK. -Xmx is
+# modest on purpose: the streaming merge's footprint is small and Solr shares this 32 GB main-step
+# cgroup (Solr is still near-empty here — asserted indexing is Stage 4). SIF_IMAGE is the image
+# pulled above, so it carries the merge fix as long as the post-fix :dev image has been built.
 start_time=$(date +%s)
-echo "###################" "inferSssomCrossSet (SSSOM, cross-set)..."
-nextflow -log "$NXF_LOGS/inferSssomCrossSet.nextflow.log" \
-    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
-    run "$SCRIPT_DIR/inferSssomCrossSet.nf" \
-    -profile "$NF_PROFILE" \
-    -with-trace    "$NXF_LOGS/inferSssomCrossSet-trace.txt" \
-    -with-report   "$NXF_LOGS/inferSssomCrossSet-report.html" \
-    -with-timeline "$NXF_LOGS/inferSssomCrossSet-timeline.html"
+echo "###################" "TEMP merge-only (cross-set)..."
+mkdir -p "$OXO2_INFERENCES/inferenceChainsCrossSet" "$OXO2_DATA/tmp"
+mapfile -t MERGE_CHUNKS < <(find "$NXF_WORK" -type f -name 'inferencesToTrace-chunk*-chains.json' | sort)
+echo "Found ${#MERGE_CHUNKS[@]} chunk chain file(s) in $NXF_WORK"
+if [ "${#MERGE_CHUNKS[@]}" -eq 0 ]; then
+    echo "ERROR: no chunk chains under $NXF_WORK — nothing to merge (was it wiped?)." >&2
+    exit 1
+fi
+( cd "$OXO2_DATA/tmp" && JAVA_OPTS="-Xmx16g -XX:+ExitOnOutOfMemoryError" \
+    singularity exec \
+        --bind "$NXF_WORK:$NXF_WORK" \
+        --bind "$OXO2_DATA:$OXO2_DATA" \
+        --env JAVA_OPTS \
+        "$SIF_IMAGE" \
+        /opt/oxo/oxo2-dataload/oxo2-json2inferences/mergeChainFiles.sh \
+        "$OXO2_INFERENCES/inferenceChainsCrossSet/inferences-chains.json" "${MERGE_CHUNKS[@]}" )
+if [ ! -s "$OXO2_INFERENCES/inferenceChainsCrossSet/inferences-chains.json" ]; then
+    echo "ERROR: merge produced no/empty inferences-chains.json" >&2
+    exit 1
+fi
 end_time=$(date +%s)
-echo "SSSOM cross-set inference took: $((end_time - start_time)) seconds"
+echo "TEMP merge-only took: $((end_time - start_time)) seconds"
 
 # --- Stage 4: Index mappings to Solr ---
 start_time=$(date +%s)
