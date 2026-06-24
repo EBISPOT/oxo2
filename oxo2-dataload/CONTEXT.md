@@ -44,7 +44,9 @@ Java sub-modules depend on `oxo2-shared` for the SSSOM data model.
 
 - **Two populated Solr collections** — `oxo2-mappings` and `oxo2-mappingsets`. Schemas under `solr-config/`.
 - **Container image** — built from `Dockerfile.dataload`; `CMD` invokes `loadData.nextflow`.
-- **HPC entry points** — `loadData.hpc`, `loadData.slurm` for SLURM-based deployments.
+- **HPC entry points** — `loadData.hpc` (login node: validate + `sbatch`) and `loadData.slurm` (the
+  single batch job) for SLURM-based deployments. Both honour a `START_STAGE` resume parameter, and
+  `loadData.jenkins.sh` + `Jenkinsfile` wrap them for CI-driven runs — see § Resumable dataload.
 - **Solr data archive** — on a successful HPC run, `loadData.slurm` stops Solr cleanly and writes
   `$OXO2_INFERENCES/solr-data.tar.gz` (the contents of `$SOLR_HOME`, excluding the run-local `logs/`
   and `pid/` dirs). Jenkins copies it onto the NFS export, and the dev-cluster Solr init container
@@ -103,7 +105,63 @@ corpus).
 **4. Solr load + explanation** — `json2solr.sh` (logic in `oxo2-solr-dataload-client`) indexes the asserted
 mapping-set and mapping JSON first, because `explanations2json` then queries Solr by `mapping_id` to recover each
 asserted premise's source set. `explanations2json` then runs (`--inference_type SSSOM_INFERENCE`, [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)), converting Nemo's trace output to OxO2 explanation-chain JSON; the inferred mappings/sets are then indexed. The Solr client caches
-`EntityDetails` and by-id mapping lookups to avoid redundant queries during load.
+`EntityDetails` and by-id mapping lookups to avoid redundant queries during load. The merged cross-set
+chains are explained **out-of-core** — indexed to an on-disk store and streamed one inferred mapping
+at a time — so heap does not scale with the closure ([ADR-0018](../docs/adr/0018-out-of-core-cross-set-explanation.md)).
+
+### Resumable dataload (HPC / Jenkins)
+
+The HPC path can resume from the last completed (sub)stage instead of re-running from scratch — so a
+production load that fails late (e.g. a flaky Solr start, or a bug in the cheap merge step after the
+expensive explain step) can be restarted at that point. This replaces the old manual
+`>>> TEMP run-from-merge <<<` edit of `loadData.slurm`.
+
+**Stages.** `loadData.slurm` defines one ordered stage list and re-enters it at `START_STAGE`
+(default `download` = full run):
+
+```
+download → sssom2json → nquads → infer → trace → explain → merge
+         → index-asserted → explanations2json → index-inferred → archive
+```
+
+`nquads … merge` are the substages of the single cross-set inference (ADR-0016); the rest are the
+download / Solr-load / archive stages. `loadData.hpc` forwards `START_STAGE` to the batch job via
+`--export`; `loadData.slurm` validates it against the list and computes which stages to run.
+
+**How resume stays correct.** Two mechanisms:
+
+- *Substage resume reads PUBLISHED artifacts, not Nextflow's work dir.* `inferSssomCrossSet.nf`
+  exposes one `-entry` workflow per inference substage (`from_infer`, `from_trace`, `from_explain`,
+  `from_merge`); each reads the previous substage's published output under `$OXO2_DATA` and re-uses
+  the composable tails (`inferThroughMerge` / `traceThroughMerge` / `explainThroughMerge`) shared
+  with the default workflow. To make this possible, `SPLIT_CROSS_SET_TRACE` now publishes to
+  `crossSet/chunks/` and `EXPLAIN_CROSS_SET_CHUNK` to `crossSet/chunkChains/` (previously only in
+  `NXF_WORK`). Because resume never depends on `NXF_WORK`, `loadData.slurm` wipes the transient
+  Nextflow dirs on every run — no fragile work-dir spelunking, and the result is independent of the
+  container digest.
+- *Stage-aware cleanup preserves earlier stages' outputs.* Each stage "owns" the artifact path(s) it
+  regenerates (`STAGE_OWNS` in `loadData.slurm`). A resume wipes only the owned paths of `START_STAGE`
+  and later, keeping everything earlier stages produced as the resume inputs. Solr's on-disk index is
+  wiped only when the asserted load (`index-asserted`) is in scope; resuming at `explanations2json` /
+  `index-inferred` / `archive` keeps the already-indexed asserted data (which `explanations2json`
+  queries). Solr is started only for runs that reach an indexing stage; `START_STAGE=archive` just
+  re-archives the existing `$SOLR_HOME`.
+
+**Checkpoint.** After each stage, `loadData.slurm` writes the stage name to
+`$OXO2_DATA/.oxo2-last-completed-stage`. On failure, set `START_STAGE` to that value to resume. The
+checkpoint lives outside every stage's owned paths, so cleanup never removes it.
+
+**Jenkins.** `Jenkinsfile` is a declarative pipeline that SSHes into the login node (via a
+"Publish over SSH" *SSH Site*, whose name is the `SSH_SITE` parameter — it carries the hostname, HPC
+username, and key, so the pipeline holds no secrets) and runs `loadData.jenkins.sh` there. That
+wrapper submits via `loadData.hpc`, then blocks — polling Slurm and streaming the job log to the
+build console — and exits with the job's final state, so the build passes iff the dataload
+`COMPLETED`. If a previous wrapper's job is still active (id recorded in
+`$SLURM_LOGS/oxo2-dataload.current-jobid`), it reattaches and tails that job instead of submitting a
+new one, so a dropped Jenkins build is recoverable by re-running the job. The repo is assumed already
+checked out on the login node; resume is just re-running the job with a different `START_STAGE`. This
+job stops at producing `solr-data.tar.gz` — copying it off-cluster and redeploying Solr to Kubernetes
+is a separate Jenkins job.
 
 ### Configuration
 

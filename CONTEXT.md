@@ -77,6 +77,12 @@ mapping/equivalence predicates) run **across all mapping sets** for findability,
 only. OxO2 derives no subsumption — the former per-set OWL phase was dropped (no value on either corpus). See
 [ADR-0016](docs/adr/0016-single-pass-sssom-reasoning.md) (supersedes ADR-0009 and ADR-0001). Affects
 `oxo2-dataload` (one Nemo pass: `sssom.rls` over the whole corpus).
+- **Cross-set explanations are materialised out-of-core** — `explanations2json` indexes the merged
+inference chains into an on-disk store and streams one inferred mapping per final conclusion, so heap
+no longer scales with the cross-set closure (which on a real corpus exceeds a memory-bound load).
+`distance` stays precomputed for every inferred mapping because it is a user-facing filter. See
+[ADR-0018](docs/adr/0018-out-of-core-cross-set-explanation.md). Affects `oxo2-dataload`
+(`oxo2-json2inferences` explanation builder; `EXPLANATIONS_TO_JSON` heap tier + scratch-disk need).
 - **Solr is the sole data store** — no relational database; both mappings and mapping sets live in Solr collections `oxo2-mappings` 
 and `oxo2-mappingsets`. See [ADR-0002](docs/adr/0002-solr-as-sole-data-store.md). Affects `oxo2-dataload` (denormalised documents at load time) and `oxo2-backend` (query patterns constrained by Solr).
 - **Origin is a denormalised `inference_type` field** — both mappings and mapping sets carry `inference_type` (`ASSERTED` / `SSSOM_INFERENCE`), set once at dataload from OxO provenance, as the single queryable origin signal; the SSSOM 

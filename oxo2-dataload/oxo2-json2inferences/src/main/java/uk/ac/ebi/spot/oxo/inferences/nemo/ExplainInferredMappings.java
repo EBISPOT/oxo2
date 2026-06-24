@@ -1,6 +1,9 @@
 package uk.ac.ebi.spot.oxo.inferences.nemo;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SequenceWriter;
@@ -23,8 +26,12 @@ import uk.ac.ebi.spot.oxo.model.sssom.MappingSet;
 import uk.ac.ebi.spot.oxo.model.sssom.PrefixMap;
 import uk.ac.ebi.spot.oxo.model.sssom.Uri;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.util.*;
 
 public class ExplainInferredMappings {
@@ -119,30 +126,52 @@ public class ExplainInferredMappings {
 
         long startTime = System.currentTimeMillis();
         DataloadSolr solrClient = null;
+        OnDiskChainStore store = null;
+        File tempDir = new File(outputFilePath).getAbsoluteFile().getParentFile();
+        File recordsFile = null;
+        File finalConclusionsFile = null;
         try {
             solrClient = new DataloadSolr();
 
-            logger.info("Reading inferences from file...");
-            NemoInferences nemoInferences = NemoInferenceReader.readInferences(inputFilePath);
-            if (nemoInferences == null) {
-                logger.error("Failed to read inferences from file or file is empty: {}", inputFilePath);
-                solrClient.close();
-                System.exit(1);
-                return;
+            // Pass 1 — stream the chains file into an on-disk store so the cross-set closure never
+            // sits in heap (ADR-0018). While streaming, collect the asserted-leaf mapping_ids for a
+            // single bulk Solr prefetch and spill the list of final conclusions for Pass 2. Temp
+            // files live next to the output (the per-task work dir), so they share its filesystem
+            // and space rather than a possibly-tiny /tmp.
+            recordsFile = File.createTempFile("oxo2-chain-records", ".bin", tempDir);
+            finalConclusionsFile = File.createTempFile("oxo2-final-conclusions", ".txt", tempDir);
+            Set<String> assertedMappingIds = new HashSet<>();
+            long finalConclusionCount;
+            logger.info("Indexing inference chains to disk: {}", inputFilePath);
+            try (OnDiskChainStore.Builder builder = new OnDiskChainStore.Builder(recordsFile);
+                 BufferedWriter finalConclusionWriter =
+                         Files.newBufferedWriter(finalConclusionsFile.toPath())) {
+                finalConclusionCount = indexChainsFile(inputFilePath, builder, assertedMappingIds,
+                        finalConclusionWriter);
+                store = builder.build();
             }
+            logger.info("Indexed {} inferences; {} final conclusions; {} asserted ids to prefetch",
+                    store.size(), finalConclusionCount, assertedMappingIds.size());
 
-            logger.info("Converting to inferred mappings...");
-            Set<InferredMapping> inferredMappings = NemoHelper.fromNemoInferencesToInferredMappings(
-                    nemoInferences, solrClient, inferredMappingSetId);
-            if (inferredMappings.isEmpty()) {
-                logger.warn("No inferred mappings were generated for file: {}", inputFilePath);
-            } else {
-                logger.info("Generated {} inferred mappings", inferredMappings.size());
-            }
+            // Bulk-load the asserted leaves once. This also indexes the curie/label of every
+            // subject/predicate/object IRI they carry, which enrichEntityDetails reads back, so no
+            // separate per-IRI Solr round-trips are needed.
+            long prefetchStart = System.currentTimeMillis();
+            solrClient.prefetchMappingsByIds(assertedMappingIds);
+            logger.info("Prefetched {} asserted mappings in {} ms",
+                    assertedMappingIds.size(), System.currentTimeMillis() - prefetchStart);
 
             // For cross-set inference, the inferred set's source is the union of every source
             // set that contributed an asserted premise, recovered per leaf during the walk.
             SortedSet<Uri> contributingSources = new TreeSet<>();
+
+            // Pass 2 — build and write one inferred mapping per final conclusion, streaming. A
+            // bounded LRU shares sub-chains for speed without holding the whole DAG; because the
+            // explanation is identity-independent, an eviction only costs a recompute, not a
+            // different result.
+            Map<String, InferredMapping> memo = boundedMemo(MAX_MEMO_ENTRIES);
+            Iterator<InferredMapping> inferredMappings = streamFinalConclusionMappings(
+                    finalConclusionsFile, store, solrClient, memo, inferredMappingSetId);
 
             logger.info("Creating mappings and streaming to file: {}", outputFilePath);
             long writtenCount = streamMappingsToJson(inferredMappings, solrClient, inferredMappingSetId,
@@ -170,10 +199,148 @@ public class ExplainInferredMappings {
             }
             logger.error("Error processing file: {}", inputFilePath, e);
             System.exit(1);
+        } finally {
+            if (store != null) {
+                try {
+                    store.close(); // deletes the records file
+                } catch (IOException e) {
+                    logger.warn("Failed to close on-disk chain store", e);
+                }
+            }
+            deleteQuietly(recordsFile);
+            deleteQuietly(finalConclusionsFile);
         }
 
         long endTime = System.currentTimeMillis();
         logger.info("Single file processing took {} s", (endTime - startTime) / 1000);
+    }
+
+    /** Max distinct sub-chains kept in the Pass-2 LRU; eviction only forces a (rare) recompute. */
+    private static final int MAX_MEMO_ENTRIES = 200_000;
+
+    /**
+     * Stream the chains file once: append every inference to {@code builder}, collect the asserted
+     * leaf mapping_ids into {@code assertedMappingIds}, and write each final conclusion (one per
+     * line) to {@code finalConclusionWriter}. Order-independent: {@code inferences} and
+     * {@code finalConclusion} are handled wherever they appear.
+     *
+     * @return the number of final conclusions written.
+     */
+    static long indexChainsFile(String inputFilePath, OnDiskChainStore.Builder builder,
+            Set<String> assertedMappingIds, BufferedWriter finalConclusionWriter) throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonFactory jsonFactory = objectMapper.getFactory();
+        long finalConclusionCount = 0;
+        try (JsonParser parser = jsonFactory.createParser(new File(inputFilePath))) {
+            parser.setCodec(objectMapper);
+            if (parser.nextToken() != JsonToken.START_OBJECT) {
+                throw new IOException("Expected a JSON object at the root of " + inputFilePath);
+            }
+            while (parser.nextToken() != JsonToken.END_OBJECT) {
+                String fieldName = parser.currentName();
+                parser.nextToken(); // advance to the field value
+                if ("inferences".equals(fieldName)) {
+                    expectArray(parser, "inferences", inputFilePath);
+                    while (parser.nextToken() != JsonToken.END_ARRAY) {
+                        NemoInferences.NemoInference inference =
+                                parser.readValueAs(NemoInferences.NemoInference.class);
+                        List<String> premises = inference.getPremises() == null
+                                ? List.of() : inference.getPremises();
+                        builder.add(inference.getConclusion(), inference.getRuleName(), premises);
+                        NemoHelper.collectAssertedMappingId(inference.getConclusion(), assertedMappingIds);
+                        for (String premise : premises) {
+                            NemoHelper.collectAssertedMappingId(premise, assertedMappingIds);
+                        }
+                    }
+                } else if ("finalConclusion".equals(fieldName)) {
+                    expectArray(parser, "finalConclusion", inputFilePath);
+                    while (parser.nextToken() != JsonToken.END_ARRAY) {
+                        finalConclusionWriter.write(parser.getValueAsString());
+                        finalConclusionWriter.write('\n');
+                        finalConclusionCount++;
+                    }
+                } else {
+                    parser.skipChildren();
+                }
+            }
+        }
+        return finalConclusionCount;
+    }
+
+    private static void expectArray(JsonParser parser, String field, String inputFilePath)
+            throws IOException {
+        if (parser.currentToken() != JsonToken.START_ARRAY) {
+            throw new IOException("Expected '" + field + "' to be an array in " + inputFilePath);
+        }
+    }
+
+    /**
+     * Lazily build an {@link InferredMapping} per final conclusion, reading the spilled conclusion
+     * list line by line and resolving each chain through {@code lookup}. Null builds (malformed
+     * atoms) are skipped. The underlying reader is closed when the stream is exhausted.
+     */
+    private static Iterator<InferredMapping> streamFinalConclusionMappings(File finalConclusionsFile,
+            InferenceLookup lookup, DataloadSolr solrClient, Map<String, InferredMapping> memo,
+            String inferredMappingSetId) throws IOException {
+        BufferedReader reader = Files.newBufferedReader(finalConclusionsFile.toPath());
+        return new Iterator<>() {
+            private InferredMapping nextMapping = advance();
+
+            private InferredMapping advance() {
+                try {
+                    String conclusion;
+                    while ((conclusion = reader.readLine()) != null) {
+                        InferredMapping mapping = NemoHelper.buildInferredMapping(
+                                lookup, conclusion, solrClient, memo, inferredMappingSetId);
+                        if (mapping != null) {
+                            return mapping;
+                        }
+                    }
+                    reader.close();
+                    return null;
+                } catch (IOException e) {
+                    throw new UncheckedIOException("Failed reading final conclusions", e);
+                }
+            }
+
+            @Override
+            public boolean hasNext() {
+                return nextMapping != null;
+            }
+
+            @Override
+            public InferredMapping next() {
+                if (nextMapping == null) {
+                    throw new NoSuchElementException();
+                }
+                InferredMapping current = nextMapping;
+                nextMapping = advance();
+                return current;
+            }
+        };
+    }
+
+    /**
+     * Access-order LRU bounding the shared-sub-chain cache to {@code maxEntries}, so Pass-2 heap
+     * stays flat regardless of how big the cross-set closure is.
+     */
+    private static Map<String, InferredMapping> boundedMemo(int maxEntries) {
+        return new LinkedHashMap<>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, InferredMapping> eldest) {
+                return size() > maxEntries;
+            }
+        };
+    }
+
+    private static void deleteQuietly(File file) {
+        if (file != null) {
+            try {
+                Files.deleteIfExists(file.toPath());
+            } catch (IOException e) {
+                logger.warn("Failed to delete temp file {}", file, e);
+            }
+        }
     }
 
     /**
@@ -236,7 +403,7 @@ public class ExplainInferredMappings {
      *
      * @return the number of {@link Mapping} records written.
      */
-    public static long streamMappingsToJson(Set<InferredMapping> inferredMappings,
+    public static long streamMappingsToJson(Iterator<InferredMapping> inferredMappings,
                                              DataloadSolr solrClient,
                                              String inferredMappingSetId,
                                              InferenceType inferenceType,
@@ -244,15 +411,16 @@ public class ExplainInferredMappings {
                                              String sourceMappingSetId,
                                              SortedSet<Uri> contributingSourcesOut,
                                              String outputFilePath) throws IOException {
-        if (inferredMappings == null || inferredMappings.isEmpty()) {
+        if (inferredMappings == null || !inferredMappings.hasNext()) {
             logger.warn("No inferred mappings to process");
             return 0;
         }
 
-        // Per-run memos for the two recursive walks over the InferredMapping DAG.
-        // NemoHelper.determineInferencesLeadingToConclusion guarantees one object
-        // per distinct conclusion string, so identity-keyed maps are correct and
-        // cheaper than equals-keyed (InferredMapping.hashCode hashes 3 IRI Strings).
+        // Per-mapping memos for the two recursive walks over one InferredMapping chain. They are
+        // cleared at the top of each iteration (below) so they stay bounded to a single chain
+        // instead of growing across the whole stream. Identity-keyed is correct because, within one
+        // chain, NemoHelper hands back one object per distinct conclusion; even if the bounded LRU
+        // ever forced a duplicate, the walks' outputs are identity-independent.
         IdentityHashMap<InferredMapping, List<InferredMapping>> assertedMemo = new IdentityHashMap<>();
         IdentityHashMap<InferredMapping, Integer> lengthMemo = new IdentityHashMap<>();
 
@@ -269,7 +437,12 @@ public class ExplainInferredMappings {
         int processed = 0;
         boolean closedCleanly = false;
         try {
-            for (InferredMapping inferredMapping : inferredMappings) {
+            while (inferredMappings.hasNext()) {
+                InferredMapping inferredMapping = inferredMappings.next();
+                // Each top-level mapping's explanation is self-contained, so reset the per-walk
+                // memos to keep them bounded to one chain.
+                assertedMemo.clear();
+                lengthMemo.clear();
                 try {
                     if (inferredMapping.getSubjectIRI() == null || inferredMapping.getPredicateIRI() == null ||
                         inferredMapping.getObjectIRI() == null) {
@@ -379,8 +552,7 @@ public class ExplainInferredMappings {
             }
         }
 
-        logger.info("Walk memos: {} top-level mappings, {} memoized assertedMappings entries, {} memoized explanationLength entries",
-                inferredMappings.size(), assertedMemo.size(), lengthMemo.size());
+        logger.info("Finished streaming inferred mappings: {} processed, {} written", processed, written);
 
         if (written > 0) {
             logger.info("Mappings successfully streamed to {} ({} mappings, {} bytes)",

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.spot.oxo.dataload.solr.DataloadSolr;
 import uk.ac.ebi.spot.oxo.dataload.solr.EntityDetails;
+import uk.ac.ebi.spot.oxo.inferences.nemo.InferenceLookup;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.NemoInferences;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.OXOInferenceConstants;
 import uk.ac.ebi.spot.oxo.model.sssom.*;
@@ -29,79 +30,24 @@ import java.util.*;
 public class NemoHelper {
     private static final Logger logger = LoggerFactory.getLogger(NemoHelper.class);
 
-    public static Set<InferredMapping> fromNemoInferencesToInferredMappings(
-            NemoInferences nemoInferences, DataloadSolr solrClient, String inferredMappingSetId) {
-
-        // Walk every atom in the trace once to collect the asserted mapping_ids, then bulk-load
-        // those mappings in batched queries. Entity details (curie/label) for every
-        // subject/predicate/object IRI are derived from those mappings as they load, so no
-        // separate per-IRI Solr round-trips are needed.
-        prefetchAssertedMappingsForChains(nemoInferences, solrClient);
-
-        Set<InferredMapping> inferredMappings = new HashSet<>();
-        // Memoize InferredMapping per conclusion string so shared sub-chains in the inference
-        // DAG share one object instead of being re-expanded as a fresh subtree per parent. The
-        // memo lives only for this call (per chains file).
-        Map<String, InferredMapping> memo = new HashMap<>();
-
-        List<String> finalConclusions = nemoInferences.getFinalConclusion();
-        int totalConclusions = finalConclusions != null ? finalConclusions.size() : 0;
-        logger.info("Building InferredMappings for {} final conclusions", totalConclusions);
-        long buildStart = System.currentTimeMillis();
-        int progressInterval = Math.max(1000, totalConclusions / 20);
-        int processed = 0;
-
-        if (finalConclusions != null) {
-            for (String finalConclusion : finalConclusions) {
-                InferredMapping inferredMapping = determineInferencesLeadingToConclusion(nemoInferences,
-                        finalConclusion, solrClient, memo, inferredMappingSetId);
-                if (inferredMapping != null) {
-                    inferredMappings.add(inferredMapping);
-                }
-                processed++;
-                if (processed % progressInterval == 0 || processed == totalConclusions) {
-                    long elapsedMs = System.currentTimeMillis() - buildStart;
-                    double rate = elapsedMs > 0 ? (processed * 1000.0 / elapsedMs) : 0.0;
-                    logger.info("InferredMapping build progress: {}/{} ({}%) — memo size {}, elapsed {} ms, ~{} conclusions/s",
-                            processed, totalConclusions,
-                            totalConclusions > 0 ? (processed * 100 / totalConclusions) : 100,
-                            memo.size(), elapsedMs, String.format("%.0f", rate));
-                }
-            }
-        }
-
-        logger.info("Finished InferredMapping build: {} top-level mappings, {} memoized conclusions, {} ms total",
-                inferredMappings.size(), memo.size(), System.currentTimeMillis() - buildStart);
-        return inferredMappings;
+    /**
+     * Build the {@link InferredMapping} chain for one final conclusion. Inferred intermediates are
+     * resolved through {@code lookup} (an {@code OnDiskChainStore} in production — ADR-0018) and
+     * asserted leaves through Solr.
+     *
+     * <p>{@code memo} shares sub-chains across conclusions for speed; pass a <i>bounded</i> cache so
+     * heap stays flat on the cross-set closure. The explanation is identity-independent
+     * (length/asserted-evidence/distance are structural over the reachable sub-DAG), so a cache
+     * eviction that forces a sub-chain to be rebuilt yields an equal result — only the work changes,
+     * never the output.
+     */
+    public static InferredMapping buildInferredMapping(InferenceLookup lookup, String conclusion,
+            DataloadSolr solrClient, Map<String, InferredMapping> memo, String inferredMappingSetId) {
+        return determineInferencesLeadingToConclusion(lookup, conclusion, solrClient, memo,
+                inferredMappingSetId);
     }
 
-    private static void prefetchAssertedMappingsForChains(NemoInferences nemoInferences, DataloadSolr solrClient) {
-        Set<String> assertedMappingIds = new HashSet<>();
-
-        if (nemoInferences.getFinalConclusion() != null) {
-            nemoInferences.getFinalConclusion().forEach(atom ->
-                    collectAssertedMappingId(atom, assertedMappingIds));
-        }
-        if (nemoInferences.getInferences() != null) {
-            for (NemoInferences.NemoInference inference : nemoInferences.getInferences()) {
-                collectAssertedMappingId(inference.getConclusion(), assertedMappingIds);
-                if (inference.getPremises() != null) {
-                    for (String premise : inference.getPremises()) {
-                        collectAssertedMappingId(premise, assertedMappingIds);
-                    }
-                }
-            }
-        }
-
-        long start = System.currentTimeMillis();
-        // Loads the asserted mappings and, as a side effect, indexes the curie/label of every
-        // subject/predicate/object IRI they carry — the source for enrichEntityDetails below.
-        solrClient.prefetchMappingsByIds(assertedMappingIds);
-        logger.info("Prefetched {} asserted mappings in {} ms",
-                assertedMappingIds.size(), System.currentTimeMillis() - start);
-    }
-
-    private static void collectAssertedMappingId(String atom, Set<String> assertedMappingIds) {
+    public static void collectAssertedMappingId(String atom, Set<String> assertedMappingIds) {
         String[] parts = parseAtomIris(atom);
         if (parts == null) return;
         if (!OXOInferenceConstants.isInferredIdTerm(parts[0])) {
@@ -129,7 +75,7 @@ public class NemoHelper {
     }
 
     private static InferredMapping determineInferencesLeadingToConclusion(
-            NemoInferences nemoInferences,
+            InferenceLookup lookup,
             String conclusion, DataloadSolr solrClient,
             Map<String, InferredMapping> memo,
             String inferredMappingSetId) {
@@ -179,7 +125,7 @@ public class NemoHelper {
         inferredMapping.setMappingJustification(new EntityReference(OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION));
 
         Optional<NemoInferences.NemoInference> optionalNemoInference =
-                nemoInferences.findNemoInferenceForConclusion(conclusion);
+                lookup.find(conclusion);
         if (optionalNemoInference.isPresent()) {
             NemoInferences.NemoInference nemoInference = optionalNemoInference.get();
             ChainRulesEnum chainRule = resolveChainRule(nemoInference.getRuleName(), conclusion);
@@ -195,7 +141,7 @@ public class NemoHelper {
                     // before we ever consult it. The guard is belt-and-suspenders.
                     if (!isMappingAtom(premise)) continue;
                     InferredMapping premiseMapping = determineInferencesLeadingToConclusion(
-                            nemoInferences, premise, solrClient, memo, inferredMappingSetId);
+                            lookup, premise, solrClient, memo, inferredMappingSetId);
                     if (premiseMapping != null) {
                         premises.add(premiseMapping);
                     }
