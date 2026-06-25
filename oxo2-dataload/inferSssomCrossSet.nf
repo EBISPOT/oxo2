@@ -12,6 +12,12 @@ params.json_input_dir = "${System.getenv('OXO2_DATA')}/sssom-as-json/mapping"
 params.asserted_mappings_dir = "${System.getenv('OXO2_DATA')}/assertedMappings"
 params.cross_set_dir = "${System.getenv('OXO2_DATA')}/inferences/crossSet"
 params.inference_chains_dir = "${System.getenv('OXO2_DATA')}/inferences/inferenceChainsCrossSet"
+// Durable per-chunk artifacts. SPLIT_CROSS_SET_TRACE and EXPLAIN_CROSS_SET_CHUNK publish their
+// outputs here so a resumed run (loadData.slurm START_STAGE=explain|merge) can re-enter the DAG
+// from a stable path under $OXO2_DATA, independent of Nextflow's transient work dir. See the
+// resume entry points below and oxo2-dataload/CONTEXT.md § Resumable dataload.
+params.chunks_dir = "${params.cross_set_dir}/chunks"
+params.chunk_chains_dir = "${params.cross_set_dir}/chunkChains"
 
 params.script_dir = params.script_dir ?: "${projectDir}"
 // Reason with the SSSOM ruleset (strong-predicate transitivity + role chains, across all sets).
@@ -35,6 +41,9 @@ params.inferences_to_trace_basename = "inferencesToTrace"
 // Mappings per tracing chunk. Smaller = more parallelism / more per-chunk overhead.
 params.trace_chunk_size = 10000
 
+// Default entry point: the full pipeline from each set's JSON. Unchanged behaviour — this is what
+// loadData.nextflow (local/integration) and a from-scratch HPC run (loadData.slurm START_STAGE in
+// download|sssom2json|nquads) invoke.
 workflow {
     json_files = channel.fromPath("${params.json_input_dir}/*.json")
         .map { f -> FilenameGuard.assertSafe(f.name); f }
@@ -44,11 +53,70 @@ workflow {
         .collect()
 
     corpus = CONCAT_CORPUS(nquads_files)
-    inferred = INFER_CROSS_SET(corpus)
-    trace = DETERMINE_CROSS_SET_TRACE(inferred)
-    chunks = SPLIT_CROSS_SET_TRACE(trace).flatten()
-    chunk_chains = EXPLAIN_CROSS_SET_CHUNK(chunks)
-    MERGE_CROSS_SET_CHAIN(chunk_chains.collect())
+    inferThroughMerge(corpus)
+}
+
+// ---------------------------------------------------------------------------
+// Resume entry points. Each re-enters the linear DAG at a substep, reading the previous substep's
+// PUBLISHED artifact (under $OXO2_DATA) rather than Nextflow's transient work dir — so a resumed
+// run is independent of any cached NXF_WORK and of the container digest. loadData.slurm selects one
+// via `-entry` from its START_STAGE parameter. See oxo2-dataload/CONTEXT.md § Resumable dataload.
+// ---------------------------------------------------------------------------
+
+// Resume from the concatenated all-sets corpus (JSON2NQUADS + CONCAT_CORPUS already done).
+workflow from_infer {
+    corpus = channel.fromPath(params.corpus_file, checkIfExists: true)
+    inferThroughMerge(corpus)
+}
+
+// Resume from the inferred TTL (INFER_CROSS_SET already done).
+workflow from_trace {
+    inferred = channel.fromPath(
+        "${params.cross_set_dir}/${params.inferred_set_basename}.ttl", checkIfExists: true)
+    traceThroughMerge(inferred)
+}
+
+// Resume from the per-chunk trace inputs (DETERMINE_CROSS_SET_TRACE + SPLIT_CROSS_SET_TRACE done).
+workflow from_explain {
+    chunks = channel.fromPath(
+        "${params.chunks_dir}/${params.inferences_to_trace_basename}-chunk*.txt", checkIfExists: true)
+    explainThroughMerge(chunks)
+}
+
+// Resume from the per-chunk explanation chains (EXPLAIN_CROSS_SET_CHUNK already done). This is the
+// formalised "merge-only" recovery — re-run just the merge over the expensive chunk chains, e.g.
+// after rebuilding the image to fix the merge step. Replaces the old manual NXF_WORK spelunking.
+workflow from_merge {
+    chunk_chains = channel.fromPath(
+        "${params.chunk_chains_dir}/*-chains.json", checkIfExists: true).collect()
+    MERGE_CROSS_SET_CHAIN(chunk_chains)
+}
+
+// ---- Composable tails shared by the default and resume entry points ----
+
+workflow inferThroughMerge {
+    take:
+        corpus
+    main:
+        inferred = INFER_CROSS_SET(corpus)
+        traceThroughMerge(inferred)
+}
+
+workflow traceThroughMerge {
+    take:
+        inferred_ttl
+    main:
+        trace = DETERMINE_CROSS_SET_TRACE(inferred_ttl)
+        chunks = SPLIT_CROSS_SET_TRACE(trace).flatten()
+        explainThroughMerge(chunks)
+}
+
+workflow explainThroughMerge {
+    take:
+        chunks
+    main:
+        chunk_chains = EXPLAIN_CROSS_SET_CHUNK(chunks)
+        MERGE_CROSS_SET_CHAIN(chunk_chains.collect())
 }
 
 
@@ -150,6 +218,9 @@ process DETERMINE_CROSS_SET_TRACE {
 process SPLIT_CROSS_SET_TRACE {
     tag "Split trace input (cross-set)"
 
+    // Published so START_STAGE=explain can re-feed the chunks without re-running INFER/SPLIT.
+    publishDir "${params.chunks_dir}", mode: 'copy', overwrite: true
+
     input:
     path inferences_to_trace_file
 
@@ -166,6 +237,10 @@ process SPLIT_CROSS_SET_TRACE {
 
 process EXPLAIN_CROSS_SET_CHUNK {
     tag "Explain chunk (cross-set): ${chunk_file.baseName}"
+
+    // Published so START_STAGE=merge can re-merge the (expensive) per-chunk chains without
+    // re-running the trace. This is the durable replacement for the old NXF_WORK spelunking.
+    publishDir "${params.chunk_chains_dir}", mode: 'copy', overwrite: true
 
     input:
     path chunk_file

@@ -106,6 +106,13 @@ Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` (groupe
 `oxo2-frontend` (expandable rows, paging over groups).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
+- **The HPC dataload is resumable from a chosen (sub)stage** — one SLURM job parameterised by `START_STAGE`;
+substage resume reads *published* artifacts under `$OXO2_DATA` (never Nextflow's work dir, which is wiped
+every run), and stage-ownership cleanup preserves earlier stages' outputs. A Jenkins Freestyle job drives it
+over SSH (the `ssh` plugin's remote-shell build step, against a Jenkins-global SSH site — no credentials in
+the repo). Operational layer on top of, not a replacement for, ADR-0003. See
+[ADR-0019](docs/adr/0019-resumable-hpc-dataload.md). Affects `oxo2-dataload` (`loadData.slurm`/`.hpc`,
+`inferSssomCrossSet.nf` `-entry` workflows + published `chunks`/`chunkChains`, `loadData.jenkins.sh`).
 - **OxO2 is backwards compatible with OxO v1** — API surface answers v1's questions even where SSSOM terms are richer. 
 See [ADR-0004](docs/adr/0004-backwards-compatible-with-oxo-v1.md). Affects `oxo2-backend` (API design) and `oxo2-frontend` (documentation surface).
 - **GitHub registries are fetched via archive tarball** — GitHub mapping registries download as the default-branch archive 

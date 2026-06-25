@@ -46,6 +46,11 @@ HPC_MEM="${HPC_MEM:-32G}"
 # pigz is run with -p $SLURM_CPUS_PER_TASK in loadData.slurm, so it tracks this value.
 HPC_CPUS="${HPC_CPUS:-8}"
 
+# --- Resume point (see oxo2-dataload/CONTEXT.md § Resumable dataload) ---
+# download (default) = full run; any later (sub)stage resumes from there, reusing earlier stages'
+# published artifacts. loadData.slurm validates the value against its STAGES list.
+START_STAGE="${START_STAGE:-download}"
+
 # --- Create log directory ---
 mkdir -p "$SLURM_LOGS"
 rm -rf "$SLURM_LOGS"/*
@@ -72,7 +77,7 @@ SBATCH_ARGS=(
     --cpus-per-task="$HPC_CPUS"
     --output="$SLURM_LOGS/oxo2-dataload-%j.out"
     --error="$SLURM_LOGS/oxo2-dataload-%j.err"
-    --export="SCRIPT_DIR=$SCRIPT_DIR,OXO2_DATA=$OXO2_DATA,OXO2_CONFIG=$OXO2_CONFIG,NEXTFLOW_DIR=$NEXTFLOW_DIR,SOLR_HOME=$SOLR_HOME,NF_CONTAINER=$NF_CONTAINER,SIF_DIGEST_FILE=$SIF_DIGEST_FILE${HPC_PATH:+,HPC_PATH=$HPC_PATH}${REMOTE_DIGEST:+,REMOTE_DIGEST=$REMOTE_DIGEST}"
+    --export="SCRIPT_DIR=$SCRIPT_DIR,OXO2_DATA=$OXO2_DATA,OXO2_CONFIG=$OXO2_CONFIG,NEXTFLOW_DIR=$NEXTFLOW_DIR,SOLR_HOME=$SOLR_HOME,NF_CONTAINER=$NF_CONTAINER,SIF_DIGEST_FILE=$SIF_DIGEST_FILE,START_STAGE=$START_STAGE${HPC_PATH:+,HPC_PATH=$HPC_PATH}${REMOTE_DIGEST:+,REMOTE_DIGEST=$REMOTE_DIGEST}"
 )
 
 if [ -n "${HPC_ACCOUNT:-}" ]; then
@@ -81,6 +86,7 @@ fi
 
 # --- Submit the job ---
 echo "Submitting OXO2 dataload job..."
+echo "  Start stage: $START_STAGE"
 echo "  Time limit: $HPC_TIME"
 echo "  Memory: $HPC_MEM"
 echo "  CPUs: $HPC_CPUS"
@@ -91,5 +97,11 @@ echo "  Nextflow dir: $NEXTFLOW_DIR"
 echo "  Solr home: $SOLR_HOME"
 echo "  Slurm logs: $SLURM_LOGS"
 
-sbatch "${SBATCH_ARGS[@]}" "$SCRIPT_DIR/loadData.slurm"
+# --parsable -> the bare job id on stdout. We also emit machine-readable OXO2_JOB_* lines so the
+# Jenkins wrapper (loadData.jenkins.sh) can parse the id and the log paths to follow/poll the run.
+OXO2_JOB_ID=$(sbatch --parsable "${SBATCH_ARGS[@]}" "$SCRIPT_DIR/loadData.slurm")
+echo "Submitted batch job $OXO2_JOB_ID"
+echo "OXO2_JOB_ID=$OXO2_JOB_ID"
+echo "OXO2_JOB_OUT=$SLURM_LOGS/oxo2-dataload-$OXO2_JOB_ID.out"
+echo "OXO2_JOB_ERR=$SLURM_LOGS/oxo2-dataload-$OXO2_JOB_ID.err"
 

@@ -16,6 +16,42 @@ echo "OxO2 Dataload started at: $dataload_start_time"
 # SCRIPT_DIR is passed via --export from loadData.hpc (BASH_SOURCE unreliable in Slurm)
 : "${SCRIPT_DIR:?SCRIPT_DIR must be set}"
 
+# ---------------------------------------------------------------------------
+# Resumable pipeline: START_STAGE selects where the run (re)enters the pipeline.
+# A full run is START_STAGE=download (the default). Any later value resumes from that
+# (sub)stage, reusing the PUBLISHED artifacts of the earlier stages (which the stage-aware
+# cleanup below deliberately preserves). The substages between `nquads` and `merge` map to
+# `-entry` points in inferSssomCrossSet.nf. See oxo2-dataload/CONTEXT.md § Resumable dataload.
+# ---------------------------------------------------------------------------
+START_STAGE="${START_STAGE:-download}"
+
+# Canonical ordered (sub)stage list. A stage's position in this array defines "before"/"after".
+STAGES=(download sssom2json nquads infer trace explain merge \
+        index-asserted explanations2json index-inferred archive)
+
+stage_index() {
+    local target=$1 idx=0
+    for name in "${STAGES[@]}"; do
+        if [ "$name" = "$target" ]; then echo "$idx"; return 0; fi
+        idx=$((idx + 1))
+    done
+    echo "ERROR: unknown stage '$target'. Valid stages: ${STAGES[*]}" >&2
+    return 1
+}
+
+if ! START_INDEX=$(stage_index "$START_STAGE"); then
+    exit 1
+fi
+
+# should_run <stage>: true when <stage> is at or after START_STAGE.
+should_run() {
+    local idx
+    idx=$(stage_index "$1") || exit 1
+    [ "$idx" -ge "$START_INDEX" ]
+}
+
+echo "START_STAGE=$START_STAGE (index $START_INDEX of ${#STAGES[@]} stages: ${STAGES[*]})"
+
 export SOLR_URL="http://$(hostname):8983/solr"
 export no_proxy="localhost,127.0.0.1,$(hostname)"
 # -XX:MaxRAMPercentage=75 — default is 25%, which caps heap at ~4 GB for a 16 GB cgroup.
@@ -49,33 +85,102 @@ export NXF_WORK NXF_HOME NXF_TEMP NXF_CACHE_DIR NXF_SINGULARITY_CACHEDIR NXF_LOG
 OXO2_INFERENCES=$OXO2_DATA/inferences
 export OXO2_INFERENCES
 
+# Checkpoint: the name of the last (sub)stage that completed this/last run. Written after each
+# stage; an operator (or Jenkins) reads it to choose START_STAGE for a resume. It lives outside
+# any stage's owned paths, so it survives stage-aware cleanup.
+CHECKPOINT_FILE="$OXO2_DATA/.oxo2-last-completed-stage"
+record_stage() {
+    mkdir -p "$OXO2_DATA"
+    echo "$1" > "$CHECKPOINT_FILE"
+    echo "=== STAGE COMPLETE: $1 (checkpoint -> $CHECKPOINT_FILE) ==="
+}
+
+verify_solr_indexed() {
+    echo "Verifying Solr indexing..."
+    local core count
+    for core in oxo2-mappings oxo2-mappingsets; do
+        count=$(curl -sf "$SOLR_URL/$core/select?q=*:*&rows=0" \
+            | grep -o '"numFound":[0-9]*' | grep -o '[0-9]*')
+        echo "  $core: ${count:-0} documents"
+        if [ -z "$count" ] || [ "$count" -eq 0 ]; then
+            echo "ERROR: No documents found in $core after indexing" >&2
+            exit 1
+        fi
+    done
+    echo "Solr indexing verified successfully."
+}
+
+if [ -f "$CHECKPOINT_FILE" ]; then
+    echo "Previous run's last completed stage: $(cat "$CHECKPOINT_FILE")"
+fi
+
+# ---------------------------------------------------------------------------
+# Stage-aware cleanup.
+# Transient Nextflow dirs are always wiped — resume reads PUBLISHED artifacts under $OXO2_DATA,
+# never NXF_WORK, so each run gets a clean work dir. The Singularity image cache is NOT wiped here
+# (only refreshed below when a newer image is available).
+# ---------------------------------------------------------------------------
+echo "Cleaning transient Nextflow working dirs..."
+rm -rf "$NXF_WORK"/* "$NXF_HOME"/* "$NXF_TEMP"/* "$NXF_CACHE_DIR"/* 2>/dev/null || true
+rm -rf "$NXF_LOGS"/* "$NXF_LOGS"/.*[!.]* 2>/dev/null || true
+
+# Each stage "owns" the artifact path(s) it (re)generates. On a run starting at START_STAGE we wipe
+# the owned paths of START_STAGE and every later stage, and PRESERVE everything earlier stages
+# produced (those are the inputs the resume builds on). Paths must not contain spaces.
+declare -A STAGE_OWNS=(
+    [download]="$OXO2_DATA/sssom"
+    [sssom2json]="$OXO2_DATA/sssom-as-json"
+    [nquads]="$OXO2_DATA/assertedMappings $OXO2_INFERENCES/crossSet/assertedCorpus.nq"
+    [infer]="$OXO2_INFERENCES/crossSet/inferences.ttl"
+    [trace]="$OXO2_INFERENCES/crossSet/inferencesToTrace.txt $OXO2_INFERENCES/crossSet/chunks"
+    [explain]="$OXO2_INFERENCES/crossSet/chunkChains"
+    [merge]="$OXO2_INFERENCES/inferenceChainsCrossSet"
+    [index-asserted]=""
+    [explanations2json]="$OXO2_INFERENCES/solr"
+    [index-inferred]=""
+    [archive]="$OXO2_INFERENCES/solr-data.tar.gz"
+)
+echo "Removing artifacts owned by stages at or after '$START_STAGE'..."
+for stage in "${STAGES[@]}"; do
+    if should_run "$stage"; then
+        for path in ${STAGE_OWNS[$stage]}; do
+            if [ -n "$path" ]; then
+                echo "  rm -rf $path"
+                rm -rf "$path"
+            fi
+        done
+    fi
+done
+
+# Solr's on-disk index is wiped only when the asserted load will run from scratch (START_STAGE at
+# or before index-asserted). Resuming at explanations2json / index-inferred / archive must KEEP the
+# asserted data already indexed by an earlier run — explanations2json queries Solr for it.
+WIPE_SOLR=false
+if [ "$START_INDEX" -le "$(stage_index index-asserted)" ]; then
+    WIPE_SOLR=true
+fi
+if [ "$WIPE_SOLR" = true ]; then
+    echo "Wiping Solr home (asserted load will run from scratch)..."
+    rm -rf "$SOLR_HOME"/*
+else
+    echo "Preserving Solr home (resuming after asserted data was indexed)."
+fi
+
+# --- (Re)create the standard directory structure (after cleanup, so dirs always exist) ---
 mkdir -p "$NXF_WORK" "$NXF_HOME" "$NXF_TEMP" "$NXF_CACHE_DIR" "$NXF_SINGULARITY_CACHEDIR" "$NXF_LOGS"
 mkdir -p "$OXO2_DATA/sssom" "$OXO2_DATA/sssom-as-json" "$OXO2_DATA/assertedMappings"
 mkdir -p "$OXO2_INFERENCES/solr/mapping" "$OXO2_INFERENCES/solr/mappingSet"
-# SSSOM cross-set working + output directories (ADR-0016).
 mkdir -p "$OXO2_INFERENCES/crossSet" "$OXO2_INFERENCES/inferenceChainsCrossSet"
 mkdir -p "$OXO2_DATA/tmp"
-mkdir -p "$NEXTFLOW_DIR/logs"
 mkdir -p "$SOLR_HOME"
 
-# --- Clean directories from previous runs ---
-# (NXF_SINGULARITY_CACHEDIR excluded — only updated when a new image is available)
-# >>> TEMP run-from-merge: keep NXF_WORK so the previous run's per-chunk chains survive <<<
-# rm -rf "$NXF_WORK"/*
-rm -rf "$NXF_HOME"/*
-rm -rf "$NXF_TEMP"/*
-rm -rf "$NXF_CACHE_DIR"/*
-rm -rf "$NXF_SINGULARITY_CACHEDIR"/*
-rm -rf "$NXF_LOGS"/* "$NXF_LOGS"/.*[!.]*
-rm -rf "$OXO2_DATA/sssom"/*
-# >>> TEMP run-from-merge: keep sssom-as-json so asserted mappings can be re-indexed <<<
-# rm -rf "$OXO2_DATA/sssom-as-json"/*
-rm -rf "$OXO2_DATA/assertedMappings"/*
-rm -rf "$OXO2_INFERENCES/crossSet"/*
-rm -rf "$OXO2_INFERENCES/inferenceChainsCrossSet"/*
-rm -rf "$OXO2_INFERENCES/solr"/*
-rm -rf "$OXO2_DATA/tmp"/*
-rm -rf "$SOLR_HOME"/*
+# Solr is needed for the indexing/explanation stages (index-asserted, explanations2json,
+# index-inferred). We start it for any run that reaches one of those; START_STAGE=archive (a
+# re-archive of an existing $SOLR_HOME) does not start Solr.
+SOLR_NEEDED=false
+if [ "$START_INDEX" -le "$(stage_index index-inferred)" ]; then
+    SOLR_NEEDED=true
+fi
 
 # --- Load Nextflow module ---
 module load nextflow
@@ -83,6 +188,7 @@ module load nextflow
 echo "Nextflow version: $(nextflow -version 2>&1 | head -3)"
 
 # --- Pull Singularity image (update if newer version available) ---
+# Always needed: every Nextflow stage runs in this image and the archive step uses its pigz.
 # REMOTE_DIGEST and SIF_DIGEST_FILE are passed from loadData.hpc (login node has internet access, compute nodes do not)
 SIF_IMAGE="$NXF_SINGULARITY_CACHEDIR/oxo2-nextflow.sif"
 echo "Remote image digest: ${REMOTE_DIGEST:-not available}"
@@ -106,334 +212,349 @@ else
     echo "Using cached Singularity image: $SIF_IMAGE (digest: ${LOCAL_DIGEST:-unknown})"
 fi
 
-# --- Copy Solr config ---
-echo "###################" copySolrConfig...
-singularity exec --bind "$SOLR_HOME:/opt/solr/server/solr" "$SIF_IMAGE" \
-    /opt/oxo/oxo2-dataload/copySolrConfig.sh
-sleep 2
+if [ "$SOLR_NEEDED" = true ]; then
+    # --- Copy Solr config ---
+    echo "###################" copySolrConfig...
+    singularity exec --bind "$SOLR_HOME:/opt/solr/server/solr" "$SIF_IMAGE" \
+        /opt/oxo/oxo2-dataload/copySolrConfig.sh
+    sleep 2
 
-# --- Start Solr as a backgrounded foreground process ---
-# Run bin/solr in foreground (-f) inside a plain `singularity exec`, then background
-# it from the slurm shell with `&`. Solr's Java is a direct child of singularity exec
-# which is a direct child of this slurm batch step — everything stays inside the slurm
-# cgroup, with no detached sinit. We captured the host PID for cleanup.
-#
-# Previous attempts used `singularity instance start solr_svc` (detached sinit). On
-# this HPC, that pattern was being SIGTERM'd silently — sacct showed no signal at job
-# level, dmesg showed no kernel OOM, and the instance vanished mid-startup (last Solr
-# log line was core-loading; no shutdown message). Whatever was sending the kill only
-# saw the detached sinit. The foreground-and-background pattern keeps Solr visible to
-# slurm's process tracking and out of reach of that path.
-#
-# Bind Jetty to 0.0.0.0 — singularity uses host networking, so all of localhost, the
-# host's loopback, and the FQDN-resolved IPs reach the same listener.
-echo "Starting Solr (foreground via singularity exec, backgrounded by slurm shell)..."
-mkdir -p "$SOLR_HOME/logs" "$SOLR_HOME/pid"
-singularity exec \
-    --bind "$SOLR_HOME:/opt/solr/server/solr" \
-    --bind "$SOLR_HOME/logs:/opt/solr/server/logs" \
-    --bind "$OXO2_DATA/tmp:/tmp" \
-    --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" \
-    --env "SOLR_JETTY_HOST=0.0.0.0" \
-    "$SIF_IMAGE" \
-    /opt/solr/bin/solr start -f --user-managed -Djava.io.tmpdir=/tmp &
-SOLR_PID=$!
-echo "Solr running as PID $SOLR_PID (singularity exec wrapping bin/solr -f)"
-
-# Trap any exit (success, failure, signal) and tear Solr down. Without this, an early
-# `exit 1` from the wait loop would leave Solr running and the host's :8983 listener
-# would block the next slurm allocation on this node.
-cleanup_solr() {
-    if [ -n "${SOLR_PID:-}" ] && kill -0 "$SOLR_PID" 2>/dev/null; then
-        echo "Cleanup: stopping Solr (PID=$SOLR_PID)..."
-        kill -TERM "$SOLR_PID" 2>/dev/null || true
-        for _ in {1..30}; do
-            kill -0 "$SOLR_PID" 2>/dev/null || break
-            sleep 1
-        done
-        kill -KILL "$SOLR_PID" 2>/dev/null || true
-        wait "$SOLR_PID" 2>/dev/null || true
-    fi
-}
-trap cleanup_solr EXIT
-
-# --- Diagnostics: capture per-node network state for intermittent-failure forensics ---
-echo "=== Solr network diagnostics (host) ==="
-echo "hostname        : $(hostname)"
-echo "hostname -f     : $(hostname -f 2>/dev/null || echo n/a)"
-echo "hostname -I     : $(hostname -I 2>/dev/null || echo n/a)"
-echo "getent hosts    : $(getent hosts "$(hostname)" 2>/dev/null || echo 'no resolution')"
-echo "--- /etc/hosts ---"
-cat /etc/hosts 2>/dev/null || echo "n/a"
-echo "--- ip addr (host) ---"
-if command -v ip >/dev/null 2>&1; then
-    ip -o addr show 2>/dev/null | awk '{print $2, $3, $4}'
-else
-    echo "ip command not available"
-fi
-echo "--- listeners on :8983 (host) ---"
-if command -v ss >/dev/null 2>&1; then
-    ss -ltnp 2>/dev/null | grep -E '(:8983|State)' || echo "ss: no listener on :8983"
-elif command -v lsof >/dev/null 2>&1; then
-    lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>/dev/null || echo "lsof: no listener on :8983"
-else
-    echo "no ss/lsof on host"
-fi
-echo "--- SOLR_PID liveness ---"
-# Quick check that the backgrounded singularity exec hasn't already died. If it's
-# already dead at this point, Solr never even got out of bin/solr's preamble.
-if kill -0 "$SOLR_PID" 2>/dev/null; then
-    echo "SOLR_PID $SOLR_PID is alive"
-else
-    echo "WARNING: SOLR_PID $SOLR_PID is already dead before wait loop"
-fi
-echo "=== End Solr network diagnostics ==="
-
-# --- Verify Solr is reachable; abort if not ---
-# Two distinct probes, both via host curl (singularity uses host networking, so the
-# host shell and the container share the same network namespace — no need to exec
-# into the container for HTTP probes):
-#   1. localhost — confirms Solr is responding to HTTP at all
-#   2. $SOLR_URL (FQDN) — confirms cross-node reachability for Nextflow sub-jobs that
-#      will run on other compute nodes
-# Retry up to ~120s — bin/solr -f starts Solr asynchronously; we have to poll for the
-# listener to come up rather than relying on bin/solr's own wait check (which only
-# applies when running daemonized).
-wait_for_solr_url() {
-    local url=$1
-    local description=$2
-
-    for attempt in {1..60}; do
-        if curl -sf "$url" > /dev/null 2>&1; then
-            echo "$description is ready at $url (attempt $attempt)"
-            return 0
-        fi
-        # Fail fast if Solr's parent process died — no point waiting 120s for a dead Solr.
-        if ! kill -0 "$SOLR_PID" 2>/dev/null; then
-            echo "ERROR: SOLR_PID $SOLR_PID died while waiting for $description" >&2
-            return 1
-        fi
-        sleep 2
-    done
-
-    echo "ERROR: $description did not become ready at $url after 120s" >&2
-    return 1
-}
-
-# Dumps whatever we can grab about Solr/JVM state to stderr. Called immediately before
-# exiting on a wait_for_solr_url failure so the slurm .err file always captures
-# forensic state, regardless of which probe failed.
-dump_failure_state() {
-    {
-        echo ""
-        echo "=== Failure-time diagnostics ==="
-        echo "--- SOLR_PID ($SOLR_PID) alive? ---"
-        if kill -0 "$SOLR_PID" 2>/dev/null; then
-            echo "yes"
-            echo "--- ps for SOLR_PID and descendants ---"
-            ps -o pid,ppid,pgid,sid,stat,etime,comm -g "$SOLR_PID" 2>&1 \
-                || ps -ef 2>&1 | grep -E "(PID|$SOLR_PID|solr|java)" | head -40
-        else
-            echo "NO — Solr's parent process has died"
-        fi
-        echo "--- listeners on :8983 (host) ---"
-        if command -v ss >/dev/null 2>&1; then
-            ss -ltnp 2>/dev/null | grep -E '(:8983|State)' || echo "ss: no listener on :8983"
-        elif command -v lsof >/dev/null 2>&1; then
-            lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>/dev/null || echo "lsof: no listener on :8983"
-        fi
-        echo "--- Solr PID file ($SOLR_HOME/pid/solr-8983.pid) ---"
-        if [ -f "$SOLR_HOME/pid/solr-8983.pid" ]; then
-            cat "$SOLR_HOME/pid/solr-8983.pid"
-        else
-            echo "no solr-8983.pid file"
-        fi
-        echo "--- JVM crash files ($SOLR_HOME/logs/jvm_crash_*.log, hs_err_*.log) ---"
-        ls -la "$SOLR_HOME/logs"/jvm_crash_*.log "$SOLR_HOME/logs"/hs_err_*.log 2>/dev/null \
-            || echo "no JVM crash/hs_err files"
-        echo "--- tail -n 100 $SOLR_HOME/logs/solr.log ---"
-        if [ -f "$SOLR_HOME/logs/solr.log" ]; then
-            tail -n 100 "$SOLR_HOME/logs/solr.log"
-        else
-            echo "$SOLR_HOME/logs/solr.log does not exist"
-        fi
-        echo "--- last 20 entries of $SOLR_HOME/logs (if any) ---"
-        ls -lt "$SOLR_HOME/logs" 2>/dev/null | head -20 || echo "logs dir not readable"
-        echo "--- dmesg tail (kernel ring buffer; may require CAP_SYSLOG) ---"
-        if dmesg --help 2>&1 | grep -q -- '--ctime'; then
-            dmesg --ctime 2>&1 | tail -200 || echo "dmesg failed (restricted?)"
-        else
-            dmesg 2>&1 | tail -200 || echo "dmesg failed (restricted?)"
-        fi
-        echo "=== End failure-time diagnostics ==="
-    } >&2
-}
-
-if ! wait_for_solr_url "http://localhost:8983/solr/admin/info/system" "Solr (via localhost)"; then
-    dump_failure_state
-    echo "ERROR: Solr is not responding to HTTP on localhost. Aborting." >&2
-    exit 1
-fi
-
-if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr (via hostname)"; then
-    dump_failure_state
-    echo "ERROR: Solr is not reachable via hostname \"$SOLR_URL\" — Nextflow sub-jobs on other nodes will fail. Aborting." >&2
-    exit 1
-fi
-
-# >>> TEMP run-from-merge: skip Stage 1 (download) + Stage 2 (sssom2json); reuse prior outputs <<<
-if false; then
-# --- Stage 1: Download mappings ---
-start_time=$(date +%s)
-echo "###################" downloadMappings...
-nextflow -log "$NXF_LOGS/downloadMappings.nextflow.log" \
-    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
-    run "$SCRIPT_DIR/downloadMappings.nf" \
-    -profile "$NF_PROFILE" \
-    -with-trace    "$NXF_LOGS/downloadMappings-trace.txt" \
-    -with-report   "$NXF_LOGS/downloadMappings-report.html" \
-    -with-timeline "$NXF_LOGS/downloadMappings-timeline.html"
-end_time=$(date +%s)
-echo "Download took: $((end_time - start_time)) seconds"
-
-# --- Stage 2: SSSOM to JSON ---
-start_time=$(date +%s)
-echo "###################" sssom2json...
-nextflow -log "$NXF_LOGS/sssom2json.nextflow.log" \
-    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
-    run "$SCRIPT_DIR/sssom2json.nf" \
-    -profile "$NF_PROFILE" \
-    -with-trace    "$NXF_LOGS/sssom2json-trace.txt" \
-    -with-report   "$NXF_LOGS/sssom2json-report.html" \
-    -with-timeline "$NXF_LOGS/sssom2json-timeline.html"
-end_time=$(date +%s)
-echo "SSSOM to JSON took: $((end_time - start_time)) seconds"
-fi  # >>> end TEMP run-from-merge skip of Stage 1 (download) + Stage 2 (sssom2json) <<<
-
-# --- Stage 3 (TEMP run-from-merge): merge existing chunk chains ONLY ---
-# Reuse the per-chunk inferencesToTrace-chunk*-chains.json the previous run left in NXF_WORK and
-# re-run just the (now streaming) merge. Skips INFER_CROSS_SET + EXPLAIN_CROSS_SET_CHUNK. -Xmx is
-# modest on purpose: the streaming merge's footprint is small and Solr shares this 32 GB main-step
-# cgroup (Solr is still near-empty here — asserted indexing is Stage 4). SIF_IMAGE is the image
-# pulled above, so it carries the merge fix as long as the post-fix :dev image has been built.
-start_time=$(date +%s)
-echo "###################" "TEMP merge-only (cross-set)..."
-mkdir -p "$OXO2_INFERENCES/inferenceChainsCrossSet" "$OXO2_DATA/tmp"
-mapfile -t MERGE_CHUNKS < <(find "$NXF_WORK" -type f -name 'inferencesToTrace-chunk*-chains.json' | sort)
-echo "Found ${#MERGE_CHUNKS[@]} chunk chain file(s) in $NXF_WORK"
-if [ "${#MERGE_CHUNKS[@]}" -eq 0 ]; then
-    echo "ERROR: no chunk chains under $NXF_WORK — nothing to merge (was it wiped?)." >&2
-    exit 1
-fi
-( cd "$OXO2_DATA/tmp" && JAVA_OPTS="-Xmx16g -XX:+ExitOnOutOfMemoryError" \
+    # --- Start Solr as a backgrounded foreground process ---
+    # Run bin/solr in foreground (-f) inside a plain `singularity exec`, then background
+    # it from the slurm shell with `&`. Solr's Java is a direct child of singularity exec
+    # which is a direct child of this slurm batch step — everything stays inside the slurm
+    # cgroup, with no detached sinit. We captured the host PID for cleanup.
+    #
+    # Previous attempts used `singularity instance start solr_svc` (detached sinit). On
+    # this HPC, that pattern was being SIGTERM'd silently — sacct showed no signal at job
+    # level, dmesg showed no kernel OOM, and the instance vanished mid-startup (last Solr
+    # log line was core-loading; no shutdown message). Whatever was sending the kill only
+    # saw the detached sinit. The foreground-and-background pattern keeps Solr visible to
+    # slurm's process tracking and out of reach of that path.
+    #
+    # Bind Jetty to 0.0.0.0 — singularity uses host networking, so all of localhost, the
+    # host's loopback, and the FQDN-resolved IPs reach the same listener.
+    echo "Starting Solr (foreground via singularity exec, backgrounded by slurm shell)..."
+    mkdir -p "$SOLR_HOME/logs" "$SOLR_HOME/pid"
     singularity exec \
-        --bind "$NXF_WORK:$NXF_WORK" \
-        --bind "$OXO2_DATA:$OXO2_DATA" \
-        --env JAVA_OPTS \
+        --bind "$SOLR_HOME:/opt/solr/server/solr" \
+        --bind "$SOLR_HOME/logs:/opt/solr/server/logs" \
+        --bind "$OXO2_DATA/tmp:/tmp" \
+        --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" \
+        --env "SOLR_JETTY_HOST=0.0.0.0" \
         "$SIF_IMAGE" \
-        /opt/oxo/oxo2-dataload/oxo2-json2inferences/mergeChainFiles.sh \
-        "$OXO2_INFERENCES/inferenceChainsCrossSet/inferences-chains.json" "${MERGE_CHUNKS[@]}" )
-if [ ! -s "$OXO2_INFERENCES/inferenceChainsCrossSet/inferences-chains.json" ]; then
-    echo "ERROR: merge produced no/empty inferences-chains.json" >&2
-    exit 1
+        /opt/solr/bin/solr start -f --user-managed -Djava.io.tmpdir=/tmp &
+    SOLR_PID=$!
+    echo "Solr running as PID $SOLR_PID (singularity exec wrapping bin/solr -f)"
+
+    # Trap any exit (success, failure, signal) and tear Solr down. Without this, an early
+    # `exit 1` from the wait loop would leave Solr running and the host's :8983 listener
+    # would block the next slurm allocation on this node.
+    cleanup_solr() {
+        if [ -n "${SOLR_PID:-}" ] && kill -0 "$SOLR_PID" 2>/dev/null; then
+            echo "Cleanup: stopping Solr (PID=$SOLR_PID)..."
+            kill -TERM "$SOLR_PID" 2>/dev/null || true
+            for _ in {1..30}; do
+                kill -0 "$SOLR_PID" 2>/dev/null || break
+                sleep 1
+            done
+            kill -KILL "$SOLR_PID" 2>/dev/null || true
+            wait "$SOLR_PID" 2>/dev/null || true
+        fi
+    }
+    trap cleanup_solr EXIT
+
+    # --- Diagnostics: capture per-node network state for intermittent-failure forensics ---
+    echo "=== Solr network diagnostics (host) ==="
+    echo "hostname        : $(hostname)"
+    echo "hostname -f     : $(hostname -f 2>/dev/null || echo n/a)"
+    echo "hostname -I     : $(hostname -I 2>/dev/null || echo n/a)"
+    echo "getent hosts    : $(getent hosts "$(hostname)" 2>/dev/null || echo 'no resolution')"
+    echo "--- /etc/hosts ---"
+    cat /etc/hosts 2>/dev/null || echo "n/a"
+    echo "--- ip addr (host) ---"
+    if command -v ip >/dev/null 2>&1; then
+        ip -o addr show 2>/dev/null | awk '{print $2, $3, $4}'
+    else
+        echo "ip command not available"
+    fi
+    echo "--- listeners on :8983 (host) ---"
+    if command -v ss >/dev/null 2>&1; then
+        ss -ltnp 2>/dev/null | grep -E '(:8983|State)' || echo "ss: no listener on :8983"
+    elif command -v lsof >/dev/null 2>&1; then
+        lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>/dev/null || echo "lsof: no listener on :8983"
+    else
+        echo "no ss/lsof on host"
+    fi
+    echo "--- SOLR_PID liveness ---"
+    # Quick check that the backgrounded singularity exec hasn't already died. If it's
+    # already dead at this point, Solr never even got out of bin/solr's preamble.
+    if kill -0 "$SOLR_PID" 2>/dev/null; then
+        echo "SOLR_PID $SOLR_PID is alive"
+    else
+        echo "WARNING: SOLR_PID $SOLR_PID is already dead before wait loop"
+    fi
+    echo "=== End Solr network diagnostics ==="
+
+    # --- Verify Solr is reachable; abort if not ---
+    # Two distinct probes, both via host curl (singularity uses host networking, so the
+    # host shell and the container share the same network namespace — no need to exec
+    # into the container for HTTP probes):
+    #   1. localhost — confirms Solr is responding to HTTP at all
+    #   2. $SOLR_URL (FQDN) — confirms cross-node reachability for Nextflow sub-jobs that
+    #      will run on other compute nodes
+    # Retry up to ~120s — bin/solr -f starts Solr asynchronously; we have to poll for the
+    # listener to come up rather than relying on bin/solr's own wait check (which only
+    # applies when running daemonized).
+    wait_for_solr_url() {
+        local url=$1
+        local description=$2
+
+        for attempt in {1..60}; do
+            if curl -sf "$url" > /dev/null 2>&1; then
+                echo "$description is ready at $url (attempt $attempt)"
+                return 0
+            fi
+            # Fail fast if Solr's parent process died — no point waiting 120s for a dead Solr.
+            if ! kill -0 "$SOLR_PID" 2>/dev/null; then
+                echo "ERROR: SOLR_PID $SOLR_PID died while waiting for $description" >&2
+                return 1
+            fi
+            sleep 2
+        done
+
+        echo "ERROR: $description did not become ready at $url after 120s" >&2
+        return 1
+    }
+
+    # Dumps whatever we can grab about Solr/JVM state to stderr. Called immediately before
+    # exiting on a wait_for_solr_url failure so the slurm .err file always captures
+    # forensic state, regardless of which probe failed.
+    dump_failure_state() {
+        {
+            echo ""
+            echo "=== Failure-time diagnostics ==="
+            echo "--- SOLR_PID ($SOLR_PID) alive? ---"
+            if kill -0 "$SOLR_PID" 2>/dev/null; then
+                echo "yes"
+                echo "--- ps for SOLR_PID and descendants ---"
+                ps -o pid,ppid,pgid,sid,stat,etime,comm -g "$SOLR_PID" 2>&1 \
+                    || ps -ef 2>&1 | grep -E "(PID|$SOLR_PID|solr|java)" | head -40
+            else
+                echo "NO — Solr's parent process has died"
+            fi
+            echo "--- listeners on :8983 (host) ---"
+            if command -v ss >/dev/null 2>&1; then
+                ss -ltnp 2>/dev/null | grep -E '(:8983|State)' || echo "ss: no listener on :8983"
+            elif command -v lsof >/dev/null 2>&1; then
+                lsof -iTCP:8983 -sTCP:LISTEN -P -n 2>/dev/null || echo "lsof: no listener on :8983"
+            fi
+            echo "--- Solr PID file ($SOLR_HOME/pid/solr-8983.pid) ---"
+            if [ -f "$SOLR_HOME/pid/solr-8983.pid" ]; then
+                cat "$SOLR_HOME/pid/solr-8983.pid"
+            else
+                echo "no solr-8983.pid file"
+            fi
+            echo "--- JVM crash files ($SOLR_HOME/logs/jvm_crash_*.log, hs_err_*.log) ---"
+            ls -la "$SOLR_HOME/logs"/jvm_crash_*.log "$SOLR_HOME/logs"/hs_err_*.log 2>/dev/null \
+                || echo "no JVM crash/hs_err files"
+            echo "--- tail -n 100 $SOLR_HOME/logs/solr.log ---"
+            if [ -f "$SOLR_HOME/logs/solr.log" ]; then
+                tail -n 100 "$SOLR_HOME/logs/solr.log"
+            else
+                echo "$SOLR_HOME/logs/solr.log does not exist"
+            fi
+            echo "--- last 20 entries of $SOLR_HOME/logs (if any) ---"
+            ls -lt "$SOLR_HOME/logs" 2>/dev/null | head -20 || echo "logs dir not readable"
+            echo "--- dmesg tail (kernel ring buffer; may require CAP_SYSLOG) ---"
+            if dmesg --help 2>&1 | grep -q -- '--ctime'; then
+                dmesg --ctime 2>&1 | tail -200 || echo "dmesg failed (restricted?)"
+            else
+                dmesg 2>&1 | tail -200 || echo "dmesg failed (restricted?)"
+            fi
+            echo "=== End failure-time diagnostics ==="
+        } >&2
+    }
+
+    if ! wait_for_solr_url "http://localhost:8983/solr/admin/info/system" "Solr (via localhost)"; then
+        dump_failure_state
+        echo "ERROR: Solr is not responding to HTTP on localhost. Aborting." >&2
+        exit 1
+    fi
+
+    if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr (via hostname)"; then
+        dump_failure_state
+        echo "ERROR: Solr is not reachable via hostname \"$SOLR_URL\" — Nextflow sub-jobs on other nodes will fail. Aborting." >&2
+        exit 1
+    fi
+
+    # --- Wait for the asserted cores to finish loading ---
+    # The probes above hit /admin/info/system, which is core-independent and answers as soon as the
+    # admin handler is up — BEFORE the oxo2-mappings / oxo2-mappingsets cores finish loading. The
+    # first json2solr POST then races core-loading: a still-loading core returns HTTP 503, the
+    # curl -fsS in json2solr.sh exits non-zero, set -e aborts this script, and the EXIT trap SIGTERMs
+    # Solr mid-load (surfacing as "CoreContainer has been closed"). Gate on each core being queryable
+    # to close that race. select?q=*:*&rows=0 mirrors verify_solr_indexed and 503s until the core loads.
+    for core in oxo2-mappings oxo2-mappingsets; do
+        if ! wait_for_solr_url "$SOLR_URL/$core/select?q=*:*&rows=0" "Solr core '$core'"; then
+            dump_failure_state
+            echo "ERROR: Solr core '$core' did not finish loading. Aborting." >&2
+            exit 1
+        fi
+    done
+fi  # SOLR_NEEDED
+
+# --- Stage: download mappings ---
+if should_run download; then
+    start_time=$(date +%s)
+    echo "###################" downloadMappings...
+    nextflow -log "$NXF_LOGS/downloadMappings.nextflow.log" \
+        -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+        run "$SCRIPT_DIR/downloadMappings.nf" \
+        -profile "$NF_PROFILE" \
+        -with-trace    "$NXF_LOGS/downloadMappings-trace.txt" \
+        -with-report   "$NXF_LOGS/downloadMappings-report.html" \
+        -with-timeline "$NXF_LOGS/downloadMappings-timeline.html"
+    end_time=$(date +%s)
+    echo "Download took: $((end_time - start_time)) seconds"
+    record_stage download
 fi
-end_time=$(date +%s)
-echo "TEMP merge-only took: $((end_time - start_time)) seconds"
 
-# --- Stage 4: Index mappings to Solr ---
-start_time=$(date +%s)
-echo "###################" json2solr mappings...
-singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
-    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/sssom-as-json/mapping" "$SOLR_URL/oxo2-mappings"
-echo "###################" json2solr mappingSets...
-singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
-    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/sssom-as-json/mappingSet" "$SOLR_URL/oxo2-mappingsets"
-end_time=$(date +%s)
-echo "Writing to Solr took: $((end_time - start_time)) seconds"
-sleep 20
+# --- Stage: SSSOM to JSON ---
+if should_run sssom2json; then
+    start_time=$(date +%s)
+    echo "###################" sssom2json...
+    nextflow -log "$NXF_LOGS/sssom2json.nextflow.log" \
+        -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+        run "$SCRIPT_DIR/sssom2json.nf" \
+        -profile "$NF_PROFILE" \
+        -with-trace    "$NXF_LOGS/sssom2json-trace.txt" \
+        -with-report   "$NXF_LOGS/sssom2json-report.html" \
+        -with-timeline "$NXF_LOGS/sssom2json-timeline.html"
+    end_time=$(date +%s)
+    echo "SSSOM to JSON took: $((end_time - start_time)) seconds"
+    record_stage sssom2json
+fi
 
-# --- Verify Stage 4: Check documents were indexed ---
-echo "Verifying Solr indexing..."
-for core in oxo2-mappings oxo2-mappingsets; do
-    count=$(curl -sf "$SOLR_URL/$core/select?q=*:*&rows=0" \
-        | grep -o '"numFound":[0-9]*' | grep -o '[0-9]*')
-    echo "  $core: ${count:-0} documents"
-    if [ -z "$count" ] || [ "$count" -eq 0 ]; then
-        echo "ERROR: No documents found in $core after indexing" >&2
-        exit 1
-    fi
-done
-echo "Solr indexing verified successfully."
+# --- Stage: inference (nquads -> infer -> trace -> explain -> merge), ADR-0016 ---
+# A single Nextflow invocation runs the whole cross-set inference. Where the run re-enters the DAG
+# is the `-entry` point selected from START_STAGE; each entry reads the previous substep's published
+# artifact (see inferSssomCrossSet.nf). The block runs whenever any inference substage is in scope
+# (START_STAGE at or before `merge`).
+if should_run merge; then
+    # Safe empty-array expansion (`${arr[@]+...}`) so `set -u` tolerates the full-run case.
+    INFER_ENTRY_ARGS=()
+    case "$START_STAGE" in
+        infer)   INFER_ENTRY_ARGS=(-entry from_infer) ;;
+        trace)   INFER_ENTRY_ARGS=(-entry from_trace) ;;
+        explain) INFER_ENTRY_ARGS=(-entry from_explain) ;;
+        merge)   INFER_ENTRY_ARGS=(-entry from_merge) ;;
+        *)       INFER_ENTRY_ARGS=() ;;  # download|sssom2json|nquads -> full pipeline from JSON
+    esac
+    start_time=$(date +%s)
+    echo "###################" "inferSssomCrossSet (SSSOM, cross-set) entry=${START_STAGE}..."
+    nextflow -log "$NXF_LOGS/inferSssomCrossSet.nextflow.log" \
+        -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+        run "$SCRIPT_DIR/inferSssomCrossSet.nf" \
+        -profile "$NF_PROFILE" \
+        ${INFER_ENTRY_ARGS[@]+"${INFER_ENTRY_ARGS[@]}"} \
+        -with-trace    "$NXF_LOGS/inferSssomCrossSet-trace.txt" \
+        -with-report   "$NXF_LOGS/inferSssomCrossSet-report.html" \
+        -with-timeline "$NXF_LOGS/inferSssomCrossSet-timeline.html"
+    end_time=$(date +%s)
+    echo "SSSOM cross-set inference took: $((end_time - start_time)) seconds"
+    # Inference substeps run inside one Nextflow process graph; we record the boundary `merge`.
+    record_stage merge
+fi
 
-# --- Stage 5: Explanations to JSON (SSSOM reasoning across all sets, ADR-0016) ---
-# Runs after the asserted data is indexed (Stage 4): explanations2json queries Solr for entity
-# details and per-leaf provenance, so the asserted mappings must already be in Solr. SOLR_URL is
-# read from the environment (exported above), so no --solr_url param is needed. A single chains
-# file -> the single oxo2/inferences set (SSSOM_INFERENCE); the source-set union is recovered
-# per-leaf from mapping_id.
-start_time=$(date +%s)
-echo "###################" "explanations2json (SSSOM, cross-set)..."
-(cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/explanations2jsonCrossSet.nextflow.log" \
-    -c "$SCRIPT_DIR/nextflow/nextflow.config" \
-    run "$SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf" \
-    -profile "$NF_PROFILE" \
-    --input_dir "$OXO2_INFERENCES/inferenceChainsCrossSet" \
-    --inference_type SSSOM_INFERENCE \
-    -with-trace    "$NXF_LOGS/explanations2jsonCrossSet-trace.txt" \
-    -with-report   "$NXF_LOGS/explanations2jsonCrossSet-report.html" \
-    -with-timeline "$NXF_LOGS/explanations2jsonCrossSet-timeline.html")
-end_time=$(date +%s)
-echo "Explanations to JSON (SSSOM cross-set) took: $((end_time - start_time)) seconds"
+# --- Stage: index asserted mappings to Solr ---
+if should_run index-asserted; then
+    start_time=$(date +%s)
+    echo "###################" json2solr mappings...
+    singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
+        /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/sssom-as-json/mapping" "$SOLR_URL/oxo2-mappings"
+    echo "###################" json2solr mappingSets...
+    singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
+        /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/sssom-as-json/mappingSet" "$SOLR_URL/oxo2-mappingsets"
+    end_time=$(date +%s)
+    echo "Writing to Solr took: $((end_time - start_time)) seconds"
+    sleep 20
+    verify_solr_indexed
+    record_stage index-asserted
+fi
 
-# --- Stage 6: Index inferred mappings and mapping sets to Solr ---
-echo "###################" json2solr inferred mappings...
-singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
-    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_INFERENCES/solr/mapping" "$SOLR_URL/oxo2-mappings"
-echo "###################" json2solr inferred mappingSets...
-singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
-    /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_INFERENCES/solr/mappingSet" "$SOLR_URL/oxo2-mappingsets"
-sleep 20
+# --- Stage: explanations to JSON (SSSOM reasoning across all sets, ADR-0016) ---
+# Runs after the asserted data is indexed: explanations2json queries Solr for entity details and
+# per-leaf provenance, so the asserted mappings must already be in Solr. The EXPLANATIONS_TO_JSON
+# task runs as its own SLURM job on another node, where Solr is not on localhost, so the main node's
+# Solr URL ($SOLR_URL, the FQDN the readiness probe confirmed reachable cross-node) is passed
+# explicitly: explanations2json.nf otherwise defaults params.solr_url to http://localhost:8983 and
+# exports it over any inherited SOLR_URL, so the task would dial its own node (ConnectException in
+# DataloadSolr.prefetchMappingsByIds). A single chains file -> the single oxo2/inferences set
+# (SSSOM_INFERENCE); the source-set union is recovered per-leaf from mapping_id.
+if should_run explanations2json; then
+    start_time=$(date +%s)
+    echo "###################" "explanations2json (SSSOM, cross-set)..."
+    (cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/explanations2jsonCrossSet.nextflow.log" \
+        -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+        run "$SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf" \
+        -profile "$NF_PROFILE" \
+        --input_dir "$OXO2_INFERENCES/inferenceChainsCrossSet" \
+        --inference_type SSSOM_INFERENCE \
+        --solr_url "$SOLR_URL" \
+        -with-trace    "$NXF_LOGS/explanations2jsonCrossSet-trace.txt" \
+        -with-report   "$NXF_LOGS/explanations2jsonCrossSet-report.html" \
+        -with-timeline "$NXF_LOGS/explanations2jsonCrossSet-timeline.html")
+    end_time=$(date +%s)
+    echo "Explanations to JSON (SSSOM cross-set) took: $((end_time - start_time)) seconds"
+    record_stage explanations2json
+fi
 
-# --- Verify Stage 7: Check inferred documents were indexed ---
-echo "Verifying Solr indexing..."
-for core in oxo2-mappings oxo2-mappingsets; do
-    count=$(curl -sf "$SOLR_URL/$core/select?q=*:*&rows=0" \
-        | grep -o '"numFound":[0-9]*' | grep -o '[0-9]*')
-    echo "  $core: ${count:-0} documents"
-    if [ -z "$count" ] || [ "$count" -eq 0 ]; then
-        echo "ERROR: No documents found in $core after indexing" >&2
-        exit 1
-    fi
-done
-echo "Solr indexing verified successfully."
+# --- Stage: index inferred mappings and mapping sets to Solr ---
+if should_run index-inferred; then
+    echo "###################" json2solr inferred mappings...
+    singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
+        /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_INFERENCES/solr/mapping" "$SOLR_URL/oxo2-mappings"
+    echo "###################" json2solr inferred mappingSets...
+    singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
+        /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_INFERENCES/solr/mappingSet" "$SOLR_URL/oxo2-mappingsets"
+    sleep 20
+    verify_solr_indexed
+    record_stage index-inferred
+fi
 
-
-# --- Stop Solr before archiving ---
-# Archive the Solr data only after a clean shutdown: SIGTERM lets Solr commit and close
-# the index so the on-disk state in $SOLR_HOME is durable and self-consistent. cleanup_solr
-# (the EXIT-trap handler installed near the top) is idempotent — sends SIGTERM, waits up to
-# 30s, then SIGKILL. We invoke it explicitly here so the stop happens before the tar, then
-# disarm the trap so it does not run a second time on exit.
-echo "################### Stopping Solr before archiving..."
-cleanup_solr
-trap - EXIT
+# --- Stage: archive (always the final step) ---
+# Stop Solr cleanly (only if we started it) so the on-disk index is durable, then tar+pigz
+# $SOLR_HOME. With START_STAGE=archive, Solr was never started and this just re-archives the
+# existing $SOLR_HOME.
+if [ "$SOLR_NEEDED" = true ]; then
+    # Archive the Solr data only after a clean shutdown: SIGTERM lets Solr commit and close the
+    # index so the on-disk state in $SOLR_HOME is durable and self-consistent. cleanup_solr (the
+    # EXIT-trap handler installed above) is idempotent — SIGTERM, wait up to 30s, then SIGKILL. We
+    # invoke it explicitly here so the stop happens before the tar, then disarm the trap so it does
+    # not run a second time on exit.
+    echo "################### Stopping Solr before archiving..."
+    cleanup_solr
+    trap - EXIT
+fi
 
 # Ensure Solr data is accessible
 chmod -R 777 "$SOLR_HOME"/* 2>/dev/null || true
 
 # --- Archive Solr data for the Kubernetes import volume ---
-# Jenkins copies this tarball to the NFS export that the dev cluster's Solr init container
-# mounts read-only and extracts into /var/solr (see k8chart-dev/oxo2/templates/solr-deployment.yaml).
-# The archive holds the *contents* of $SOLR_HOME (created with `-C "$SOLR_HOME" .`) so that
-# `tar -xzf ... -C /var/solr` on the cluster reproduces the layout. The run-local logs/ and
-# pid/ dirs are excluded — they are meaningless in the cluster and only bloat the archive.
+# A separate Jenkins job copies this tarball to the NFS export that the dev cluster's Solr init
+# container mounts read-only and extracts into /var/solr (see
+# k8chart-dev/oxo2/templates/solr-deployment.yaml). The archive holds the *contents* of $SOLR_HOME
+# (created with `-C "$SOLR_HOME" .`) so that `tar -xzf ... -C /var/solr` on the cluster reproduces
+# the layout. The run-local logs/ and pid/ dirs are excluded — they are meaningless in the cluster
+# and only bloat the archive.
 #
-# Compression runs inside the Singularity image (which ships pigz) rather than on the host,
-# so parallel gzip is guaranteed available. pigz uses $SLURM_CPUS_PER_TASK threads (set via
-# --cpus-per-task in loadData.hpc; falls back to 1 — plain single-threaded gzip — if unset).
-# Both $SOLR_HOME and $OXO2_DATA (which contains $OXO2_INFERENCES) are bound at their host
-# paths so the same absolute paths resolve inside the container. The inner `set -o pipefail`
-# makes a tar failure propagate through the pigz pipe rather than being masked by pigz's exit.
+# Compression runs inside the Singularity image (which ships pigz) rather than on the host, so
+# parallel gzip is guaranteed available. pigz uses $SLURM_CPUS_PER_TASK threads (set via
+# --cpus-per-task in loadData.hpc; falls back to 1 — plain single-threaded gzip — if unset). Both
+# $SOLR_HOME and $OXO2_DATA (which contains $OXO2_INFERENCES) are bound at their host paths so the
+# same absolute paths resolve inside the container. The inner `set -o pipefail` makes a tar failure
+# propagate through the pigz pipe rather than being masked by pigz's exit.
 SOLR_ARCHIVE="$OXO2_INFERENCES/solr-data.tar.gz"
 PIGZ_THREADS="${SLURM_CPUS_PER_TASK:-1}"
 echo "################### Archiving Solr data to $SOLR_ARCHIVE (pigz -p $PIGZ_THREADS) ..."
@@ -446,6 +567,7 @@ singularity exec \
     bash -c "set -o pipefail; tar -cf - -C '$SOLR_HOME' --exclude=./logs --exclude=./pid . | pigz -p $PIGZ_THREADS > '$SOLR_ARCHIVE'"
 archive_end_time=$(date +%s)
 echo "Solr data archived in $((archive_end_time - archive_start_time)) seconds ($(du -h "$SOLR_ARCHIVE" | cut -f1))"
+record_stage archive
 
 echo "=== OXO2 HPC Dataload Complete ==="
 echo "Date: $(date)"

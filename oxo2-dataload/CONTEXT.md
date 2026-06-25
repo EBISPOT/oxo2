@@ -46,7 +46,8 @@ Java sub-modules depend on `oxo2-shared` for the SSSOM data model.
 - **Container image** — built from `Dockerfile.dataload`; `CMD` invokes `loadData.nextflow`.
 - **HPC entry points** — `loadData.hpc` (login node: validate + `sbatch`) and `loadData.slurm` (the
   single batch job) for SLURM-based deployments. Both honour a `START_STAGE` resume parameter, and
-  `loadData.jenkins.sh` + `Jenkinsfile` wrap them for CI-driven runs — see § Resumable dataload.
+  `loadData.jenkins.sh` (the login-node submit→poll→tail wrapper a Jenkins Freestyle job runs over
+  SSH) wraps them for CI-driven runs — see § Resumable dataload.
 - **Solr data archive** — on a successful HPC run, `loadData.slurm` stops Solr cleanly and writes
   `$OXO2_INFERENCES/solr-data.tar.gz` (the contents of `$SOLR_HOME`, excluding the run-local `logs/`
   and `pid/` dirs). Jenkins copies it onto the NFS export, and the dev-cluster Solr init container
@@ -111,6 +112,8 @@ at a time — so heap does not scale with the closure ([ADR-0018](../docs/adr/00
 
 ### Resumable dataload (HPC / Jenkins)
 
+Decision and rationale: [ADR-0019](../docs/adr/0019-resumable-hpc-dataload.md).
+
 The HPC path can resume from the last completed (sub)stage instead of re-running from scratch — so a
 production load that fails late (e.g. a flaky Solr start, or a bug in the cheap merge step after the
 expensive explain step) can be restarted at that point. This replaces the old manual
@@ -151,11 +154,35 @@ download / Solr-load / archive stages. `loadData.hpc` forwards `START_STAGE` to 
 `$OXO2_DATA/.oxo2-last-completed-stage`. On failure, set `START_STAGE` to that value to resume. The
 checkpoint lives outside every stage's owned paths, so cleanup never removes it.
 
-**Jenkins.** `Jenkinsfile` is a declarative pipeline that SSHes into the login node (via a
-"Publish over SSH" *SSH Site*, whose name is the `SSH_SITE` parameter — it carries the hostname, HPC
-username, and key, so the pipeline holds no secrets) and runs `loadData.jenkins.sh` there. That
-wrapper submits via `loadData.hpc`, then blocks — polling Slurm and streaming the job log to the
-build console — and exits with the job's final state, so the build passes iff the dataload
+**Jenkins.** The dataload is driven from a **parameterised Freestyle job** (not a `Jenkinsfile`): its
+single build step is *Execute shell script on remote host using ssh* (the `ssh` plugin), targeting the
+globally-configured **SSH site** for the login node — the same SSH site the `solr-data.tar.gz` copy
+job uses. The hostname, HPC user, and key live in that Jenkins-global SSH site, so no credentials are
+in the repo. (We use a Freestyle job because that build step has no pipeline DSL, and because
+*Publish over SSH* — which a `Jenkinsfile` would have needed — is not installed on the controller and
+cannot be added without disruption.)
+
+The build step runs `loadData.jenkins.sh`, which reads everything from environment variables, so the
+step body just exports the build parameters and invokes the wrapper on the login node:
+
+```sh
+export START_STAGE="$START_STAGE"
+export OXO2_CONFIG="$OXO2_CONFIG"
+export NF_CONTAINER="$NF_CONTAINER"
+export HPC_TIME="$HPC_TIME" HPC_MEM="$HPC_MEM" HPC_CPUS="$HPC_CPUS"
+export HPC_ACCOUNT="$HPC_ACCOUNT" POLL_INTERVAL="$POLL_INTERVAL"
+bash -l "$OXO2_DATALOAD_DIR/loadData.jenkins.sh"
+```
+
+The `$VAR` references are Jenkins build parameters; the `ssh` plugin expands them before sending the
+command, so the login node receives literal values. Configure the job with: a `START_STAGE` **choice**
+parameter (`download` … `archive`, default `download`); string parameters `OXO2_DATALOAD_DIR` (the
+checked-out `oxo2-dataload` dir on the login node), `OXO2_CONFIG`, `NF_CONTAINER`, `HPC_TIME`,
+`HPC_MEM`, `HPC_CPUS`, `HPC_ACCOUNT` (blank = none), `POLL_INTERVAL`; and tick **Do not allow
+concurrent builds** (so two dataloads never race on the checkpoint/jobid files and `$SOLR_HOME`).
+
+`loadData.jenkins.sh` submits via `loadData.hpc`, then blocks — polling Slurm and streaming the job
+log to the build console — and exits with the job's final state, so the build passes iff the dataload
 `COMPLETED`. If a previous wrapper's job is still active (id recorded in
 `$SLURM_LOGS/oxo2-dataload.current-jobid`), it reattaches and tails that job instead of submitting a
 new one, so a dropped Jenkins build is recoverable by re-running the job. The repo is assumed already
