@@ -1,6 +1,6 @@
 # OxO2 HPC Data Release Pipeline
 
-This document describes the end-to-end process for running an OxO2 data release on the EBI HPC (SLURM) cluster. The pipeline downloads SSSOM ontology mappings, converts them to JSON, runs inference and explanation generation via the Nemo rules engine, and indexes everything into Apache Solr.
+This document describes the end-to-end process for running an OxO2 data release on the EBI HPC (SLURM) cluster. The pipeline downloads SSSOM ontology mappings, converts them to JSON, runs cross-set SSSOM inference via the Nemo rules engine, and indexes the asserted and (bare) inferred mappings into Apache Solr. Explanations are no longer precomputed in the dataload — they are deferred to a future on-demand service ([ADR-0020](adr/0020-defer-explanations-to-on-demand.md)).
 
 ## Architecture Overview
 
@@ -16,15 +16,22 @@ The HPC data release uses a **three-layer execution model**:
  loadData.hpc                  loadData.slurm                   Nextflow tasks
    │                             │                                │
    ├─ Validate env vars          ├─ Create directories            ├─ DOWNLOAD_REGISTRY (x N)
-   ├─ Check container digest     ├─ Pull Singularity image        ├─ SSSOM2JSON (x 1)
+   ├─ Check container digest      ├─ Pull Singularity image        ├─ SSSOM2JSON (x 1)
    └─ sbatch ───────────────────>├─ Copy Solr config              ├─ JSON2NQUADS (x M)
-                                 ├─ Start Solr (Singularity)      ├─ INFER_CROSS_SET (x 1)
-                                 ├─ nextflow run (Stages 1-3)────>├─ DETERMINE_CROSS_SET_TRACE...
-                                 ├─ json2solr (Stage 4)           ├─ EXPLAIN_CROSS_SET_CHUNK...
-                                 ├─ nextflow run (Stage 5)───────>└─ EXPLANATIONS_TO_JSON
-                                 ├─ json2solr (Stage 6)
+                                 ├─ Start Solr (Singularity)      ├─ CONCAT_CORPUS (x 1)
+                                 ├─ nextflow run (download)       ├─ INFER_CROSS_SET (x 1)
+                                 ├─ nextflow run (sssom2json)     └─ INFERENCES_TO_JSON (x 1)
+                                 ├─ nextflow run (infer)─────────>
+                                 ├─ json2solr (index-asserted)
+                                 ├─ nextflow run (inferences2json)
+                                 ├─ json2solr (index-inferred)
+                                 ├─ archive (solr-data.tar.gz)
                                  └─ Stop Solr
 ```
+
+The orchestrator's stages are resumable via `START_STAGE`
+([ADR-0019](adr/0019-resumable-hpc-dataload.md)): `download`, `sssom2json`, `nquads`, `infer`,
+`index-asserted`, `inferences2json`, `index-inferred`, `archive`.
 
 ## Prerequisites
 
@@ -91,9 +98,8 @@ $OXO2_DATA/
   assertedMappings/      # Per-set N-Quads facts
   tmp/                   # Temporary files
   inferences/
-    crossSet/                  # Concatenated corpus + Nemo inference output (TTL)
-    inferenceChainsCrossSet/   # Explanation chains (JSON)
-    solr/                # Final enriched JSON for Solr
+    crossSet/            # Concatenated corpus + Nemo inference output (TTL)
+    solr/                # Bare inferred-mapping JSON for Solr (mapping/ and mappingSet/)
 
 $SOLR_HOME/
   oxo2-mappings/         # Solr core: individual mappings
@@ -102,7 +108,7 @@ $SOLR_HOME/
   pid/                   # Solr PID file
 ```
 
-All directories except `NXF_SINGULARITY_CACHEDIR` are cleaned at the start of each run.
+All directories except `NXF_SINGULARITY_CACHEDIR` are cleaned at the start of a full run.
 
 **Singularity image management:** The image is only re-pulled when:
 - It doesn't exist locally, OR
@@ -148,7 +154,7 @@ This is intentionally run as a single process because multiple SSSOM TSV files a
 | Resource | Value   |
 |----------|---------|
 | CPU | 1       |
-| Memory | 16 GB   |
+| Memory | 4 GB    |
 | Time | 2 hours |
 
 **Input:** `$OXO2_DATA/sssom/` (all TSV files)  
@@ -156,23 +162,23 @@ This is intentionally run as a single process because multiple SSSOM TSV files a
 
 ### Step 4: Stage 3 -- Infer Mappings (SSSOM, cross-set) (`inferSssomCrossSet.nf`)
 
-This is the most complex and resource-intensive stage. SSSOM reasoning (ADR-0016) runs **once across all
+This is the most resource-intensive stage. SSSOM reasoning (ADR-0016) runs **once across all
 mapping sets**: each set's JSON is converted to N-Quads, every set's N-Quads is concatenated into one
-corpus, `nmo` runs `sssom.rls` over the whole corpus, and the inferred mappings are traced in chunks.
+corpus, and `nmo` runs `sssom.rls` over the whole corpus to produce the inferred mappings. No trace or
+explanation is computed — explanations are deferred to an on-demand service (ADR-0020).
 
 ```
-*.json ─> JSON2NQUADS ─> CONCAT_CORPUS ─> INFER_CROSS_SET ─> DETERMINE_CROSS_SET_TRACE ─> SPLIT_CROSS_SET_TRACE ─> EXPLAIN_CROSS_SET_CHUNK ─> MERGE_CROSS_SET_CHAIN
- (per file)   (per file)      (x 1)           (x 1)              (x 1)                       (x 1)                    (per chunk, fan-out)        (x 1)
+*.json ─> JSON2NQUADS ─> CONCAT_CORPUS ─> INFER_CROSS_SET
+ (per file)   (per file)      (x 1)           (x 1)
 ```
 
-`JSON2NQUADS` runs per file; everything downstream is a single run over the concatenated corpus.
-`SPLIT_CROSS_SET_TRACE` divides the facts-to-trace file into chunks of `params.trace_chunk_size` mappings
-(default 20000), `EXPLAIN_CROSS_SET_CHUNK` runs `nmo` per chunk concurrently (capped by
-`executor.queueSize`), and `MERGE_CROSS_SET_CHAIN` recombines the per-chunk chain JSONs into one file.
+`JSON2NQUADS` runs per file; `CONCAT_CORPUS` and `INFER_CROSS_SET` are each a single run over the
+concatenated corpus. The output `inferences.ttl` is the inferred mappings themselves; it is turned
+into bare Solr JSON later by `inferences2json.nf` (Step 6), after the asserted mappings are indexed.
 
 > **Sizing is provisional.** The cross-set processes have not yet run at full scale on HPC; the values below
 > are the `nextflow.config` `slurm` estimates and must be recalibrated to ~2x observed peak RSS after the
-> first real HPC run captures cross-set traces.
+> first real HPC run.
 
 #### Stage 3a: JSON to N-Quads (`JSON2NQUADS`)
 
@@ -181,7 +187,7 @@ Converts each JSON mapping file to N-Quads (`<s> <p> <o> <urn:uuid:mapping_id> .
 
 | Resource | Value |
 |----------|-------|
-| CPU | 2 |
+| CPU | 1 |
 | Memory | 4 GB |
 | Time | 2 hours |
 
@@ -209,7 +215,7 @@ across sets. The single heaviest task, as it loads and materialises the all-sets
 | Resource | Value |
 |----------|-------|
 | CPU | 1 |
-| Memory | 32 GB |
+| Memory | 24 GB |
 | Time | 8 hours |
 
 **Command:**
@@ -222,67 +228,6 @@ nmo sssom.rls \
 
 **Input:** `$OXO2_INFERENCES/crossSet/assertedCorpus.nq`
 **Output:** `$OXO2_INFERENCES/crossSet/inferences.ttl`
-
-#### Stage 3d: Determine Inferences to Trace (`DETERMINE_CROSS_SET_TRACE`)
-
-Selects which inferred mappings need explanation chains, via the Java `MainDispatcher inferences2trace`
-command.
-
-| Resource | Value |
-|----------|-------|
-| CPU | 2 |
-| Memory | 4 GB |
-| Time | 4 hours |
-
-**Input:** `$OXO2_INFERENCES/crossSet/inferences.ttl`
-**Output:** `$OXO2_INFERENCES/crossSet/inferencesToTrace.txt`
-
-#### Stage 3e: Split Trace Input (`SPLIT_CROSS_SET_TRACE`)
-
-Splits the facts-to-trace file into chunks of `params.trace_chunk_size` mappings (default 20000) so the
-trace step can fan out.
-
-| Resource | Value |
-|----------|-------|
-| CPU | 1 |
-| Memory | 1 GB |
-| Time | 30 min |
-
-#### Stage 3f: Explain Inference Chunk (`EXPLAIN_CROSS_SET_CHUNK`)
-
-Runs Nemo with tracing enabled on a single chunk of the facts-to-trace file. One task per chunk; concurrency
-capped by `executor.queueSize`. Each chunk re-loads the corpus and re-materialises the inferred graph, so
-heap is sized from the corpus + inferred TTL size (floor 8 GB).
-
-| Resource | Value |
-|----------|-------|
-| CPU | 1 |
-| Memory | dynamic ((corpus + inferred) x 3, floor 8 GB) |
-| Time | 8 hours |
-
-#### Stage 3g: Merge Chain JSON (`MERGE_CROSS_SET_CHAIN`)
-
-Deduplicates and concatenates the per-chunk chain JSONs into the single cross-set chain file matching the
-schema `NemoInferenceReader` expects.
-
-| Resource | Value |
-|----------|-------|
-| CPU | 1 |
-| Memory | 32 GB |
-| Time | 2 hours |
-
-**Command:**
-```bash
-nmo sssom.rls \
-    --param importfile=<assertedCorpus.nq> \
-    --param exportfile=<inferences.ttl> \
-    --trace-input-file <inferencesToTrace.txt> \
-    --trace-output <chains.json>
-```
-
-**Input:** Corpus N-Quads + Inferred TTL + trace selection file
-**Output:** `$OXO2_INFERENCES/inferenceChainsCrossSet/inferences-chains.json`
-
 
 ### Step 5: Stage 4 -- Index Asserted Mappings to Solr
 
@@ -298,37 +243,49 @@ json2solr.sh "$OXO2_DATA/sssom-as-json/mappingSet" http://localhost:8983/solr/ox
 
 **Verification:** After indexing, the pipeline queries each Solr core for `numFound` and **fails the entire pipeline** if any core has zero documents.
 
-### Step 6: Stage 5 -- Explanations to JSON (`explanations2json.nf`)
+### Step 6: Stage 5 -- Inferences to JSON (bare) (`inferences2json.nf`)
 
-**Parallelism:** One SLURM sub-job per inference chain file.
+**Parallelism:** A single process over the one cross-set `inferences.ttl`.
 
-Converts Nemo inference chains into enriched JSON mappings with explanations. The process queries the Solr index (populated in Stage 4) to enrich the output, which is why this stage must run after Stage 4.
+Builds **bare** inferred-mapping JSON straight from `inferences.ttl` (ADR-0020): one document per
+inferred mapping with subject/predicate/object, CURIE/label, and `inference_type` — no explanation
+chain, distance, or asserted evidence. The process queries the Solr index (populated in Stage 4) to
+resolve each inferred entity's CURIE and label, which is why it must run after Stage 4.
 
 | Resource | Value |
 |----------|-------|
 | CPU | 1 |
 | Memory | 16 GB |
-| Time | 12 hours |
+| Time | 8 hours |
 
-Sized from observed peak RSS of ~8 GB (mondo, pre-RG/RI cleanup) across 231 mapping sets; mean was ~743 MB. 16 GB gives ~2× headroom. Slowest historical realtime was mondo at 11.9 h; post-RG/RI-cleanup workload is lighter, so 12 h is a comfortable upper bound.
+16 GB is a generous starting tier — the bare build only holds an IRI→CURIE/label entity cache for the
+entities the inferred mappings reference, far lighter than the former out-of-core explanation step;
+recalibrate to ~2× observed peak RSS after the first real HPC run. The process runs with
+`errorStrategy = 'terminate'` (overriding the global `ignore`): there is a single cross-set output, so a
+swallowed failure would silently drop **all** inferred mappings.
 
 Environment variables `SOLR_URL`, `no_proxy`, and `JAVA_OPTS` are whitelisted in the Singularity configuration and passed to the container so the Java process can reach Solr on the compute node.
 
-**Input:** `$OXO2_INFERENCES/inferenceChainsCrossSet/inferences-chains.json`  
-**Output:** `$OXO2_INFERENCES/solr/*-explained.json`
+**Input:** `$OXO2_INFERENCES/crossSet/inferences.ttl`  
+**Output:** `$OXO2_INFERENCES/solr/mapping/inferences-explained.json` and `$OXO2_INFERENCES/solr/mappingSet/inferences-mappingSet.json`
 
 ### Step 7: Stage 6 -- Index Inferred Mappings to Solr
 
-Posts the enriched inferred mappings to the same `oxo2-mappings` core:
+Posts the bare inferred mappings and their inferred mapping set to the same Solr cores as the asserted
+data:
 
 ```bash
-json2solr.sh "$OXO2_INFERENCES/solr" http://localhost:8983/solr/oxo2-mappings
+json2solr.sh "$OXO2_INFERENCES/solr/mapping"    http://localhost:8983/solr/oxo2-mappings
+json2solr.sh "$OXO2_INFERENCES/solr/mappingSet" http://localhost:8983/solr/oxo2-mappingsets
 ```
 
-### Step 8: Cleanup and Shutdown
+### Step 8: Archive and Shutdown
 
-1. Stops Solr: `solr stop` then `singularity instance stop solr_svc`
-2. Sets permissions: `chmod -R 777 "$SOLR_HOME"/*` so downstream services (e.g., Kubernetes pods) can read the Solr data.
+1. **Archive:** Packs the contents of `$SOLR_HOME` into `$OXO2_INFERENCES/solr-data.tar.gz` (using the
+   image's `pigz`). This archive is what the separate copy-to-NFS + Kubernetes redeploy job consumes; the
+   dataload itself stops here and does not deploy.
+2. **Stop Solr:** `solr stop` then `singularity instance stop solr_svc`.
+3. **Permissions:** `chmod -R 777 "$SOLR_HOME"/*` so downstream services (e.g., Kubernetes pods) can read the Solr data.
 
 ## Resource Summary
 
@@ -336,35 +293,31 @@ json2solr.sh "$OXO2_INFERENCES/solr" http://localhost:8983/solr/oxo2-mappings
 |---------|-----|--------|------|-------------|
 | Main SLURM job | 1 | 16 GB | 72h | 1 (orchestrator) |
 | DOWNLOAD_REGISTRY | 1 | 4 GB | 2h | N registries |
-| SSSOM2JSON | 1 | 8 GB | 2h | 1 (batch) |
-| JSON2NQUADS | 2 | 4 GB | 2h | M files |
+| SSSOM2JSON | 1 | 4 GB | 2h | 1 (batch) |
+| JSON2NQUADS | 1 | 4 GB | 2h | M files |
 | CONCAT_CORPUS | 1 | 4 GB | 2h | 1 |
-| INFER_CROSS_SET | 1 | 32 GB | 8h | 1 |
-| DETERMINE_CROSS_SET_TRACE | 2 | 4 GB | 4h | 1 |
-| SPLIT_CROSS_SET_TRACE | 1 | 1 GB | 30m | 1 |
-| EXPLAIN_CROSS_SET_CHUNK | 1 | dynamic (≥8 GB) | 8h | chunks |
-| MERGE_CROSS_SET_CHAIN | 1 | 32 GB | 2h | 1 |
-| EXPLANATIONS_TO_JSON | 1 | 16 GB | 12h | M files |
+| INFER_CROSS_SET | 1 | 24 GB | 8h | 1 |
+| INFERENCES_TO_JSON | 1 | 16 GB | 8h | 1 |
 
-Nextflow concurrency limit: `executor.queueSize = 200` in the `slurm` profile — up to 200 sub-jobs queued/running concurrently. No `submitRateLimit` is set.
+Nextflow concurrency limit: `executor.queueSize = 150` in the `slurm` profile — up to 150 sub-jobs queued/running concurrently. No `submitRateLimit` is set.
 
 ## Nextflow Configuration Highlights
 
 Key settings from `nextflow/nextflow.config`:
 
-- **SLURM profile:** `executor.name = 'slurm'`, `queueSize =50` (no `submitRateLimit` set)
+- **SLURM profile:** `executor.name = 'slurm'`, `queueSize = 150` (no `submitRateLimit` set)
 - **Singularity:** `enabled = true`, `autoMounts = true`, whitelists `SOLR_URL,no_proxy,JAVA_OPTS`
-- **Error handling:** Default `errorStrategy = 'ignore'` with `maxRetries = 1` (per-process overrides may apply)
+- **Error handling:** Default `errorStrategy = 'ignore'` with `maxRetries = 1`; `INFERENCES_TO_JSON` overrides this to `terminate` (single cross-set output — fail loud rather than silently drop all inferred mappings)
 - **Caching:** `cache = 'lenient'` allows Nextflow to reuse completed tasks on resume
 - **Reports:** HTML execution report, timeline, and trace file written to `$NXF_LOGS/`
 
 ## Error Handling
 
 - **Shell strict mode:** `set -euo pipefail` in `loadData.slurm` fails the pipeline on any error.
-- **Nextflow retries:** Default `errorStrategy = 'ignore'` with `maxRetries = 1`; failing tasks are skipped rather than aborting the workflow.
+- **Nextflow retries:** Default `errorStrategy = 'ignore'` with `maxRetries = 1`; failing tasks are skipped rather than aborting the workflow (except `INFERENCES_TO_JSON`, which terminates).
 - **Solr verification:** Stage 4 explicitly checks document counts and aborts if indexing failed.
 - **Empty file handling:** All Nextflow processes remove output files smaller than 1 byte to prevent downstream issues.
-- **Heap dumps:** The `explanations2json` process enables `-XX:+HeapDumpOnOutOfMemoryError` for post-mortem analysis.
+- **Heap dumps:** The `inferences2json` process enables `-XX:+HeapDumpOnOutOfMemoryError` for post-mortem analysis.
 
 ## Logging
 
@@ -394,8 +347,10 @@ This submits a quick SLURM job (`srun`, 1 hour, 8 GB) that deletes `$NEXTFLOW_DI
 
 2. **Solr as a Singularity instance** -- Solr runs as a long-lived Singularity instance on the compute node (not as a Nextflow task). This lets it persist across all six stages and be accessible from sub-jobs on other nodes via the compute node's hostname.
 
-3. **Per-file pipelining in Stage 3** -- The four inference sub-stages are wired as a single Nextflow workflow with channels connecting them. Each file flows through independently, so file A can be in the explanation stage while file B is still being inferred.
+3. **Cross-set inference in Stage 3** -- `JSON2NQUADS` runs per file, then `CONCAT_CORPUS` and `INFER_CROSS_SET` reason **once** over the concatenated all-sets corpus (ADR-0016). The inferred mappings are indexed bare; explanations are deferred to an on-demand service (ADR-0020).
 
 4. **SSSOM-to-JSON runs as a single batch** -- Unlike other stages, this is intentionally NOT parallelized per-file because output filenames are derived from `mappingSetId`, and multiple input files from different registries can collide. The batch converter handles this with `getUniqueFilename()`.
 
-5. **Two-pass Solr indexing** -- Asserted mappings are indexed first (Stage 4), then inferred mappings are added (Stage 6). Stage 5 (explanations2json) needs the asserted data in Solr to enrich inferred mappings, creating a necessary ordering dependency.
+5. **Two-pass Solr indexing** -- Asserted mappings are indexed first (Stage 4), then inferred mappings are added (Stage 6). Stage 5 (`inferences2json`) needs the asserted data in Solr to resolve each inferred entity's CURIE/label, creating a necessary ordering dependency.
+</content>
+</invoke>

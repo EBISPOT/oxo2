@@ -99,7 +99,7 @@ Single execution path: `loadData.nextflow` invokes the stages below in order. Pe
   so distinct sets that share a basename across sub-directories (the five landscape `priority.sssom.tsv` files) don't
   collapse at the flat publish dir. Downstream stages treat the stem as an opaque unique key.
 
-**3. Inference** — `determineInferencesAndExplanations.nextflow` runs the single SSSOM cross-set pass
+**3. Inference** — `determineInferences.nextflow` runs the single SSSOM cross-set pass
 ([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)) via `inferSssomCrossSet.nf`: `json2nquads`
 converts each set's JSON to N-Quads carrying `mapping_id`
 ([ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)); every set's N-Quads is concatenated
