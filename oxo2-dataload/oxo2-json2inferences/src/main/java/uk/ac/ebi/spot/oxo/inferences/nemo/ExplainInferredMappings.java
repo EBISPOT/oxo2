@@ -403,6 +403,54 @@ public class ExplainInferredMappings {
      *
      * @return the number of {@link Mapping} records written.
      */
+    /**
+     * Resolve an inferred mapping's subject/predicate/object CURIEs + labels from the asserted Solr
+     * index ({@link DataloadSolr#queryEntityDetailsForIRI}, served from the entity cache the caller
+     * must have populated — by chain-leaf prefetch on the explanation path, or by
+     * {@link DataloadSolr#prefetchEntityDetailsByIris} on the bare path) and return a
+     * {@link Mapping.Builder} carrying the s/p/o + ids/labels, justification, tool, set id, and
+     * inference type. The fields common to every inferred mapping doc; the explanation-derived
+     * fields (explanation, asserted evidence, explanationLength, distance) are added by the caller
+     * that has them. Shared by the explanation path and the bare inferred-mapping indexer (ADR-0020).
+     */
+    static Mapping.Builder baseInferredMappingBuilder(DataloadSolr solrClient, String subjectIRI,
+            String predicateIRI, String objectIRI, String inferredMappingSetId,
+            InferenceType inferenceType) {
+        EntityDetails subjectDetails = solrClient.queryEntityDetailsForIRI(subjectIRI);
+        Optional<String> predicateCurie = PrefixMap.toCurie(predicateIRI);
+        String predicateId;
+        String predicateLabel;
+        if (predicateCurie.isPresent()) {
+            predicateId = predicateCurie.get();
+            predicateLabel = "";
+        } else {
+            EntityDetails predicateDetails = solrClient.queryEntityDetailsForIRI(predicateIRI);
+            predicateId = (predicateDetails != null && predicateDetails.getCurie() != null) ?
+                    predicateDetails.getCurie() : "";
+            predicateLabel = (predicateDetails != null && predicateDetails.getLabel() != null) ?
+                    predicateDetails.getLabel() : "";
+        }
+        EntityDetails objectDetails = solrClient.queryEntityDetailsForIRI(objectIRI);
+        return new Mapping.Builder()
+            .subjectIRI(subjectIRI)
+            .subjectId((subjectDetails != null && subjectDetails.getCurie() != null) ?
+                    subjectDetails.getCurie() : "")
+            .subjectLabel((subjectDetails != null && subjectDetails.getLabel() != null) ?
+                    subjectDetails.getLabel() : "")
+            .predicateIRI(predicateIRI)
+            .predicateId(predicateId)
+            .predicateLabel(predicateLabel)
+            .objectIRI(objectIRI)
+            .objectId((objectDetails != null && objectDetails.getCurie() != null) ?
+                    objectDetails.getCurie() : "")
+            .objectLabel((objectDetails != null && objectDetails.getLabel() != null) ?
+                    objectDetails.getLabel() : "")
+            .mappingJustification(OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION)
+            .mappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL)
+            .mappingSetId(inferredMappingSetId)
+            .inferenceType(inferenceType.getCode());
+    }
+
     public static long streamMappingsToJson(Iterator<InferredMapping> inferredMappings,
                                              DataloadSolr solrClient,
                                              String inferredMappingSetId,
@@ -459,25 +507,6 @@ public class ExplainInferredMappings {
                         continue;
                     }
 
-                    EntityDetails subjectDetails = solrClient.queryEntityDetailsForIRI(
-                            inferredMapping.getSubjectIRI().asStringIRI());
-                    String predicateIri = inferredMapping.getPredicateIRI().asStringIRI();
-                    Optional<String> predicateCurie = PrefixMap.toCurie(predicateIri);
-                    String predicateId;
-                    String predicateLabel;
-                    if (predicateCurie.isPresent()) {
-                        predicateId = predicateCurie.get();
-                        predicateLabel = "";
-                    } else {
-                        EntityDetails predicateDetails = solrClient.queryEntityDetailsForIRI(predicateIri);
-                        predicateId = (predicateDetails != null && predicateDetails.getCurie() != null) ?
-                                predicateDetails.getCurie() : "";
-                        predicateLabel = (predicateDetails != null && predicateDetails.getLabel() != null) ?
-                                predicateDetails.getLabel() : "";
-                    }
-                    EntityDetails objectDetails = solrClient.queryEntityDetailsForIRI(
-                            inferredMapping.getObjectIRI().asStringIRI());
-
                     List<InferredMapping> assertedEvidence =
                             determineAssertedMappingsForExplanation(inferredMapping, assertedMemo);
                     // Accumulate the source-set union for the cross-set inferred set metadata: every
@@ -489,28 +518,18 @@ public class ExplainInferredMappings {
                         }
                     }
 
-                    Mapping.Builder mappingBuilder = new Mapping.Builder()
-                        .subjectIRI(inferredMapping.getSubjectIRI().asStringIRI())
-                        .subjectId((subjectDetails != null && subjectDetails.getCurie() != null) ?
-                                subjectDetails.getCurie() : "")
-                        .subjectLabel((subjectDetails != null && subjectDetails.getLabel() != null) ?
-                                subjectDetails.getLabel() : "")
-                        .predicateIRI(predicateIri)
-                        .predicateId(predicateId)
-                        .predicateLabel(predicateLabel)
-                        .objectIRI(inferredMapping.getObjectIRI().asStringIRI())
-                        .objectId((objectDetails != null && objectDetails.getCurie() != null) ?
-                                objectDetails.getCurie() : "")
-                        .objectLabel((objectDetails != null && objectDetails.getLabel() != null) ?
-                                objectDetails.getLabel() : "")
-                        .mappingJustification(OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION)
-                        .mappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL)
+                    // Reuse the shared entity-resolution + base builder so the s/p/o + ids/labels
+                    // are built one place — the same place the bare inferred-mapping indexer uses
+                    // (ADR-0020) — then add the explanation-derived fields that only the trace gives.
+                    Mapping.Builder mappingBuilder = baseInferredMappingBuilder(solrClient,
+                            inferredMapping.getSubjectIRI().asStringIRI(),
+                            inferredMapping.getPredicateIRI().asStringIRI(),
+                            inferredMapping.getObjectIRI().asStringIRI(),
+                            inferredMappingSetId, inferenceType)
                         .explanation(inferredMapping)
                         .assertedMappings(assertedEvidence)
                         .explanationLength(explanationLength(inferredMapping, lengthMemo))
-                        .distance(calculateMappingDistance(inferredMapping))
-                        .mappingSetId(inferredMappingSetId)
-                        .inferenceType(inferenceType.getCode());
+                        .distance(calculateMappingDistance(inferredMapping));
                     // Single-source inference records its one source set. In cross-set inference a
                     // mapping can draw on several sets (captured in the explanation and the set-level
                     // source union), so a single mappingSource would be lossy — leave it unset.

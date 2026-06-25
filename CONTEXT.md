@@ -34,8 +34,10 @@ A SSSOM-defined enumeration.
 ### OxO2 cross-cutting vocabulary
 
 - **Asserted mapping** — a mapping that came directly from an input SSSOM file (`inference_type = ASSERTED`). Contrast with *inferred mapping*; represented in explanation chains by `ChainRulesEnum.ASSERTED`.
-- **Inferred mapping** — a mapping derived by OxO's SSSOM reasoning (see § Cross-cutting constraints), not present in any input file. Modelled as `InferredMapping` in `oxo2-shared`. Inferred mappings carry the chain rule that produced them and a link 
-to the explanation chain. Narrower than the SSSOM notion of a *derived* mapping: a `semapv:LexicalMatching` mapping is derived 
+- **Inferred mapping** — a mapping derived by OxO's SSSOM reasoning (see § Cross-cutting constraints), not present in any input file. Modelled as `InferredMapping` in `oxo2-shared`. In the index they are **bare**
+(`inference_type = SSSOM_INFERENCE`); the chain rule that produced them and their explanation chain are
+not precomputed but reconstructed on demand ([ADR-0020](docs/adr/0020-defer-explanations-to-on-demand.md)).
+Narrower than the SSSOM notion of a *derived* mapping: a `semapv:LexicalMatching` mapping is derived 
 but, having come from an input file, is *asserted* in OxO — *inferred* means produced specifically by OxO reasoning. Every mapping's origin is recorded in the `inference_type` field as one of `ASSERTED` or `SSSOM_INFERENCE`.
 - **SSSOM inference** — an inferred mapping produced by SSSOM reasoning (`sssom.rls`): transitivity and role
 chains over the strong mapping/equivalence predicates, applied **across all mapping sets** — OxO2's only
@@ -45,15 +47,14 @@ inference. `inference_type = SSSOM_INFERENCE`. Shown alongside asserted mappings
 sources. It carries `inference_type`; its IRI resolves to an OxO2 mapping-set view (see
 [ADR-0012](docs/adr/0012-resolvable-inference-set-iris.md)).
 - **Chain rule** — a rule that derives a new mapping from existing ones (e.g. transitivity, inverse, role chain). Implemented in OxO2 as `ChainRulesEnum` (`RCE`, `T`, `RI` families) and as Nemo rules in `oxo2-json2inferences/sssom.rls`. See the SSSOM chaining-rules spec linked in § External surfaces.
-- **Explanation** — the derivation step that justifies a single inferred mapping: which chain rule fired and which input mappings it consumed.
-- **Explanation chain** — the full derivation tree for an inferred mapping, recording every chain-rule application back to asserted mappings.
-- **Facts to trace** — the set of inferred mappings whose explanation chains still need to be computed. Produced by the inference stage, 
-consumed by the trace stage. Lives as per-set files split into chunks for parallel tracing (see § Cross-cutting constraints).
+- **Explanation** — the derivation step that justifies a single inferred mapping: which chain rule fired and which input mappings it consumed. Not precomputed; reconstructed on demand ([ADR-0020](docs/adr/0020-defer-explanations-to-on-demand.md)).
+- **Explanation chain** — the full derivation tree for an inferred mapping, recording every chain-rule application back to asserted mappings. Not precomputed; reconstructed on demand ([ADR-0020](docs/adr/0020-defer-explanations-to-on-demand.md)).
+- **Facts to trace** — the set of inferred mappings whose explanation chains need computing. _Dormant_: with explanations deferred ([ADR-0020](docs/adr/0020-defer-explanations-to-on-demand.md)) the dataload has no trace stage; the term applies again to the future on-demand service, which traces one conclusion at a time rather than chunked files.
 - **Mapping group** — the set of mappings that share the same `subject_id`, `predicate_id`, `predicate_modifier`, and `object_id`: one 
 asserted *meaning* of a triple, collapsed into a single row in the Search and Inferences result views (see § Cross-cutting constraints). 
 Identified by the denormalised `spo_key` field. A relation and its negation (`predicate_modifier = Not`) form **different** groups. 
 _Avoid_: collapsed row, duplicate mappings, SPO group.
-- **Representative mapping** — the member of a **mapping group** shown as its parent row: the highest inference-tier member (`ASSERTED` over `SSSOM_INFERENCE`, shorter chains first). Its subject/predicate/object are the ones displayed; the remaining 
+- **Representative mapping** — the member of a **mapping group** shown as its parent row: the highest inference-tier member (`ASSERTED` over `SSSOM_INFERENCE`; the former "shorter chains first" tie-break is dropped now `distance`/`explanation_length` are not precomputed — [ADR-0020](docs/adr/0020-defer-explanations-to-on-demand.md)). Its subject/predicate/object are the ones displayed; the remaining 
 members are reached by expanding the row.
 
 ## Module map
@@ -77,12 +78,17 @@ mapping/equivalence predicates) run **across all mapping sets** for findability,
 only. OxO2 derives no subsumption — the former per-set OWL phase was dropped (no value on either corpus). See
 [ADR-0016](docs/adr/0016-single-pass-sssom-reasoning.md) (supersedes ADR-0009 and ADR-0001). Affects
 `oxo2-dataload` (one Nemo pass: `sssom.rls` over the whole corpus).
-- **Cross-set explanations are materialised out-of-core** — `explanations2json` indexes the merged
-inference chains into an on-disk store and streams one inferred mapping per final conclusion, so heap
-no longer scales with the cross-set closure (which on a real corpus exceeds a memory-bound load).
-`distance` stays precomputed for every inferred mapping because it is a user-facing filter. See
-[ADR-0018](docs/adr/0018-out-of-core-cross-set-explanation.md). Affects `oxo2-dataload`
-(`oxo2-json2inferences` explanation builder; `EXPLANATIONS_TO_JSON` heap tier + scratch-disk need).
+- **Inferred mappings are indexed without explanations** — the dataload indexes inferred mappings
+**bare** (`inference_type` + s/p/o + ids/labels; no explanation chain, asserted evidence, or
+source-set union; `distance`/`explanation_length` carry inert model defaults rather than computed
+values), built straight from `INFER_CROSS_SET`'s `inferences.ttl` (the
+`~assertedTriple` rule already excludes asserted echoes). Explanation reconstruction costs a full
+reasoning pass per conclusion, so it is deferred to a future async, cached, **on-demand** service
+that reuses the retained (dormant) Java chain interpreter over `nmo` + `sssom.rls` +
+`assertedCorpus.nq`. See [ADR-0020](docs/adr/0020-defer-explanations-to-on-demand.md) (supersedes
+ADR-0018). Affects `oxo2-dataload` (no trace/explain/merge/`explanations2json` on the pipeline; a
+bare inferred-mapping indexer instead). The `distance`/`explanation` backend/frontend/schema surface
+is left dead pending that service (deferred cleanup, ADR-0020).
 - **Solr is the sole data store** — no relational database; both mappings and mapping sets live in Solr collections `oxo2-mappings` 
 and `oxo2-mappingsets`. See [ADR-0002](docs/adr/0002-solr-as-sole-data-store.md). Affects `oxo2-dataload` (denormalised documents at load time) and `oxo2-backend` (query patterns constrained by Solr).
 - **Origin is a denormalised `inference_type` field** — both mappings and mapping sets carry `inference_type` (`ASSERTED` / `SSSOM_INFERENCE`), set once at dataload from OxO provenance, as the single queryable origin signal; the SSSOM 
@@ -112,7 +118,9 @@ every run), and stage-ownership cleanup preserves earlier stages' outputs. A Jen
 over SSH (the `ssh` plugin's remote-shell build step, against a Jenkins-global SSH site — no credentials in
 the repo). Operational layer on top of, not a replacement for, ADR-0003. See
 [ADR-0019](docs/adr/0019-resumable-hpc-dataload.md). Affects `oxo2-dataload` (`loadData.slurm`/`.hpc`,
-`inferSssomCrossSet.nf` `-entry` workflows + published `chunks`/`chunkChains`, `loadData.jenkins.sh`).
+`loadData.jenkins.sh`). NB: [ADR-0020](docs/adr/0020-defer-explanations-to-on-demand.md) removes the
+`trace`/`explain`/`merge`/`explanations2json` stages and the `inferSssomCrossSet.nf`
+`from_trace`/`from_explain`/`from_merge` entry points, shortening the resumable stage list.
 - **OxO2 is backwards compatible with OxO v1** — API surface answers v1's questions even where SSSOM terms are richer. 
 See [ADR-0004](docs/adr/0004-backwards-compatible-with-oxo-v1.md). Affects `oxo2-backend` (API design) and `oxo2-frontend` (documentation surface).
 - **GitHub registries are fetched via archive tarball** — GitHub mapping registries download as the default-branch archive 
@@ -149,12 +157,11 @@ SSSOM mapping set URLs
         ▼
 [oxo2-json2inferences]
    ├─ json2nquads    ──► N-Quads facts (mapping_id as urn:uuid graph)
-   ├─ nmo infer sssom.rls (all sets)  ──► SSSOM inferences
-   ├─ split + nmo trace (chunked)
-   └─ explanations2json  ──► explanation chain files (provenance via mapping_id)
-        │
+   └─ nmo infer sssom.rls (all sets)  ──► inferences.ttl (bare inferred mappings)
+        │   (no trace/explain — explanations are on-demand, ADR-0020)
         ▼
 [oxo2-solr-dataload-client]  ──►  Solr: oxo2-mappings + oxo2-mappingsets
+        │   (asserted indexed, then bare inferred mappings from inferences.ttl)
         │
         ▼
 [oxo2-backend]  /api/v2/mappings, /api/v2/mapping-sets

@@ -31,6 +31,9 @@ public class MainDispatcher {
                 case "explanations2json":
                     uk.ac.ebi.spot.oxo.inferences.nemo.ExplainInferredMappings.main(remainingArgs);
                     break;
+                case "inferences2json":
+                    uk.ac.ebi.spot.oxo.inferences.nemo.BareInferredMappings.main(remainingArgs);
+                    break;
                 case "mergeChainFiles":
                     uk.ac.ebi.spot.oxo.inferences.nemo.MergeChainFiles.main(remainingArgs);
                     break;
@@ -66,6 +69,7 @@ public class MainDispatcher {
         System.out.println("  json2nquads  - Creates .nq (N-Quads) file from mappings in .json, carrying mapping_id. ");
         System.out.println("  inferences2trace  - Creates a file of inferences to trace in the format expected by Nemo.");
         System.out.println("  explanations2json - Creates a .json file of inferred mappings with their explanations.");
+        System.out.println("  inferences2json   - Creates a .json file of BARE inferred mappings (no explanations, ADR-0020).");
         System.out.println("  mergeChainFiles  - Merges per-chunk Nemo chain trace JSON files into one per-mapping-set file.");
     }
 }

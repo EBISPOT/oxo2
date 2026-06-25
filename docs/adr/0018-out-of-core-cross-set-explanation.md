@@ -1,6 +1,6 @@
 # ADR-0018: Out-of-core cross-set explanation
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR-0020](0020-defer-explanations-to-on-demand.md)
 - **Date**: 2026-06-24
 
 ## Context

@@ -20,14 +20,16 @@ echo "OxO2 Dataload started at: $dataload_start_time"
 # Resumable pipeline: START_STAGE selects where the run (re)enters the pipeline.
 # A full run is START_STAGE=download (the default). Any later value resumes from that
 # (sub)stage, reusing the PUBLISHED artifacts of the earlier stages (which the stage-aware
-# cleanup below deliberately preserves). The substages between `nquads` and `merge` map to
-# `-entry` points in inferSssomCrossSet.nf. See oxo2-dataload/CONTEXT.md § Resumable dataload.
+# cleanup below deliberately preserves). The `nquads`/`infer` substages map to `-entry` points in
+# inferSssomCrossSet.nf. Explanations are no longer precomputed (ADR-0020), so there is no
+# trace/explain/merge; `inferences2json` builds bare inferred-mapping JSON from inferences.ttl.
+# See oxo2-dataload/CONTEXT.md § Resumable dataload.
 # ---------------------------------------------------------------------------
 START_STAGE="${START_STAGE:-download}"
 
 # Canonical ordered (sub)stage list. A stage's position in this array defines "before"/"after".
-STAGES=(download sssom2json nquads infer trace explain merge \
-        index-asserted explanations2json index-inferred archive)
+STAGES=(download sssom2json nquads infer \
+        index-asserted inferences2json index-inferred archive)
 
 stage_index() {
     local target=$1 idx=0
@@ -132,11 +134,8 @@ declare -A STAGE_OWNS=(
     [sssom2json]="$OXO2_DATA/sssom-as-json"
     [nquads]="$OXO2_DATA/assertedMappings $OXO2_INFERENCES/crossSet/assertedCorpus.nq"
     [infer]="$OXO2_INFERENCES/crossSet/inferences.ttl"
-    [trace]="$OXO2_INFERENCES/crossSet/inferencesToTrace.txt $OXO2_INFERENCES/crossSet/chunks"
-    [explain]="$OXO2_INFERENCES/crossSet/chunkChains"
-    [merge]="$OXO2_INFERENCES/inferenceChainsCrossSet"
     [index-asserted]=""
-    [explanations2json]="$OXO2_INFERENCES/solr"
+    [inferences2json]="$OXO2_INFERENCES/solr"
     [index-inferred]=""
     [archive]="$OXO2_INFERENCES/solr-data.tar.gz"
 )
@@ -153,8 +152,8 @@ for stage in "${STAGES[@]}"; do
 done
 
 # Solr's on-disk index is wiped only when the asserted load will run from scratch (START_STAGE at
-# or before index-asserted). Resuming at explanations2json / index-inferred / archive must KEEP the
-# asserted data already indexed by an earlier run — explanations2json queries Solr for it.
+# or before index-asserted). Resuming at inferences2json / index-inferred / archive must KEEP the
+# asserted data already indexed by an earlier run — inferences2json queries Solr for entity details.
 WIPE_SOLR=false
 if [ "$START_INDEX" -le "$(stage_index index-asserted)" ]; then
     WIPE_SOLR=true
@@ -170,13 +169,14 @@ fi
 mkdir -p "$NXF_WORK" "$NXF_HOME" "$NXF_TEMP" "$NXF_CACHE_DIR" "$NXF_SINGULARITY_CACHEDIR" "$NXF_LOGS"
 mkdir -p "$OXO2_DATA/sssom" "$OXO2_DATA/sssom-as-json" "$OXO2_DATA/assertedMappings"
 mkdir -p "$OXO2_INFERENCES/solr/mapping" "$OXO2_INFERENCES/solr/mappingSet"
-mkdir -p "$OXO2_INFERENCES/crossSet" "$OXO2_INFERENCES/inferenceChainsCrossSet"
+mkdir -p "$OXO2_INFERENCES/crossSet"
 mkdir -p "$OXO2_DATA/tmp"
 mkdir -p "$SOLR_HOME"
 
-# Solr is needed for the indexing/explanation stages (index-asserted, explanations2json,
-# index-inferred). We start it for any run that reaches one of those; START_STAGE=archive (a
-# re-archive of an existing $SOLR_HOME) does not start Solr.
+# Solr is needed for the indexing stages (index-asserted, inferences2json, index-inferred):
+# inferences2json resolves entity CURIEs/labels from the asserted index. We start it for any run
+# that reaches one of those; START_STAGE=archive (a re-archive of an existing $SOLR_HOME) does not
+# start Solr.
 SOLR_NEEDED=false
 if [ "$START_INDEX" -le "$(stage_index index-inferred)" ]; then
     SOLR_NEEDED=true
@@ -436,19 +436,17 @@ if should_run sssom2json; then
     record_stage sssom2json
 fi
 
-# --- Stage: inference (nquads -> infer -> trace -> explain -> merge), ADR-0016 ---
-# A single Nextflow invocation runs the whole cross-set inference. Where the run re-enters the DAG
-# is the `-entry` point selected from START_STAGE; each entry reads the previous substep's published
-# artifact (see inferSssomCrossSet.nf). The block runs whenever any inference substage is in scope
-# (START_STAGE at or before `merge`).
-if should_run merge; then
+# --- Stage: inference (nquads -> infer), ADR-0016 / ADR-0020 ---
+# A single Nextflow invocation runs the cross-set inference (JSON -> N-Quads -> corpus -> infer ->
+# inferences.ttl). There is no trace/explain/merge — explanations are deferred to on-demand
+# (ADR-0020). A resume at START_STAGE=infer re-enters at `-entry from_infer`, reading the published
+# assertedCorpus.nq (see inferSssomCrossSet.nf). The block runs whenever any inference substage is
+# in scope (START_STAGE at or before `infer`).
+if should_run infer; then
     # Safe empty-array expansion (`${arr[@]+...}`) so `set -u` tolerates the full-run case.
     INFER_ENTRY_ARGS=()
     case "$START_STAGE" in
         infer)   INFER_ENTRY_ARGS=(-entry from_infer) ;;
-        trace)   INFER_ENTRY_ARGS=(-entry from_trace) ;;
-        explain) INFER_ENTRY_ARGS=(-entry from_explain) ;;
-        merge)   INFER_ENTRY_ARGS=(-entry from_merge) ;;
         *)       INFER_ENTRY_ARGS=() ;;  # download|sssom2json|nquads -> full pipeline from JSON
     esac
     start_time=$(date +%s)
@@ -463,8 +461,8 @@ if should_run merge; then
         -with-timeline "$NXF_LOGS/inferSssomCrossSet-timeline.html"
     end_time=$(date +%s)
     echo "SSSOM cross-set inference took: $((end_time - start_time)) seconds"
-    # Inference substeps run inside one Nextflow process graph; we record the boundary `merge`.
-    record_stage merge
+    # nquads + infer run inside one Nextflow process graph; we record the boundary `infer`.
+    record_stage infer
 fi
 
 # --- Stage: index asserted mappings to Solr ---
@@ -483,31 +481,31 @@ if should_run index-asserted; then
     record_stage index-asserted
 fi
 
-# --- Stage: explanations to JSON (SSSOM reasoning across all sets, ADR-0016) ---
-# Runs after the asserted data is indexed: explanations2json queries Solr for entity details and
-# per-leaf provenance, so the asserted mappings must already be in Solr. The EXPLANATIONS_TO_JSON
-# task runs as its own SLURM job on another node, where Solr is not on localhost, so the main node's
-# Solr URL ($SOLR_URL, the FQDN the readiness probe confirmed reachable cross-node) is passed
-# explicitly: explanations2json.nf otherwise defaults params.solr_url to http://localhost:8983 and
-# exports it over any inherited SOLR_URL, so the task would dial its own node (ConnectException in
-# DataloadSolr.prefetchMappingsByIds). A single chains file -> the single oxo2/inferences set
-# (SSSOM_INFERENCE); the source-set union is recovered per-leaf from mapping_id.
-if should_run explanations2json; then
+# --- Stage: bare inferred mappings to JSON (SSSOM reasoning across all sets, ADR-0020) ---
+# Runs after the asserted data is indexed: inferences2json resolves each inferred entity's
+# CURIE/label from the asserted Solr index, so the asserted mappings must already be in Solr. The
+# INFERENCES_TO_JSON task runs as its own SLURM job on another node, where Solr is not on localhost,
+# so the main node's Solr URL ($SOLR_URL, the FQDN the readiness probe confirmed reachable
+# cross-node) is passed explicitly: inferences2json.nf otherwise defaults params.solr_url to
+# http://localhost:8983 and exports it over any inherited SOLR_URL, so the task would dial its own
+# node (ConnectException in DataloadSolr.prefetchEntityDetailsByIris). Builds the single
+# oxo2/inferences set (SSSOM_INFERENCE) bare from inferences.ttl — no explanations (ADR-0020).
+if should_run inferences2json; then
     start_time=$(date +%s)
-    echo "###################" "explanations2json (SSSOM, cross-set)..."
-    (cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/explanations2jsonCrossSet.nextflow.log" \
+    echo "###################" "inferences2json (SSSOM, cross-set, bare)..."
+    (cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/inferences2jsonCrossSet.nextflow.log" \
         -c "$SCRIPT_DIR/nextflow/nextflow.config" \
-        run "$SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf" \
+        run "$SCRIPT_DIR/oxo2-json2inferences/inferences2json.nf" \
         -profile "$NF_PROFILE" \
-        --input_dir "$OXO2_INFERENCES/inferenceChainsCrossSet" \
+        --inferences_ttl "$OXO2_INFERENCES/crossSet/inferences.ttl" \
         --inference_type SSSOM_INFERENCE \
         --solr_url "$SOLR_URL" \
-        -with-trace    "$NXF_LOGS/explanations2jsonCrossSet-trace.txt" \
-        -with-report   "$NXF_LOGS/explanations2jsonCrossSet-report.html" \
-        -with-timeline "$NXF_LOGS/explanations2jsonCrossSet-timeline.html")
+        -with-trace    "$NXF_LOGS/inferences2jsonCrossSet-trace.txt" \
+        -with-report   "$NXF_LOGS/inferences2jsonCrossSet-report.html" \
+        -with-timeline "$NXF_LOGS/inferences2jsonCrossSet-timeline.html")
     end_time=$(date +%s)
-    echo "Explanations to JSON (SSSOM cross-set) took: $((end_time - start_time)) seconds"
-    record_stage explanations2json
+    echo "Bare inferred mappings to JSON (SSSOM cross-set) took: $((end_time - start_time)) seconds"
+    record_stage inferences2json
 fi
 
 # --- Stage: index inferred mappings and mapping sets to Solr ---

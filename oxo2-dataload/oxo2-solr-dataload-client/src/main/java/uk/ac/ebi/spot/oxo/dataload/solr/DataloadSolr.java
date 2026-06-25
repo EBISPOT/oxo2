@@ -194,6 +194,73 @@ public class DataloadSolr {
     }
 
     /**
+     * Bulk-populate {@link #entityDetailsByIri} for a set of entity IRIs by harvesting the
+     * curie/label off the asserted mappings that carry each IRI as their subject or object. The
+     * bare inferred-mapping indexer (ADR-0020) has no chains to drive a {@code mapping_id} prefetch,
+     * so it seeds the entity cache directly from the inferred mappings' endpoint IRIs. After this
+     * returns, {@link #queryEntityDetailsForIRI} is a cache hit for every supplied IRI that any
+     * asserted mapping references. One grouped query per field returns a single representative
+     * document per distinct IRI value (curie/label are entity properties, identical across the
+     * mappings that carry the IRI), so coverage does not depend on how many mappings share an IRI.
+     */
+    public void prefetchEntityDetailsByIris(Collection<String> iris) {
+        if (iris == null || iris.isEmpty()) {
+            return;
+        }
+        Set<String> distinct = new HashSet<>();
+        for (String iri : iris) {
+            if (iri != null && !iri.isBlank()) {
+                distinct.add(iri);
+            }
+        }
+        if (distinct.isEmpty()) {
+            return;
+        }
+
+        List<String> fetchList = new ArrayList<>(distinct);
+        int totalChunks = (fetchList.size() + PREFETCH_CHUNK_SIZE - 1) / PREFETCH_CHUNK_SIZE;
+        logger.info("Prefetch entity details by IRI: {} distinct IRIs in {} chunk(s) of up to {}",
+                fetchList.size(), totalChunks, PREFETCH_CHUNK_SIZE);
+        long batchStart = System.currentTimeMillis();
+        for (int i = 0; i < fetchList.size(); i += PREFETCH_CHUNK_SIZE) {
+            List<String> chunk = fetchList.subList(i, Math.min(i + PREFETCH_CHUNK_SIZE, fetchList.size()));
+            int chunkIndex = (i / PREFETCH_CHUNK_SIZE) + 1;
+            long chunkStart = System.currentTimeMillis();
+            int docsReturned = fetchEntityDetailsChunk(MappingEnum.SUBJECT_IRI.getField(), chunk)
+                    + fetchEntityDetailsChunk(MappingEnum.OBJECT_IRI.getField(), chunk);
+            logger.info("Prefetch entity details by IRI: chunk {}/{} ({} IRIs) -> {} docs in {} ms",
+                    chunkIndex, totalChunks, chunk.size(), docsReturned,
+                    System.currentTimeMillis() - chunkStart);
+        }
+        logger.info("Prefetch entity details by IRI: complete in {} ms",
+                System.currentTimeMillis() - batchStart);
+    }
+
+    private int fetchEntityDetailsChunk(String field, List<String> chunk) {
+        try {
+            SolrQuery query = new SolrQuery();
+            query.setQuery("{!terms f=" + field + "}" + String.join(",", chunk));
+            // Field-collapse to one representative doc per distinct IRI value (group.main flattens
+            // the groups into the normal result list), so a few prolific IRIs can't crowd the row
+            // budget and leave others unharvested.
+            query.set("group", true);
+            query.set("group.field", field);
+            query.set("group.limit", 1);
+            query.set("group.main", true);
+            query.setRows(chunk.size());
+
+            QueryResponse response = solrMappingClient.query(query, SolrRequest.METHOD.POST);
+            List<Mapping.Builder> builders = response.getBeans(Mapping.Builder.class);
+            for (Mapping.Builder builder : builders) {
+                indexEntityDetails(builder.build());
+            }
+            return builders.size();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Look up the {@link EntityDetails} (curie + label) for a bare IRI. Served entirely from
      * {@link #entityDetailsByIri}, which is derived from the asserted {@link Mapping}s loaded by
      * {@link #prefetchMappingsByIds}/{@link #queryByMappingId} — no Solr round-trip. Returns an
