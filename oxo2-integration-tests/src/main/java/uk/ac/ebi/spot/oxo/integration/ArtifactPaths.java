@@ -37,12 +37,11 @@ public final class ArtifactPaths {
         List<LayerArtifact> artifacts = new ArrayList<>();
 
         // SSSOM cross-set inference: a single inferences-* output for the isolated run (ADR-0016).
+        // The Nemo chain JSON layer (inferenceChainsCrossSet/inferences-chains.json) is gone:
+        // explanations are no longer precomputed, so there is no trace/merge output (ADR-0020).
         artifacts.add(layer("crossSet/inferences.ttl",
                 actual.resolve("crossSet").resolve("inferences.ttl"),
                 expected.resolve("crossSet").resolve("inferences.ttl"), Layer.TTL));
-        artifacts.add(layer("inferenceChainsCrossSet/inferences-chains.json",
-                actual.resolve("inferenceChainsCrossSet").resolve("inferences-chains.json"),
-                expected.resolve("inferenceChainsCrossSet").resolve("inferences-chains.json"), Layer.JSON));
         artifacts.add(layer("solr/mapping/inferences-explained.json",
                 actual.resolve("solr").resolve("mapping").resolve("inferences-explained.json"),
                 expected.resolve("solr").resolve("mapping").resolve("inferences-explained.json"), Layer.EXPLAINED));

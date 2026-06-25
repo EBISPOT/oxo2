@@ -1,62 +1,6 @@
 [ {
-  "asserted_mappings" : [ {
-    "chain_rule_applications" : {
-      "chain_rule" : {
-        "chain_rule_abbreviated" : "Asserted",
-        "chain_rule_long_form" : "Asserted",
-        "chain_rule_name" : "Asserted"
-      }
-    },
-    "distance" : 1,
-    "mapping_id" : "a52ef9d2-77cd-340d-93b6-71ba711578ce",
-    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/RCE_WEAK_NOCHAIN",
-    "object_id" : "EX:B",
-    "object_iri" : "https://w3id.org/oxo2/test/ex/B",
-    "object_label" : "Entity B",
-    "predicate_id" : "OWL:equivalentClass",
-    "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
-    "subject_id" : "EX:A",
-    "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
-    "subject_label" : "Entity A"
-  } ],
-  "distance" : -1,
-  "explanation" : {
-    "chain_rule_applications" : {
-      "premises" : [ {
-        "chain_rule_applications" : {
-          "chain_rule" : {
-            "chain_rule_abbreviated" : "Asserted",
-            "chain_rule_long_form" : "Asserted",
-            "chain_rule_name" : "Asserted"
-          }
-        },
-        "distance" : 1,
-        "mapping_id" : "a52ef9d2-77cd-340d-93b6-71ba711578ce",
-        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/RCE_WEAK_NOCHAIN",
-        "object_id" : "EX:B",
-        "object_iri" : "https://w3id.org/oxo2/test/ex/B",
-        "object_label" : "Entity B",
-        "predicate_id" : "OWL:equivalentClass",
-        "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
-        "subject_id" : "EX:A",
-        "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
-        "subject_label" : "Entity A"
-      } ]
-    },
-    "distance" : 1,
-    "mapping_justification" : "SEMAPV:MappingChaining",
-    "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
-    "mapping_tool" : "OxO Inferences",
-    "object_id" : "EX:A",
-    "object_iri" : "https://w3id.org/oxo2/test/ex/A",
-    "object_label" : "Entity A",
-    "predicate_id" : "OWL:equivalentClass",
-    "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
-    "subject_id" : "EX:B",
-    "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
-    "subject_label" : "Entity B"
-  },
-  "explanation_length" : 2,
+  "distance" : 1,
+  "explanation_length" : 0,
   "inference_type" : "SSSOM_INFERENCE",
   "mapping_id" : "6190a80b-7b1c-36d4-bb48-5bc6f70b9a40",
   "mapping_justification" : "SEMAPV:MappingChaining",

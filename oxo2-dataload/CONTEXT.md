@@ -12,17 +12,25 @@ explanation chains, and loads everything into Solr. Orchestration is by Nextflow
 ## Vocabulary introduced here
 
 The cross-cutting terms `inferred mapping`, `chain rule`, `explanation`, `explanation chain`, and `facts to trace`
-(defined in `/CONTEXT.md` § Glossary) originate in this module — they describe artifacts produced by the inference stage.
+(defined in `/CONTEXT.md` § Glossary) originate in this module. `inferred mapping` and `chain rule` still describe
+live inference-stage artifacts; `explanation`, `explanation chain`, and `facts to trace` are **dormant** — the
+dataload no longer computes explanations ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)), which
+defers them to a future on-demand service.
 
 Module-local artifact names worth knowing:
 
 - **Per-set N-Quads fact file** — `<s> <p> <o> <urn:uuid:mapping_id> .` quads generated from a mapping set's JSON,
   fed to Nemo as input. The `mapping_id` graph term carries source-mapping provenance through Nemo
   ([ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)). Produced by `json2nquadsNextflow.sh`.
-- **Cross-set corpus** — the concatenation of every set's N-Quads into one file; the input to SSSOM cross-set reasoning. Produced by `inferSssomCrossSet.nf`.
-- **Trace chunk** — a slice of the facts-to-trace file (default `trace_chunk_size = 100 000`), used as the
-  parallelism unit for `nmo trace`. See `inferSssomCrossSet.nf`.
-- **Chain file** — the JSON file of explanation chains; produced per trace chunk and merged into the single cross-set chain file by `mergeChainFiles.sh`.
+- **Cross-set corpus** — the concatenation of every set's N-Quads into one file (`assertedCorpus.nq`); the input
+  to SSSOM cross-set reasoning. Produced by `inferSssomCrossSet.nf`. Also the corpus the future on-demand
+  explanation service reasons over ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)).
+- **Inferred mappings TTL** — `inferences.ttl`, the Turtle export of `INFER_CROSS_SET`: exactly the inferred
+  mappings (asserted echoes already excluded by the `~assertedTriple` rule). The bare inferred-mapping indexer
+  reads it directly; no trace is needed for the *what*.
+- **Trace chunk** / **Chain file** — _dormant_ ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)):
+  the chunked `nmo trace` and per-chunk explanation-chain JSON only existed to precompute explanations, which the
+  dataload no longer does.
 
 ## Depends on
 
@@ -95,20 +103,22 @@ Single execution path: `loadData.nextflow` invokes the stages below in order. Pe
 ([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)) via `inferSssomCrossSet.nf`: `json2nquads`
 converts each set's JSON to N-Quads carrying `mapping_id`
 ([ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)); every set's N-Quads is concatenated
-into one corpus; `nmo` runs `sssom.rls` (strong-predicate transitivity + role chains) over the whole corpus
-to derive mappings that may chain across sets → the single `https://www.ebi.ac.uk/oxo2/inferences` set; then
-the facts-to-trace file is split into chunks, `nmo trace` runs in parallel, and `mergeChainFiles.sh`
-recombines the per-chunk chain JSONs into one file. A set whose mappings yield no quads — all using
-non-inference predicates (e.g. the `ebi-text-mappings` sets are `skos:closeMatch`) or lacking a subject/object
-IRI — produces no `.nq` and is logged (it is still indexed as asserted; it just does not enter the inference
-corpus).
+into one corpus (`assertedCorpus.nq`); `nmo` runs `sssom.rls` (strong-predicate transitivity + role chains)
+over the whole corpus to derive mappings that may chain across sets, exported as `inferences.ttl` (the single
+`https://www.ebi.ac.uk/oxo2/inferences` set). **No trace/explain/merge** — explanations are deferred to
+on-demand ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)). A set whose mappings yield no
+quads — all using non-inference predicates (e.g. the `ebi-text-mappings` sets are `skos:closeMatch`) or
+lacking a subject/object IRI — produces no `.nq` and is logged (it is still indexed as asserted; it just does
+not enter the inference corpus).
 
-**4. Solr load + explanation** — `json2solr.sh` (logic in `oxo2-solr-dataload-client`) indexes the asserted
-mapping-set and mapping JSON first, because `explanations2json` then queries Solr by `mapping_id` to recover each
-asserted premise's source set. `explanations2json` then runs (`--inference_type SSSOM_INFERENCE`, [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)), converting Nemo's trace output to OxO2 explanation-chain JSON; the inferred mappings/sets are then indexed. The Solr client caches
-`EntityDetails` and by-id mapping lookups to avoid redundant queries during load. The merged cross-set
-chains are explained **out-of-core** — indexed to an on-disk store and streamed one inferred mapping
-at a time — so heap does not scale with the closure ([ADR-0018](../docs/adr/0018-out-of-core-cross-set-explanation.md)).
+**4. Solr load** — `json2solr.sh` (logic in `oxo2-solr-dataload-client`) indexes the asserted mapping-set and
+mapping JSON first, so the bare inferred-mapping indexer can resolve each inferred subject/object's CURIE and
+label from the already-indexed asserted documents (`DataloadSolr.prefetchEntityDetailsByIris`). That indexer
+then builds **bare** inferred mappings straight from `inferences.ttl` — subject/object/predicate + ids/labels,
+`inference_type = SSSOM_INFERENCE` ([ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)),
+`spo_key`; no explanation chain, asserted evidence, or set-source union, with `distance`/`explanation_length`
+left at their inert model defaults ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)) — and
+indexes them. The Solr client caches `EntityDetails` to avoid redundant queries during load.
 
 ### Resumable dataload (HPC / Jenkins)
 
@@ -123,32 +133,34 @@ expensive explain step) can be restarted at that point. This replaces the old ma
 (default `download` = full run):
 
 ```
-download → sssom2json → nquads → infer → trace → explain → merge
-         → index-asserted → explanations2json → index-inferred → archive
+download → sssom2json → nquads → infer
+         → index-asserted → inferences2json → index-inferred → archive
 ```
 
-`nquads … merge` are the substages of the single cross-set inference (ADR-0016); the rest are the
-download / Solr-load / archive stages. `loadData.hpc` forwards `START_STAGE` to the batch job via
-`--export`; `loadData.slurm` validates it against the list and computes which stages to run.
+`nquads`/`infer` are the substages of the single cross-set inference (ADR-0016); the rest are the
+download / Solr-load / archive stages. The `trace`/`explain`/`merge` stages were removed with
+explanations and `explanations2json` was replaced by `inferences2json`
+([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)): `inferences2json` builds the
+bare inferred-mapping JSON from `inferences.ttl` (querying the asserted Solr index for entity
+details), and `index-inferred` posts it to Solr. `loadData.hpc` forwards `START_STAGE` to the batch
+job via `--export`; `loadData.slurm` validates it against the list and computes which stages to run.
 
 **How resume stays correct.** Two mechanisms:
 
 - *Substage resume reads PUBLISHED artifacts, not Nextflow's work dir.* `inferSssomCrossSet.nf`
-  exposes one `-entry` workflow per inference substage (`from_infer`, `from_trace`, `from_explain`,
-  `from_merge`); each reads the previous substage's published output under `$OXO2_DATA` and re-uses
-  the composable tails (`inferThroughMerge` / `traceThroughMerge` / `explainThroughMerge`) shared
-  with the default workflow. To make this possible, `SPLIT_CROSS_SET_TRACE` now publishes to
-  `crossSet/chunks/` and `EXPLAIN_CROSS_SET_CHUNK` to `crossSet/chunkChains/` (previously only in
-  `NXF_WORK`). Because resume never depends on `NXF_WORK`, `loadData.slurm` wipes the transient
-  Nextflow dirs on every run — no fragile work-dir spelunking, and the result is independent of the
-  container digest.
+  exposes the `from_infer` `-entry` workflow, which reads the published `assertedCorpus.nq` under
+  `$OXO2_DATA` and re-runs `INFER_CROSS_SET`. (The `from_trace`/`from_explain`/`from_merge` entry
+  points and their `crossSet/chunks/`, `crossSet/chunkChains/` published artifacts went away with
+  explanations — [ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md).) Because resume
+  never depends on `NXF_WORK`, `loadData.slurm` wipes the transient Nextflow dirs on every run — no
+  fragile work-dir spelunking, and the result is independent of the container digest.
 - *Stage-aware cleanup preserves earlier stages' outputs.* Each stage "owns" the artifact path(s) it
   regenerates (`STAGE_OWNS` in `loadData.slurm`). A resume wipes only the owned paths of `START_STAGE`
   and later, keeping everything earlier stages produced as the resume inputs. Solr's on-disk index is
-  wiped only when the asserted load (`index-asserted`) is in scope; resuming at `explanations2json` /
-  `index-inferred` / `archive` keeps the already-indexed asserted data (which `explanations2json`
-  queries). Solr is started only for runs that reach an indexing stage; `START_STAGE=archive` just
-  re-archives the existing `$SOLR_HOME`.
+  wiped only when the asserted load (`index-asserted`) is in scope; resuming at `index-inferred` /
+  `archive` keeps the already-indexed asserted data (which the bare inferred-mapping indexer queries
+  for entity details). Solr is started only for runs that reach an indexing stage; `START_STAGE=archive`
+  just re-archives the existing `$SOLR_HOME`.
 
 **Checkpoint.** After each stage, `loadData.slurm` writes the stage name to
 `$OXO2_DATA/.oxo2-last-completed-stage`. On failure, set `START_STAGE` to that value to resume. The

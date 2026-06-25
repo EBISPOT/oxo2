@@ -5,8 +5,10 @@ See [`/CONTEXT.md`](../CONTEXT.md) for the project-wide glossary and cross-cutti
 ## Purpose
 
 End-to-end integration tests that exercise the full `loadData.nextflow` pipeline against minimal SSSOM
-fixtures and assert against expected output at four layers (Nemo inferred TTL, Nemo explanation chain
-JSON, OxO2 explained JSON, and Solr counts). Under the single-pass SSSOM reasoning model ([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)) each fixture is run **in isolation** — its own `loadData.nextflow` pass over only its set(s) — so the single cross-set `oxo2/inferences` output belongs to exactly that fixture and can be asserted per-rule.
+fixtures and assert against expected output at three layers (Nemo inferred TTL, the bare OxO2
+inferred-mapping JSON, and Solr counts). The Nemo explanation-chain JSON layer is gone: explanations
+are no longer precomputed ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)). Under the
+single-pass SSSOM reasoning model ([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)) each fixture is run **in isolation** — its own `loadData.nextflow` pass over only its set(s) — so the single cross-set `oxo2/inferences` output belongs to exactly that fixture and can be asserted per-rule.
 The final pass leaves Solr populated for downstream backend / frontend work.
 
 Scope: one minimal single-set fixture per active `ChainRulesEnum` rule under `testcases/minimal/rules/` (the SSSOM rules in `sssom.rls`), plus cross-set fixtures under `testcases/minimal/crossset/<name>/` whose mappings only chain when reasoned over together.
@@ -16,12 +18,13 @@ Scope: one minimal single-set fixture per active `ChainRulesEnum` rule under `te
 - **Rule fixture** — a minimal single-set SSSOM TSV at `testcases/minimal/rules/<RULE>.sssom.tsv`
   designed to trigger one chain rule (and accept whatever cascade Nemo derives).
 - **Cross-set fixture** — a directory `testcases/minimal/crossset/<name>/` of two or more SSSOM TSVs
-  whose mappings only chain when reasoned over together, proving cross-set inference with
-  per-leaf `mapping_id` provenance (the inferred set's `mapping_set_source` is the union of the
-  contributing sets).
-- **Expected output layer** — an assertion target for a fixture: the cross-set inferred TTL / chain JSON / explained JSON / mappingSet JSON (the single `inferences-*` files) and the per-`inference_type` Solr `numFound`. All mirrored per
-  fixture under `testcases_expected_output/minimal/<fixture>/`. `ArtifactPaths.artifactsFor(fixture)`
-  is the single source of truth for the path list.
+  whose mappings only chain when reasoned over together, proving cross-set inference. (The inferred
+  set's `mapping_set_source` union is now left empty — recovering it needed the trace, which is no
+  longer run, ADR-0020.)
+- **Expected output layer** — an assertion target for a fixture: the cross-set inferred TTL / bare
+  explained JSON / mappingSet JSON (the single `inferences-*` files) and the per-`inference_type` Solr
+  `numFound`. All mirrored per fixture under `testcases_expected_output/minimal/<fixture>/`.
+  `ArtifactPaths.artifactsFor(fixture)` is the single source of truth for the path list.
 - **Capture mode** — running `mvn ... exec:java@captureExpected` instead of `mvn ... verify`. Runs the
   same per-fixture isolated passes but writes canonicalised actual output to the expected paths
   instead of asserting. Used to baseline a new fixture or refresh after an intentional change.
@@ -113,8 +116,7 @@ and `testcases_expected_output/minimal/<fixture>/` (expected).
 | Layer | Path (cross-set) | Comparator |
 |---|---|---|
 | Inferred TTL | `crossSet/inferences.ttl` | Expand commas, sort N-Triples lexically, text-equal. |
-| Nemo chain JSON | `inferenceChainsCrossSet/inferences-chains.json` | Jackson tree, recursive key + array sort, text-equal. |
-| OxO2 explained JSON | `solr/mapping/inferences-explained.json` | Recursively unwrap embedded `asserted_mappings` / `explanation` JSON strings, then recursive key + array sort, text-equal. |
+| OxO2 inferred JSON (bare) | `solr/mapping/inferences-explained.json` | Recursive key + array sort, text-equal. (Bare docs carry no embedded `asserted_mappings` / `explanation` strings to unwrap — ADR-0020.) |
 | MappingSet JSON | `solr/mappingSet/inferences-mappingSet.json` | Jackson tree, recursive key + array sort, text-equal. |
 | Solr | `oxo2-mappings` / `oxo2-mappingsets` | per-`inference_type` `numFound` (ASSERTED / SSSOM_INFERENCE) matches `numFound.json`. |
 
@@ -130,6 +132,7 @@ and `testcases_expected_output/minimal/<fixture>/` (expected).
   inference is the symmetric edge `B owl:equivalentClass A` of the strong asserted
   `A owl:equivalentClass B` (`SSSOM_INFERENCE` numFound 1) — no longer a zero-inference fixture. The other weak predicates have no dedicated
   fixture and are covered only by every fixture's exact-count `numFound` assertion.
-- **Synthetic-IRI distance is degenerate**: `distance` is derived from OBO-style `PREFIX_NUMBER` IRIs,
-  which the `ex:A`-style test IRIs don't match, so fixtures record a constant placeholder distance.
-  This is deterministic (captured in the golden) and never affects real OBO data.
+- **`distance`/`explanation_length` are inert**: explanations are no longer computed (ADR-0020), so
+  every bare inferred doc carries the model defaults (`distance` 1, `explanation_length` 0). They are
+  captured in the goldens but no longer derived from a chain; the fields are removed from the model
+  and Solr schema in the deferred surface cleanup.

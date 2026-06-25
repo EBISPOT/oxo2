@@ -158,23 +158,24 @@ mkdir -p $OXO2_INFERENCES/solr/mapping
 mkdir -p $OXO2_INFERENCES/solr/mappingSet
 
 start_time=$(date +%s)
-# SSSOM inferences across all sets (ADR-0016): a single chains file -> the single
-# https://www.ebi.ac.uk/oxo2/inferences set (SSSOM_INFERENCE), source-set union recovered per-leaf.
-# Runs now (not during inference) because explanations2json queries Solr for entity details and
-# per-leaf provenance, so the asserted data must already be indexed.
-echo "Using Nextflow for explanations2json (SSSOM, cross-set)"
-(cd $NXF_LOGS && nextflow -log $NXF_LOGS/explanations2jsonCrossSet.nextflow.log \
+# Bare inferred-mapping JSON across all sets (ADR-0020): the single
+# https://www.ebi.ac.uk/oxo2/inferences set (SSSOM_INFERENCE), built directly from inferences.ttl
+# with NO explanations (deferred to an on-demand service). Runs now (not during inference) because
+# the indexer resolves each inferred entity's CURIE/label from the asserted Solr index, so the
+# asserted data must already be indexed.
+echo "Using Nextflow for inferences2json (SSSOM, cross-set, bare)"
+(cd $NXF_LOGS && nextflow -log $NXF_LOGS/inferences2jsonCrossSet.nextflow.log \
     -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
-    run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf \
+    run $SCRIPT_DIR/oxo2-json2inferences/inferences2json.nf \
     -profile $NF_PROFILE \
-    --input_dir "$OXO2_INFERENCES/inferenceChainsCrossSet" \
+    --inferences_ttl "$OXO2_INFERENCES/crossSet/inferences.ttl" \
     --inference_type SSSOM_INFERENCE \
-    -with-trace    $NXF_LOGS/explanations2jsonCrossSet-trace.txt \
-    -with-report   $NXF_LOGS/explanations2jsonCrossSet-report.html \
-    -with-timeline $NXF_LOGS/explanations2jsonCrossSet-timeline.html)
+    -with-trace    $NXF_LOGS/inferences2jsonCrossSet-trace.txt \
+    -with-report   $NXF_LOGS/inferences2jsonCrossSet-report.html \
+    -with-timeline $NXF_LOGS/inferences2jsonCrossSet-timeline.html)
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
-echo "Nextflow Parallel Processing: explanations2json (SSSOM cross-set) took: ${elapsed} seconds"
+echo "Nextflow Processing: inferences2json (SSSOM cross-set, bare) took: ${elapsed} seconds"
 
 
 echo  "###################"  json2solr inferred mappings ...
