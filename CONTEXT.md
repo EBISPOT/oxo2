@@ -89,6 +89,18 @@ that reuses the retained (dormant) Java chain interpreter over `nmo` + `sssom.rl
 ADR-0018). Affects `oxo2-dataload` (no trace/explain/merge/`explanations2json` on the pipeline; a
 bare inferred-mapping indexer instead). The `distance`/`explanation` backend/frontend/schema surface
 is left dead pending that service (deferred cleanup, ADR-0020).
+- **On-demand explanations are served by a resident Nemo engine (Proposed)** — the deferred
+explanation service (ADR-0020) runs the cross-set chase **once at startup** and keeps the Nemo
+`ExecutionEngine` resident, turning each single-conclusion explanation into a cheap backward trace
+rather than a full ~10–20 min reasoning pass per request (that cost is a fresh-`nmo`-process cold
+start, not an intrinsic per-trace cost). One trace at a time per engine → scale by replicas (each
+~24 GB); no state snapshot → cold start re-chases (blue/green on data release); the resident engine
+emits `nmo --trace-output` JSON so the retained `NemoHelper`/`NemoInferences` interpreter is reused
+unchanged. Refines ADR-0020's cost premise. See
+[ADR-0021](docs/adr/0021-on-demand-explanation-resident-nemo-engine.md) and
+[docs/on-demand-explanation-service.md](docs/on-demand-explanation-service.md). Affects a new
+`oxo2-explain` service, `oxo2-backend` (format conclusion + interpret trace), and the data release
+(publishes `sssom.rls` + `assertedCorpus.nq` as runtime artifacts).
 - **Solr is the sole data store** — no relational database; both mappings and mapping sets live in Solr collections `oxo2-mappings` 
 and `oxo2-mappingsets`. See [ADR-0002](docs/adr/0002-solr-as-sole-data-store.md). Affects `oxo2-dataload` (denormalised documents at load time) and `oxo2-backend` (query patterns constrained by Solr).
 - **Origin is a denormalised `inference_type` field** — both mappings and mapping sets carry `inference_type` (`ASSERTED` / `SSSOM_INFERENCE`), set once at dataload from OxO provenance, as the single queryable origin signal; the SSSOM 
