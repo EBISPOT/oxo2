@@ -34,9 +34,6 @@ public class MainDispatcher {
                 case "inferences2json":
                     uk.ac.ebi.spot.oxo.inferences.nemo.BareInferredMappings.main(remainingArgs);
                     break;
-                case "mergeChainFiles":
-                    uk.ac.ebi.spot.oxo.inferences.nemo.MergeChainFiles.main(remainingArgs);
-                    break;
                 default:
                     logger.error("Unknown command: {}", command);
                     printUsage();
@@ -54,8 +51,8 @@ public class MainDispatcher {
             logger.error("Max memory: {}", maxMemory);
             logger.error("Available memory: {} ", availableMemory);
 
-            // Fail loudly. Without this, a fatal error (e.g. OutOfMemoryError from the chain
-            // merge) would be logged and then the JVM would exit 0, so the wrapper's `set -e`
+            // Fail loudly. Without this, a fatal error (e.g. OutOfMemoryError from the cross-set
+            // inference) would be logged and then the JVM would exit 0, so the wrapper's `set -e`
             // and Nextflow both see success while the expected output file is missing. Combined
             // with `optional: true` outputs that silently dropped cross-set inferences instead of
             // failing the run. Exit non-zero so the failure surfaces as a failed task.
@@ -70,6 +67,5 @@ public class MainDispatcher {
         System.out.println("  inferences2trace  - Creates a file of inferences to trace in the format expected by Nemo.");
         System.out.println("  explanations2json - Creates a .json file of inferred mappings with their explanations.");
         System.out.println("  inferences2json   - Creates a .json file of BARE inferred mappings (no explanations, ADR-0020).");
-        System.out.println("  mergeChainFiles  - Merges per-chunk Nemo chain trace JSON files into one per-mapping-set file.");
     }
 }

@@ -35,9 +35,9 @@ import java.util.Optional;
  * the directory, seeks the records file and <i>verifies the stored conclusion string</i> — so a
  * (vanishingly rare) 64-bit hash collision is resolved correctly, never silently.
  *
- * <p>Precondition: conclusions are unique across the input. {@code MergeChainFiles} already
- * de-duplicates by conclusion when it writes the chains file, so this holds; a duplicate would
- * simply leave two equivalent records, of which {@link #find} returns one.
+ * <p>Precondition: conclusions are unique across the input (the chains file is written
+ * de-duplicated by conclusion), so this holds; a duplicate would simply leave two equivalent
+ * records, of which {@link #find} returns one.
  *
  * <p>Not thread-safe; the explanation pass is single-threaded.
  */
