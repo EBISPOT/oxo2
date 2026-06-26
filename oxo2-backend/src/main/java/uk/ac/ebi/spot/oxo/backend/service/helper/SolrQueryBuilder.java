@@ -112,21 +112,28 @@ public class SolrQueryBuilder {
     }
 
     /**
-     * Same-SPO grouping (ADR-0013): collapse documents sharing {@code spo_key} into one
-     * representative row. {@code group.sort=score desc} makes the representative the highest
-     * inference-tier member (the {@link #RANKING_BOOST}); the main sort (set above) still orders the
-     * groups, and {@code spo_key} is appended as a total-order tiebreaker so paging is stable across
-     * requests. {@code group.ngroups} makes the result total a group count (a page is N groups), and
-     * {@code group.limit} caps the member documents inlined per group. Grouping sits on top of the
-     * existing filters, so a group's members reflect only what passed the inference-type filter.
+     * Same-SPO collapse (ADR-0023, superseding ADR-0013's result grouping): keep one representative
+     * row per {@code spo_key} via the CollapsingQParserPlugin as a post-filter. The collapse
+     * {@code sort='score desc'} selects the highest inference-tier member (the {@link #RANKING_BOOST})
+     * as the representative; {@code numFound} on the collapsed set is the exact group count (a page is
+     * N groups), replacing the prohibitively slow {@code group.ngroups} pass. The ExpandComponent
+     * returns each page representative's other members (the rows the detail view inlines, previously
+     * {@code group.limit}). Collapse ANDs with the existing filter queries, so a group's members
+     * reflect only what passed the inference-type filter. The main sort (set above) orders the
+     * representatives, with {@code spo_key} appended as a total-order tiebreaker so paging is stable.
      */
     private static void applySpoGrouping(SolrQuery solrQuery) {
-        solrQuery.set(SolrConstants.GROUP, true);
-        solrQuery.set(SolrConstants.GROUP_FIELD, MappingEnum.SPO_KEY.getField());
-        solrQuery.set(SolrConstants.GROUP_NGROUPS, true);
-        solrQuery.set(SolrConstants.GROUP_LIMIT, SolrConstants.GROUP_MEMBER_LIMIT);
-        solrQuery.set(SolrConstants.GROUP_SORT, "score desc");
-        solrQuery.addSort(MappingEnum.SPO_KEY.getField(), SolrQuery.ORDER.asc);
+        String spoKey = MappingEnum.SPO_KEY.getField();
+        solrQuery.addFilterQuery(String.format(
+                SolrConstants.COLLAPSE_FQ_TEMPLATE, spoKey, SolrConstants.REPRESENTATIVE_SORT));
+        solrQuery.set(SolrConstants.EXPAND, true);
+        solrQuery.set(SolrConstants.EXPAND_FIELD, spoKey);
+        solrQuery.set(SolrConstants.EXPAND_SORT, SolrConstants.REPRESENTATIVE_SORT);
+        solrQuery.set(SolrConstants.EXPAND_ROWS, SolrConstants.GROUP_MEMBER_LIMIT);
+        // spo_key is docValues-only (not stored): request it so each representative carries the key
+        // used to join its expanded members, and append it as the total-order paging tiebreaker.
+        solrQuery.addField(spoKey);
+        solrQuery.addSort(spoKey, SolrQuery.ORDER.asc);
     }
 
 

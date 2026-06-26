@@ -8,10 +8,8 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.beans.DocumentObjectBinder;
 import org.apache.solr.client.solrj.impl.HttpJdkSolrClient;
 import org.apache.solr.client.solrj.response.FacetField;
-import org.apache.solr.client.solrj.response.Group;
-import org.apache.solr.client.solrj.response.GroupCommand;
-import org.apache.solr.client.solrj.response.GroupResponse;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.SolrParams;
 import org.slf4j.Logger;
@@ -23,7 +21,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.FacetedMappingResponse;
+import uk.ac.ebi.spot.oxo.backend.service.helper.SolrConstants;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
+import uk.ac.ebi.spot.oxo.model.sssom.MappingConstants;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -74,9 +74,11 @@ public class OxOSolrClient {
     public FacetedMappingResponse query(SolrParams params, Pageable pageable) throws Exception {
         QueryResponse response = solrMappingClient.query(params);
 
-        GroupResponse groupResponse = response.getGroupResponse();
-        Page<Mapping> mappingPage = (groupResponse != null && !groupResponse.getValues().isEmpty())
-                ? buildGroupedPage(groupResponse.getValues().get(0), pageable)
+        // A same-SPO collapse query (ADR-0023) sets expand=true; its representatives come back as a
+        // flat result with the expanded members alongside, so it takes the collapse-aware path.
+        boolean collapsed = params.getBool(SolrConstants.EXPAND, false);
+        Page<Mapping> mappingPage = collapsed
+                ? buildCollapsedPage(response, pageable)
                 : buildFlatPage(response, pageable);
 
         Map<String, Map<String, Long>> facetFieldToCounts = getFacetFieldToCounts(response);
@@ -92,29 +94,43 @@ public class OxOSolrClient {
     }
 
     /**
-     * Build a page of group representatives (ADR-0013). Each group's top document — the highest
-     * inference-tier member, via {@code group.sort=score} — becomes the representative row, carrying
-     * its members and true size as a group_members JSON string ({@code {"total":N,"members":[...]}}).
-     * The page total is the group count ({@code getNGroups}), so pagination counts triples, not
-     * documents.
+     * Build a page of collapse representatives (ADR-0023, superseding ADR-0013's result grouping).
+     * Each representative is its spo_key group's highest inference-tier document (via the collapse
+     * score sort); {@code response.getResults()} is the flat list of representatives whose
+     * {@code numFound} is the exact group count, and {@code response.getExpandedResults()} carries
+     * each representative's other members keyed by spo_key. The representative leads its own
+     * group_members list ({@code {"total":N,"members":[...]}}, mirroring ADR-0013) so the detail view
+     * still shows it first; the true group size is one (the representative) plus the expanded member
+     * count, which can exceed the inlined cap. The page total is the group count, so pagination
+     * counts triples, not documents.
      */
-    private Page<Mapping> buildGroupedPage(GroupCommand command, Pageable pageable) throws Exception {
+    private Page<Mapping> buildCollapsedPage(QueryResponse response, Pageable pageable) throws Exception {
         DocumentObjectBinder binder = solrMappingClient.getBinder();
+        SolrDocumentList representativeDocs = response.getResults();
+        Map<String, SolrDocumentList> expandedBySpoKey = response.getExpandedResults();
+
         List<Mapping> representatives = new ArrayList<>();
-        for (Group group : command.getValues()) {
-            SolrDocumentList memberDocs = group.getResult();
-            List<Mapping.Builder> builders = binder.getBeans(Mapping.Builder.class, memberDocs);
-            if (builders.isEmpty()) {
-                continue;
+        for (SolrDocument representativeDoc : representativeDocs) {
+            Mapping.Builder representativeBuilder = binder.getBean(Mapping.Builder.class, representativeDoc);
+            String spoKey = String.valueOf(representativeDoc.getFieldValue(MappingConstants.SPO_KEY));
+
+            // group_members leads with the representative itself, then its expanded members.
+            List<Mapping> members = new ArrayList<>();
+            members.add(representativeBuilder.build());
+            long groupSize = 1;
+            SolrDocumentList expandedMembers =
+                    expandedBySpoKey != null ? expandedBySpoKey.get(spoKey) : null;
+            if (expandedMembers != null) {
+                binder.getBeans(Mapping.Builder.class, expandedMembers).stream()
+                        .map(Mapping.Builder::build)
+                        .forEach(members::add);
+                groupSize += expandedMembers.getNumFound();
             }
-            List<Mapping> members = builders.stream()
-                    .map(Mapping.Builder::build)
-                    .collect(Collectors.toList());
-            String groupMembers = serializeGroupMembers(members, memberDocs.getNumFound());
-            representatives.add(builders.get(0).groupMembersAsString(groupMembers).build());
+
+            String groupMembers = serializeGroupMembers(members, groupSize);
+            representatives.add(representativeBuilder.groupMembersAsString(groupMembers).build());
         }
-        int totalGroups = command.getNGroups() != null ? command.getNGroups() : representatives.size();
-        return new PageImpl<>(representatives, pageable, totalGroups);
+        return new PageImpl<>(representatives, pageable, representativeDocs.getNumFound());
     }
 
     private String serializeGroupMembers(List<Mapping> members, long total) throws Exception {

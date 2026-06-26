@@ -534,7 +534,7 @@ class SolrQueryBuilderTest {
     // ---------- same-SPO grouping (ADR-0013) ----------
 
     @Test
-    void groupBySpoAddsGroupingParamsAndSpoKeyTiebreaker() {
+    void groupBySpoAddsCollapseAndExpandParams() {
         MappingSearchRequest request = baseRequest();
         request.setGroupBySpo(true);
         SortedField sort = new SortedField();
@@ -544,25 +544,33 @@ class SolrQueryBuilderTest {
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
-        assertThat(solrQuery.get(SolrConstants.GROUP)).isEqualTo("true");
-        assertThat(solrQuery.get(SolrConstants.GROUP_FIELD)).isEqualTo(MappingEnum.SPO_KEY.getField());
-        assertThat(solrQuery.get(SolrConstants.GROUP_NGROUPS)).isEqualTo("true");
-        assertThat(solrQuery.get(SolrConstants.GROUP_SORT)).isEqualTo("score desc");
-        assertThat(solrQuery.get(SolrConstants.GROUP_LIMIT))
+        String spoKey = MappingEnum.SPO_KEY.getField();
+        String collapseFilter = String.format(
+                SolrConstants.COLLAPSE_FQ_TEMPLATE, spoKey, SolrConstants.REPRESENTATIVE_SORT);
+        assertThat(solrQuery.getFilterQueries()).contains(collapseFilter);
+        assertThat(solrQuery.getBool(SolrConstants.EXPAND, false)).isTrue();
+        assertThat(solrQuery.get(SolrConstants.EXPAND_FIELD)).isEqualTo(spoKey);
+        assertThat(solrQuery.get(SolrConstants.EXPAND_SORT)).isEqualTo(SolrConstants.REPRESENTATIVE_SORT);
+        assertThat(solrQuery.get(SolrConstants.EXPAND_ROWS))
                 .isEqualTo(String.valueOf(SolrConstants.GROUP_MEMBER_LIMIT));
+        // spo_key is docValues-only, so it is added to fl for the expand join.
+        assertThat(solrQuery.getFields()).contains(spoKey);
         // spo_key is appended after the user's sort as a total-order tiebreaker for stable paging.
         SolrQuery.SortClause lastSort = solrQuery.getSorts().get(solrQuery.getSorts().size() - 1);
-        assertThat(lastSort.getItem()).isEqualTo(MappingEnum.SPO_KEY.getField());
+        assertThat(lastSort.getItem()).isEqualTo(spoKey);
         assertThat(lastSort.getOrder()).isEqualTo(SolrQuery.ORDER.asc);
     }
 
     @Test
-    void groupBySpoFalseAddsNoGroupingParams() {
+    void groupBySpoFalseAddsNoCollapseOrExpand() {
         MappingSearchRequest request = baseRequest();
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
-        assertThat(solrQuery.get(SolrConstants.GROUP)).isNull();
+        assertThat(solrQuery.getBool(SolrConstants.EXPAND, false)).isFalse();
+        String[] filterQueries = solrQuery.getFilterQueries();
+        assertThat(filterQueries == null ? new String[0] : filterQueries)
+                .noneMatch(clause -> clause.contains("{!collapse"));
         assertThat(solrQuery.getSorts())
                 .noneMatch(clause -> clause.getItem().equals(MappingEnum.SPO_KEY.getField()));
     }

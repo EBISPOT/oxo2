@@ -1,6 +1,8 @@
 # ADR-0013: Group same-SPO mappings into one row in result views
 
-- **Status**: Accepted
+- **Status**: Accepted — grouping *mechanism* superseded by
+  [ADR-0023](0023-collapse-for-same-spo.md) (the same-SPO collapse behaviour and `spo_key` design
+  below still stand; only the Solr result-grouping implementation is replaced)
 - **Date**: 2026-06-08
 
 ## Context
@@ -66,7 +68,8 @@ single **mapping group**, rendered as one expandable row whose members are reach
   misrepresenting the data (see § predicate_modifier in `/CONTEXT.md`).
 - **Client-side per-page grouping** — rejected: same-SPO documents straddle page boundaries, and the total /
   pagination counts would still be document-based.
-- **Collapsing QParser + ExpandComponent** — rejected: result grouping returns members and the group count in
-  one response, mapping directly onto the parent + expandable-children UI.
+- **Collapsing QParser + ExpandComponent** — rejected here on the assumption that result grouping's
+  single-response members-and-count was cheap; **reversed by [ADR-0023](0023-collapse-for-same-spo.md)**
+  after `group.ngroups` measured at ~19s on a high-frequency term. This is now the chosen mechanism.
 - **Lazy-load members on expand** — deferred: inline-capped members keep the single-query `Page` shape;
   revisit if groups turn out to be routinely huge.

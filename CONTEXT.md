@@ -118,10 +118,12 @@ builder) and `oxo2-mappings` (`mapping_id` becomes `indexed`).
 /api/v2/mapping-sets/by-id?mappingSetId=<IRI>`), and `oxo2-frontend` (`/inferences` route).
 - **Same-SPO mappings are grouped in result views** — the Search and Inferences tables collapse mappings sharing 
 (`subject_id`, `predicate_id`, `predicate_modifier`, `object_id`) into one *mapping group* row, via the denormalised Solr `spo_key` 
-field and Solr result grouping. Grouping is presentation-layer, layered on top of the inference-type filter, and a page counts groups 
-not documents (`group.ngroups`); the Advanced tab stays flat. See [ADR-0013](docs/adr/0013-group-same-spo-mappings-in-result-views.md). 
-Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` (grouped query path + `group_members` transport), and 
-`oxo2-frontend` (expandable rows, paging over groups).
+field and the Solr CollapsingQParserPlugin + ExpandComponent (ADR-0023, replacing the original result grouping whose 
+`group.ngroups` count cost ~19s on high-frequency terms). Collapse is presentation-layer, layered on top of the inference-type 
+filter, and a page counts groups not documents (the collapsed `numFound`); the Advanced tab stays flat. See 
+[ADR-0013](docs/adr/0013-group-same-spo-mappings-in-result-views.md) and 
+[ADR-0023](docs/adr/0023-collapse-for-same-spo.md). Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` 
+(collapse query path + `group_members` transport), and `oxo2-frontend` (expandable rows, paging over groups).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **The dataload is resumable from a chosen (sub)stage** — parameterised by `START_STAGE` (default
