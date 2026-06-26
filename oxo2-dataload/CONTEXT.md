@@ -55,7 +55,8 @@ Java sub-modules depend on `oxo2-shared` for the SSSOM data model.
 - **HPC entry points** — `loadData.hpc` (login node: validate + `sbatch`) and `loadData.slurm` (the
   single batch job) for SLURM-based deployments. Both honour a `START_STAGE` resume parameter, and
   `loadData.jenkins.sh` (the login-node submit→poll→tail wrapper a Jenkins Freestyle job runs over
-  SSH) wraps them for CI-driven runs — see § Resumable dataload.
+  SSH) wraps them for CI-driven runs — see § Resumable dataload. The `START_STAGE` contract they share
+  with the local `loadData.nextflow` lives in the sourced `loadData.lib.sh`.
 - **Solr data archive** — on a successful HPC run, `loadData.slurm` stops Solr cleanly and writes
   `$OXO2_INFERENCES/solr-data.tar.gz` (the contents of `$SOLR_HOME`, excluding the run-local `logs/`
   and `pid/` dirs). Jenkins copies it onto the NFS export, and the dev-cluster Solr init container
@@ -73,6 +74,8 @@ This module exposes no Java API to other OxO2 modules — its outputs flow downs
 
 Single execution path: `loadData.nextflow` invokes the stages below in order. Per-stage `.sh` scripts (e.g. `downloadMappings.sh`, 
 `inferMappings.sh`) exist for local debugging only — they are *not* part of the production pipeline (see [ADR-0003](../docs/adr/0003-nextflow-as-sole-dataload-path.md)).
+`loadData.nextflow` is itself resumable from a chosen `START_STAGE` (default `download` = full run), sharing the same contract as the
+HPC path — see § Resumable dataload.
 
 **1. Download** — `downloadMappings.nf` (calling logic in `oxo2-downloader`). Reads the SSSOM source list from `OXO2_CONFIG` 
 (an `oxo-config*.json` file) and downloads each mapping set's TSV to the dataload working directory. A registry may be a direct
@@ -120,17 +123,23 @@ then builds **bare** inferred mappings straight from `inferences.ttl` — subjec
 left at their inert model defaults ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)) — and
 indexes them. The Solr client caches `EntityDetails` to avoid redundant queries during load.
 
-### Resumable dataload (HPC / Jenkins)
+### Resumable dataload (local, HPC, Jenkins)
 
-Decision and rationale: [ADR-0019](../docs/adr/0019-resumable-hpc-dataload.md).
+Decision and rationale: [ADR-0019](../docs/adr/0019-resumable-hpc-dataload.md) (HPC) and
+[ADR-0022](../docs/adr/0022-resumable-local-dataload-shared-library.md) (the shared library extending it
+to local).
 
-The HPC path can resume from the last completed (sub)stage instead of re-running from scratch — so a
-production load that fails late (e.g. a flaky Solr start, or a bug in the cheap merge step after the
-expensive explain step) can be restarted at that point. This replaces the old manual
-`>>> TEMP run-from-merge <<<` edit of `loadData.slurm`.
+Both orchestrators can resume from the last completed (sub)stage instead of re-running from scratch — so
+a load that fails late (e.g. a flaky Solr start, or a late stage failing after the expensive inference)
+can be restarted at that point. The ordered stage list, `should_run` gating, stage-aware cleanup, the
+resume checkpoint, and the Solr wipe/needed decisions live in **one sourced library**,
+`loadData.lib.sh`, used by both `loadData.slurm` (HPC) and `loadData.nextflow` (local/integration); a new
+stage must be declared there, not in either script. This replaced the old manual
+`>>> TEMP run-from-merge <<<` edit of `loadData.slurm` (HPC) and the unconditional `rm -R $OXO2_DATA/*`
+full wipe (local).
 
-**Stages.** `loadData.slurm` defines one ordered stage list and re-enters it at `START_STAGE`
-(default `download` = full run):
+**Stages.** `loadData.lib.sh` defines one ordered stage list; each orchestrator re-enters it at
+`START_STAGE` (default `download` = full run):
 
 ```
 download → sssom2json → nquads → infer
@@ -142,29 +151,36 @@ download / Solr-load / archive stages. The `trace`/`explain`/`merge` stages were
 explanations and `explanations2json` was replaced by `inferences2json`
 ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)): `inferences2json` builds the
 bare inferred-mapping JSON from `inferences.ttl` (querying the asserted Solr index for entity
-details), and `index-inferred` posts it to Solr. `loadData.hpc` forwards `START_STAGE` to the batch
-job via `--export`; `loadData.slurm` validates it against the list and computes which stages to run.
+details), and `index-inferred` posts it to Solr. On HPC, `loadData.hpc` forwards `START_STAGE` to the
+batch job via `--export`; locally it is just an environment variable read by `loadData.nextflow`. Either
+way `loadData.lib.sh` validates it against the list and computes which stages to run. `loadData.nextflow`
+has no body for `archive`, so locally that final stage is a no-op (no `solr-data.tar.gz`).
 
 **How resume stays correct.** Two mechanisms:
 
 - *Substage resume reads PUBLISHED artifacts, not Nextflow's work dir.* `inferSssomCrossSet.nf`
   exposes the `from_infer` `-entry` workflow, which reads the published `assertedCorpus.nq` under
-  `$OXO2_DATA` and re-runs `INFER_CROSS_SET`. (The `from_trace`/`from_explain`/`from_merge` entry
-  points and their `crossSet/chunks/`, `crossSet/chunkChains/` published artifacts went away with
-  explanations — [ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md).) Because resume
-  never depends on `NXF_WORK`, `loadData.slurm` wipes the transient Nextflow dirs on every run — no
-  fragile work-dir spelunking, and the result is independent of the container digest.
+  `$OXO2_DATA` and re-runs `INFER_CROSS_SET`. Both orchestrators select it at `START_STAGE=infer` — HPC
+  inline in `loadData.slurm`, locally via `determineInferences.nextflow`. (The
+  `from_trace`/`from_explain`/`from_merge` entry points and their `crossSet/chunks/`,
+  `crossSet/chunkChains/` published artifacts went away with explanations —
+  [ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md).) Because resume never depends on
+  `NXF_WORK`, both orchestrators wipe the transient Nextflow dirs on every run — no fragile work-dir
+  spelunking, and the result is independent of the container digest.
 - *Stage-aware cleanup preserves earlier stages' outputs.* Each stage "owns" the artifact path(s) it
-  regenerates (`STAGE_OWNS` in `loadData.slurm`). A resume wipes only the owned paths of `START_STAGE`
-  and later, keeping everything earlier stages produced as the resume inputs. Solr's on-disk index is
-  wiped only when the asserted load (`index-asserted`) is in scope; resuming at `index-inferred` /
-  `archive` keeps the already-indexed asserted data (which the bare inferred-mapping indexer queries
-  for entity details). Solr is started only for runs that reach an indexing stage; `START_STAGE=archive`
-  just re-archives the existing `$SOLR_HOME`.
+  regenerates (`OXO2_STAGE_OWNS` in `loadData.lib.sh`). A resume wipes only the owned paths of
+  `START_STAGE` and later, keeping everything earlier stages produced as the resume inputs. Both the
+  Solr on-disk index wipe **and** the Solr-config copy (`copySolrConfig.sh`, which deletes and recreates
+  the core dirs) are gated on the same `should_wipe_solr` decision — true only when the asserted load
+  (`index-asserted`) is in scope — so resuming at `inferences2json` / `index-inferred` / `archive` keeps
+  the already-indexed asserted data the bare inferred-mapping indexer queries for entity details. (Gating
+  the config copy on anything looser would re-wipe the asserted cores on a resume — a latent bug
+  ADR-0022 fixed.) Solr is started only for runs that reach an indexing stage; `START_STAGE=archive` just
+  re-archives the existing `$SOLR_HOME` (HPC only).
 
-**Checkpoint.** After each stage, `loadData.slurm` writes the stage name to
-`$OXO2_DATA/.oxo2-last-completed-stage`. On failure, set `START_STAGE` to that value to resume. The
-checkpoint lives outside every stage's owned paths, so cleanup never removes it.
+**Checkpoint.** After each stage, the orchestrator (via `record_stage` in `loadData.lib.sh`) writes the
+stage name to `$OXO2_DATA/.oxo2-last-completed-stage`. On failure, set `START_STAGE` to that value to
+resume. The checkpoint lives outside every stage's owned paths, so cleanup never removes it.
 
 **Jenkins.** The dataload is driven from a **parameterised Freestyle job** (not a `Jenkinsfile`): its
 single build step is *Execute shell script on remote host using ssh* (the `ssh` plugin), targeting the

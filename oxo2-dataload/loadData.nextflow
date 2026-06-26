@@ -42,49 +42,50 @@ export SOLR_URL SOLR_SECURITY_MANAGER_ENABLED
 # memory=22 GB), so an explicit -Xmx avoids the default JVM ergonomics letting
 # each one grab ~25% of host RAM and oversubscribing the box.
 export JAVA_OPTS="${JAVA_OPTS:-} -Xmx4g -XX:+ExitOnOutOfMemoryError"
-rm -R $OXO2_DATA/*
-rm -R $NEXTFLOW_DIR/*
 
-mkdir -p $NXF_WORK $NXF_HOME $NXF_TEMP $NXF_CACHE_DIR $NXF_LOGS
+# ---------------------------------------------------------------------------
+# Resumable pipeline (ADR-0019): START_STAGE selects where the run (re)enters the pipeline; the
+# default `download` is a full run. The shared loadData.lib.sh — the SAME file loadData.slurm uses
+# on HPC — owns the ordered stage list, should_run, the stage-aware cleanup, the resume checkpoint,
+# and the Solr wipe/needed decisions. The local path has no `archive` stage (it produces no
+# solr-data.tar.gz); the canonical list still includes archive, so its owned tarball path simply
+# never exists here and the archive stage is a no-op. Resume reads PUBLISHED artifacts under
+# $OXO2_DATA, never NXF_WORK, so the transient Nextflow dirs are wiped on every run.
+# Export START_STAGE so determineInferences.nextflow can re-enter inference at `-entry from_infer`.
+# See oxo2-dataload/CONTEXT.md § Resumable dataload.
+# ---------------------------------------------------------------------------
+START_STAGE="${START_STAGE:-download}"
+export START_STAGE
+. "$SCRIPT_DIR/loadData.lib.sh"
 
-start_time=$(date +%s)
-echo "###################" downloadMappings...
-$SCRIPT_DIR/downloadMappings.nextflow
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Download took: ${elapsed} seconds"
-
-start_time=$(date +%s)
-echo "Using Nextflow for parallel processing of SSSOM to JSON conversion"
-(nextflow -log $NXF_LOGS/sssom2json.nextflow.log \
-    -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
-    run $SCRIPT_DIR/sssom2json.nf \
-    -profile $NF_PROFILE \
-    -with-trace    $NXF_LOGS/sssom2json-trace.txt \
-    -with-report   $NXF_LOGS/sssom2json-report.html \
-    -with-timeline $NXF_LOGS/sssom2json-timeline.html)
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Nextflow Parallel Processing: Writing JSON took: ${elapsed} seconds"
-
-
-start_time=$(date +%s)
-echo  "###################"  makeInferences...
-$SCRIPT_DIR/determineInferences.nextflow
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Total inference process took: ${elapsed} seconds"
-
-echo  "###################"  copySolrConfig...
-if ! "$SCRIPT_DIR/copySolrConfig.sh"; then
-    echo "Failed to copy Solr config into $SOLR_HOME" >&2
-    exit 1
+echo "START_STAGE=$START_STAGE (index $OXO2_START_INDEX of ${#OXO2_STAGES[@]} stages: ${OXO2_STAGES[*]})"
+if [ -f "$OXO2_CHECKPOINT_FILE" ]; then
+    echo "Previous run's last completed stage: $(cat "$OXO2_CHECKPOINT_FILE")"
 fi
-sleep 2
-echo Start solr ...
-mkdir -p $OXO2_DATA/tmp
-ulimit -n 65000 2>/dev/null || true
-$SOLR_SCRIPT/solr start --user-managed -Djava.io.tmpdir=$OXO2_DATA/tmp
+
+# --- Cleanup ---
+# Transient Nextflow dirs are always wiped (resume reads published artifacts under $OXO2_DATA, never
+# NXF_WORK). Stage-aware cleanup then removes only the artifacts owned by START_STAGE and later,
+# preserving earlier stages' outputs as the resume inputs. On a full run (START_STAGE=download) this
+# wipes every owned path — the same clean slate the integration harness relies on per fixture.
+rm -rf "$NEXTFLOW_DIR"/* 2>/dev/null || true
+oxo2_clean_owned_artifacts
+
+# Solr's data is wiped only when the asserted load runs from scratch — locally copySolrConfig.sh is
+# the wipe (it deletes the oxo2-mappings / oxo2-mappingsets core dirs), so we gate it on WIPE_SOLR.
+# A resume after index-asserted keeps the already-indexed asserted data, which inferences2json
+# queries for entity details. SOLR_NEEDED is true for any run that reaches an indexing stage.
+WIPE_SOLR=false
+if should_wipe_solr; then WIPE_SOLR=true; fi
+SOLR_NEEDED=false
+if solr_needed; then SOLR_NEEDED=true; fi
+
+# --- (Re)create the standard directory structure (after cleanup, so dirs always exist) ---
+mkdir -p $NXF_WORK $NXF_HOME $NXF_TEMP $NXF_CACHE_DIR $NXF_LOGS
+mkdir -p "$OXO2_DATA/sssom" "$OXO2_DATA/sssom-as-json" "$OXO2_DATA/assertedMappings"
+mkdir -p "$OXO2_INFERENCES/solr/mapping" "$OXO2_INFERENCES/solr/mappingSet"
+mkdir -p "$OXO2_INFERENCES/crossSet"
+mkdir -p "$OXO2_DATA/tmp"
 
 wait_for_solr_url() {
     local url=$1
@@ -121,18 +122,6 @@ wait_for_solr_core() {
     return 1
 }
 
-if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr"; then
-    exit 1
-fi
-
-if ! wait_for_solr_core "oxo2-mappings"; then
-    exit 1
-fi
-
-if ! wait_for_solr_core "oxo2-mappingsets"; then
-    exit 1
-fi
-
 run_json2solr() {
     local input_dir=$1
     local solr_url=$2
@@ -143,49 +132,123 @@ run_json2solr() {
     fi
 }
 
-start_time=$(date +%s)
-echo  "###################"  json2solr mappings ...
-run_json2solr "$OXO2_DATA/sssom-as-json/mapping" "$SOLR_URL/oxo2-mappings"
-echo  "###################"  json2solr mappingSets ...
-run_json2solr "$OXO2_DATA/sssom-as-json/mappingSet" "$SOLR_URL/oxo2-mappingsets"
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Writing to Solr took: ${elapsed} seconds"
-sleep 20
+# --- Stage: download ---
+if should_run download; then
+    start_time=$(date +%s)
+    echo "###################" downloadMappings...
+    $SCRIPT_DIR/downloadMappings.nextflow
+    end_time=$(date +%s)
+    echo "Download took: $((end_time - start_time)) seconds"
+    record_stage download
+fi
 
+# --- Stage: SSSOM to JSON ---
+if should_run sssom2json; then
+    start_time=$(date +%s)
+    echo "Using Nextflow for parallel processing of SSSOM to JSON conversion"
+    (nextflow -log $NXF_LOGS/sssom2json.nextflow.log \
+        -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
+        run $SCRIPT_DIR/sssom2json.nf \
+        -profile $NF_PROFILE \
+        -with-trace    $NXF_LOGS/sssom2json-trace.txt \
+        -with-report   $NXF_LOGS/sssom2json-report.html \
+        -with-timeline $NXF_LOGS/sssom2json-timeline.html)
+    end_time=$(date +%s)
+    echo "Nextflow Parallel Processing: Writing JSON took: $((end_time - start_time)) seconds"
+    record_stage sssom2json
+fi
 
-mkdir -p $OXO2_INFERENCES/solr/mapping
-mkdir -p $OXO2_INFERENCES/solr/mappingSet
+# --- Stage: inference (nquads -> infer), ADR-0016 / ADR-0020 ---
+# determineInferences.nextflow runs the single cross-set pass (JSON -> N-Quads -> corpus -> infer ->
+# inferences.ttl). It re-enters at `-entry from_infer` when START_STAGE=infer (reading the published
+# assertedCorpus.nq); otherwise it runs the full pipeline from JSON. Guard on `infer`: any
+# START_STAGE that includes nquads also includes infer, since they are one Nextflow process graph.
+if should_run infer; then
+    start_time=$(date +%s)
+    echo  "###################"  makeInferences...
+    $SCRIPT_DIR/determineInferences.nextflow
+    end_time=$(date +%s)
+    echo "Total inference process took: $((end_time - start_time)) seconds"
+    record_stage infer
+fi
 
-start_time=$(date +%s)
-# Bare inferred-mapping JSON across all sets (ADR-0020): the single
-# https://www.ebi.ac.uk/oxo2/inferences set (SSSOM_INFERENCE), built directly from inferences.ttl
-# with NO explanations (deferred to an on-demand service). Runs now (not during inference) because
-# the indexer resolves each inferred entity's CURIE/label from the asserted Solr index, so the
-# asserted data must already be indexed.
-echo "Using Nextflow for inferences2json (SSSOM, cross-set, bare)"
-(cd $NXF_LOGS && nextflow -log $NXF_LOGS/inferences2jsonCrossSet.nextflow.log \
-    -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
-    run $SCRIPT_DIR/oxo2-json2inferences/inferences2json.nf \
-    -profile $NF_PROFILE \
-    --inferences_ttl "$OXO2_INFERENCES/crossSet/inferences.ttl" \
-    --inference_type SSSOM_INFERENCE \
-    -with-trace    $NXF_LOGS/inferences2jsonCrossSet-trace.txt \
-    -with-report   $NXF_LOGS/inferences2jsonCrossSet-report.html \
-    -with-timeline $NXF_LOGS/inferences2jsonCrossSet-timeline.html)
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-echo "Nextflow Processing: inferences2json (SSSOM cross-set, bare) took: ${elapsed} seconds"
+# --- Solr config + start (only for runs that reach an indexing stage) ---
+if [ "$SOLR_NEEDED" = true ]; then
+    if [ "$WIPE_SOLR" = true ]; then
+        echo  "###################"  copySolrConfig...
+        if ! "$SCRIPT_DIR/copySolrConfig.sh"; then
+            echo "Failed to copy Solr config into $SOLR_HOME" >&2
+            exit 1
+        fi
+        sleep 2
+    else
+        echo "Preserving Solr cores (resuming after asserted data was indexed); skipping copySolrConfig."
+    fi
 
+    echo Start solr ...
+    ulimit -n 65000 2>/dev/null || true
+    $SOLR_SCRIPT/solr start --user-managed -Djava.io.tmpdir=$OXO2_DATA/tmp
 
-echo  "###################"  json2solr inferred mappings ...
-run_json2solr "$OXO2_INFERENCES/solr/mapping" "$SOLR_URL/oxo2-mappings"
-echo  "###################"  json2solr inferred mappingSets ...
-run_json2solr "$OXO2_INFERENCES/solr/mappingSet" "$SOLR_URL/oxo2-mappingsets"
-sleep 20
+    if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr"; then
+        exit 1
+    fi
+    if ! wait_for_solr_core "oxo2-mappings"; then
+        exit 1
+    fi
+    if ! wait_for_solr_core "oxo2-mappingsets"; then
+        exit 1
+    fi
+fi
 
+# --- Stage: index asserted mappings to Solr ---
+if should_run index-asserted; then
+    start_time=$(date +%s)
+    echo  "###################"  json2solr mappings ...
+    run_json2solr "$OXO2_DATA/sssom-as-json/mapping" "$SOLR_URL/oxo2-mappings"
+    echo  "###################"  json2solr mappingSets ...
+    run_json2solr "$OXO2_DATA/sssom-as-json/mappingSet" "$SOLR_URL/oxo2-mappingsets"
+    end_time=$(date +%s)
+    echo "Writing to Solr took: $((end_time - start_time)) seconds"
+    sleep 20
+    record_stage index-asserted
+fi
 
-echo  "################### Stopping solr ..."
-$SOLR_SCRIPT/solr stop -p 8983
+# --- Stage: bare inferred mappings to JSON (SSSOM reasoning across all sets, ADR-0020) ---
+# Bare inferred-mapping JSON across all sets: the single https://www.ebi.ac.uk/oxo2/inferences set
+# (SSSOM_INFERENCE), built directly from inferences.ttl with NO explanations (deferred to an
+# on-demand service). Runs after the asserted load because the indexer resolves each inferred
+# entity's CURIE/label from the asserted Solr index.
+if should_run inferences2json; then
+    start_time=$(date +%s)
+    echo "Using Nextflow for inferences2json (SSSOM, cross-set, bare)"
+    (cd $NXF_LOGS && nextflow -log $NXF_LOGS/inferences2jsonCrossSet.nextflow.log \
+        -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
+        run $SCRIPT_DIR/oxo2-json2inferences/inferences2json.nf \
+        -profile $NF_PROFILE \
+        --inferences_ttl "$OXO2_INFERENCES/crossSet/inferences.ttl" \
+        --inference_type SSSOM_INFERENCE \
+        -with-trace    $NXF_LOGS/inferences2jsonCrossSet-trace.txt \
+        -with-report   $NXF_LOGS/inferences2jsonCrossSet-report.html \
+        -with-timeline $NXF_LOGS/inferences2jsonCrossSet-timeline.html)
+    end_time=$(date +%s)
+    echo "Nextflow Processing: inferences2json (SSSOM cross-set, bare) took: $((end_time - start_time)) seconds"
+    record_stage inferences2json
+fi
+
+# --- Stage: index inferred mappings and mapping sets to Solr ---
+if should_run index-inferred; then
+    echo  "###################"  json2solr inferred mappings ...
+    run_json2solr "$OXO2_INFERENCES/solr/mapping" "$SOLR_URL/oxo2-mappings"
+    echo  "###################"  json2solr inferred mappingSets ...
+    run_json2solr "$OXO2_INFERENCES/solr/mappingSet" "$SOLR_URL/oxo2-mappingsets"
+    sleep 20
+    record_stage index-inferred
+fi
+
+# --- Stop Solr (only if we started it) ---
+if [ "$SOLR_NEEDED" = true ]; then
+    echo  "################### Stopping solr ..."
+    $SOLR_SCRIPT/solr stop -p 8983
+fi
 
 cd ..

@@ -20,14 +20,24 @@ if [ -n "${NF_EXTRA_CONFIG:-}" ]; then
     NF_EXTRA_CONFIG_ARG="-c ${NF_EXTRA_CONFIG}"
 fi
 
+# Resume support (ADR-0019): when the orchestrator resumes at START_STAGE=infer, re-enter the DAG at
+# INFER via `-entry from_infer`, reading the previously PUBLISHED assertedCorpus.nq instead of
+# rebuilding N-Quads from JSON. Any other START_STAGE (download|sssom2json|nquads, or unset) runs the
+# default workflow {} from each set's JSON. Mirrors the entry selection in loadData.slurm.
+INFER_ENTRY_ARGS=()
+case "${START_STAGE:-download}" in
+    infer) INFER_ENTRY_ARGS=(-entry from_infer) ;;
+esac
+
 # SSSOM reasoning across all mapping sets (ADR-0016): JSON -> N-Quads -> concatenate corpus ->
 # Infer (sssom.rls) -> inferences.ttl (the inferred mappings; no trace/explain, ADR-0020).
 start_time=$(date +%s)
-echo "Inference: SSSOM reasoning across all mapping sets (inferSssomCrossSet.nf)"
+echo "Inference: SSSOM reasoning across all mapping sets (inferSssomCrossSet.nf, entry=${START_STAGE:-download})"
 (nextflow -log $NXF_LOGS/inferSssomCrossSet.nextflow.log \
     -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
     run $SCRIPT_DIR/inferSssomCrossSet.nf \
     -profile ${NF_PROFILE:-standard} \
+    ${INFER_ENTRY_ARGS[@]+"${INFER_ENTRY_ARGS[@]}"} \
     -with-trace    $NXF_LOGS/inferSssomCrossSet-trace.txt \
     -with-report   $NXF_LOGS/inferSssomCrossSet-report.html \
     -with-timeline $NXF_LOGS/inferSssomCrossSet-timeline.html)

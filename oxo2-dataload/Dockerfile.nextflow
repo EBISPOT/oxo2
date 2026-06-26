@@ -75,6 +75,7 @@ COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/determineInferences.nextflow \
          ./oxo2-dataload/inferSssomCrossSet.nf \
          ./oxo2-dataload/json2solr.sh \
+         ./oxo2-dataload/loadData.lib.sh \
          ./oxo2-dataload/loadData.nextflow \
          ./oxo2-dataload/sssom2json.sh \
          ./oxo2-dataload/sssom2json.nf \

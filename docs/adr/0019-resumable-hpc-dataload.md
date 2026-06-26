@@ -66,7 +66,11 @@ remains the sole dataload path.
   composable `inferThroughMerge` tail the resume entries use, and the two new `publishDir`s are side-effect
   copies that do not alter any channel output. The integration goldens
   ([`oxo2-integration-tests`](../../oxo2-integration-tests/CONTEXT.md), 108 dynamic tests) still match — the
-  local/integration pipeline (`loadData.nextflow`) uses no `-entry` and is untouched.
+  local/integration pipeline (`loadData.nextflow`) used no `-entry` and was untouched at the time.
+  **Extended by [ADR-0022](0022-resumable-local-dataload-shared-library.md) (2026-06-26):**
+  `loadData.nextflow` now shares this same resumable contract via a sourced `loadData.lib.sh`, and the
+  stage list / cleanup / checkpoint / Solr-decision logic this ADR put in `loadData.slurm` is the shared
+  library both orchestrators source.
 - Extra disk under `$OXO2_INFERENCES/crossSet/`: the per-chunk trace inputs (`chunks/`) and explanation
   chains (`chunkChains/`) are now persisted rather than living only in the work dir. They are the durable
   resume contract for `START_STAGE=explain` and `START_STAGE=merge`.

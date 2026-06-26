@@ -124,12 +124,17 @@ Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` (groupe
 `oxo2-frontend` (expandable rows, paging over groups).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
-- **The HPC dataload is resumable from a chosen (sub)stage** — one SLURM job parameterised by `START_STAGE`;
-substage resume reads *published* artifacts under `$OXO2_DATA` (never Nextflow's work dir, which is wiped
-every run), and stage-ownership cleanup preserves earlier stages' outputs. A Jenkins Freestyle job drives it
-over SSH (the `ssh` plugin's remote-shell build step, against a Jenkins-global SSH site — no credentials in
-the repo). Operational layer on top of, not a replacement for, ADR-0003. See
-[ADR-0019](docs/adr/0019-resumable-hpc-dataload.md). Affects `oxo2-dataload` (`loadData.slurm`/`.hpc`,
+- **The dataload is resumable from a chosen (sub)stage** — parameterised by `START_STAGE` (default
+`download` = full run); substage resume reads *published* artifacts under `$OXO2_DATA` (never Nextflow's
+work dir, which is wiped every run), and stage-ownership cleanup preserves earlier stages' outputs. Both
+orchestrators share one contract: the ordered stage list, cleanup, checkpoint and Solr wipe/needed
+decisions live in the sourced `oxo2-dataload/loadData.lib.sh`, used by `loadData.slurm` (HPC) and
+`loadData.nextflow` (local/integration) alike — so a new stage must be declared in the library, not in
+either script. On HPC a Jenkins Freestyle job drives it over SSH (the `ssh` plugin's remote-shell build
+step, against a Jenkins-global SSH site — no credentials in the repo). Operational layer on top of, not a
+replacement for, ADR-0003. See [ADR-0019](docs/adr/0019-resumable-hpc-dataload.md) (HPC) and
+[ADR-0022](docs/adr/0022-resumable-local-dataload-shared-library.md) (the shared library that extends it to
+local). Affects `oxo2-dataload` (`loadData.lib.sh`, `loadData.slurm`/`.hpc`, `loadData.nextflow`,
 `loadData.jenkins.sh`). NB: [ADR-0020](docs/adr/0020-defer-explanations-to-on-demand.md) removes the
 `trace`/`explain`/`merge`/`explanations2json` stages and the `inferSssomCrossSet.nf`
 `from_trace`/`from_explain`/`from_merge` entry points, shortening the resumable stage list.

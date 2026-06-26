@@ -27,32 +27,18 @@ echo "OxO2 Dataload started at: $dataload_start_time"
 # ---------------------------------------------------------------------------
 START_STAGE="${START_STAGE:-download}"
 
-# Canonical ordered (sub)stage list. A stage's position in this array defines "before"/"after".
-STAGES=(download sssom2json nquads infer \
-        index-asserted inferences2json index-inferred archive)
+# OXO2_INFERENCES is derived from OXO2_DATA and is referenced by the shared OXO2_STAGE_OWNS map, so
+# set it before sourcing the helper (the map is expanded at source time).
+OXO2_INFERENCES=$OXO2_DATA/inferences
+export OXO2_INFERENCES
 
-stage_index() {
-    local target=$1 idx=0
-    for name in "${STAGES[@]}"; do
-        if [ "$name" = "$target" ]; then echo "$idx"; return 0; fi
-        idx=$((idx + 1))
-    done
-    echo "ERROR: unknown stage '$target'. Valid stages: ${STAGES[*]}" >&2
-    return 1
-}
+# Shared resumable-pipeline contract (ADR-0019): the ordered stage list, should_run, stage-aware
+# cleanup (oxo2_clean_owned_artifacts), the resume checkpoint, and the should_wipe_solr / solr_needed
+# decisions. loadData.nextflow (local/integration) sources the very same file, so the two
+# orchestrators cannot drift on the stage sequence or the cleanup rules.
+. "$SCRIPT_DIR/loadData.lib.sh"
 
-if ! START_INDEX=$(stage_index "$START_STAGE"); then
-    exit 1
-fi
-
-# should_run <stage>: true when <stage> is at or after START_STAGE.
-should_run() {
-    local idx
-    idx=$(stage_index "$1") || exit 1
-    [ "$idx" -ge "$START_INDEX" ]
-}
-
-echo "START_STAGE=$START_STAGE (index $START_INDEX of ${#STAGES[@]} stages: ${STAGES[*]})"
+echo "START_STAGE=$START_STAGE (index $OXO2_START_INDEX of ${#OXO2_STAGES[@]} stages: ${OXO2_STAGES[*]})"
 
 export SOLR_URL="http://$(hostname):8983/solr"
 export no_proxy="localhost,127.0.0.1,$(hostname)"
@@ -84,19 +70,6 @@ NXF_SINGULARITY_CACHEDIR=${HPC_PATH:-$NEXTFLOW_DIR}/NXF_SINGULARITY_CACHEDIR
 NXF_LOGS=$NEXTFLOW_DIR/logs
 export NXF_WORK NXF_HOME NXF_TEMP NXF_CACHE_DIR NXF_SINGULARITY_CACHEDIR NXF_LOGS
 
-OXO2_INFERENCES=$OXO2_DATA/inferences
-export OXO2_INFERENCES
-
-# Checkpoint: the name of the last (sub)stage that completed this/last run. Written after each
-# stage; an operator (or Jenkins) reads it to choose START_STAGE for a resume. It lives outside
-# any stage's owned paths, so it survives stage-aware cleanup.
-CHECKPOINT_FILE="$OXO2_DATA/.oxo2-last-completed-stage"
-record_stage() {
-    mkdir -p "$OXO2_DATA"
-    echo "$1" > "$CHECKPOINT_FILE"
-    echo "=== STAGE COMPLETE: $1 (checkpoint -> $CHECKPOINT_FILE) ==="
-}
-
 verify_solr_indexed() {
     echo "Verifying Solr indexing..."
     local core count
@@ -112,8 +85,8 @@ verify_solr_indexed() {
     echo "Solr indexing verified successfully."
 }
 
-if [ -f "$CHECKPOINT_FILE" ]; then
-    echo "Previous run's last completed stage: $(cat "$CHECKPOINT_FILE")"
+if [ -f "$OXO2_CHECKPOINT_FILE" ]; then
+    echo "Previous run's last completed stage: $(cat "$OXO2_CHECKPOINT_FILE")"
 fi
 
 # ---------------------------------------------------------------------------
@@ -126,36 +99,15 @@ echo "Cleaning transient Nextflow working dirs..."
 rm -rf "$NXF_WORK"/* "$NXF_HOME"/* "$NXF_TEMP"/* "$NXF_CACHE_DIR"/* 2>/dev/null || true
 rm -rf "$NXF_LOGS"/* "$NXF_LOGS"/.*[!.]* 2>/dev/null || true
 
-# Each stage "owns" the artifact path(s) it (re)generates. On a run starting at START_STAGE we wipe
-# the owned paths of START_STAGE and every later stage, and PRESERVE everything earlier stages
-# produced (those are the inputs the resume builds on). Paths must not contain spaces.
-declare -A STAGE_OWNS=(
-    [download]="$OXO2_DATA/sssom"
-    [sssom2json]="$OXO2_DATA/sssom-as-json"
-    [nquads]="$OXO2_DATA/assertedMappings $OXO2_INFERENCES/crossSet/assertedCorpus.nq"
-    [infer]="$OXO2_INFERENCES/crossSet/inferences.ttl"
-    [index-asserted]=""
-    [inferences2json]="$OXO2_INFERENCES/solr"
-    [index-inferred]=""
-    [archive]="$OXO2_INFERENCES/solr-data.tar.gz"
-)
-echo "Removing artifacts owned by stages at or after '$START_STAGE'..."
-for stage in "${STAGES[@]}"; do
-    if should_run "$stage"; then
-        for path in ${STAGE_OWNS[$stage]}; do
-            if [ -n "$path" ]; then
-                echo "  rm -rf $path"
-                rm -rf "$path"
-            fi
-        done
-    fi
-done
+# Stage-aware cleanup (shared loadData.lib.sh): wipe only the artifacts owned by START_STAGE and
+# every later stage, preserving everything earlier stages produced as the resume inputs.
+oxo2_clean_owned_artifacts
 
 # Solr's on-disk index is wiped only when the asserted load will run from scratch (START_STAGE at
 # or before index-asserted). Resuming at inferences2json / index-inferred / archive must KEEP the
 # asserted data already indexed by an earlier run — inferences2json queries Solr for entity details.
 WIPE_SOLR=false
-if [ "$START_INDEX" -le "$(stage_index index-asserted)" ]; then
+if should_wipe_solr; then
     WIPE_SOLR=true
 fi
 if [ "$WIPE_SOLR" = true ]; then
@@ -178,7 +130,7 @@ mkdir -p "$SOLR_HOME"
 # that reaches one of those; START_STAGE=archive (a re-archive of an existing $SOLR_HOME) does not
 # start Solr.
 SOLR_NEEDED=false
-if [ "$START_INDEX" -le "$(stage_index index-inferred)" ]; then
+if solr_needed; then
     SOLR_NEEDED=true
 fi
 
@@ -213,11 +165,19 @@ else
 fi
 
 if [ "$SOLR_NEEDED" = true ]; then
-    # --- Copy Solr config ---
-    echo "###################" copySolrConfig...
-    singularity exec --bind "$SOLR_HOME:/opt/solr/server/solr" "$SIF_IMAGE" \
-        /opt/oxo/oxo2-dataload/copySolrConfig.sh
-    sleep 2
+    # --- Copy Solr config (only when wiping) ---
+    # copySolrConfig.sh deletes the oxo2-mappings / oxo2-mappingsets core dirs (config AND data) and
+    # re-copies empty config. Gate it on WIPE_SOLR, NOT just SOLR_NEEDED: on a resume that preserves
+    # the asserted index (START_STAGE after index-asserted) we must keep the cores, or inferences2json
+    # would query an empty index for entity CURIEs/labels (ADR-0019).
+    if [ "$WIPE_SOLR" = true ]; then
+        echo "###################" copySolrConfig...
+        singularity exec --bind "$SOLR_HOME:/opt/solr/server/solr" "$SIF_IMAGE" \
+            /opt/oxo/oxo2-dataload/copySolrConfig.sh
+        sleep 2
+    else
+        echo "Preserving Solr cores (resuming after asserted data was indexed); skipping copySolrConfig."
+    fi
 
     # --- Start Solr as a backgrounded foreground process ---
     # Run bin/solr in foreground (-f) inside a plain `singularity exec`, then background

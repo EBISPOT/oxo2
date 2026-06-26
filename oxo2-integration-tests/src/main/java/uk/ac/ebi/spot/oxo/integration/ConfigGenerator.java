@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Writes an OXO2_CONFIG JSON listing fixture TSVs as {@code file://} registries, suitable for
  * loadData.nextflow. Output lives under oxo2-integration-tests/target/ so it's disposable via
- * mvn clean and survives loadData.nextflow's `rm -R $OXO2_DATA/*` step.
+ * mvn clean and is untouched by loadData.nextflow's cleanup (which only wipes paths under $OXO2_DATA).
  *
  * Each fixture is run in isolation (ADR-0009), so the integration test calls {@link #generate(RuleFixtures.Fixture)}
  * once per fixture. {@link #generateAll()} backs the standalone generateConfig tool for a manual
