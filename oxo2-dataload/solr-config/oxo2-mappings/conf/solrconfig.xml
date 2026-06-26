@@ -528,26 +528,19 @@
     <!-- QuerySenderListener takes an array of NamedList and executes a
          local query request for each NamedList in sequence.
       -->
+    <!-- No same-SPO collapse warming query here (ADR-0023). A `q=*:*` +
+         `{!collapse field=spo_key sort='score desc'}` warm-up was tried and reverted: the newSearcher
+         listener fires after EVERY commit, so during the bulk dataload it runs a full-index collapse
+         on the growing index after each commit — each taking seconds and, on the dataload Solr's
+         default 512m heap, eventually OOMing the JVM. The collapse cold cost (~3s) is instead paid
+         once by the first real user query after a searcher opens; read-only serving has no commits,
+         so it is a one-time per-boot cost. Do not re-add a `*:*` collapse warm-up here. -->
     <listener event="newSearcher" class="solr.QuerySenderListener">
       <arr name="queries">
-        <!-- Warm the CollapsingQParserPlugin's per-segment structures so the first same-SPO collapse
-             search (ADR-0023) is not cold (~3s) after a commit. spo_key is docValues, so this builds
-             the ordinal map the collapse post-filter reads. -->
-        <lst>
-          <str name="q">*:*</str>
-          <str name="fq">{!collapse field=spo_key sort='score desc'}</str>
-          <str name="rows">1</str>
-        </lst>
       </arr>
     </listener>
     <listener event="firstSearcher" class="solr.QuerySenderListener">
       <arr name="queries">
-        <!-- Same collapse warm-up as newSearcher, for the first searcher after Solr starts. -->
-        <lst>
-          <str name="q">*:*</str>
-          <str name="fq">{!collapse field=spo_key sort='score desc'}</str>
-          <str name="rows">1</str>
-        </lst>
       </arr>
     </listener>
 

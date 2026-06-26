@@ -54,14 +54,21 @@ mechanism changes.
   appended as the total-order paging tiebreaker (as before).
 - **Collapse ANDs with existing filters**, so a group's members still reflect only what passed the
   inference-type filter (ADR-0011) — same as ADR-0013's "grouping on top of every filter".
-- **Cold-start warming.** Collapse builds per-segment structures on the first query after a commit
-  (~3 s). A `newSearcher`/`firstSearcher` warming query
-  (`q=*:*&fq={!collapse field=spo_key sort='score desc'}`) in the `oxo2-mappings` solrconfig keeps
-  the first user search warm.
+- **Cold-start cost, not warmed.** Collapse builds its per-segment structures on the first query
+  after a searcher opens (~3 s), then ~1 ms. A `newSearcher`/`firstSearcher` warming query
+  (`q=*:*&fq={!collapse field=spo_key sort='score desc'}`) was tried and **reverted**: `newSearcher`
+  fires after *every* commit, so during the bulk dataload it runs a full-index collapse on the
+  growing index after each commit — each taking seconds and, on the dataload Solr's default 512 m
+  heap (`bin/solr` ignores `JAVA_OPTS`; only `SOLR_HEAP`/`SOLR_JAVA_MEM` set the server heap),
+  eventually OOMing the JVM. The ~3 s cold cost is instead paid once by the first real user query
+  after each searcher opens; read-only serving has no commits, so it is a one-time per-boot cost. If
+  serve-time pre-warming is wanted later, issue it against the serving Solr (which has a large heap),
+  not from the dataload-shared solrconfig.
 
 ## Consequences
 
-- High-frequency normal searches drop from ~19 s to ~1 ms warm; the exact group total is retained.
+- High-frequency normal searches drop from ~19 s (grouping) to ~3 s on the first query after a
+  searcher opens and ~1 ms thereafter; the exact group total is retained.
 - No schema or reindex change — `spo_key` already has the `docValues` collapse needs.
 - Collapse is a post-filter, so were facets ever enabled on the grouped path, counts would reflect
   the **collapsed** (per-group) set rather than documents. The normal/inferences tables render no
