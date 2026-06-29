@@ -162,6 +162,107 @@ public class SolrQueryBuilder {
         solrQuery.addSort(spoKey, SolrQuery.ORDER.asc);
     }
 
+    // ---------- Cross-ontology batch mapping (ADR-0024) ----------
+
+    /**
+     * Display query for batch term mapping: subjects matched to the given input terms (source-side
+     * only — a batch input is a source, never an object), objects restricted to the target ontologies.
+     * Each input is classified by shape (IRI → subject_iri, CURIE → subject_id, else label →
+     * subject_label) — the default search's classification, but on the subject side alone. Reuses the
+     * soft ranking, field list, default weak-predicate exclusion and same-SPO collapse of /search.
+     */
+    public static SolrQuery buildBatchMapQuery(List<String> terms, List<String> objectPrefixes,
+                                               List<InferenceType> inferenceTypes, boolean groupBySpo,
+                                               Pageable pageable) {
+        SolrQuery solrQuery = new SolrQuery();
+        solrQuery.setStart((int) pageable.getOffset());
+        solrQuery.setRows(pageable.getPageSize());
+        solrQuery.setQuery(subjectSideDisjunction(terms));
+        solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
+        applyInferenceRanking(solrQuery);
+        solrQuery.setFields(constructFieldList(null));
+        solrQuery.setFilterQueries(batchFilterQueries(objectPrefixes, inferenceTypes));
+        if (groupBySpo) {
+            applySpoGrouping(solrQuery);
+        }
+        return solrQuery;
+    }
+
+    /**
+     * Unmapped-input probe for batch mapping: a {@code rows=0} query over the same target/inference
+     * filters, carrying one {@code facet.query} per input (its subject-side clause). Each input's
+     * facet count is the number of mappings it produces into the targets; a zero count means the input
+     * is unmapped. One Solr request settles the whole unmapped set, independent of the display paging.
+     */
+    public static SolrQuery buildBatchMapUnmappedQuery(List<String> terms, List<String> objectPrefixes,
+                                                       List<InferenceType> inferenceTypes) {
+        SolrQuery solrQuery = new SolrQuery("*:*");
+        solrQuery.setRows(0);
+        solrQuery.setFilterQueries(batchFilterQueries(objectPrefixes, inferenceTypes));
+        solrQuery.setFacet(true);
+        if (terms != null) {
+            for (String term : terms) {
+                String clause = subjectSideClause(term);
+                if (clause != null) {
+                    solrQuery.addFacetQuery(clause);
+                }
+            }
+        }
+        return solrQuery;
+    }
+
+    /**
+     * The subject-side query clause for one input term, classified by shape, or null if blank. Public
+     * so the batch controller can recompute an input's clause to look up its {@code facet.query} count.
+     */
+    public static String subjectSideClause(String term) {
+        if (term == null) {
+            return null;
+        }
+        String stripped = term.strip();
+        if (stripped.isEmpty()) {
+            return null;
+        }
+        String escaped = ClientUtils.escapeQueryChars(stripped);
+        String field;
+        if (StringUtils.isIri(stripped)) {
+            field = MappingEnum.SUBJECT_IRI.getField();
+        } else if (StringUtils.isCurie(stripped)) {
+            field = MappingEnum.SUBJECT_ID.getField();
+        } else {
+            field = MappingEnum.SUBJECT_LABEL.getField();
+        }
+        return "(" + field + ":\"" + escaped + "\")";
+    }
+
+    private static String subjectSideDisjunction(List<String> terms) {
+        if (terms == null || terms.isEmpty()) {
+            return "*:*";
+        }
+        String query = terms.stream()
+                .map(SolrQueryBuilder::subjectSideClause)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining(" OR "));
+        return query.isEmpty() ? "*:*" : query;
+    }
+
+    /**
+     * Filter queries shared by the batch display and unmapped-probe queries: target-ontology
+     * restriction (object_prefix), the inference-type filter, and the default weak-predicate exclusion
+     * (batch inputs are sources, so there is never an explicit predicate filter to lift it).
+     */
+    private static String[] batchFilterQueries(List<String> objectPrefixes,
+                                               List<InferenceType> inferenceTypes) {
+        List<String> filterQueriesList = new ArrayList<>();
+        String inferenceClause = inferenceTypeFilterClause(inferenceTypes);
+        if (inferenceClause != null) {
+            filterQueriesList.add(inferenceClause);
+        }
+        addPrefixFilter(filterQueriesList, MappingEnum.OBJECT_PREFIX, objectPrefixes);
+        filterQueriesList.add(weakPredicateExclusionClause());
+        return filterQueriesList.toArray(new String[0]);
+    }
+
 
     private static String[] constructFilterQueries(List<MappingSearchRequest.ColumnFilter> queryFilters,
                                                    List<String> mappingSetIds,
@@ -185,20 +286,10 @@ public class SolrQueryBuilder {
         addPrefixFilter(filterQueriesList, MappingEnum.SUBJECT_PREFIX, subjectPrefixes);
         addPrefixFilter(filterQueriesList, MappingEnum.OBJECT_PREFIX, objectPrefixes);
 
-        // Multi-select inference-type filter (ADR-0011). inference_type is a denormalised string
-        // whose values are the InferenceType codes (safe enum names, no escaping needed); absent or
-        // empty means all types. An OR of exact term matches, never the substring columnFilter path.
-        if (inferenceTypes != null && !inferenceTypes.isEmpty()) {
-            String field = MappingEnum.INFERENCE_TYPE.getField();
-            String clause = inferenceTypes.stream()
-                    .filter(Objects::nonNull)
-                    .map(InferenceType::getCode)
-                    .distinct()
-                    .map(code -> field + ":" + code)
-                    .collect(Collectors.joining(" OR "));
-            if (!clause.isEmpty()) {
-                filterQueriesList.add("(" + clause + ")");
-            }
+        // Multi-select inference-type filter (ADR-0011).
+        String inferenceClause = inferenceTypeFilterClause(inferenceTypes);
+        if (inferenceClause != null) {
+            filterQueriesList.add(inferenceClause);
         }
 
         if (mappingSetIds != null && !mappingSetIds.isEmpty()) {
@@ -217,6 +308,25 @@ public class SolrQueryBuilder {
         }
 
         return filterQueriesList.toArray(new String[filterQueriesList.size()]);
+    }
+
+    /**
+     * Multi-select inference-type filter clause (ADR-0011), or null if none. inference_type is a
+     * denormalised string whose values are the InferenceType codes (safe enum names, no escaping
+     * needed); an OR of exact term matches, never the substring columnFilter path.
+     */
+    private static String inferenceTypeFilterClause(List<InferenceType> inferenceTypes) {
+        if (inferenceTypes == null || inferenceTypes.isEmpty()) {
+            return null;
+        }
+        String field = MappingEnum.INFERENCE_TYPE.getField();
+        String clause = inferenceTypes.stream()
+                .filter(Objects::nonNull)
+                .map(InferenceType::getCode)
+                .distinct()
+                .map(code -> field + ":" + code)
+                .collect(Collectors.joining(" OR "));
+        return clause.isEmpty() ? null : "(" + clause + ")";
     }
 
     /**

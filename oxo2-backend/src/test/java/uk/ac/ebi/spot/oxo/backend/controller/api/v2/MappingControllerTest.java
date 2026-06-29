@@ -1,8 +1,11 @@
 package uk.ac.ebi.spot.oxo.backend.controller.api.v2;
 
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
+import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.SolrParams;
+import org.apache.solr.common.util.NamedList;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +18,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.MappingSearchResponse;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
+import uk.ac.ebi.spot.oxo.backend.service.helper.SolrQueryBuilder;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +34,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MappingController.class)
@@ -183,6 +192,87 @@ class MappingControllerTest {
     @Test
     void mapOntologiesReturns400OnOversizeSize() throws Exception {
         mockMvc.perform(get("/api/v2/mappings").param("from", "DOID").param("size", "101"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ---------- POST /api/v2/mappings/batch-map ----------
+
+    /** QueryResponse carrying one facet.query count per (clause -> count). */
+    private static QueryResponse facetQueryResponse(Map<String, Integer> queryCounts) {
+        NamedList<Object> facetQueries = new NamedList<>();
+        queryCounts.forEach(facetQueries::add);
+        NamedList<Object> facetCounts = new NamedList<>();
+        facetCounts.add("facet_queries", facetQueries);
+        facetCounts.add("facet_fields", new NamedList<>());
+        NamedList<Object> root = new NamedList<>();
+        root.add("response", new SolrDocumentList());
+        root.add("facet_counts", facetCounts);
+        QueryResponse queryResponse = new QueryResponse();
+        queryResponse.setResponse(root);
+        return queryResponse;
+    }
+
+    @Test
+    void batchMapComputesUnmappedInputsFromFacetCounts() throws Exception {
+        when(solrClient.query(any(SolrParams.class), any(Pageable.class)))
+                .thenReturn(emptyResponse());
+        // Per-input facet.query counts: DOID:9352 maps (2), DOID:0000 maps to nothing (0), diabetes maps (1).
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        counts.put(SolrQueryBuilder.subjectSideClause("DOID:9352"), 2);
+        counts.put(SolrQueryBuilder.subjectSideClause("DOID:0000"), 0);
+        counts.put(SolrQueryBuilder.subjectSideClause("diabetes"), 1);
+        when(solrClient.queryMappings(any(SolrParams.class)))
+                .thenReturn(facetQueryResponse(counts));
+
+        String body = """
+                {
+                  "terms": ["DOID:9352", "DOID:0000", "diabetes"],
+                  "objectPrefixes": ["EFO"],
+                  "page": 0,
+                  "size": 10
+                }
+                """;
+
+        mockMvc.perform(post("/api/v2/mappings/batch-map")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unmappedInputs.length()").value(1))
+                .andExpect(jsonPath("$.unmappedInputs[0]").value("DOID:0000"))
+                .andExpect(jsonPath("$.summary.inputCount").value(3))
+                .andExpect(jsonPath("$.summary.mappedCount").value(2))
+                .andExpect(jsonPath("$.summary.unmappedCount").value(1));
+
+        // The display query restricts objects to the target ontology.
+        SolrQuery displayQuery = captureQuery();
+        assertThat(displayQuery.getFilterQueries())
+                .contains("(" + MappingEnum.OBJECT_PREFIX.getField() + ":EFO)");
+    }
+
+    @Test
+    void batchMapReturns400OnOversizeSize() throws Exception {
+        String body = """
+                {
+                  "terms": ["DOID:9352"],
+                  "size": 101
+                }
+                """;
+        mockMvc.perform(post("/api/v2/mappings/batch-map")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void batchMapReturns400WhenTooManyTerms() throws Exception {
+        String terms = IntStream.rangeClosed(0, MappingController.MAX_INPUT_TERMS) // 1001 distinct terms
+                .mapToObj(i -> "\"DOID:" + i + "\"")
+                .collect(Collectors.joining(","));
+        String body = "{ \"terms\": [" + terms + "] }";
+
+        mockMvc.perform(post("/api/v2/mappings/batch-map")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isBadRequest());
     }
 }
