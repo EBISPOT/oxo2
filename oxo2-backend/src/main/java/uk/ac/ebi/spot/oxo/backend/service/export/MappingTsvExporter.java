@@ -182,7 +182,7 @@ public class MappingTsvExporter {
     }
 
     /** TSV strips embedded tabs/newlines to spaces; CSV quotes values containing the separator/quote/newline. */
-    static String escape(String value, char separator) {
+    public static String escape(String value, char separator) {
         if (value == null) {
             return "";
         }

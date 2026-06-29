@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.FieldQuery;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
+import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
@@ -233,16 +234,22 @@ public class SolrQueryBuilder {
         if (stripped.isEmpty()) {
             return null;
         }
-        String escaped = ClientUtils.escapeQueryChars(stripped);
         String field;
+        String value;
         if (StringUtils.isIri(stripped)) {
             field = MappingEnum.SUBJECT_IRI.getField();
+            value = stripped;
         } else if (StringUtils.isCurie(stripped)) {
+            // Normalise the CURIE to its stored representation (prefix upper-cased) so a lower-cased
+            // input still matches the indexed subject_id.
             field = MappingEnum.SUBJECT_ID.getField();
+            value = new EntityReference(stripped).getDataRepresentation()
+                    .map(Object::toString).orElse(stripped);
         } else {
             field = MappingEnum.SUBJECT_LABEL.getField();
+            value = stripped;
         }
-        return "(" + field + ":\"" + escaped + "\")";
+        return "(" + field + ":\"" + ClientUtils.escapeQueryChars(value) + "\")";
     }
 
     private static String subjectSideDisjunction(List<String> terms) {
@@ -291,6 +298,31 @@ public class SolrQueryBuilder {
                 request.getObjectPrefixes(),
                 excludeWeakPredicates));
         solrQuery.setSort(UNIQUE_KEY, SolrQuery.ORDER.asc);
+        return solrQuery;
+    }
+
+    /**
+     * Per-term query for the OxO v1 {@code /api/search} adapter (ADR-0024): one input term matched on
+     * the subject side, objects restricted to the v1 {@code mappingTarget} datasources, with v1's
+     * {@code distance} mapped onto the inference tiers — {@code distance == 1} → asserted only;
+     * anything else (incl. {@code -1} = unlimited) → asserted ∪ inferred (no tier filter).
+     */
+    public static SolrQuery buildV1TermQuery(String term, List<String> mappingTarget, int distance,
+                                             int maxRows) {
+        SolrQuery solrQuery = new SolrQuery();
+        String clause = subjectSideClause(term);
+        solrQuery.setQuery(clause == null ? "*:*" : clause);
+        solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
+        List<InferenceType> inferenceTypes = (distance == 1) ? List.of(InferenceType.ASSERTED) : null;
+        solrQuery.setFilterQueries(batchFilterQueries(mappingTarget, inferenceTypes));
+        // mapping_id is requested so Mapping.Builder.build() uses it rather than re-deriving a UUID
+        // (which would NPE without mapping_set_id in the field list).
+        solrQuery.setFields(
+                MappingEnum.MAPPING_ID.getField(),
+                MappingEnum.SUBJECT_ID.getField(), MappingEnum.SUBJECT_LABEL.getField(),
+                MappingEnum.OBJECT_ID.getField(), MappingEnum.OBJECT_LABEL.getField(),
+                MappingEnum.INFERENCE_TYPE.getField());
+        solrQuery.setRows(maxRows);
         return solrQuery;
     }
 

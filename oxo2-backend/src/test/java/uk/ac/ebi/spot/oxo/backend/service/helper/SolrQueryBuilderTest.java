@@ -755,4 +755,41 @@ class SolrQueryBuilderTest {
         // No prefix clause contributed; only the default weak-predicate exclusion remains.
         assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
     }
+
+    // ---------- subject-side classification + v1 term query (ADR-0024) ----------
+
+    @Test
+    void subjectSideClauseNormalisesCurieCaseToStoredForm() {
+        String escaped = ClientUtils.escapeQueryChars("DOID:9352");
+        assertThat(SolrQueryBuilder.subjectSideClause("doid:9352"))
+                .isEqualTo("(" + MappingEnum.SUBJECT_ID.getField() + ":\"" + escaped + "\")");
+    }
+
+    @Test
+    void subjectSideClauseRoutesIriAndLabel() {
+        assertThat(SolrQueryBuilder.subjectSideClause("http://purl.obolibrary.org/obo/DOID_9352"))
+                .startsWith("(" + MappingEnum.SUBJECT_IRI.getField() + ":");
+        assertThat(SolrQueryBuilder.subjectSideClause("diabetes"))
+                .startsWith("(" + MappingEnum.SUBJECT_LABEL.getField() + ":");
+    }
+
+    @Test
+    void v1TermQueryDistanceOneFiltersAssertedOnly() {
+        SolrQuery solrQuery = SolrQueryBuilder.buildV1TermQuery("DOID:9352", List.of("EFO"), 1, 100);
+
+        assertThat(solrQuery.getFilterQueries())
+                .contains("(" + MappingEnum.INFERENCE_TYPE.getField() + ":"
+                        + InferenceType.ASSERTED.getCode() + ")");
+        assertThat(solrQuery.getFilterQueries())
+                .contains("(" + MappingEnum.OBJECT_PREFIX.getField() + ":EFO)");
+    }
+
+    @Test
+    void v1TermQueryUnlimitedDistanceHasNoInferenceTypeFilter() {
+        SolrQuery solrQuery = SolrQueryBuilder.buildV1TermQuery("DOID:9352", List.of("EFO"), -1, 100);
+
+        assertThat(Arrays.stream(solrQuery.getFilterQueries())
+                .anyMatch(filterQuery -> filterQuery.contains(MappingEnum.INFERENCE_TYPE.getField())))
+                .isFalse();
+    }
 }
