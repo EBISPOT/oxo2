@@ -182,6 +182,22 @@ has no body for `archive`, so locally that final stage is a no-op (no `solr-data
 stage name to `$OXO2_DATA/.oxo2-last-completed-stage`. On failure, set `START_STAGE` to that value to
 resume. The checkpoint lives outside every stage's owned paths, so cleanup never removes it.
 
+**Running locally from an arbitrary stage.** `START_STAGE` is an ordinary environment variable read
+by `loadData.nextflow`, so resuming locally is just setting it before the invocation (defaults to
+`download` = full run). For example, to re-index from scratch after the inference stage already
+completed — wiping and rebuilding the Solr index, then continuing through `index-inferred` and
+`archive`:
+
+```sh
+START_STAGE=index-asserted ./loadData.nextflow
+```
+
+The prerequisite artifacts for the chosen stage must already exist under `$OXO2_DATA` from a
+previous run (e.g. `index-asserted` reads `sssom-as-json/` and the published `inferences.ttl`).
+Because `index-asserted` is in scope here, `should_wipe_solr` is true, so `copySolrConfig.sh`
+re-copies the Solr config and the asserted cores are rebuilt; starting at `inferences2json` or later
+instead preserves the already-indexed asserted data.
+
 **Jenkins.** The dataload is driven from a **parameterised Freestyle job** (not a `Jenkinsfile`): its
 single build step is *Execute shell script on remote host using ssh* (the `ssh` plugin), targeting the
 globally-configured **SSH site** for the login node — the same SSH site the `solr-data.tar.gz` copy
