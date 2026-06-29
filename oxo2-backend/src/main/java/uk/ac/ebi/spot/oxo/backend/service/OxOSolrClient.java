@@ -7,7 +7,6 @@ import jakarta.annotation.PreDestroy;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.beans.DocumentObjectBinder;
 import org.apache.solr.client.solrj.impl.HttpJdkSolrClient;
-import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -20,13 +19,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.FacetedMappingResponse;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.MappingSearchResponse;
 import uk.ac.ebi.spot.oxo.backend.service.helper.SolrConstants;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingConstants;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -71,7 +69,7 @@ public class OxOSolrClient {
         return solrMappingSetClient.query(params);
     }
 
-    public FacetedMappingResponse query(SolrParams params, Pageable pageable) throws Exception {
+    public MappingSearchResponse query(SolrParams params, Pageable pageable) throws Exception {
         QueryResponse response = solrMappingClient.query(params);
 
         // A same-SPO collapse query (ADR-0023) sets expand=true; its representatives come back as a
@@ -81,9 +79,7 @@ public class OxOSolrClient {
                 ? buildCollapsedPage(response, pageable)
                 : buildFlatPage(response, pageable);
 
-        Map<String, Map<String, Long>> facetFieldToCounts = getFacetFieldToCounts(response);
-
-        return new FacetedMappingResponse(mappingPage, facetFieldToCounts);
+        return new MappingSearchResponse(mappingPage);
     }
 
     private Page<Mapping> buildFlatPage(QueryResponse response, Pageable pageable) {
@@ -138,21 +134,6 @@ public class OxOSolrClient {
         root.put("total", total);
         root.set("members", objectMapper.valueToTree(members));
         return objectMapper.writeValueAsString(root);
-    }
-
-    private static Map<String, Map<String, Long>> getFacetFieldToCounts(QueryResponse response) {
-        Map<String, Map<String, Long>> facetFieldToCounts = new LinkedHashMap<>();
-        if (response.getFacetFields() != null) {
-            for (FacetField facetField : response.getFacetFields()) {
-                Map<String, Long> valueToCount = new LinkedHashMap<>();
-                for(FacetField.Count count : facetField.getValues()) {
-                    if (count.getCount() > 0)
-                        valueToCount.put(count.getName(), count.getCount());
-                }
-                facetFieldToCounts.put(facetField.getName(), valueToCount);
-            }
-        }
-        return facetFieldToCounts;
     }
 
     @PreDestroy

@@ -11,7 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
-import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.FacetedMappingResponse;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.MappingSearchResponse;
 import uk.ac.ebi.spot.oxo.backend.service.helper.SolrQueryBuilder;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
@@ -29,7 +29,7 @@ public class MappingController {
     private OxOSolrClient solrClient;
     private static final Logger logger = LoggerFactory.getLogger(MappingController.class);
 
-    private static ResponseEntity<FacetedMappingResponse> validatePaging(int page, int size) {
+    private static ResponseEntity<MappingSearchResponse> validatePaging(int page, int size) {
         if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
             return ResponseEntity.badRequest().build();
         }
@@ -37,10 +37,10 @@ public class MappingController {
     }
 
     @GetMapping("/{subjectId}")
-    public ResponseEntity<FacetedMappingResponse> getMappingsById(@PathVariable String subjectId,
+    public ResponseEntity<MappingSearchResponse> getMappingsById(@PathVariable String subjectId,
                                                          @RequestParam(defaultValue = "0") int page,
                                                          @RequestParam(defaultValue = "10") int size) {
-        ResponseEntity<FacetedMappingResponse> pagingError = validatePaging(page, size);
+        ResponseEntity<MappingSearchResponse> pagingError = validatePaging(page, size);
         if (pagingError != null) {
             return pagingError;
         }
@@ -53,8 +53,8 @@ public class MappingController {
             solrQuery.setStart((int) pageable.getOffset());
             solrQuery.setRows(pageable.getPageSize());
 
-            FacetedMappingResponse facetedMappingResponse = solrClient.query(solrQuery, pageable);
-            return ResponseEntity.ok(facetedMappingResponse);
+            MappingSearchResponse mappingSearchResponse = solrClient.query(solrQuery, pageable);
+            return ResponseEntity.ok(mappingSearchResponse);
         } catch (Exception e) {
             logger.error("Error while fetching mappings for subjectId: {}", subjectId, e);
             return ResponseEntity.status(500).build();
@@ -63,11 +63,11 @@ public class MappingController {
 
     @PostMapping(path = "/search",
             /*consumes = {MediaType.APPLICATION_JSON_VALUE},*/ produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<FacetedMappingResponse> getMappings(@RequestBody MappingSearchRequest mappingSearchRequest) {
+    public ResponseEntity<MappingSearchResponse> getMappings(@RequestBody MappingSearchRequest mappingSearchRequest) {
 
         logger.info("Mapping search request: {}", mappingSearchRequest);
 
-        ResponseEntity<FacetedMappingResponse> pagingError =
+        ResponseEntity<MappingSearchResponse> pagingError =
                 validatePaging(mappingSearchRequest.getPage(), mappingSearchRequest.getSize());
         if (pagingError != null) {
             return pagingError;
@@ -79,9 +79,9 @@ public class MappingController {
         logger.trace("Solr query={}", solrQuery.toString());
 
         try {
-            FacetedMappingResponse facetedMappingResponse = solrClient.query(solrQuery, pageable);
-            logger.trace("facetedMappingResponse={}", facetedMappingResponse);
-            return ResponseEntity.ok(facetedMappingResponse);
+            MappingSearchResponse mappingSearchResponse = solrClient.query(solrQuery, pageable);
+            logger.trace("mappingSearchResponse={}", mappingSearchResponse);
+            return ResponseEntity.ok(mappingSearchResponse);
         } catch (Exception e) {
             logger.error("Error while fetching mappings for subjectId: {}", mappingSearchRequest, e);
             return ResponseEntity.status(500).build();

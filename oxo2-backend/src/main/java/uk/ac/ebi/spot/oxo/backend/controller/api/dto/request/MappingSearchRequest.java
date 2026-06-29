@@ -4,7 +4,6 @@ import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.List;
-import java.util.Set;
 
 public class MappingSearchRequest {
 
@@ -17,7 +16,6 @@ public class MappingSearchRequest {
 
     private int distance;
 
-    private Set<MappingFacetEnum> facets;
     private int page = 1;
     private int size = 10;
 
@@ -75,14 +73,6 @@ public class MappingSearchRequest {
 
     public void setDistance(int distance) {
         this.distance = distance;
-    }
-
-    public Set<MappingFacetEnum> getFacets() {
-        return facets;
-    }
-
-    public void setFacets(Set<MappingFacetEnum> facets) {
-        this.facets = facets;
     }
 
     public int getPage() {
@@ -150,7 +140,6 @@ public class MappingSearchRequest {
                 ", fieldList=" + fieldList +
                 ", sortedFields=" + sortedFields +
                 ", distance=" + distance +
-                ", facets=" + facets +
                 ", page=" + page +
                 ", size=" + size +
                 ", mappingSetIds=" + mappingSetIds +

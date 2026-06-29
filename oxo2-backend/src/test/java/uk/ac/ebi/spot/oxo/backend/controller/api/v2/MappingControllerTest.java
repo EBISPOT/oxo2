@@ -13,13 +13,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.FacetedMappingResponse;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.MappingSearchResponse;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.Collections;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,9 +37,9 @@ class MappingControllerTest {
     @MockitoBean
     private OxOSolrClient solrClient;
 
-    private static FacetedMappingResponse emptyResponse() {
+    private static MappingSearchResponse emptyResponse() {
         Page<Mapping> emptyPage = new PageImpl<>(Collections.emptyList());
-        return new FacetedMappingResponse(emptyPage, Map.of());
+        return new MappingSearchResponse(emptyPage);
     }
 
     private SolrQuery captureQuery() throws Exception {
@@ -124,7 +123,6 @@ class MappingControllerTest {
                   "queries": ["UBERON:0000948"],
                   "queryFields": ["subject_id"],
                   "columnFilters": [],
-                  "facets": [],
                   "page": 0,
                   "size": 10
                 }
@@ -152,7 +150,6 @@ class MappingControllerTest {
                   "queries": ["UBERON:0000948"],
                   "queryFields": ["subject_id"],
                   "columnFilters": [],
-                  "facets": [],
                   "page": 0,
                   "size": 101
                 }

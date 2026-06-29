@@ -29,10 +29,10 @@ OxO2 modules:
 A REST API rooted at `/api/v2/`:
 
 - **`GET /api/v2/mappings/{subjectId}`** — list mappings whose subject is `subjectId` (URL-decoded). Paged.
-- **`POST /api/v2/mappings/search`** — faceted mapping search. Body: `MappingSearchRequest` (filters, facets,
+- **`POST /api/v2/mappings/search`** — mapping search. Body: `MappingSearchRequest` (filters,
 sort, paging, and a multi-select `inferenceType` filter — [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)).
 Results carry a soft multiplicative edismax ranking (asserted &gt; SSSOM; shorter chains
-higher). Returns `FacetedMappingResponse`.
+higher). Returns `MappingSearchResponse`.
 - **`GET /api/v2/mapping-sets`** — list all mapping sets (up to 10 000), returning `MappingSetSummary` (id, title, 
 description, creator labels, provider, `inference_type`, source-set union). Sorted by title; optional multi-select
 `?inferenceType` filter.
@@ -49,12 +49,11 @@ the design constraint is that v1 questions remain answerable.
 ### Layout
 
 - `controller/api/v2/` — REST controllers (`MappingController`, `MappingSetController`).
-- `controller/api/dto/request/` — request DTOs: `MappingSearchRequest`, `FieldQuery`, `SortedField`, `SortOrderEnum`, 
-`MappingFacetEnum`.
-- `controller/api/dto/response/` — response DTOs: `FacetedMappingResponse`, `MappingSetSummary`.
+- `controller/api/dto/request/` — request DTOs: `MappingSearchRequest`, `FieldQuery`, `SortedField`, `SortOrderEnum`.
+- `controller/api/dto/response/` — response DTOs: `MappingSearchResponse`, `MappingSetSummary`.
 - `service/OxOSolrClient.java` — single SolrJ-backed service exposing `query(...)` over the `oxo2-mappings` collection 
 and `queryMappingSets(...)` over `oxo2-mappingsets`.
-- `service/helper/SolrQueryBuilder.java` — translates `MappingSearchRequest` into a `SolrQuery` (facets, filters, sort, paging).
+- `service/helper/SolrQueryBuilder.java` — translates `MappingSearchRequest` into a `SolrQuery` (filters, sort, paging).
 - `service/helper/SolrConstants.java` — Solr field-name constants for this module's queries.
 - `exception/GlobalExceptionHandler.java` — top-level exception translation.
 
@@ -83,7 +82,7 @@ boost above), and `spo_key` is appended as the final sort key so paging is a sta
 total becomes the **group count** (`getNGroups`), so a page is N triples not N documents. `OxOSolrClient`
 turns each group's top document into the representative row and attaches its members + true size as a
 `group_members` JSON string (`{"total":N,"members":[...]}`), serialised with the app `ObjectMapper`, leaving
-the `FacetedMappingResponse` / `Page<Mapping>` shape unchanged. Grouping sits on top of the filters, so a
+the `MappingSearchResponse` / `Page<Mapping>` shape unchanged. Grouping sits on top of the filters, so a
 group's members reflect only what passed the inference-type filter. See
 [ADR-0013](../docs/adr/0013-group-same-spo-mappings-in-result-views.md).
 
@@ -119,7 +118,7 @@ Conventions:
 
 - **`SolrQueryBuilderTest`** drives the builder through its public entry point
   `buildSolrQuery(...)` and asserts on the resulting `SolrQuery`'s observable properties
-  (`getQuery()`, `getFilterQueries()`, `getSorts()`, `getFacetFields()`, `getFields()`,
+  (`getQuery()`, `getFilterQueries()`, `getSorts()`, `getFields()`,
   `get("defType")`, `getParams("qf")`). All `construct*` helpers are private — exercise them
   through dispatch in `buildSolrQuery`; do not loosen visibility for tests.
 - **`MappingControllerTest`** uses `@WebMvcTest(MappingController.class)` with

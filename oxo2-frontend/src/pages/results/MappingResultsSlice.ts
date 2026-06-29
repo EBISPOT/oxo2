@@ -11,7 +11,7 @@ import {
 import { InferenceType, asInferenceType } from '../../model/InferenceType';
 import { post } from '../../app/api';
 
-export interface FacetedMappingResponse {
+export interface MappingSearchResponse {
     mappings: {
         content: MappingResponse[];
         totalElements: number;
@@ -19,32 +19,18 @@ export interface FacetedMappingResponse {
         number: number;
         size: number;
     };
-    facets: Record<string, Record<string, number>>;
 }
 
-export const emptyFacetedMappingResponse: FacetedMappingResponse = {
-    mappings: {
-        content: [],
-        totalElements: 0,
-        totalPages: 0,
-        number: 0,
-        size: 0
-    },
-    facets: {}
-}
-
-export interface FacetedMapping {
+export interface MappingPage {
     mappings: Mapping[];
-    facets: Record<string, Record<string, number>>;
     totalElements: number;
     totalPages: number;
     number: number;
     size: number;
 }
 
-export const emptyFacetedMapping: FacetedMapping = {
+export const emptyMappingPage: MappingPage = {
     mappings: [],
-    facets: {},
     totalElements: 0,
     totalPages: 0,
     number: 0,
@@ -62,7 +48,6 @@ interface SearchRequest {
     size: number;
     queryFields: string[];
     fieldList: string[];
-    facets: string[];
     columnFilters: string[];
     sortedFields: string[];
     mappingSetIds?: string[];
@@ -266,17 +251,16 @@ export function fromMappingResponse(item: MappingResponse): Mapping {
     };
 }
 
-export function fromJson(json: FacetedMappingResponse|undefined): FacetedMapping {
-    if (!json || !json.mappings || !json.mappings.content || !json.facets) {
-        return emptyFacetedMapping;
+export function fromJson(json: MappingSearchResponse|undefined): MappingPage {
+    if (!json || !json.mappings || !json.mappings.content) {
+        return emptyMappingPage;
     }
     return {
         mappings: json.mappings.content.map(fromMappingResponse),
         totalElements: json.mappings.totalElements,
         totalPages: json.mappings.totalPages,
         number: json.mappings.number,
-        size: json.mappings.size,
-        facets: json.facets
+        size: json.mappings.size
     }
 }
 
@@ -284,7 +268,7 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
                               sorting: any[], mappingSetIds?: string[],
                               advancedFieldQueries?: AdvancedFieldQueryRequest[],
                               inferenceType?: InferenceType[],
-                              groupBySpo: boolean = false): Promise<FacetedMappingResponse> {
+                              groupBySpo: boolean = false): Promise<MappingSearchResponse> {
     const requestBody: SearchRequest = {
         queries: queries,
         page: page,
@@ -292,7 +276,6 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
         queryFields: [],
         fieldList: ['mapping_set_id', 'mapping_set_title', 'subject_id', 'subject_label', 'predicate_id', 'predicate_label',
             'predicate_modifier', 'object_id', 'object_label', 'mapping_justification', 'mapping_provider', 'inference_type', 'asserted_mappings', 'explanation'],
-        facets: [],
         columnFilters: columnFilters,
         sortedFields: sorting,
         ...(mappingSetIds && mappingSetIds.length > 0 ? { mappingSetIds } : {}),
@@ -301,7 +284,7 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
         ...(groupBySpo ? { groupBySpo } : {}),
     };
 
-    const searchResponse = post<SearchRequest, FacetedMappingResponse>(
+    const searchResponse = post<SearchRequest, MappingSearchResponse>(
         '/api/v2/mappings/search',
         requestBody);
 

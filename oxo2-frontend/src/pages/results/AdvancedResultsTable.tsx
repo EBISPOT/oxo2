@@ -4,7 +4,7 @@ import {InferenceType, DEFAULT_INFERENCE_TYPES} from "../../model/InferenceType"
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {InferenceTypeFilter} from "../../components/mapping/InferenceTypeFilter";
 import {AdvancedFieldQuery} from "../../model/Search";
-import {emptyFacetedMapping, FacetedMapping, fetchMappings, fromJson} from "./MappingResultsSlice";
+import {emptyMappingPage, MappingPage, fetchMappings, fromJson} from "./MappingResultsSlice";
 import {useQuery} from "@tanstack/react-query";
 import {
     MaterialReactTable,
@@ -79,7 +79,7 @@ export function AdvancedResultsTable({
         staleTime: Infinity,
     });
 
-    const mappingResults: FacetedMapping = data ? fromJson(data) : emptyFacetedMapping;
+    const mappingResults: MappingPage = data ? fromJson(data) : emptyMappingPage;
 
     const columns = useMemo<MRT_ColumnDef<Mapping>[]>(
         () => [
