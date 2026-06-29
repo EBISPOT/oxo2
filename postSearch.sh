@@ -11,5 +11,4 @@ curl -X 'POST' "https://wwwdev.ebi.ac.uk/oxo2/api/v2/mappings/search" \
           "queryFields":["subject_id","object_id", "subject_label", "predicate_label", "object_label"],
           "fieldList":["mapping_set_id","subject_id","subject_label","predicate_id","predicate_label","predicate_modifier","object_id","object_label","mapping_justification"],
           "columnFilters":[],
-          "facets":["predicate_id", "mapping_justification"],
           "sortedFields": [{"id": "subject_id", "desc": false}]}'

@@ -29,7 +29,7 @@ mapping asserts that the predicate does *not* hold between subject and object. B
 displayed without its modifier misrepresents the mapping.
 - **mapping_justification** — why the mapping is held to be true (e.g. asserted by curator, derived by lexical match, inferred by a chain rule). 
 A SSSOM-defined enumeration.
-- **subject_source**, **object_source** — the ontologies the subject and object come from. Used in faceting and filtering.
+- **subject_source**, **object_source** — the ontologies the subject and object come from. Used in filtering.
 
 ### OxO2 cross-cutting vocabulary
 
@@ -200,7 +200,7 @@ the glossary above — follow the links provided here for more details.
 https://mapping-commons.github.io/sssom/dev/chaining-rules/.
 - **Nemo rules engine** — used by `oxo2-json2inferences` for inference (`nmo` CLI). Vocabulary: rule, fact, derivation, trace. 
 See https://github.com/knowsys/nemo.
-- **Apache Solr** — sole data store. Vocabulary: collection, core, schema, faceting. See https://solr.apache.org/. 
+- **Apache Solr** — sole data store. Vocabulary: collection, core, schema. See https://solr.apache.org/. 
 Collection configs live in `oxo2-dataload/solr-config/`.
 - **Nextflow** — workflow engine for the dataload. Vocabulary: process, channel, queueSize. See https://www.nextflow.io/. 
 Workflow definitions are `.nf` files under `oxo2-dataload/`.

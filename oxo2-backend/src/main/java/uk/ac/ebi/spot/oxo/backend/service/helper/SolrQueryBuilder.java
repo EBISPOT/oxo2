@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.FieldQuery;
-import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingFacetEnum;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
@@ -101,7 +100,6 @@ public class SolrQueryBuilder {
                 mappingSearchRequest.getColumnFilters(),
                 mappingSearchRequest.getMappingSetIds(),
                 mappingSearchRequest.getInferenceType()));
-        solrQuery = configureFacets(solrQuery, mappingSearchRequest.getFacets());
         solrQuery = constructSortedFields(solrQuery, mappingSearchRequest);
 
         if (mappingSearchRequest.isGroupBySpo()) {
@@ -373,11 +371,6 @@ public class SolrQueryBuilder {
         }
 
         return fieldsSet.toArray(new String[0]);
-    }
-
-    private static SolrQuery configureFacets(SolrQuery solrQuery, Set<MappingFacetEnum> facets) {
-        facets.forEach(f ->  solrQuery.addFacetField(f.getValue()));
-        return solrQuery;
     }
 
     /**

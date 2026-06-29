@@ -45,7 +45,7 @@ single **mapping group**, rendered as one expandable row whose members are reach
   is exceeded.
 - **A page is N groups.** `rows`/`start` page over groups and `totalElements = getNGroups()`. Members are
   transported on the representative as a `group_members` JSON string, mirroring the existing
-  `asserted_mappings` / `explanation` fields, so `FacetedMappingResponse` / `Page<Mapping>` keep their shape.
+  `asserted_mappings` / `explanation` fields, so `MappingSearchResponse` / `Page<Mapping>` keep their shape.
 - **Scope.** Grouping is intrinsic to the `NormalResultsTable`, which backs both the **Search** results and
   the **Inferences** page. The **Advanced** tab stays flat (one document per row) as the per-document escape
   hatch.

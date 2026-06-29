@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {emptyFacetedMapping, FacetedMapping, fetchMappings, fromJson} from "./MappingResultsSlice";
+import {emptyMappingPage, MappingPage, fetchMappings, fromJson} from "./MappingResultsSlice";
 import {useQuery} from "@tanstack/react-query";
 import {
     MaterialReactTable,
@@ -176,7 +176,7 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
         staleTime: Infinity,
     });
 
-    const mappingResults: FacetedMapping = data ? fromJson(data) : emptyFacetedMapping;
+    const mappingResults: MappingPage = data ? fromJson(data) : emptyMappingPage;
 
     const columns = useMemo<MRT_ColumnDef<Mapping>[]>(
         () => [

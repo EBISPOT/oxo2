@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.FieldQuery;
-import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingFacetEnum;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest.ColumnFilter;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
@@ -15,7 +14,6 @@ import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,7 +27,6 @@ class SolrQueryBuilderTest {
     private static MappingSearchRequest baseRequest() {
         MappingSearchRequest request = new MappingSearchRequest();
         request.setColumnFilters(Collections.emptyList());
-        request.setFacets(EnumSet.noneOf(MappingFacetEnum.class));
         return request;
     }
 
@@ -409,7 +406,7 @@ class SolrQueryBuilderTest {
         assertThat(clause.getOrder()).isEqualTo(SolrQuery.ORDER.desc);
     }
 
-    // ---------- field list & facets ----------
+    // ---------- field list ----------
 
     @Test
     void fieldListIncludesMinimalFieldsEvenWhenNull() {
@@ -434,19 +431,6 @@ class SolrQueryBuilderTest {
         assertThat(solrQuery.getFields())
                 .contains(MappingEnum.AUTHOR_ID.getField())
                 .contains(MappingEnum.COMMENT.getField());
-    }
-
-    @Test
-    void facetsAreAddedToSolrQuery() {
-        MappingSearchRequest request = baseRequest();
-        request.setFacets(EnumSet.of(
-                MappingFacetEnum.MAPPING_SET_ID, MappingFacetEnum.PREDICATE_ID));
-
-        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
-
-        assertThat(solrQuery.getFacetFields()).containsExactlyInAnyOrder(
-                MappingFacetEnum.MAPPING_SET_ID.getValue(),
-                MappingFacetEnum.PREDICATE_ID.getValue());
     }
 
     // ---------- inference_type filter ----------

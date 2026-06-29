@@ -6,7 +6,7 @@ specifically owns.
 ## Purpose
 
 `oxo2-frontend` is the React single-page application users interact with. It provides search by CURIE, mapping-results browsing
-with facets and paging, mapping-detail views, and inferred-mapping graph visualisation. It is a consumer of `oxo2-backend`'s REST API 
+with paging, mapping-detail views, and inferred-mapping graph visualisation. It is a consumer of `oxo2-backend`'s REST API 
 and has no direct knowledge of Solr.
 
 ## Vocabulary introduced here
@@ -32,7 +32,7 @@ The user interface, served on port 8080 (Vite dev server, Docker, and Kubernetes
 Routes (`App.tsx`):
 
 - **`/`** and **`/home`** → `Home` — landing page with search.
-- **`/search/:curies`** → `MappingResults` — paged, faceted mapping results for the given CURIE(s).
+- **`/search/:curies`** → `MappingResults` — paged mapping results for the given CURIE(s).
 - **`/mapping/:id`** → `MappingDetails` (via `MappingDetailsWrapper` to pass state through router) — detail view for a 
 single mapping including inferred-mapping graph.
 - **`/inferences`** and **`/inferences/*`** → `InferencesPage` — resolution surface for inferred mapping sets: the
