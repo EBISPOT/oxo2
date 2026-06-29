@@ -9,6 +9,9 @@ export interface SearchInput {
     mappingSetIds?: string[];
     advancedFieldQueries?: AdvancedFieldQuery[];
     activeTab?: 'search' | 'advanced';
+    // Cross-ontology mapping (ADR-0024): source/target ontology (CURIE) prefixes.
+    subjectPrefixes?: string[];
+    objectPrefixes?: string[];
 }
 
 export const initialSearchState: SearchInput = {
@@ -17,4 +20,6 @@ export const initialSearchState: SearchInput = {
     mappingSetIds: undefined,
     advancedFieldQueries: undefined,
     activeTab: 'search',
+    subjectPrefixes: undefined,
+    objectPrefixes: undefined,
 }

@@ -4,8 +4,11 @@ import { ADVANCED_FIELD_NAMES } from "../../model/AdvancedFields";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import React from "react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { useQuery } from "@tanstack/react-query";
 import { AdvancedSearch } from "./AdvancedSearch";
 import { MappingSetSelector } from "./MappingSetSelector";
+import { OntologySelector } from "./OntologySelector";
+import { fetchOntologies, fetchTargetsForSubject } from "../../pages/results/OntologiesSlice";
 
 const tableTheme = createTheme({
     palette: {
@@ -47,6 +50,37 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
         }));
     }, []);
 
+    // Cross-ontology mapping (ADR-0024): source/target ontology prefix selectors on the Search tab.
+    const [subjectPrefixes, setSubjectPrefixes] = useState<string[]>(searchInput.subjectPrefixes ?? []);
+    const [objectPrefixes, setObjectPrefixes] = useState<string[]>(searchInput.objectPrefixes ?? []);
+
+    const { data: ontologies } = useQuery({
+        queryKey: ["ontologies"], queryFn: fetchOntologies, staleTime: Infinity,
+    });
+    const allPrefixes = useMemo(() => (ontologies ?? []).map((o) => o.prefix), [ontologies]);
+    const subjectCounts = useMemo(
+        () => Object.fromEntries((ontologies ?? []).map((o) => [o.prefix, o.asSubject])), [ontologies]);
+    const objectCounts = useMemo(
+        () => Object.fromEntries((ontologies ?? []).map((o) => [o.prefix, o.asObject])), [ontologies]);
+
+    // With exactly one source chosen, narrow the target options to the reachable ones (with counts).
+    const singleSource = subjectPrefixes.length === 1 ? subjectPrefixes[0] : null;
+    const { data: targets } = useQuery({
+        queryKey: ["targetsForSubject", singleSource],
+        queryFn: () => fetchTargetsForSubject(singleSource as string),
+        enabled: singleSource != null,
+        staleTime: Infinity,
+    });
+    const targetOptions = singleSource && targets ? targets.map((t) => t.prefix) : allPrefixes;
+    const targetCounts = singleSource && targets
+        ? Object.fromEntries(targets.map((t) => [t.prefix, t.count])) : objectCounts;
+
+    const handleSwap = () => {
+        const previousSource = subjectPrefixes;
+        setSubjectPrefixes(objectPrefixes);
+        setObjectPrefixes(previousSource);
+    };
+
     // Keep selection in sync when mapping_set_id query params arrive later
     // (e.g. via URL on the results page) after this component mounts.
     const incomingIdsKey = (searchInput.mappingSetIds ?? []).join(",");
@@ -69,6 +103,14 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
         }
     }, [incomingAdvancedKey, searchInput.activeTab]);
 
+    // Pick up from/to prefixes arriving via URL after mount.
+    const incomingPrefixKey = (searchInput.subjectPrefixes ?? []).join(",")
+        + "|" + (searchInput.objectPrefixes ?? []).join(",");
+    useEffect(() => {
+        setSubjectPrefixes(searchInput.subjectPrefixes ?? []);
+        setObjectPrefixes(searchInput.objectPrefixes ?? []);
+    }, [incomingPrefixKey]);
+
     const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         const userSearchInput = event.target.value;
         const sanitizedSearchInput = userSearchInput.split(/[\n,]+/).filter(item => item.trim() !== '');
@@ -76,15 +118,25 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
     };
 
     const handleSearch = () => {
-        if (searchState.userSearchInput && searchState.userSearchInput.trim() !== "") {
-            const curies = searchState.sanitizedSearchInput.join(",");
-            const path = `/search/${encodeURIComponent(curies)}`;
-            const ids = searchState.mappingSetIds ?? [];
-            const query = ids.length > 0
-                ? "?" + ids.map((id) => `mapping_set_id=${encodeURIComponent(id)}`).join("&")
-                : "";
-            navigate(`${path}${query}`);
+        const hasTerms = !!searchState.userSearchInput && searchState.userSearchInput.trim() !== "";
+        const hasPrefixes = subjectPrefixes.length > 0 || objectPrefixes.length > 0;
+        if (!hasTerms && !hasPrefixes) {
+            return;
         }
+        // Terms present → /search/<curies>; whole-ontology (prefixes only) → the _map sentinel.
+        const curies = hasTerms ? searchState.sanitizedSearchInput.join(",") : "_map";
+        const params = new URLSearchParams();
+        for (const id of searchState.mappingSetIds ?? []) {
+            params.append("mapping_set_id", id);
+        }
+        for (const prefix of subjectPrefixes) {
+            params.append("from", prefix);
+        }
+        for (const prefix of objectPrefixes) {
+            params.append("to", prefix);
+        }
+        const query = params.toString();
+        navigate(`/search/${encodeURIComponent(curies)}${query ? `?${query}` : ""}`);
     };
 
     const handleClear = () => {
@@ -94,6 +146,8 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
             mappingSetIds: undefined,
             activeTab,
         });
+        setSubjectPrefixes([]);
+        setObjectPrefixes([]);
     };
 
     const handleAdvancedChange = (field: string, value: string) => {
@@ -154,6 +208,43 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
             </div>
 
             {activeTab === 'search' ? (
+                <>
+                <div className="mb-3">
+                    <div className="text-tertiary mb-2">
+                        Optionally map from / to whole ontologies (leave the box empty to map an entire
+                        source ontology):
+                    </div>
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
+                        <div className="flex-1">
+                            <OntologySelector
+                                label="From ontologies"
+                                placeholder="source, e.g. DOID"
+                                options={allPrefixes}
+                                counts={subjectCounts}
+                                value={subjectPrefixes}
+                                onChange={setSubjectPrefixes}
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            title="Swap source and target"
+                            className="link-default px-2 py-1 text-xl"
+                            onClick={handleSwap}
+                        >
+                            ⇄
+                        </button>
+                        <div className="flex-1">
+                            <OntologySelector
+                                label="To ontologies"
+                                placeholder="target, e.g. EFO, MONDO"
+                                options={targetOptions}
+                                counts={targetCounts}
+                                value={objectPrefixes}
+                                onChange={setObjectPrefixes}
+                            />
+                        </div>
+                    </div>
+                </div>
                 <div className="flex flex-col md:flex-row gap-4">
                     <div className="w-full">
                         <div className="flex flex-col md:flex-row justify-between mb-2">
@@ -197,6 +288,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
                         </button>
                     </div>
                 </div>
+                </>
             ) : (
                 <AdvancedSearch
                     values={advancedValues}

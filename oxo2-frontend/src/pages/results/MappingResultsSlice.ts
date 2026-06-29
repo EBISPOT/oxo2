@@ -9,7 +9,7 @@ import {
     ChainRule/*, MappingFields*/
 } from '../../model/Mapping';
 import { InferenceType, asInferenceType } from '../../model/InferenceType';
-import { post } from '../../app/api';
+import { post, downloadPost } from '../../app/api';
 
 export interface MappingSearchResponse {
     mappings: {
@@ -48,8 +48,8 @@ interface SearchRequest {
     size: number;
     queryFields: string[];
     fieldList: string[];
-    columnFilters: string[];
-    sortedFields: string[];
+    columnFilters: unknown[];
+    sortedFields: unknown[];
     mappingSetIds?: string[];
     advancedFieldQueries?: AdvancedFieldQueryRequest[];
     // Multi-select inference-type filter (ADR-0011): omitted/empty = all types; otherwise restrict
@@ -57,6 +57,16 @@ interface SearchRequest {
     inferenceType?: string[];
     // Collapse same-SPO mappings into one row (ADR-0013). The normal/inferences result tables set this.
     groupBySpo?: boolean;
+    // Cross-ontology mapping (ADR-0024): restrict subjects/objects to these ontology (CURIE) prefixes.
+    subjectPrefixes?: string[];
+    objectPrefixes?: string[];
+}
+
+// Batch cross-ontology mapping response (ADR-0024): the page of mappings plus the unmapped inputs.
+export interface BatchMapResponse {
+    mappings: MappingSearchResponse;
+    unmappedInputs: string[];
+    summary: { inputCount: number; mappedCount: number; unmappedCount: number };
 }
 
 export enum SearchStatus {
@@ -264,12 +274,12 @@ export function fromJson(json: MappingSearchResponse|undefined): MappingPage {
     }
 }
 
-export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10, columnFilters: any[],
-                              sorting: any[], mappingSetIds?: string[],
-                              advancedFieldQueries?: AdvancedFieldQueryRequest[],
-                              inferenceType?: InferenceType[],
-                              groupBySpo: boolean = false): Promise<MappingSearchResponse> {
-    const requestBody: SearchRequest = {
+function buildSearchRequest(queries: string[], page: number, pageSize: number, columnFilters: unknown[],
+                           sorting: unknown[], mappingSetIds?: string[],
+                           advancedFieldQueries?: AdvancedFieldQueryRequest[],
+                           inferenceType?: InferenceType[], groupBySpo: boolean = false,
+                           subjectPrefixes?: string[], objectPrefixes?: string[]): SearchRequest {
+    return {
         queries: queries,
         page: page,
         size: pageSize,
@@ -282,11 +292,47 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
         ...(advancedFieldQueries && advancedFieldQueries.length > 0 ? { advancedFieldQueries } : {}),
         ...(inferenceType && inferenceType.length > 0 ? { inferenceType } : {}),
         ...(groupBySpo ? { groupBySpo } : {}),
+        ...(subjectPrefixes && subjectPrefixes.length > 0 ? { subjectPrefixes } : {}),
+        ...(objectPrefixes && objectPrefixes.length > 0 ? { objectPrefixes } : {}),
     };
+}
 
-    const searchResponse = post<SearchRequest, MappingSearchResponse>(
-        '/api/v2/mappings/search',
-        requestBody);
+export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10, columnFilters: unknown[],
+                              sorting: unknown[], mappingSetIds?: string[],
+                              advancedFieldQueries?: AdvancedFieldQueryRequest[],
+                              inferenceType?: InferenceType[],
+                              groupBySpo: boolean = false,
+                              subjectPrefixes?: string[],
+                              objectPrefixes?: string[]): Promise<MappingSearchResponse> {
+    const requestBody = buildSearchRequest(queries, page, pageSize, columnFilters, sorting, mappingSetIds,
+        advancedFieldQueries, inferenceType, groupBySpo, subjectPrefixes, objectPrefixes);
+    return post<SearchRequest, MappingSearchResponse>('/api/v2/mappings/search', requestBody);
+}
 
-    return searchResponse;
+/**
+ * Download the current result set as an SSSOM-compliant TSV (ADR-0024): the same filters as the
+ * search, streamed in full by the backend (paging ignored) via ?format=sssom-tsv.
+ */
+export function exportMappings(queries: string[], columnFilters: unknown[], mappingSetIds?: string[],
+                               inferenceType?: InferenceType[],
+                               subjectPrefixes?: string[], objectPrefixes?: string[]): Promise<void> {
+    const requestBody = buildSearchRequest(queries, 0, 10, columnFilters, [], mappingSetIds,
+        undefined, inferenceType, false, subjectPrefixes, objectPrefixes);
+    return downloadPost('/api/v2/mappings/search?format=sssom-tsv', requestBody, 'oxo2-mappings.tsv');
+}
+
+/**
+ * Batch cross-ontology mapping (ADR-0024): map a list of input terms into the target ontologies,
+ * returning the matching mappings plus the inputs that mapped to nothing.
+ */
+export function batchMap(terms: string[], objectPrefixes?: string[], inferenceType?: InferenceType[],
+                         page: number = 0, size: number = 10, groupBySpo: boolean = true): Promise<BatchMapResponse> {
+    return post<object, BatchMapResponse>('/api/v2/mappings/batch-map', {
+        terms,
+        page,
+        size,
+        groupBySpo,
+        ...(objectPrefixes && objectPrefixes.length > 0 ? { objectPrefixes } : {}),
+        ...(inferenceType && inferenceType.length > 0 ? { inferenceType } : {}),
+    });
 }

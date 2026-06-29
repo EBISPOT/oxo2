@@ -1,26 +1,24 @@
+// Resolve a backend path to a full request URL.
+// In production (OXO_PUBLIC_URL set) use relative URLs through the Caddy proxy; in local development
+// (OXO_BACKEND_URL set) hit the backend directly; otherwise fall back to a relative URL.
+function resolveUrl(path: string): string {
+    const backendUrl = import.meta.env.OXO_BACKEND_URL;
+    const publicUrl = import.meta.env.OXO_PUBLIC_URL || '';
+    if (publicUrl && publicUrl !== '/') {
+        return `${publicUrl}${path}`;
+    }
+    if (backendUrl) {
+        return `${backendUrl}${path}`;
+    }
+    return path;
+}
+
 export async function doHTTPRequest<T>(
     path: string,
     request?: RequestInit | undefined
 ): Promise<T> {
-    // In production (when OXO_PUBLIC_URL is set), always use relative URLs through Caddy proxy
-    // In local development (no OXO_PUBLIC_URL), use OXO_BACKEND_URL directly
-    const backendUrl = import.meta.env.OXO_BACKEND_URL;
-    const publicUrl = import.meta.env.OXO_PUBLIC_URL || '';
-    
-    let requestUrl: string;
-    if (publicUrl && publicUrl !== '/') {
-        // Production: use relative URL through Caddy proxy, prefixed with base path
-        requestUrl = `${publicUrl}${path}`;
-    } else if (backendUrl) {
-        // Local development: use absolute URL directly to backend
-        requestUrl = `${backendUrl}${path}`;
-    } else {
-        // Fallback: use relative URL (shouldn't happen in normal operation)
-        requestUrl = path;
-    }
-    
     const response: Response = await fetch(
-        requestUrl,
+        resolveUrl(path),
         {
             ...(request ? request : {}),
         }
@@ -49,4 +47,28 @@ export async function post<TReq, TRes>(path: string,
             "content-type": "application/json",
         },
     });
+}
+
+/**
+ * POST a JSON body to a streaming export endpoint (ADR-0024) and save the response as a file. Used for
+ * the SSSOM-TSV export, whose POST + body can't be a plain download link.
+ */
+export async function downloadPost<TReq>(path: string, body: TReq, filename: string): Promise<void> {
+    const response = await fetch(resolveUrl(path), {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: { "content-type": "application/json" },
+    });
+    if (!response.ok) {
+        throw new Error(`Export failed: ${response.status} (${response.statusText})`);
+    }
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(objectUrl);
 }

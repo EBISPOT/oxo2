@@ -34,7 +34,11 @@ function MappingResults() {
     const { curies } = useParams<{ curies: string }>();
     const [searchParams] = useSearchParams();
     const mappingSetIds = searchParams.getAll("mapping_set_id");
+    // Cross-ontology mapping (ADR-0024): from/to ontology prefixes; "_map" = whole-ontology (no terms).
+    const subjectPrefixes = searchParams.getAll("from");
+    const objectPrefixes = searchParams.getAll("to");
     const isAdvanced = curies === "_advanced";
+    const isMap = curies === "_map";
 
     const advancedFieldQueries: AdvancedFieldQuery[] = isAdvanced
         ? searchParams
@@ -50,16 +54,18 @@ function MappingResults() {
               .filter((x): x is AdvancedFieldQuery => x !== null)
         : [];
 
-    const queriesForBackend = isAdvanced ? [] : (curies
+    const queriesForBackend = (isAdvanced || isMap) ? [] : (curies
         ? curies.split(/[\n,]+/).filter((item) => item.trim() !== "")
         : []);
 
     const searchInput: SearchInput = {
-        userSearchInput: isAdvanced ? "" : (curies || ""),
+        userSearchInput: (isAdvanced || isMap) ? "" : (curies || ""),
         sanitizedSearchInput: queriesForBackend,
         mappingSetIds: mappingSetIds.length > 0 ? mappingSetIds : undefined,
         advancedFieldQueries: isAdvanced && advancedFieldQueries.length > 0 ? advancedFieldQueries : undefined,
         activeTab: isAdvanced ? "advanced" : "search",
+        subjectPrefixes: subjectPrefixes.length > 0 ? subjectPrefixes : undefined,
+        objectPrefixes: objectPrefixes.length > 0 ? objectPrefixes : undefined,
     };
 
     return (
@@ -76,6 +82,8 @@ function MappingResults() {
                     <NormalResultsTable
                         queries={queriesForBackend}
                         mappingSetIds={mappingSetIds}
+                        subjectPrefixes={subjectPrefixes}
+                        objectPrefixes={objectPrefixes}
                     />
                 )}
             </ThemeProvider>

@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {emptyMappingPage, MappingPage, fetchMappings, fromJson} from "./MappingResultsSlice";
+import {emptyMappingPage, MappingPage, fetchMappings, exportMappings, fromJson} from "./MappingResultsSlice";
 import {useQuery} from "@tanstack/react-query";
 import {
     MaterialReactTable,
@@ -14,7 +14,7 @@ import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenc
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {InferenceTypeFilterPopover} from "../../components/mapping/InferenceTypeFilterPopover";
 import {IconButton, Tooltip} from "@mui/material";
-import {EyeIcon} from "@heroicons/react/24/solid";
+import {EyeIcon, ArrowDownTrayIcon} from "@heroicons/react/24/solid";
 import {EntityRefCell, CopyButton} from "../../components/mapping/EntityRefCell";
 import {ColumnFilterPopover, type FilterFieldDef} from "../../components/mapping/ColumnFilterPopover";
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
@@ -92,9 +92,12 @@ function advancedHrefForTriple(mapping: Mapping): string {
  * the underlying mappings. Field-level filtering is offered via per-column popovers; the Advanced tab
  * remains the home for exhaustive per-field filtering (see AdvancedResultsTable).
  */
-export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTypes = DEFAULT_INFERENCE_TYPES }:
-    { queries: string[]; mappingSetIds: string[]; initialInferenceTypes?: InferenceType[] }) {
+export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [], objectPrefixes = [],
+    initialInferenceTypes = DEFAULT_INFERENCE_TYPES }:
+    { queries: string[]; mappingSetIds: string[]; subjectPrefixes?: string[]; objectPrefixes?: string[];
+      initialInferenceTypes?: InferenceType[] }) {
     const navigate = useNavigate();
+    const [isExporting, setIsExporting] = useState(false);
 
     const [pagination, setPagination] = useState<MRT_PaginationState>({
         pageIndex: 0,
@@ -150,6 +153,8 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
     }, []);
 
     const mappingSetIdsKey = mappingSetIds.join(",");
+    const subjectPrefixesKey = subjectPrefixes.join(",");
+    const objectPrefixesKey = objectPrefixes.join(",");
     const { data, isLoading, isError } = useQuery({
         queryKey: [
             "fetchMappings",
@@ -160,6 +165,8 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
             sorting,
             mappingSetIdsKey,
             inferenceTypes.join(","),
+            subjectPrefixesKey,
+            objectPrefixesKey,
         ],
         queryFn: () =>
             fetchMappings(
@@ -171,10 +178,22 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
                 mappingSetIds,
                 undefined,
                 inferenceTypes,
-                true // group same-SPO mappings into one row (ADR-0013)
+                true, // group same-SPO mappings into one row (ADR-0013)
+                subjectPrefixes,
+                objectPrefixes
             ),
         staleTime: Infinity,
     });
+
+    // Cross-ontology export (ADR-0024): download the full result as SSSOM-compliant TSV.
+    const handleExport = useCallback(() => {
+        setIsExporting(true);
+        exportMappings(queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
+            subjectPrefixes, objectPrefixes)
+            .catch((error) => console.error("Export failed", error))
+            .finally(() => setIsExporting(false));
+    }, [queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
+        subjectPrefixes, objectPrefixes]);
 
     const mappingResults: MappingPage = data ? fromJson(data) : emptyMappingPage;
 
@@ -488,6 +507,24 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
         },
         enableHiding: true,
         enableTopToolbar: true,
+        renderTopToolbarCustomActions: () => (
+            <div className="flex items-center gap-3">
+                {(subjectPrefixes.length > 0 || objectPrefixes.length > 0) && (
+                    <span className="text-sm text-tertiary">
+                        {(mappingResults?.totalElements ?? 0).toLocaleString()} mappings
+                        {subjectPrefixes.length > 0 ? ` · from ${subjectPrefixes.join(", ")}` : ""}
+                        {objectPrefixes.length > 0 ? ` → ${objectPrefixes.join(", ")}` : ""}
+                    </span>
+                )}
+                <Tooltip title="Download all results as SSSOM-compliant TSV">
+                    <span>
+                        <IconButton onClick={handleExport} disabled={isExporting} size="small">
+                            <ArrowDownTrayIcon className="w-5 h-5" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            </div>
+        ),
     });
 
     return (
