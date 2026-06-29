@@ -1,5 +1,10 @@
 package uk.ac.ebi.spot.oxo.backend.controller.api.v2;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
@@ -25,6 +30,7 @@ import java.util.stream.Collectors;
 
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingSetConstants.*;
 
+@Tag(name = "Mapping sets", description = "List and resolve the SSSOM mapping sets loaded into OxO2.")
 @RestController
 @RequestMapping(path = "/api/v2/mapping-sets", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class MappingSetController {
@@ -41,8 +47,15 @@ public class MappingSetController {
     @Autowired
     private OxOSolrClient solrClient;
 
+    @Operation(
+            summary = "List mapping sets",
+            description = "Returns a summary of every mapping set (up to 10 000), sorted by title. "
+                    + "Optionally restrict to one or more inference types.")
+    @ApiResponse(responseCode = "200", description = "Mapping-set summaries")
     @GetMapping
     public ResponseEntity<List<MappingSetSummary>> listMappingSets(
+            @Parameter(description = "Restrict to these inference types (`ASSERTED`, `SSSOM_INFERENCE`); "
+                    + "absent/empty returns all sets. Unknown values are ignored.")
             @RequestParam(required = false) List<String> inferenceType) {
         try {
             SolrQuery solrQuery = new SolrQuery("*:*");
@@ -77,8 +90,20 @@ public class MappingSetController {
      * and Tomcat rejects the encoded slashes ({@code %2F}) an IRI path variable would require.
      * Spring already URL-decodes the query parameter value, so no manual decode is needed.
      */
+    @Operation(
+            summary = "Get a mapping set by id",
+            description = "Fetches a single mapping set by its id. The id is a full IRI passed as a "
+                    + "query parameter (not a path variable), because Tomcat rejects the encoded "
+                    + "slashes an IRI path variable would require.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "The mapping set"),
+            @ApiResponse(responseCode = "404", description = "No mapping set with that id", content = @io.swagger.v3.oas.annotations.media.Content),
+            @ApiResponse(responseCode = "500", description = "Error querying Solr", content = @io.swagger.v3.oas.annotations.media.Content)
+    })
     @GetMapping("/by-id")
-    public ResponseEntity<MappingSetSummary> getMappingSet(@RequestParam String mappingSetId) {
+    public ResponseEntity<MappingSetSummary> getMappingSet(
+            @Parameter(description = "Full IRI of the mapping set.", example = "https://www.ebi.ac.uk/oxo2/inferences")
+            @RequestParam String mappingSetId) {
         try {
             SolrQuery solrQuery = new SolrQuery();
             solrQuery.setQuery(MAPPING_SET_ID + ":\"" + ClientUtils.escapeQueryChars(mappingSetId) + "\"");

@@ -1,6 +1,13 @@
 # OxO2
 A SSSOM compliant implementation of OxO that is backwards compatible with OxO version 1
 
+## API documentation
+
+The backend publishes an OpenAPI 3 description of its REST API. Once the backend is running
+(`http://localhost:8081` in the setups below), the interactive Swagger UI is available at
+`http://localhost:8081/swagger-ui.html` and the raw OpenAPI spec at
+`http://localhost:8081/v3/api-docs`.
+
 ## Running OxO2 using Docker
 
 ## Prerequisites

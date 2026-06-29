@@ -16,6 +16,8 @@
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring.boot.version>3.5.14</spring.boot.version>
+        <!-- springdoc 2.8.x targets Spring Boot 3.4/3.5; the 3.0.x line is for Spring Boot 4. -->
+        <springdoc.version>2.8.17</springdoc.version>
     </properties>
 
     <dependencies>
@@ -46,6 +48,23 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <version>${spring.boot.version}</version>
+        </dependency>
+        <!-- OpenAPI 3 spec generation + bundled Swagger UI. Serves /v3/api-docs and
+             /swagger-ui.html. See OpenApiConfig and oxo2-backend/CONTEXT.md § Exposes. -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+        <!-- Align swagger-annotations with the swagger-core springdoc pulls. SolrJ drags in an
+             older swagger-annotations-jakarta (2.2.22), which is "nearer" in the dependency tree
+             and so wins by Maven mediation; but it predates @Schema.$dynamicRef(), which springdoc's
+             newer swagger-core (2.2.47) invokes reflectively while generating the spec, throwing
+             NoSuchMethodError at /v3/api-docs. A direct dependency overrides the transitive one. -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
+            <version>2.2.47</version>
         </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>
@@ -114,6 +133,16 @@
                                 https://stackoverflow.com/questions/58562397/org-apache-jena-shared-noreaderforlangexception-reader-not-found-nt
                                 -->
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                                <!--
+                                springdoc and spring-boot-autoconfigure both ship a
+                                META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+                                file. The shade plugin keeps only the last one by default, which would
+                                silently drop either Spring Boot's or springdoc's auto-configuration from
+                                the fat jar. Concatenate them (newline-separated) so both survive.
+                                -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</resource>
+                                </transformer>
                             </transformers>
                             <filters>
                                 <filter>

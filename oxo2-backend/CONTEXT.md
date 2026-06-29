@@ -44,6 +44,24 @@ would require.
 Backwards compatibility with OxO v1 is *behavioural* ([ADR-0004](../docs/adr/0004-backwards-compatible-with-oxo-v1.md)) — the endpoints above use OxO2/SSSOM-shaped JSON; 
 the design constraint is that v1 questions remain answerable.
 
+### API documentation (OpenAPI / Swagger)
+
+The API is self-described via springdoc-openapi. The generated OpenAPI 3 spec is served at
+**`/v3/api-docs`** and the bundled Swagger UI at **`/swagger-ui.html`** (port 8081 locally).
+The top-level `info` block comes from `config/OpenApiConfig`; per-endpoint summaries, parameter
+descriptions and response codes come from `@Operation` / `@Parameter` / `@ApiResponse` annotations
+on the controllers, and request/response field descriptions from `@Schema` on the DTOs in
+`controller/api/dto/`. The `Mapping` model in `oxo2-shared` is left un-annotated so the
+swagger-annotations dependency stays confined to this module; springdoc infers its schema by
+reflection. `OpenApiDocsTest` boots the full context and asserts the spec is generated and lists
+every endpoint.
+
+Two packaging gotchas are handled in `pom.xml`: (1) the fat jar's shade config appends the
+`META-INF/spring/...AutoConfiguration.imports` resource so springdoc's and Spring Boot's
+auto-configuration both survive the merge; (2) `io.swagger.core.v3:swagger-annotations-jakarta` is
+pinned to match the swagger-core that springdoc pulls, overriding the older transitive version
+SolrJ brings (which lacks `@Schema.$dynamicRef()` and would otherwise fail spec generation).
+
 ## Module notes
 
 ### Layout
@@ -56,6 +74,7 @@ and `queryMappingSets(...)` over `oxo2-mappingsets`.
 - `service/helper/SolrQueryBuilder.java` — translates `MappingSearchRequest` into a `SolrQuery` (filters, sort, paging).
 - `service/helper/SolrConstants.java` — Solr field-name constants for this module's queries.
 - `exception/GlobalExceptionHandler.java` — top-level exception translation.
+- `config/OpenApiConfig.java` — OpenAPI 3 `info` metadata for the Swagger docs (see § API documentation).
 
 ### Querying patterns
 

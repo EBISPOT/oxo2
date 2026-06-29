@@ -1,8 +1,13 @@
 package uk.ac.ebi.spot.oxo.backend.controller.api.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "An advanced query against a single field.")
 public class FieldQuery {
 
+    @Schema(description = "Solr field id to query.", example = "subject_label")
     private String field;
+    @Schema(description = "Value to match.", example = "diabetes mellitus")
     private String value;
 
     public FieldQuery() {}
