@@ -64,6 +64,27 @@ public class SolrQueryBuilder {
         return mappingEnum.getField() + "_ngram";
     }
 
+    /**
+     * Weak predicates excluded from mapping-search results by default. The inference corpus has no
+     * rule that chains them and their objects are frequently bare database codes (see
+     * {@code ApplicablePredicatesEnum} in oxo2-json2inferences), so they add noise to ordinary
+     * searches. Matched on {@code predicate_iri} (the canonical, prefix-independent IRI) rather than
+     * {@code predicate_id}, whose stored CURIE prefix and casing vary by source set. The exclusion is
+     * bypassed whenever the caller explicitly filters on a predicate field (see
+     * {@link #hasExplicitPredicateFilter}), so it can never hide a row the caller deliberately asked
+     * for.
+     */
+    private static final List<String> DEFAULT_EXCLUDED_PREDICATE_IRIS = List.of(
+            "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+            "http://www.geneontology.org/formats/oboInOwl#hasDbXref");
+
+    /** Predicate fields whose explicit filtering bypasses the default weak-predicate exclusion. */
+    private static final Set<MappingEnum> PREDICATE_FILTER_FIELDS = Set.of(
+            MappingEnum.PREDICATE_ID,
+            MappingEnum.PREDICATE_LABEL,
+            MappingEnum.PREDICATE_IRI,
+            MappingEnum.PREDICATE_MODIFIER);
+
     public static SolrQuery buildSolrQuery(MappingSearchRequest mappingSearchRequest, Pageable pageable) {
 
         SolrQuery solrQuery = new SolrQuery();
@@ -96,10 +117,15 @@ public class SolrQueryBuilder {
         applyInferenceRanking(solrQuery);
 
         solrQuery.setFields(constructFieldList(mappingSearchRequest.getFieldList()));
+        // Hide the weak predicates (rdfs:subClassOf, oboInOwl:hasDbXref) by default, unless the caller
+        // explicitly filters on a predicate field — they then clearly want whatever predicates match,
+        // so the default exclusion would be wrong.
+        boolean excludeWeakPredicates = !hasExplicitPredicateFilter(mappingSearchRequest);
         solrQuery.setFilterQueries(constructFilterQueries(
                 mappingSearchRequest.getColumnFilters(),
                 mappingSearchRequest.getMappingSetIds(),
-                mappingSearchRequest.getInferenceType()));
+                mappingSearchRequest.getInferenceType(),
+                excludeWeakPredicates));
         solrQuery = constructSortedFields(solrQuery, mappingSearchRequest);
 
         if (mappingSearchRequest.isGroupBySpo()) {
@@ -137,11 +163,16 @@ public class SolrQueryBuilder {
 
     private static String[] constructFilterQueries(List<MappingSearchRequest.ColumnFilter> queryFilters,
                                                    List<String> mappingSetIds,
-                                                   List<InferenceType> inferenceTypes) {
-        List<String> filterQueriesList = queryFilters.stream()
-                .map(SolrQueryBuilder::constructFilterClause)
-                .filter(clause -> !clause.isEmpty())
-                .collect(Collectors.toList());
+                                                   List<InferenceType> inferenceTypes,
+                                                   boolean excludeWeakPredicates) {
+        List<String> filterQueriesList = new ArrayList<>();
+
+        if (queryFilters != null) {
+            queryFilters.stream()
+                    .map(SolrQueryBuilder::constructFilterClause)
+                    .filter(clause -> !clause.isEmpty())
+                    .forEach(filterQueriesList::add);
+        }
 
         // Multi-select inference-type filter (ADR-0011). inference_type is a denormalised string
         // whose values are the InferenceType codes (safe enum names, no escaping needed); absent or
@@ -170,7 +201,62 @@ public class SolrQueryBuilder {
             }
         }
 
+        if (excludeWeakPredicates) {
+            filterQueriesList.add(weakPredicateExclusionClause());
+        }
+
         return filterQueriesList.toArray(new String[filterQueriesList.size()]);
+    }
+
+    /**
+     * Pure-negative filter excluding the {@link #DEFAULT_EXCLUDED_PREDICATE_IRIS}. The leading
+     * {@code *:*} is required because Solr matches nothing for a filter query that is only negative;
+     * it supplies the all-docs base from which the predicates are subtracted. Each IRI is escaped and
+     * quoted (an exact term match on the {@code string}-typed {@code predicate_iri} field), mirroring
+     * the mapping_set_id clause above.
+     */
+    private static String weakPredicateExclusionClause() {
+        String field = MappingEnum.PREDICATE_IRI.getField();
+        String excluded = DEFAULT_EXCLUDED_PREDICATE_IRIS.stream()
+                .map(iri -> field + ":\"" + ClientUtils.escapeQueryChars(iri) + "\"")
+                .collect(Collectors.joining(" OR "));
+        return "*:* -(" + excluded + ")";
+    }
+
+    /**
+     * True when the request explicitly constrains a predicate field — via a column filter or an
+     * advanced field query carrying a non-blank value. Such a caller is asking about predicates
+     * directly, so the default weak-predicate exclusion is switched off for that request. Note the
+     * default (classified) search path that merely searches {@code predicate_*} alongside subject and
+     * object does <em>not</em> count: that is a broad term search, not an explicit predicate filter.
+     */
+    private static boolean hasExplicitPredicateFilter(MappingSearchRequest request) {
+        List<MappingSearchRequest.ColumnFilter> columnFilters = request.getColumnFilters();
+        if (columnFilters != null) {
+            for (MappingSearchRequest.ColumnFilter filter : columnFilters) {
+                if (isPredicateField(filter.getId()) && isNonBlank(filter.getValue())) {
+                    return true;
+                }
+            }
+        }
+        List<FieldQuery> advancedFieldQueries = request.getAdvancedFieldQueries();
+        if (advancedFieldQueries != null) {
+            for (FieldQuery fieldQuery : advancedFieldQueries) {
+                if (isPredicateField(fieldQuery.getField()) && isNonBlank(fieldQuery.getValue())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean isPredicateField(String fieldId) {
+        MappingEnum field = MappingEnum.fromString(fieldId);
+        return field != null && PREDICATE_FILTER_FIELDS.contains(field);
+    }
+
+    private static boolean isNonBlank(String value) {
+        return value != null && !value.isBlank();
     }
 
     /**
