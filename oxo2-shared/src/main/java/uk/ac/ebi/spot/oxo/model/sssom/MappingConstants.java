@@ -61,6 +61,10 @@ public class MappingConstants {
     // group_members carries a representative row's underlying members as {"total":N,"members":[...]}.
     public static final String SPO_KEY = "spo_key";
     public static final String GROUP_MEMBERS = "group_members";
+    // Cross-ontology mapping (ADR-0024): the CURIE prefix of subject_id / object_id (the "ontology"
+    // a term belongs to). Derived at serialization time, not deserialised.
+    public static final String SUBJECT_PREFIX = "subject_prefix";
+    public static final String OBJECT_PREFIX = "object_prefix";
     public static final String CHAIN_RULE = "chain_rule";
     public static final String CHAIN_RULE_APPLICATIONS = "chain_rule_applications";
     public static final String DISTANCE = "distance";

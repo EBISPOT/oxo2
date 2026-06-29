@@ -63,6 +63,8 @@ public enum MappingEnum {
     // Extensions to SSSOM
     ASSERTED_MAPPINGS(MappingConstants.ASSERTED_MAPPINGS),
     SPO_KEY(MappingConstants.SPO_KEY),
+    SUBJECT_PREFIX(MappingConstants.SUBJECT_PREFIX),
+    OBJECT_PREFIX(MappingConstants.OBJECT_PREFIX),
     CHAIN_RULE(MappingConstants.CHAIN_RULE),
     CHAIN_RULE_APPLICATIONS(MappingConstants.CHAIN_RULE_APPLICATIONS),
     DISTANCE(MappingConstants.DISTANCE),

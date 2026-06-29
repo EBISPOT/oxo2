@@ -69,6 +69,15 @@ public class OxOSolrClient {
         return solrMappingSetClient.query(params);
     }
 
+    /**
+     * Raw query against the oxo2-mappings collection, for callers that read the {@link QueryResponse}
+     * directly rather than as a page of {@link Mapping} beans — e.g. the /api/v2/ontologies facet
+     * counts over subject_prefix / object_prefix (ADR-0024).
+     */
+    public QueryResponse queryMappings(SolrParams params) throws Exception {
+        return solrMappingClient.query(params);
+    }
+
     public MappingSearchResponse query(SolrParams params, Pageable pageable) throws Exception {
         QueryResponse response = solrMappingClient.query(params);
 

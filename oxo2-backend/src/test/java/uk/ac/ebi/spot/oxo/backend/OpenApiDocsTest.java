@@ -40,7 +40,8 @@ class OpenApiDocsTest {
                 .andExpect(jsonPath("$.paths['/api/v2/mappings/search'].post").exists())
                 .andExpect(jsonPath("$.paths['/api/v2/mappings/{subjectId}'].get").exists())
                 .andExpect(jsonPath("$.paths['/api/v2/mapping-sets'].get").exists())
-                .andExpect(jsonPath("$.paths['/api/v2/mapping-sets/by-id'].get").exists());
+                .andExpect(jsonPath("$.paths['/api/v2/mapping-sets/by-id'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/v2/ontologies'].get").exists());
     }
 
     @Test

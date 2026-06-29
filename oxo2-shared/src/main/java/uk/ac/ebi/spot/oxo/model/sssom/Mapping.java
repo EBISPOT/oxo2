@@ -216,6 +216,30 @@ public record Mapping (
         return UUID.nameUUIDFromBytes(bytes).toString();
     }
 
+    /**
+     * Cross-ontology mapping (ADR-0024): the CURIE prefix of subject_id / object_id — OxO2's notion of
+     * the "ontology" a term belongs to (DOID:0001816 → DOID). Derived, not stored as model state:
+     * emitted as the Solr {@code subject_prefix} / {@code object_prefix} fields at dataload, where they
+     * back prefix-filtered cross-ontology queries and the /api/v2/ontologies facets. A bare IRI that
+     * never resolved to a CURIE has no prefix (null → omitted by the record's NON_EMPTY include).
+     */
+    @JsonProperty(SUBJECT_PREFIX)
+    public String subjectPrefix() {
+        return subjectId.map(Mapping::curiePrefixOf).orElse(null);
+    }
+
+    @JsonProperty(OBJECT_PREFIX)
+    public String objectPrefix() {
+        return objectId.map(Mapping::curiePrefixOf).orElse(null);
+    }
+
+    private static String curiePrefixOf(EntityReference reference) {
+        String idAsString = reference.getDataAsString();
+        if (idAsString == null || !StringUtils.isCurie(idAsString))
+            return null;
+        return idAsString.substring(0, idAsString.indexOf(':'));
+    }
+
 
     @Override
     public boolean equals(Object o) {
@@ -1129,6 +1153,19 @@ public record Mapping (
         // inference stage — doesn't fail on the extra field.
         @JsonProperty(SPO_KEY)
         public Builder spoKey(String ignoredSpoKey) {
+            return this;
+        }
+
+        // subject_prefix / object_prefix are derived, output-only (see Mapping#subjectPrefix() /
+        // objectPrefix()). Accept and ignore them on input so deserialising a serialised Mapping —
+        // e.g. the dataload's own JSON read back by the inference stage — doesn't fail on the field.
+        @JsonProperty(SUBJECT_PREFIX)
+        public Builder subjectPrefix(String ignoredSubjectPrefix) {
+            return this;
+        }
+
+        @JsonProperty(OBJECT_PREFIX)
+        public Builder objectPrefix(String ignoredObjectPrefix) {
             return this;
         }
 

@@ -530,6 +530,12 @@
        subject_id + predicate_id + predicate_modifier + object_id. Derived at serialization time by
        Mapping.spoKey(); docValues for grouping, not stored (never retrieved). -->
   <field name="spo_key" type="string" multiValued="false" indexed="true" stored="false" docValues="true"/>
+  <!-- Cross-ontology mapping (ADR-0024): the CURIE prefix of subject_id / object_id (the "ontology"),
+       derived at serialization time by Mapping.subjectPrefix() / objectPrefix(). indexed for prefix
+       filter queries (subject_prefix:DOID), docValues for the /api/v2/ontologies facets; not stored
+       (never retrieved directly). A bare IRI with no CURIE prefix leaves these empty. -->
+  <field name="subject_prefix" type="string" multiValued="false" indexed="true" stored="false" docValues="true"/>
+  <field name="object_prefix" type="string" multiValued="false" indexed="true" stored="false" docValues="true"/>
   <field name="subject_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_source" type="string" multiValued="false" indexed="true" stored="true"/>
