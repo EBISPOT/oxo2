@@ -12,7 +12,7 @@ import {
 import {Mapping} from "../../model/Mapping.ts";
 import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
-import {InferenceTypeFilter} from "../../components/mapping/InferenceTypeFilter";
+import {InferenceTypeFilterPopover} from "../../components/mapping/InferenceTypeFilterPopover";
 import {IconButton, Tooltip} from "@mui/material";
 import {EyeIcon} from "@heroicons/react/24/solid";
 import {EntityRefCell, CopyButton} from "../../components/mapping/EntityRefCell";
@@ -272,6 +272,12 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
                 header: "Type",
                 enableSorting: false,
                 size: 130,
+                Header: () => (
+                    <span className="flex items-center gap-1">
+                        <span>Type</span>
+                        <InferenceTypeFilterPopover value={inferenceTypes} onChange={handleInferenceTypesChange} />
+                    </span>
+                ),
                 Cell: ({ row }) => {
                     const groupSize = row.original.groupSize ?? 1;
                     return (
@@ -336,7 +342,7 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
                 },
             },
         ],
-        [handleFilterChange, handleSortChange]
+        [handleFilterChange, handleSortChange, inferenceTypes, handleInferenceTypesChange]
     );
 
     const table = useMaterialReactTable({
@@ -482,9 +488,6 @@ export function NormalResultsTable({ queries, mappingSetIds, initialInferenceTyp
         },
         enableHiding: true,
         enableTopToolbar: true,
-        renderTopToolbarCustomActions: () => (
-            <InferenceTypeFilter value={inferenceTypes} onChange={handleInferenceTypesChange} />
-        ),
     });
 
     return (

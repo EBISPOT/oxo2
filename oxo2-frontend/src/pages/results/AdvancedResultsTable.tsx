@@ -2,7 +2,7 @@ import {useCallback, useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {InferenceType, DEFAULT_INFERENCE_TYPES} from "../../model/InferenceType";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
-import {InferenceTypeFilter} from "../../components/mapping/InferenceTypeFilter";
+import {InferenceTypeFilterPopover} from "../../components/mapping/InferenceTypeFilterPopover";
 import {AdvancedFieldQuery} from "../../model/Search";
 import {emptyMappingPage, MappingPage, fetchMappings, fromJson} from "./MappingResultsSlice";
 import {useQuery} from "@tanstack/react-query";
@@ -135,11 +135,18 @@ export function AdvancedResultsTable({
                 header: "Mapping Justification",
             },
             {
-                // Inference type (ADR-0011). Filtering of this field is driven by the toolbar
-                // multi-select, not the per-column filter input, so the inline filter is disabled.
+                // Inference type (ADR-0011). Filtering of this field is driven by the single-select
+                // popover in the column header, not the per-column filter input, so the inline
+                // filter is disabled.
                 accessorKey: "inferenceType",
                 header: "Type",
                 enableColumnFilter: false,
+                Header: () => (
+                    <span className="flex items-center gap-1">
+                        <span>Type</span>
+                        <InferenceTypeFilterPopover value={inferenceTypes} onChange={handleInferenceTypesChange} />
+                    </span>
+                ),
                 Cell: ({ row }) => <InferenceTypeBadge value={row.original.inferenceType} />,
             },
             {
@@ -159,7 +166,7 @@ export function AdvancedResultsTable({
                 header: "License",
             }
         ],
-        []
+        [inferenceTypes, handleInferenceTypesChange]
     );
 
     const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
@@ -246,9 +253,6 @@ export function AdvancedResultsTable({
         onColumnVisibilityChange: setColumnVisibility,
         enableHiding: true,
         enableTopToolbar: true, // Show toolbar so user can access column visibility menu
-        renderTopToolbarCustomActions: () => (
-            <InferenceTypeFilter value={inferenceTypes} onChange={handleInferenceTypesChange} />
-        ),
         muiTableBodyRowProps: ({ row }) => ({
             onClick: () => {
                 const mapping = row.original;
