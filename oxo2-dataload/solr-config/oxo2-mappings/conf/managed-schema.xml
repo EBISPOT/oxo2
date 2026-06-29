@@ -480,7 +480,9 @@
   <field name="creator_id" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="creator_label" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="curation_rule" type="strings" multiValued="true" indexed="true" stored="true"/>
-  <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
+  <!-- docValues so the unique key can drive cursorMark deep paging for streaming export (ADR-0024)
+       efficiently, rather than building a field cache over the whole index. -->
+  <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true" docValues="true"/>
   <field name="issue_tracker_item" type="string" multiValued="false" indexed="false" stored="true"/>
   <field name="license" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="mapping_cardinality" type="string" multiValued="false" indexed="true" stored="true"/>

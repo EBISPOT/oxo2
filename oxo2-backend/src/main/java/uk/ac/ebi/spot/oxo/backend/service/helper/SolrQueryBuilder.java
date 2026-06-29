@@ -85,6 +85,9 @@ public class SolrQueryBuilder {
             MappingEnum.PREDICATE_IRI,
             MappingEnum.PREDICATE_MODIFIER);
 
+    /** The oxo2-mappings unique key — a total order for cursorMark streaming export (ADR-0024). */
+    private static final String UNIQUE_KEY = "id";
+
     public static SolrQuery buildSolrQuery(MappingSearchRequest mappingSearchRequest, Pageable pageable) {
 
         SolrQuery solrQuery = new SolrQuery();
@@ -92,23 +95,8 @@ public class SolrQueryBuilder {
         solrQuery.setStart((int) pageable.getOffset());
         solrQuery.setRows(pageable.getPageSize());
 
-        // Dispatch order (most specific first):
-        //   1. advancedFieldQueries non-empty → AND-joined per-field clauses (Advanced tab).
-        //   2. queryFields non-empty       → legacy edismax/qf path.
-        //   3. otherwise                    → classified-by-shape path (default search).
-        // Do not silently rewire — each path is independent and documented.
-        List<FieldQuery> advancedFieldQueries = mappingSearchRequest.getAdvancedFieldQueries();
-        List<MappingEnum> queryFields = mappingSearchRequest.getQueryFields();
-        if (advancedFieldQueries != null && !advancedFieldQueries.isEmpty()) {
-            solrQuery.setQuery(constructAdvancedQuery(advancedFieldQueries));
-        } else if (queryFields != null && !queryFields.isEmpty()) {
-            // Override path: caller pinned the fields via qf.
-            solrQuery.setQuery(constructUsingQueryFields(mappingSearchRequest.getQueries()));
-            solrQuery.set(QF, constructQueryFields(queryFields));
-        } else {
-            // Default path: classify each term by shape and route to type-appropriate fields.
-            solrQuery.setQuery(constructClassifiedQuery(mappingSearchRequest.getQueries()));
-        }
+        // Build q (and qf on the override path) — see applyQuery for the dispatch order.
+        applyQuery(solrQuery, mappingSearchRequest);
 
         // ADR-0011: every path uses edismax so the soft inference-type + distance ranking applies
         // uniformly. The fielded queries on the advanced/classified paths carry their own field
@@ -135,6 +123,28 @@ public class SolrQueryBuilder {
         }
 
         return solrQuery;
+    }
+
+    /**
+     * Set q on the query (and qf on the override path). Dispatch order, most specific first:
+     * <ol>
+     *   <li>advancedFieldQueries non-empty → AND-joined per-field clauses (Advanced tab).</li>
+     *   <li>queryFields non-empty → legacy edismax/qf path (caller-pinned fields).</li>
+     *   <li>otherwise → classified-by-shape path (default search).</li>
+     * </ol>
+     * Do not silently rewire — each path is independent and documented.
+     */
+    private static void applyQuery(SolrQuery solrQuery, MappingSearchRequest request) {
+        List<FieldQuery> advancedFieldQueries = request.getAdvancedFieldQueries();
+        List<MappingEnum> queryFields = request.getQueryFields();
+        if (advancedFieldQueries != null && !advancedFieldQueries.isEmpty()) {
+            solrQuery.setQuery(constructAdvancedQuery(advancedFieldQueries));
+        } else if (queryFields != null && !queryFields.isEmpty()) {
+            solrQuery.setQuery(constructUsingQueryFields(request.getQueries()));
+            solrQuery.set(QF, constructQueryFields(queryFields));
+        } else {
+            solrQuery.setQuery(constructClassifiedQuery(request.getQueries()));
+        }
     }
 
     /**
@@ -261,6 +271,41 @@ public class SolrQueryBuilder {
         addPrefixFilter(filterQueriesList, MappingEnum.OBJECT_PREFIX, objectPrefixes);
         filterQueriesList.add(weakPredicateExclusionClause());
         return filterQueriesList.toArray(new String[0]);
+    }
+
+    /**
+     * Export query for /search-style cross-ontology results (ADR-0024): the same q + filter queries as
+     * {@link #buildSolrQuery}, but flat (no same-SPO collapse) and sorted by the unique key so a
+     * cursorMark stream can read the whole result. rows / fl / cursorMark are set by the exporter.
+     */
+    public static SolrQuery buildExportQuery(MappingSearchRequest request) {
+        SolrQuery solrQuery = new SolrQuery();
+        applyQuery(solrQuery, request);
+        solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
+        boolean excludeWeakPredicates = !hasExplicitPredicateFilter(request);
+        solrQuery.setFilterQueries(constructFilterQueries(
+                request.getColumnFilters(),
+                request.getMappingSetIds(),
+                request.getInferenceType(),
+                request.getSubjectPrefixes(),
+                request.getObjectPrefixes(),
+                excludeWeakPredicates));
+        solrQuery.setSort(UNIQUE_KEY, SolrQuery.ORDER.asc);
+        return solrQuery;
+    }
+
+    /**
+     * Export query for batch term mapping: the subject-side disjunction and batch filters of
+     * {@link #buildBatchMapQuery}, flat and sorted by the unique key for cursorMark streaming.
+     */
+    public static SolrQuery buildBatchExportQuery(List<String> terms, List<String> objectPrefixes,
+                                                  List<InferenceType> inferenceTypes) {
+        SolrQuery solrQuery = new SolrQuery();
+        solrQuery.setQuery(subjectSideDisjunction(terms));
+        solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
+        solrQuery.setFilterQueries(batchFilterQueries(objectPrefixes, inferenceTypes));
+        solrQuery.setSort(UNIQUE_KEY, SolrQuery.ORDER.asc);
+        return solrQuery;
     }
 
 

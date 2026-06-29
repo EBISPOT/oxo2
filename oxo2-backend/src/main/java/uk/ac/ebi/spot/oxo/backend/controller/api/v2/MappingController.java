@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,10 +22,13 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.BatchMapRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.BatchMapResponse;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.MappingSearchResponse;
+import uk.ac.ebi.spot.oxo.backend.service.export.ExportFormat;
+import uk.ac.ebi.spot.oxo.backend.service.export.MappingTsvExporter;
 import uk.ac.ebi.spot.oxo.backend.service.helper.SolrQueryBuilder;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
+import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -42,7 +47,13 @@ public class MappingController {
 
     @Autowired
     private OxOSolrClient solrClient;
+    @Autowired
+    private MappingTsvExporter exporter;
     private static final Logger logger = LoggerFactory.getLogger(MappingController.class);
+
+    /** Producible types for endpoints that serve JSON or a streamed export (ADR-0024). */
+    private static final String[] JSON_OR_EXPORT =
+            {MediaType.APPLICATION_JSON_VALUE, "text/tab-separated-values", "text/csv"};
 
     private static ResponseEntity<MappingSearchResponse> validatePaging(int page, int size) {
         if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
@@ -109,11 +120,15 @@ public class MappingController {
             @ApiResponse(responseCode = "400", description = "Invalid paging parameters", content = @io.swagger.v3.oas.annotations.media.Content),
             @ApiResponse(responseCode = "500", description = "Error querying Solr", content = @io.swagger.v3.oas.annotations.media.Content)
     })
-    @PostMapping(path = "/search",
-            /*consumes = {MediaType.APPLICATION_JSON_VALUE},*/ produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<MappingSearchResponse> getMappings(@RequestBody MappingSearchRequest mappingSearchRequest) {
+    @PostMapping(path = "/search", produces = {MediaType.APPLICATION_JSON_VALUE,
+            "text/tab-separated-values", "text/csv"})
+    public ResponseEntity<?> getMappings(@RequestBody MappingSearchRequest mappingSearchRequest,
+            @Parameter(description = "Output format: `json` (default, paged) or `sssom-tsv` / `tsv` / "
+                    + "`csv` to stream the full result set as an SSSOM-compliant file.")
+            @RequestParam(required = false) String format,
+            HttpServletResponse httpResponse) throws IOException {
 
-        logger.info("Mapping search request: {}", mappingSearchRequest);
+        logger.info("Mapping search request: {} (format={})", mappingSearchRequest, format);
 
         ResponseEntity<MappingSearchResponse> pagingError =
                 validatePaging(mappingSearchRequest.getPage(), mappingSearchRequest.getSize());
@@ -121,17 +136,19 @@ public class MappingController {
             return pagingError;
         }
 
+        ExportFormat exportFormat = ExportFormat.fromParam(format);
+        if (exportFormat.isStreamed()) {
+            writeExport(SolrQueryBuilder.buildExportQuery(mappingSearchRequest), exportFormat, httpResponse);
+            return null;
+        }
+
         Pageable pageable = PageRequest.of(mappingSearchRequest.getPage(), mappingSearchRequest.getSize());
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(mappingSearchRequest, pageable);
-
         logger.trace("Solr query={}", solrQuery.toString());
-
         try {
-            MappingSearchResponse mappingSearchResponse = solrClient.query(solrQuery, pageable);
-            logger.trace("mappingSearchResponse={}", mappingSearchResponse);
-            return ResponseEntity.ok(mappingSearchResponse);
+            return ResponseEntity.ok(solrClient.query(solrQuery, pageable));
         } catch (Exception e) {
-            logger.error("Error while fetching mappings for subjectId: {}", mappingSearchRequest, e);
+            logger.error("Error while fetching mappings for: {}", mappingSearchRequest, e);
             return ResponseEntity.status(500).build();
         }
     }
@@ -149,8 +166,8 @@ public class MappingController {
             @ApiResponse(responseCode = "400", description = "Invalid paging parameters", content = @io.swagger.v3.oas.annotations.media.Content),
             @ApiResponse(responseCode = "500", description = "Error querying Solr", content = @io.swagger.v3.oas.annotations.media.Content)
     })
-    @GetMapping
-    public ResponseEntity<MappingSearchResponse> mapOntologies(
+    @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, "text/tab-separated-values", "text/csv"})
+    public ResponseEntity<?> mapOntologies(
             @Parameter(description = "Source ontologies (CURIE prefixes), comma-separated.", example = "DOID")
             @RequestParam(required = false) List<String> from,
             @Parameter(description = "Target ontologies (CURIE prefixes), comma-separated.", example = "EFO,MONDO")
@@ -160,7 +177,10 @@ public class MappingController {
             @Parameter(description = "Page size (1–100).")
             @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "Collapse same subject/predicate/object rows into one representative.")
-            @RequestParam(defaultValue = "true") boolean groupBySpo) {
+            @RequestParam(defaultValue = "true") boolean groupBySpo,
+            @Parameter(description = "Output format: `json` (default) or `sssom-tsv` / `tsv` / `csv` to stream.")
+            @RequestParam(required = false) String format,
+            HttpServletResponse httpResponse) throws IOException {
         ResponseEntity<MappingSearchResponse> pagingError = validatePaging(page, size);
         if (pagingError != null) {
             return pagingError;
@@ -172,6 +192,12 @@ public class MappingController {
         request.setPage(page);
         request.setSize(size);
         request.setGroupBySpo(groupBySpo);
+
+        ExportFormat exportFormat = ExportFormat.fromParam(format);
+        if (exportFormat.isStreamed()) {
+            writeExport(SolrQueryBuilder.buildExportQuery(request), exportFormat, httpResponse);
+            return null;
+        }
 
         Pageable pageable = PageRequest.of(page, size);
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, pageable);
@@ -195,8 +221,13 @@ public class MappingController {
             @ApiResponse(responseCode = "400", description = "Invalid paging or too many input terms", content = @io.swagger.v3.oas.annotations.media.Content),
             @ApiResponse(responseCode = "500", description = "Error querying Solr", content = @io.swagger.v3.oas.annotations.media.Content)
     })
-    @PostMapping(path = "/batch-map", produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<BatchMapResponse> batchMap(@RequestBody BatchMapRequest request) {
+    @PostMapping(path = "/batch-map", produces = {MediaType.APPLICATION_JSON_VALUE,
+            "text/tab-separated-values", "text/csv"})
+    public ResponseEntity<?> batchMap(@RequestBody BatchMapRequest request,
+            @Parameter(description = "Output format: `json` (default, with the unmapped report) or "
+                    + "`sssom-tsv` / `tsv` / `csv` to stream the matching mappings as a file.")
+            @RequestParam(required = false) String format,
+            HttpServletResponse httpResponse) throws IOException {
         if (request.getPage() < 0 || request.getSize() < 1 || request.getSize() > MAX_PAGE_SIZE) {
             return ResponseEntity.badRequest().build();
         }
@@ -204,6 +235,14 @@ public class MappingController {
         if (terms.size() > MAX_INPUT_TERMS) {
             logger.warn("batch-map rejected: {} terms exceeds cap {}", terms.size(), MAX_INPUT_TERMS);
             return ResponseEntity.badRequest().build();
+        }
+
+        ExportFormat exportFormat = ExportFormat.fromParam(format);
+        if (exportFormat.isStreamed()) {
+            // The export is the matching mappings as an SSSOM file; the unmapped report is JSON-only.
+            writeExport(SolrQueryBuilder.buildBatchExportQuery(
+                    terms, request.getObjectPrefixes(), request.getInferenceType()), exportFormat, httpResponse);
+            return null;
         }
 
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
@@ -236,6 +275,29 @@ public class MappingController {
         } catch (Exception e) {
             logger.error("Error in batch-map for {} terms", terms.size(), e);
             return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * Stream a cross-ontology result set straight to the response as a downloadable SSSOM-compliant
+     * file (ADR-0024). The base query already carries the q + filters and an {@code id asc} sort for
+     * cursorMark deep paging; the exporter writes the curie_map header then streams every row, so
+     * nothing is buffered server-side. The caller returns {@code null} afterwards — having written the
+     * response itself, which Spring treats as handled.
+     */
+    private void writeExport(SolrQuery exportQuery, ExportFormat format, HttpServletResponse response)
+            throws IOException {
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType(format.contentType());
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"oxo2-mappings." + format.fileExtension() + "\"");
+        try {
+            exporter.stream(exportQuery, format, response.getWriter());
+        } catch (IOException ioException) {
+            throw ioException;
+        } catch (Exception e) {
+            throw new IOException("Export failed", e);
         }
     }
 

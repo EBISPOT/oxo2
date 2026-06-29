@@ -18,6 +18,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.MappingSearchResponse;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
+import uk.ac.ebi.spot.oxo.backend.service.export.ExportFormat;
+import uk.ac.ebi.spot.oxo.backend.service.export.MappingTsvExporter;
 import uk.ac.ebi.spot.oxo.backend.service.helper.SolrQueryBuilder;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
@@ -30,10 +32,13 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -45,6 +50,10 @@ class MappingControllerTest {
 
     @MockitoBean
     private OxOSolrClient solrClient;
+
+    // MappingController depends on the exporter; mock it so the @WebMvcTest slice context loads.
+    @MockitoBean
+    private MappingTsvExporter exporter;
 
     private static MappingSearchResponse emptyResponse() {
         Page<Mapping> emptyPage = new PageImpl<>(Collections.emptyList());
@@ -274,5 +283,38 @@ class MappingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
+    }
+
+    // ---------- ?format= export routing (ADR-0024) ----------
+
+    @Test
+    void searchWithFormatRoutesToStreamingExportNotJsonPath() throws Exception {
+        String body = """
+                { "subjectPrefixes": ["DOID"], "objectPrefixes": ["EFO"], "page": 0, "size": 10 }
+                """;
+
+        // A non-json format streams the export and must NOT issue the paged JSON search query.
+        mockMvc.perform(post("/api/v2/mappings/search")
+                        .param("format", "sssom-tsv")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("text/tab-separated-values"));
+
+        verify(solrClient, never()).query(any(SolrParams.class), any(Pageable.class));
+        verify(exporter).stream(any(SolrQuery.class), eq(ExportFormat.SSSOM_TSV), any());
+    }
+
+    @Test
+    void searchWithoutFormatStaysOnJsonPath() throws Exception {
+        when(solrClient.query(any(SolrParams.class), any(Pageable.class)))
+                .thenReturn(emptyResponse());
+
+        mockMvc.perform(post("/api/v2/mappings/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ \"queries\": [\"diabetes\"], \"page\": 0, \"size\": 10 }"))
+                .andExpect(status().isOk());
+
+        verify(solrClient).query(any(SolrParams.class), any(Pageable.class));
     }
 }
