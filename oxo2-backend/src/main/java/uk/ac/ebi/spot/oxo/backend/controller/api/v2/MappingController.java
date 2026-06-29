@@ -23,6 +23,7 @@ import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 
 @Tag(name = "Mappings", description = "Search ontology mappings and list the mappings for a subject term.")
@@ -123,6 +124,53 @@ public class MappingController {
             return ResponseEntity.ok(mappingSearchResponse);
         } catch (Exception e) {
             logger.error("Error while fetching mappings for subjectId: {}", mappingSearchRequest, e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @Operation(
+            summary = "Map one ontology to another (source → target)",
+            description = "Cross-ontology mapping (ADR-0024): returns mappings whose subject is in the "
+                    + "source ontologies (`from`) and object is in the target ontologies (`to`), each a "
+                    + "CURIE prefix. Directional (subject = source, object = target) — the bookmarkable "
+                    + "form, mirroring OxO v1's `GET /api/mappings?fromId=…&toId=…`. Same-SPO rows are "
+                    + "collapsed by default. With neither `from` nor `to`, returns a page over all "
+                    + "mappings (weak predicates hidden as in /search).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Page of matching mappings"),
+            @ApiResponse(responseCode = "400", description = "Invalid paging parameters", content = @io.swagger.v3.oas.annotations.media.Content),
+            @ApiResponse(responseCode = "500", description = "Error querying Solr", content = @io.swagger.v3.oas.annotations.media.Content)
+    })
+    @GetMapping
+    public ResponseEntity<MappingSearchResponse> mapOntologies(
+            @Parameter(description = "Source ontologies (CURIE prefixes), comma-separated.", example = "DOID")
+            @RequestParam(required = false) List<String> from,
+            @Parameter(description = "Target ontologies (CURIE prefixes), comma-separated.", example = "EFO,MONDO")
+            @RequestParam(required = false) List<String> to,
+            @Parameter(description = "Zero-based page index.")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size (1–100).")
+            @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Collapse same subject/predicate/object rows into one representative.")
+            @RequestParam(defaultValue = "true") boolean groupBySpo) {
+        ResponseEntity<MappingSearchResponse> pagingError = validatePaging(page, size);
+        if (pagingError != null) {
+            return pagingError;
+        }
+
+        MappingSearchRequest request = new MappingSearchRequest();
+        request.setSubjectPrefixes(from);
+        request.setObjectPrefixes(to);
+        request.setPage(page);
+        request.setSize(size);
+        request.setGroupBySpo(groupBySpo);
+
+        Pageable pageable = PageRequest.of(page, size);
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, pageable);
+        try {
+            return ResponseEntity.ok(solrClient.query(solrQuery, pageable));
+        } catch (Exception e) {
+            logger.error("Error mapping ontologies from={} to={}", from, to, e);
             return ResponseEntity.status(500).build();
         }
     }

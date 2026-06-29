@@ -699,4 +699,60 @@ class SolrQueryBuilderTest {
 
         assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
     }
+
+    // ---------- cross-ontology prefix filters (ADR-0024) ----------
+
+    @Test
+    void subjectPrefixesProduceOrFilterClause() {
+        MappingSearchRequest request = baseRequest();
+        request.setSubjectPrefixes(List.of("DOID", "HP"));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        String field = MappingEnum.SUBJECT_PREFIX.getField();
+        String expected = "(" + field + ":DOID OR " + field + ":HP)";
+        assertThat(solrQuery.getFilterQueries())
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+    }
+
+    @Test
+    void subjectAndObjectPrefixesProduceTwoDirectionalClauses() {
+        MappingSearchRequest request = baseRequest();
+        request.setSubjectPrefixes(List.of("DOID"));
+        request.setObjectPrefixes(List.of("EFO", "MONDO"));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        String subjectField = MappingEnum.SUBJECT_PREFIX.getField();
+        String objectField = MappingEnum.OBJECT_PREFIX.getField();
+        String subjectClause = "(" + subjectField + ":DOID)";
+        String objectClause = "(" + objectField + ":EFO OR " + objectField + ":MONDO)";
+        assertThat(solrQuery.getFilterQueries())
+                .containsExactlyInAnyOrder(subjectClause, objectClause, weakPredicateExclusion());
+    }
+
+    @Test
+    void prefixFilterValuesAreEscaped() {
+        MappingSearchRequest request = baseRequest();
+        request.setSubjectPrefixes(List.of(INJECTION_PAYLOAD));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        String expected = "(" + MappingEnum.SUBJECT_PREFIX.getField() + ":"
+                + ClientUtils.escapeQueryChars(INJECTION_PAYLOAD) + ")";
+        assertThat(solrQuery.getFilterQueries())
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+        assertThat(String.join("", solrQuery.getFilterQueries())).doesNotContain("\" OR *:*");
+    }
+
+    @Test
+    void blankPrefixesAreIgnored() {
+        MappingSearchRequest request = baseRequest();
+        request.setSubjectPrefixes(Arrays.asList("  ", null));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        // No prefix clause contributed; only the default weak-predicate exclusion remains.
+        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
+    }
 }

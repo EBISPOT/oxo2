@@ -48,6 +48,15 @@ public class MappingSearchRequest {
     @Schema(description = "Restrict to these inference types; null/empty returns all types.")
     private List<InferenceType> inferenceType;
 
+    // Cross-ontology mapping (ADR-0024): restrict subjects/objects to these ontologies (CURIE
+    // prefixes). Each list becomes an OR'd exact-term filter on subject_prefix / object_prefix
+    // (subject = source, object = target). The GET /api/v2/mappings?from=&to= view and the frontend
+    // from/to selectors set these; null/empty means unrestricted on that side.
+    @Schema(description = "Restrict subjects to these ontologies (CURIE prefixes), e.g. [\"DOID\"].")
+    private List<String> subjectPrefixes;
+    @Schema(description = "Restrict objects to these ontologies (CURIE prefixes), e.g. [\"EFO\",\"MONDO\"].")
+    private List<String> objectPrefixes;
+
     // Collapse same-SPO mappings into one row via Solr result grouping (ADR-0013). Default false;
     // the normal/inferences result tables opt in, the Advanced tab stays flat.
     @Schema(description = "Collapse mappings that share the same subject/predicate/object into one "
@@ -143,6 +152,22 @@ public class MappingSearchRequest {
         this.inferenceType = inferenceType;
     }
 
+    public List<String> getSubjectPrefixes() {
+        return subjectPrefixes;
+    }
+
+    public void setSubjectPrefixes(List<String> subjectPrefixes) {
+        this.subjectPrefixes = subjectPrefixes;
+    }
+
+    public List<String> getObjectPrefixes() {
+        return objectPrefixes;
+    }
+
+    public void setObjectPrefixes(List<String> objectPrefixes) {
+        this.objectPrefixes = objectPrefixes;
+    }
+
     public boolean isGroupBySpo() {
         return groupBySpo;
     }
@@ -165,6 +190,8 @@ public class MappingSearchRequest {
                 ", mappingSetIds=" + mappingSetIds +
                 ", advancedFieldQueries=" + advancedFieldQueries +
                 ", inferenceType=" + inferenceType +
+                ", subjectPrefixes=" + subjectPrefixes +
+                ", objectPrefixes=" + objectPrefixes +
                 ", groupBySpo=" + groupBySpo +
                 '}';
     }

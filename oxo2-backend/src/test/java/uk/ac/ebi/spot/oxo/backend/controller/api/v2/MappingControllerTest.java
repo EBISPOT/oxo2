@@ -160,4 +160,29 @@ class MappingControllerTest {
                         .content(body))
                 .andExpect(status().isBadRequest());
     }
+
+    // ---------- GET /api/v2/mappings?from=&to= (cross-ontology) ----------
+
+    @Test
+    void mapOntologiesAppliesPrefixFiltersAndCollapse() throws Exception {
+        when(solrClient.query(any(SolrParams.class), any(Pageable.class)))
+                .thenReturn(emptyResponse());
+
+        mockMvc.perform(get("/api/v2/mappings").param("from", "DOID").param("to", "EFO,MONDO"))
+                .andExpect(status().isOk());
+
+        SolrQuery solrQuery = captureQuery();
+        String subjectClause = "(" + MappingEnum.SUBJECT_PREFIX.getField() + ":DOID)";
+        String objectClause = "(" + MappingEnum.OBJECT_PREFIX.getField() + ":EFO OR "
+                + MappingEnum.OBJECT_PREFIX.getField() + ":MONDO)";
+        assertThat(solrQuery.getFilterQueries()).contains(subjectClause, objectClause);
+        // groupBySpo defaults true on this endpoint → same-SPO collapse (ExpandComponent) is applied.
+        assertThat(solrQuery.get("expand")).isEqualTo("true");
+    }
+
+    @Test
+    void mapOntologiesReturns400OnOversizeSize() throws Exception {
+        mockMvc.perform(get("/api/v2/mappings").param("from", "DOID").param("size", "101"))
+                .andExpect(status().isBadRequest());
+    }
 }

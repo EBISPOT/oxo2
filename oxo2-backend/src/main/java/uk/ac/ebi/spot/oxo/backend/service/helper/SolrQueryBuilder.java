@@ -125,6 +125,8 @@ public class SolrQueryBuilder {
                 mappingSearchRequest.getColumnFilters(),
                 mappingSearchRequest.getMappingSetIds(),
                 mappingSearchRequest.getInferenceType(),
+                mappingSearchRequest.getSubjectPrefixes(),
+                mappingSearchRequest.getObjectPrefixes(),
                 excludeWeakPredicates));
         solrQuery = constructSortedFields(solrQuery, mappingSearchRequest);
 
@@ -164,6 +166,8 @@ public class SolrQueryBuilder {
     private static String[] constructFilterQueries(List<MappingSearchRequest.ColumnFilter> queryFilters,
                                                    List<String> mappingSetIds,
                                                    List<InferenceType> inferenceTypes,
+                                                   List<String> subjectPrefixes,
+                                                   List<String> objectPrefixes,
                                                    boolean excludeWeakPredicates) {
         List<String> filterQueriesList = new ArrayList<>();
 
@@ -173,6 +177,13 @@ public class SolrQueryBuilder {
                     .filter(clause -> !clause.isEmpty())
                     .forEach(filterQueriesList::add);
         }
+
+        // Cross-ontology mapping (ADR-0024): restrict subject/object to the given ontologies via an
+        // OR'd exact-term filter on the denormalised subject_prefix / object_prefix fields. Directional
+        // (subject = source, object = target). The closure is precomputed (ADR-0016), so this is a
+        // plain filter, not a traversal.
+        addPrefixFilter(filterQueriesList, MappingEnum.SUBJECT_PREFIX, subjectPrefixes);
+        addPrefixFilter(filterQueriesList, MappingEnum.OBJECT_PREFIX, objectPrefixes);
 
         // Multi-select inference-type filter (ADR-0011). inference_type is a denormalised string
         // whose values are the InferenceType codes (safe enum names, no escaping needed); absent or
@@ -206,6 +217,26 @@ public class SolrQueryBuilder {
         }
 
         return filterQueriesList.toArray(new String[filterQueriesList.size()]);
+    }
+
+    /**
+     * Add an OR-of-exact-terms filter clause restricting an ontology-prefix field to the given
+     * prefixes, or nothing if the list is null/empty. Prefix values are escaped (a user could pass an
+     * arbitrary string), then matched as exact terms on the {@code string}-typed prefix field.
+     */
+    private static void addPrefixFilter(List<String> filterQueriesList, MappingEnum prefixField,
+                                        List<String> prefixes) {
+        if (prefixes == null || prefixes.isEmpty()) {
+            return;
+        }
+        String field = prefixField.getField();
+        String clause = prefixes.stream()
+                .filter(prefix -> prefix != null && !prefix.isBlank())
+                .map(prefix -> field + ":" + ClientUtils.escapeQueryChars(prefix.strip()))
+                .collect(Collectors.joining(" OR "));
+        if (!clause.isEmpty()) {
+            filterQueriesList.add("(" + clause + ")");
+        }
     }
 
     /**
