@@ -258,6 +258,14 @@ them to `$SOLR_HOME` for local runs.
 > carries automatically, so a normal `loadData.nextflow` run populates it. `stored="false"`, so it is never
 > returned in query results.
 
+> **Reindex required (ADR-0024):** `oxo2-mappings` gained `subject_prefix` and `object_prefix`
+> (`string`, `indexed`, `docValues`) — the CURIE prefix of `subject_id` / `object_id`, the ontology
+> identity that cross-ontology mapping filters and facets on
+> ([ADR-0024](../docs/adr/0024-cross-ontology-mapping.md)). Like `spo_key`, they are derived accessors
+> every serialised mapping document carries (asserted and inferred), so a normal `loadData.nextflow`
+> run populates them; an existing index must be rebuilt. A bare IRI that never resolved to a CURIE has
+> no prefix and is left empty.
+
 ### Input validation
 
 Remote filenames sourced from registries (FTP listings, TAR entries — including the GitHub archive

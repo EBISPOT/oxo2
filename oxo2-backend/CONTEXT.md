@@ -32,7 +32,22 @@ A REST API rooted at `/api/v2/`:
 - **`POST /api/v2/mappings/search`** — mapping search. Body: `MappingSearchRequest` (filters,
 sort, paging, and a multi-select `inferenceType` filter — [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)).
 Results carry a soft multiplicative edismax ranking (asserted &gt; SSSOM; shorter chains
-higher). Returns `MappingSearchResponse`.
+higher). Returns `MappingSearchResponse`. Accepts `subjectPrefixes` / `objectPrefixes` for
+cross-ontology mapping (see § Cross-ontology mapping).
+- **`GET /api/v2/mappings?from=DOID&to=EFO,MONDO`** — the bookmarkable source→target view: the mappings
+collection filtered by source/target prefix via query params (no action verb), mirroring v1's
+`GET /api/mappings?fromId=…&toId=…`. The view the frontend links to.
+- **`POST /api/v2/mappings/batch-map`** — map an explicit list of input terms (CURIEs / IRIs / labels)
+into target ontologies; returns the paged mappings **plus** `unmappedInputs` (supplied terms with no
+mapping into the targets). Input is capped (default 1 000 terms).
+- **`GET /api/v2/ontologies`** — distinct CURIE prefixes with counts (drives the Search-tab from/to
+selectors); `?forSubject=<prefix>` facets `object_prefix` over that subject subset to return reachable
+targets with counts.
+
+`?format=` (default `json`; plus `sssom-tsv` / `csv` / `tsv`) on `search`, the prefix-filtered
+`GET /api/v2/mappings`, and `batch-map` negotiates the representation: a non-`json` format streams the
+full result (paging ignored) via a Solr cursor — SSSOM-compliant TSV with a metadata header +
+`curie_map`. There is no standalone export endpoint, mirroring v1's `/api/search?format=`.
 - **`GET /api/v2/mapping-sets`** — list all mapping sets (up to 10 000), returning `MappingSetSummary` (id, title, 
 description, creator labels, provider, `inference_type`, source-set union). Sorted by title; optional multi-select
 `?inferenceType` filter.
@@ -41,8 +56,12 @@ inferred-set resolution surface ([ADR-0012](../docs/adr/0012-resolvable-inferenc
 not a path variable, because a mapping-set id is a full IRI and Tomcat rejects the encoded slashes a path variable
 would require.
 
-Backwards compatibility with OxO v1 is *behavioural* ([ADR-0004](../docs/adr/0004-backwards-compatible-with-oxo-v1.md)) — the endpoints above use OxO2/SSSOM-shaped JSON; 
-the design constraint is that v1 questions remain answerable.
+Backwards compatibility with OxO v1 is mostly *behavioural* ([ADR-0004](../docs/adr/0004-backwards-compatible-with-oxo-v1.md)) — the `/api/v2/...` endpoints above use OxO2/SSSOM-shaped JSON; 
+the design constraint is that v1 questions remain answerable. The one **wire-compatible** exception is
+**`POST /api/search`** (and `GET`): the literal v1 path, taking the v1 `MappingSearchRequest`
+(`ids`, `inputSource`, `mappingTarget`, `mappingSource`, `distance`) and returning the v1 HAL
+`PagedResources<SearchResult>` envelope, so existing v1 pipelines run unchanged. See § Cross-ontology
+mapping ([ADR-0024](../docs/adr/0024-cross-ontology-mapping.md)).
 
 ### API documentation (OpenAPI / Swagger)
 
@@ -104,6 +123,27 @@ turns each group's top document into the representative row and attaches its mem
 the `MappingSearchResponse` / `Page<Mapping>` shape unchanged. Grouping sits on top of the filters, so a
 group's members reflect only what passed the inference-type filter. See
 [ADR-0013](../docs/adr/0013-group-same-spo-mappings-in-result-views.md).
+
+#### Cross-ontology mapping
+
+Mapping a source ontology to target ontologies ([ADR-0024](../docs/adr/0024-cross-ontology-mapping.md))
+is a **directional prefix filter** over the existing mappings index, not a graph traversal — the SSSOM
+cross-set closure is already materialised at dataload ([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)).
+`subjectPrefixes` / `objectPrefixes` on the search request become OR'd exact-term filter queries on the
+denormalised `subject_prefix` / `object_prefix` fields (subject = source, object = target); the
+bookmarkable `GET /api/v2/mappings?from=&to=` sets the same two filters from query params. `GET
+/api/v2/ontologies` faceting on the same fields drives the count-laden from/to selectors.
+`batch-map` runs the same filters with the input terms classified the way the default search classifies
+them (CURIE → `subject_id`, IRI → `subject_iri`, label → `subject_label`), then computes
+`unmappedInputs` as the input set minus the matched subjects.
+
+The v1 `POST /api/search` adapter builds the same Solr query, regroups the flat hits **by input term**
+into `SearchResult` / `MappingResponse`, and maps v1's `distance` onto the inference-type tiers —
+`distance=1` → `inference_type:ASSERTED` only; `distance≠1` (incl. `-1`) → no tier filter
+(`ASSERTED ∪ SSSOM_INFERENCE`), so "unlimited" still returns the direct mappings. OxO2 has no
+query-time hop count ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md) left `distance`
+inert), so `MappingResponse.distance` is a coarse direct/indirect sentinel (`1` asserted, `2` inferred),
+not a true depth — a deliberate v1 break recorded in ADR-0024.
 
 #### Column-filter matching
 

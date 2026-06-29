@@ -56,6 +56,19 @@ Identified by the denormalised `spo_key` field. A relation and its negation (`pr
 _Avoid_: collapsed row, duplicate mappings, SPO group.
 - **Representative mapping** — the member of a **mapping group** shown as its parent row: the highest inference-tier member (`ASSERTED` over `SSSOM_INFERENCE`; the former "shorter chains first" tie-break is dropped now `distance`/`explanation_length` are not precomputed — [ADR-0020](docs/adr/0020-defer-explanations-to-on-demand.md)). Its subject/predicate/object are the ones displayed; the remaining 
 members are reached by expanding the row.
+- **Ontology prefix** — the CURIE prefix of a `subject_id` / `object_id` (`DOID:0001816` → `DOID`).
+OxO2's notion of an "ontology" or v1 "datasource": there is no ontology entity, only the prefix.
+Denormalised onto each mapping as `subject_prefix` / `object_prefix` for filtering and faceting
+([ADR-0024](docs/adr/0024-cross-ontology-mapping.md)).
+- **Cross-ontology mapping** — the query that returns every mapping from one or more **source**
+ontologies (by subject prefix) into one or more **target** ontologies (by object prefix); OxO v1's
+"map a datasource to a datasource". Directional (subject = source, object = target). Reuses the
+precomputed SSSOM closure rather than walking a graph at query time. See
+[ADR-0024](docs/adr/0024-cross-ontology-mapping.md).
+- **Batch mapping** — cross-ontology mapping driven by an explicit list of input terms (CURIEs / IRIs
+/ labels) rather than a whole source ontology; the only mode that can report **unmapped inputs** —
+supplied terms with no mapping into the targets. _Why only this mode:_ OxO2 ingests mapping sets, not
+ontologies, so it knows only *mapped* terms and cannot enumerate "all of DOID".
 
 ## Module map
 
@@ -124,6 +137,20 @@ filter, and a page counts groups not documents (the collapsed `numFound`); the A
 [ADR-0013](docs/adr/0013-group-same-spo-mappings-in-result-views.md) and 
 [ADR-0023](docs/adr/0023-collapse-for-same-spo.md). Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` 
 (collapse query path + `group_members` transport), and `oxo2-frontend` (expandable rows, paging over groups).
+- **Cross-ontology mapping is a prefix filter over the precomputed closure** — mapping a source
+ontology to target ontologies is a directional filter on denormalised `subject_prefix` / `object_prefix`
+(subject = source, object = target), served from the existing mappings index; it does **not** traverse
+a graph at query time the way OxO v1 did, because the SSSOM cross-set closure
+([ADR-0016](docs/adr/0016-single-pass-sssom-reasoning.md)) is already materialised. v1's
+`POST /api/search` is honoured wire-for-wire (HAL `SearchResult` envelope), but v1's query-time
+`distance` (hop count) degrades to a tier toggle (`1` = asserted, `≠1` = asserted ∪ inferred) — a
+deliberate v1 semantic break, since hop counts cannot be reproduced over a flattened closure
+([ADR-0020](docs/adr/0020-defer-explanations-to-on-demand.md) left `distance` inert). See
+[ADR-0024](docs/adr/0024-cross-ontology-mapping.md) (under [ADR-0004](docs/adr/0004-backwards-compatible-with-oxo-v1.md)).
+Affects `oxo2-dataload` (`subject_prefix` / `object_prefix` population + reindex), `oxo2-backend`
+(`/api/v2/ontologies`, the prefix-filtered `GET /api/v2/mappings?from=&to=` + `POST …/search`,
+`batch-map`, `?format=` export, the v1 `/api/search` adapter), and `oxo2-frontend` (from/to prefix
+selectors on the Search tab, batch + export UI).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **The dataload is resumable from a chosen (sub)stage** — parameterised by `START_STAGE` (default
@@ -204,7 +231,10 @@ See https://github.com/knowsys/nemo.
 Collection configs live in `oxo2-dataload/solr-config/`.
 - **Nextflow** — workflow engine for the dataload. Vocabulary: process, channel, queueSize. See https://www.nextflow.io/. 
 Workflow definitions are `.nf` files under `oxo2-dataload/`.
-- **REST API** — `/api/v2/mappings` (incl. `/{subjectId}` and `/search`) and `/api/v2/mapping-sets`. Detail in `oxo2-backend/CONTEXT.md`.
+- **REST API** — `/api/v2/mappings` (incl. `/{subjectId}`, `/search`, `/batch-map`, and `?from=&to=`
+cross-ontology filtering with `?format=` export), `/api/v2/mapping-sets`, and `/api/v2/ontologies`;
+plus the OxO v1 compatibility endpoint `/api/search` (HAL `SearchResult` envelope —
+[ADR-0024](docs/adr/0024-cross-ontology-mapping.md)). Detail in `oxo2-backend/CONTEXT.md`.
 
 ---
 

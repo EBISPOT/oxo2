@@ -33,6 +33,8 @@ Routes (`App.tsx`):
 
 - **`/`** and **`/home`** → `Home` — landing page with search.
 - **`/search/:curies`** → `MappingResults` — paged mapping results for the given CURIE(s).
+- **`/map`** → cross-ontology results for `?from=…&to=…` (source→target prefixes), bookmarkable; the
+pasted-term-list (batch) variant is POST-only and not bookmarkable ([ADR-0024](../docs/adr/0024-cross-ontology-mapping.md)).
 - **`/mapping/:id`** → `MappingDetails` (via `MappingDetailsWrapper` to pass state through router) — detail view for a 
 single mapping including inferred-mapping graph.
 - **`/inferences`** and **`/inferences/*`** → `InferencesPage` — resolution surface for inferred mapping sets: the
@@ -60,6 +62,18 @@ SSSOM_INFERENCE): code→label map, display order, the default filter selection
 `mapping/InferenceTypeBadge.tsx` (badge) and `mapping/InferenceTypeFilter.tsx` (multi-select toggle) are
 reused by both result tables and the mapping-set selector. `mapping/InferredMappingGraph.tsx` labels each
 asserted leaf with its source mapping set, surfacing cross-set provenance.
+
+### Cross-ontology mapping (ADR-0024)
+
+The normal **Search** tab is extended (not a new tab) with two optional exact-prefix selectors,
+**"from \[source ontologies]"** and **"to \[target ontologies]"**, plus a ⇄ swap, beside the existing
+terms box. Options and counts come from `GET /api/v2/ontologies` (re-fetched with `?forSubject=` once a
+source is chosen, so targets show counts and zero-count targets grey out). They compose: source prefix
++ empty box → entire ontology; terms + target prefix → bounded batch lookup; terms only → today's
+search. A label input (not a CURIE/IRI) is treated as a **source-side** label, bounded by the target
+prefixes. Results reuse `NormalResultsTable` plus a summary header and an SSSOM-TSV "Export" button; the
+batch (pasted-list) variant also shows an unmapped-inputs panel and mirrors its input to
+`sessionStorage` so a refresh re-runs.
 
 ### State management
 
