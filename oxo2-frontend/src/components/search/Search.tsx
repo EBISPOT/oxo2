@@ -211,8 +211,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
                 <>
                 <div className="mb-3">
                     <div className="text-tertiary mb-2">
-                        Optionally map from / to whole ontologies (leave the box empty to map an entire
-                        source ontology):
+                        Map from / to entire ontologies (leave the CURIEs, IRIs, or labels box empty):
                     </div>
                     <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
                         <div className="flex-1">
@@ -249,7 +248,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
                     <div className="w-full">
                         <div className="flex flex-col md:flex-row justify-between mb-2">
                             <div className="text-tertiary">
-                                Enter identifiers, IRIs, or labels separated by comma or newline:
+                                Search by CURIEs, IRIs or labels separated by comma or newline:
                             </div>
                             <div
                                 className="link-default md:mx-0.5"
