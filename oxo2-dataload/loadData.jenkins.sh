@@ -39,10 +39,42 @@ NFS_PATH="${NFS_PATH:-/nfs/production/parkinso/spot/oxo2/dev}"
 SLURM_LOGS="${SLURM_LOGS:-$NFS_PATH/logs}"
 CURRENT_JOBID_FILE="$SLURM_LOGS/oxo2-dataload.current-jobid"
 
+# Terminal Slurm states: the job has stopped (cleanly or not). Anything else — RUNNING, PENDING,
+# COMPLETING, CONFIGURING, REQUEUED, ... (and the empty string, when sacct itself failed) — means
+# "keep waiting". sacct_state has already reduced multi-word states to their first token, so a plain
+# CANCELLED* glob covers CANCELLED / CANCELLED+ / "CANCELLED by <uid>".
+is_terminal_state() {
+    case "$1" in
+        COMPLETED|FAILED|TIMEOUT|OUT_OF_MEMORY|NODE_FAIL|BOOT_FAIL|DEADLINE|PREEMPTED|REVOKED|CANCELLED*)
+            return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# Authoritative terminal state from the accounting DB. Prefer the .batch step (the actual script's
+# exit), falling back to the job-level state. Echoes the state, or empty if sacct itself failed.
+sacct_state() {
+    local job_id=$1 state
+    state=$(sacct -j "${job_id}.batch" --noheader --format=State%30 2>/dev/null | head -1 | awk '{print $1}')
+    [ -n "$state" ] || state=$(sacct -j "$job_id" --noheader --format=State%30 2>/dev/null | head -1 | awk '{print $1}')
+    printf '%s' "$state"
+}
+
+# Is the job still queued / running? Robust against transient squeue failures: a FAILED squeue
+# (slurmctld busy -> the command is SIGTERM'd, exit 143) must NOT be read as "job gone" — in the
+# reattach check that would resubmit a duplicate driver, and in the poll loop it produced the
+# false-FAILURE this wrapper used to emit. On a squeue *error* we fall back to sacct and stay
+# "active" unless sacct confirms a terminal state (or both are unreachable — then assume active).
 job_active() {
-    local job_id=$1
+    local job_id=$1 squeue_state
     [ -n "$job_id" ] || return 1
-    squeue -h -j "$job_id" -o '%T' 2>/dev/null | grep -q .
+    if squeue_state=$(squeue -h -j "$job_id" -o '%T' 2>/dev/null); then
+        # squeue succeeded: non-empty -> still in queue; empty -> the job has left the queue.
+        [ -n "$squeue_state" ]
+        return
+    fi
+    # squeue failed (controller hiccup) — do not assume the job is gone.
+    ! is_terminal_state "$(sacct_state "$job_id")"
 }
 
 JOB_ID=""
@@ -90,21 +122,20 @@ stop_tail() {
 trap stop_tail EXIT
 start_tail
 
-# --- Poll until the job leaves the queue, then read its terminal state ---
+# --- Poll until the job reaches a terminal state, then read it ---
+# A transient squeue failure (slurmctld busy -> the poll command is SIGTERM'd, exit 143) must NOT be
+# read as "the job finished": that is the false-FAILURE this wrapper used to emit (it would fall
+# through and report a still-RUNNING job as a failure). job_active() treats a failed squeue as "still
+# active" by cross-checking sacct, so we wait through controller hiccups instead of abandoning a live
+# job. If the job genuinely ends while squeue is flaky, sacct's terminal state ends the loop.
 final_state=""
-while squeue -h -j "$JOB_ID" -o '%T' 2>/dev/null | grep -q .; do
+while job_active "$JOB_ID"; do
     sleep "$POLL_INTERVAL"
 done
 
-# sacct can lag a few seconds behind squeue, so retry briefly before giving up. Prefer the
-# .batch step's state (the actual script's exit), falling back to the job-level state.
+# sacct can lag a few seconds behind squeue, so retry briefly before giving up.
 for _ in {1..10}; do
-    final_state=$(sacct -j "${JOB_ID}.batch" --noheader --format=State%30 2>/dev/null \
-        | head -1 | awk '{print $1}')
-    if [ -z "$final_state" ]; then
-        final_state=$(sacct -j "$JOB_ID" --noheader --format=State%30 2>/dev/null \
-            | head -1 | awk '{print $1}')
-    fi
+    final_state=$(sacct_state "$JOB_ID")
     [ -n "$final_state" ] && break
     sleep 3
 done
