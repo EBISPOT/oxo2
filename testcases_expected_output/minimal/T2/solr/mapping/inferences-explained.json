@@ -9,12 +9,14 @@
   "object_id" : "EX:A",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
+  "object_prefix" : "EX",
   "predicate_id" : "OWL:equivalentProperty",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentProperty",
   "spo_key" : "3565d6b9-1601-394d-b1fa-5beefb906203",
   "subject_id" : "EX:C",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
-  "subject_label" : "Entity C"
+  "subject_label" : "Entity C",
+  "subject_prefix" : "EX"
 }, {
   "distance" : 1,
   "explanation_length" : 0,
@@ -26,12 +28,14 @@
   "object_id" : "EX:B",
   "object_iri" : "https://w3id.org/oxo2/test/ex/B",
   "object_label" : "Entity B",
+  "object_prefix" : "EX",
   "predicate_id" : "OWL:equivalentProperty",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentProperty",
   "spo_key" : "56cc64b1-7672-3b0f-8b33-3441b2f7fcec",
   "subject_id" : "EX:C",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
-  "subject_label" : "Entity C"
+  "subject_label" : "Entity C",
+  "subject_prefix" : "EX"
 }, {
   "distance" : 1,
   "explanation_length" : 0,
@@ -43,12 +47,14 @@
   "object_id" : "EX:A",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
+  "object_prefix" : "EX",
   "predicate_id" : "OWL:equivalentProperty",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentProperty",
   "spo_key" : "9ceb53a0-cd37-3dc8-8247-f4bcc68957d3",
   "subject_id" : "EX:B",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
-  "subject_label" : "Entity B"
+  "subject_label" : "Entity B",
+  "subject_prefix" : "EX"
 }, {
   "distance" : 1,
   "explanation_length" : 0,
@@ -60,10 +66,12 @@
   "object_id" : "EX:C",
   "object_iri" : "https://w3id.org/oxo2/test/ex/C",
   "object_label" : "Entity C",
+  "object_prefix" : "EX",
   "predicate_id" : "OWL:equivalentProperty",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentProperty",
   "spo_key" : "7f54b812-42ba-377e-845d-79a2d6383321",
   "subject_id" : "EX:A",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
-  "subject_label" : "Entity A"
+  "subject_label" : "Entity A",
+  "subject_prefix" : "EX"
 } ]

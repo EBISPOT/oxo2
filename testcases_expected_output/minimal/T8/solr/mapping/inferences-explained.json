@@ -9,12 +9,14 @@
   "object_id" : "EX:C",
   "object_iri" : "https://w3id.org/oxo2/test/ex/C",
   "object_label" : "Entity C",
+  "object_prefix" : "EX",
   "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
   "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
   "spo_key" : "7ba35be9-272e-3992-b480-6fa502dc4886",
   "subject_id" : "EX:A",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
-  "subject_label" : "Entity A"
+  "subject_label" : "Entity A",
+  "subject_prefix" : "EX"
 }, {
   "distance" : 1,
   "explanation_length" : 0,
@@ -26,12 +28,14 @@
   "object_id" : "EX:A",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
+  "object_prefix" : "EX",
   "predicate_id" : "SEMAPV:crossSpeciesBroadMatch",
   "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesBroadMatch",
   "spo_key" : "3cc10a6f-1cd6-3635-9457-81451447af0e",
   "subject_id" : "EX:B",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
-  "subject_label" : "Entity B"
+  "subject_label" : "Entity B",
+  "subject_prefix" : "EX"
 }, {
   "distance" : 1,
   "explanation_length" : 0,
@@ -43,12 +47,14 @@
   "object_id" : "EX:B",
   "object_iri" : "https://w3id.org/oxo2/test/ex/B",
   "object_label" : "Entity B",
+  "object_prefix" : "EX",
   "predicate_id" : "SEMAPV:crossSpeciesBroadMatch",
   "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesBroadMatch",
   "spo_key" : "bb7be93b-69df-301f-9e3d-413d49a4ec90",
   "subject_id" : "EX:C",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
-  "subject_label" : "Entity C"
+  "subject_label" : "Entity C",
+  "subject_prefix" : "EX"
 }, {
   "distance" : 1,
   "explanation_length" : 0,
@@ -60,10 +66,12 @@
   "object_id" : "EX:A",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
+  "object_prefix" : "EX",
   "predicate_id" : "SEMAPV:crossSpeciesBroadMatch",
   "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesBroadMatch",
   "spo_key" : "cdaf0a2b-0d06-3c32-8fce-ea2536286b29",
   "subject_id" : "EX:C",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
-  "subject_label" : "Entity C"
+  "subject_label" : "Entity C",
+  "subject_prefix" : "EX"
 } ]

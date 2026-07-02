@@ -9,10 +9,12 @@
   "object_id" : "EX:A",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
+  "object_prefix" : "EX",
   "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
   "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
   "spo_key" : "a273b4c8-4465-307e-8159-8313f819796d",
   "subject_id" : "EX:B",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
-  "subject_label" : "Entity B"
+  "subject_label" : "Entity B",
+  "subject_prefix" : "EX"
 } ]

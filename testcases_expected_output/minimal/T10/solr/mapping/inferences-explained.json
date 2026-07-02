@@ -9,12 +9,14 @@
   "object_id" : "EX:A",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
+  "object_prefix" : "EX",
   "predicate_id" : "SKOS:exactMatch",
   "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
   "spo_key" : "91d08de8-afbc-32e1-9ccd-df7a9478ff1e",
   "subject_id" : "EX:C",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
-  "subject_label" : "Entity C"
+  "subject_label" : "Entity C",
+  "subject_prefix" : "EX"
 }, {
   "distance" : 1,
   "explanation_length" : 0,
@@ -26,12 +28,14 @@
   "object_id" : "EX:A",
   "object_iri" : "https://w3id.org/oxo2/test/ex/A",
   "object_label" : "Entity A",
+  "object_prefix" : "EX",
   "predicate_id" : "SKOS:exactMatch",
   "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
   "spo_key" : "b28390b9-254a-3fb2-9e21-d8cced8d76ff",
   "subject_id" : "EX:B",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
-  "subject_label" : "Entity B"
+  "subject_label" : "Entity B",
+  "subject_prefix" : "EX"
 }, {
   "distance" : 1,
   "explanation_length" : 0,
@@ -43,12 +47,14 @@
   "object_id" : "EX:B",
   "object_iri" : "https://w3id.org/oxo2/test/ex/B",
   "object_label" : "Entity B",
+  "object_prefix" : "EX",
   "predicate_id" : "SKOS:exactMatch",
   "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
   "spo_key" : "ca66f1d0-f110-3b9b-81f6-8c226c439bcd",
   "subject_id" : "EX:C",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
-  "subject_label" : "Entity C"
+  "subject_label" : "Entity C",
+  "subject_prefix" : "EX"
 }, {
   "distance" : 1,
   "explanation_length" : 0,
@@ -60,10 +66,12 @@
   "object_id" : "EX:C",
   "object_iri" : "https://w3id.org/oxo2/test/ex/C",
   "object_label" : "Entity C",
+  "object_prefix" : "EX",
   "predicate_id" : "SKOS:exactMatch",
   "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
   "spo_key" : "23c9eb42-b470-3b6a-89fd-14ceb22aa8b5",
   "subject_id" : "EX:A",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
-  "subject_label" : "Entity A"
+  "subject_label" : "Entity A",
+  "subject_prefix" : "EX"
 } ]
