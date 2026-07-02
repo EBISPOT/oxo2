@@ -247,6 +247,17 @@ is a separate Jenkins job.
 `solr-config/oxo2-mappings/` and `solr-config/oxo2-mappingsets/` hold the Solr collection configs. `copySolrConfig.sh` deploys 
 them to `$SOLR_HOME` for local runs.
 
+The Solr query/index URL is `$SOLR_URL` (default `http://localhost:8983/solr`), threaded into every
+indexing step **and** into `inferences2json.nf` via `--solr_url` (the inferred-entity CURIE/label
+lookups query the asserted index, so they must hit the same Solr the run indexed into — a non-default
+port would otherwise silently fall back to 8983).
+
+`OXO2_SOLR_UNMANAGED` (default `false`): when `true`, the caller owns the Solr process and the
+collection wipe, so `loadData.nextflow` skips `copySolrConfig.sh` / `solr start` / `solr stop` and only
+indexes into the already-running, already-cleared collections (it still runs the readiness probes).
+Set by the integration-test harness, which runs one Solr for the whole suite and clears collections
+between fixtures with a `delete *:*` (see `oxo2-integration-tests/CONTEXT.md` § Solr lifecycle).
+
 > **Reindex required (ADR-0011):** the schemas changed — `is_inferred` (boolean) became `inference_type`
 > (string, default `ASSERTED`) on both cores, and `mapping_id` is now `indexed="true"` on `oxo2-mappings`
 > (the explanation step looks up asserted premises by it). An existing index must be rebuilt; a normal

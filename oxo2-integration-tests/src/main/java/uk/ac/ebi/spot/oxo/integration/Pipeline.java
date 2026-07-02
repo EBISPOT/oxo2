@@ -1,31 +1,31 @@
 package uk.ac.ebi.spot.oxo.integration;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Invokes loadData.nextflow as a subprocess against the generated OXO2_CONFIG. Inherits stdout
- * and stderr so users see the same output as a manual run. Throws on non-zero exit.
+ * Invokes loadData.nextflow as a subprocess against the generated OXO2_CONFIG, in "unmanaged Solr"
+ * mode. Inherits stdout/stderr so users see the same output as a manual run. Throws on non-zero exit.
  *
- * loadData.nextflow stops Solr at the end. The harness needs Solr running afterwards both
- * to query numFound and to leave it usable for backend/frontend dev work, so this class
- * restarts Solr and waits for readiness before returning.
+ * <p>The {@link SolrLifecycle} harness owns the Solr process and the per-fixture collection wipe for
+ * the whole run, so each loadData pass runs with {@code OXO2_SOLR_UNMANAGED=true}: it indexes into the
+ * already-running, already-cleared test collections and never starts/stops Solr or rewrites the Solr
+ * config (which would corrupt the live cores it shares with the other fixtures).
+ *
+ * <p>Every pass runs against the isolated test workspace + Solr: the harness reads the {@code *_TEST}
+ * env vars and injects them as the plain {@code OXO2_DATA} / {@code SOLR_HOME} / {@code SOLR_URL}
+ * loadData.nextflow expects, so a run never touches a developer's production data or Solr.
  */
 public final class Pipeline {
 
     private Pipeline() {}
 
-    /** Runs loadData.nextflow against the given OXO2_CONFIG, in isolation (the run wipes
-     *  $OXO2_DATA and the Solr collections, then loads only the sets that config lists). */
+    /** Runs loadData.nextflow against the given OXO2_CONFIG, in isolation (the run wipes the test
+     *  {@code $OXO2_DATA} intermediates; the harness has already cleared the shared Solr collections),
+     *  then loads only the sets that config lists into the harness-managed test Solr. */
     public static void runLoadDataNextflow(Path config) throws IOException, InterruptedException {
         Path repoRoot = Env.repoRoot();
         Path loadDataScript = repoRoot.resolve("oxo2-dataload").resolve("loadData.nextflow");
@@ -37,26 +37,23 @@ public final class Pipeline {
             throw new IllegalStateException("nextflow-test.config missing: " + testConfig);
         }
 
-        // A previous run leaves Solr running. loadData.nextflow's copySolrConfig.sh would then
-        // rm the collection data dirs while Solr still has open file handles on them, and the
-        // subsequent `solr start` is a no-op because port 8983 is taken — so json2solr posts
-        // documents to the soon-to-be-evicted old core and commits go to deleted files. After
-        // loadData's `solr stop` + our restart, Solr opens the fresh empty config and the data
-        // looks like it was never loaded. Stop any running Solr first to make the run idempotent.
-        stopSolrIfRunning();
-
-        List<String> command = new ArrayList<>();
-        command.add(loadDataScript.toString());
-
-        ProcessBuilder processBuilder = new ProcessBuilder(command)
+        ProcessBuilder processBuilder = new ProcessBuilder(loadDataScript.toString())
                 .directory(repoRoot.toFile())
                 .inheritIO();
-        processBuilder.environment().put("OXO2_CONFIG", config.toString());
-        // Pick the test profile and layer in resource overrides sized for tiny fixtures.
-        // The standard profile asks for many GB per INFER_CROSS_SET task against a 24 GB
-        // executor pool, which deadlocks the local scheduler across the fixtures.
-        processBuilder.environment().put("NF_PROFILE", "test");
-        processBuilder.environment().put("NF_EXTRA_CONFIG", testConfig.toString());
+        Map<String, String> environment = processBuilder.environment();
+        environment.put("OXO2_CONFIG", config.toString());
+        // Isolated test workspace + Solr: inject the *_TEST values as the plain vars loadData reads.
+        environment.put("OXO2_DATA", Env.oxo2Data().toString());
+        environment.put("SOLR_HOME", Env.solrHome().toString());
+        environment.put("SOLR_URL", Env.solrHost());
+        environment.put("OXO2_SOLR_HOST", Env.solrHost());
+        // Solr is owned by the SolrLifecycle harness: loadData must not copy config / start / stop it.
+        environment.put("OXO2_SOLR_UNMANAGED", "true");
+        // Pick the test profile and layer in resource overrides sized for tiny fixtures. The standard
+        // profile asks for many GB per INFER_CROSS_SET task against a 24 GB executor pool, which
+        // deadlocks the local scheduler across the fixtures.
+        environment.put("NF_PROFILE", "test");
+        environment.put("NF_EXTRA_CONFIG", testConfig.toString());
 
         long started = System.currentTimeMillis();
         Process process = processBuilder.start();
@@ -71,78 +68,5 @@ public final class Pipeline {
         if (exit != 0) {
             throw new IllegalStateException("loadData.nextflow exited with code " + exit);
         }
-
-        startSolrAndWait();
-    }
-
-    /** Best-effort Solr stop: returns once $SOLR_SCRIPT/solr stop reports success, or
-     *  immediately if Solr wasn't running. Errors are advisory — the next start will surface
-     *  any real problem. */
-    private static void stopSolrIfRunning() throws IOException, InterruptedException {
-        Path solrBinary = Path.of(System.getenv(Env.SOLR_SCRIPT), "solr");
-        if (!Files.isExecutable(solrBinary)) {
-            throw new IllegalStateException("Solr binary not executable: " + solrBinary);
-        }
-        System.out.println("Stopping Solr if it is already running...");
-        ProcessBuilder processBuilder = new ProcessBuilder(solrBinary.toString(), "stop", "-p", "8983")
-                .redirectErrorStream(true);
-        Process process = processBuilder.start();
-        process.waitFor(60, TimeUnit.SECONDS);
-        try (var inputStream = process.getInputStream()) {
-            inputStream.transferTo(System.out);
-        }
-    }
-
-    /** Starts Solr via $SOLR_SCRIPT/solr start (no-op if it's already running) and waits
-     *  until the admin ping endpoint responds 200. */
-    private static void startSolrAndWait() throws IOException, InterruptedException {
-        Path solrBinary = Path.of(System.getenv(Env.SOLR_SCRIPT), "solr");
-        if (!Files.isExecutable(solrBinary)) {
-            throw new IllegalStateException("Solr binary not executable: " + solrBinary);
-        }
-        System.out.println("Starting Solr (in case loadData stopped it)...");
-        ProcessBuilder processBuilder = new ProcessBuilder(solrBinary.toString(), "start", "--user-managed")
-                .redirectErrorStream(true);
-        Process process = processBuilder.start();
-        // solr start is fast; treat exit code as advisory (already-running is fine).
-        process.waitFor(60, TimeUnit.SECONDS);
-        try (var inputStream = process.getInputStream()) {
-            inputStream.transferTo(System.out);
-        }
-        waitForSolrReady(Duration.ofSeconds(60));
-    }
-
-    private static void waitForSolrReady(Duration timeout) throws InterruptedException {
-        // /admin/cores?action=STATUS returns 200 before cores have finished loading, so the
-        // first real query hits "SolrCore is loading" 503s. Probe each collection directly
-        // until select?rows=0 returns 200 — that means the core has finished loading.
-        HttpClient client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(3)).build();
-        long deadline = System.currentTimeMillis() + timeout.toMillis();
-        String baseUrl = Env.solrHost().replaceAll("/+$", "");
-        String[] collections = { "oxo2-mappings", "oxo2-mappingsets" };
-        for (String collection : collections) {
-            String url = baseUrl + "/" + collection + "/select?q=*:*&rows=0&wt=json";
-            while (true) {
-                if (System.currentTimeMillis() >= deadline) {
-                    throw new IllegalStateException(
-                            "Solr collection " + collection + " did not become ready at "
-                                    + url + " within " + timeout);
-                }
-                try {
-                    HttpResponse<String> response = client.send(
-                            HttpRequest.newBuilder(URI.create(url))
-                                    .timeout(Duration.ofSeconds(5)).GET().build(),
-                            HttpResponse.BodyHandlers.ofString());
-                    if (response.statusCode() == 200) {
-                        break;
-                    }
-                } catch (Exception ignored) {
-                    // Not up yet; sleep and retry.
-                }
-                Thread.sleep(1000);
-            }
-        }
-        System.out.println("Solr ready at " + Env.solrHost());
     }
 }

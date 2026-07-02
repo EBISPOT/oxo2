@@ -37,6 +37,15 @@ SOLR_URL=${SOLR_URL:-http://localhost:8983/solr}
 SOLR_SECURITY_MANAGER_ENABLED=${SOLR_SECURITY_MANAGER_ENABLED:-false}
 export SOLR_URL SOLR_SECURITY_MANAGER_ENABLED
 
+# When OXO2_SOLR_UNMANAGED=true the caller owns the Solr process and the collection wipe (the
+# integration-test harness runs one Solr for the whole suite and clears collections between fixtures
+# with a delete-query). This run then must NOT copy Solr config, start, or stop Solr — doing so would
+# rm the live core dirs out from under the running Solr or evict the data the harness is reusing. It
+# still indexes into the already-running, harness-cleared collections via $SOLR_URL. Default false:
+# normal local runs manage their own Solr.
+OXO2_SOLR_UNMANAGED=${OXO2_SOLR_UNMANAGED:-false}
+export OXO2_SOLR_UNMANAGED
+
 # Pin per-task heap to 4 GB. With per-file parallelism in sssom2json.nf, up to
 # ~5 SSSOM2JSON JVMs run concurrently on the local executor (cpus=6, executor
 # memory=22 GB), so an explicit -Xmx avoids the default JVM ergonomics letting
@@ -174,21 +183,27 @@ fi
 
 # --- Solr config + start (only for runs that reach an indexing stage) ---
 if [ "$SOLR_NEEDED" = true ]; then
-    if [ "$WIPE_SOLR" = true ]; then
-        echo  "###################"  copySolrConfig...
-        if ! "$SCRIPT_DIR/copySolrConfig.sh"; then
-            echo "Failed to copy Solr config into $SOLR_HOME" >&2
-            exit 1
-        fi
-        sleep 2
+    if [ "$OXO2_SOLR_UNMANAGED" = true ]; then
+        echo "OXO2_SOLR_UNMANAGED=true: Solr process + collection wipe owned by the caller (test harness); skipping copySolrConfig/start."
     else
-        echo "Preserving Solr cores (resuming after asserted data was indexed); skipping copySolrConfig."
+        if [ "$WIPE_SOLR" = true ]; then
+            echo  "###################"  copySolrConfig...
+            if ! "$SCRIPT_DIR/copySolrConfig.sh"; then
+                echo "Failed to copy Solr config into $SOLR_HOME" >&2
+                exit 1
+            fi
+            sleep 2
+        else
+            echo "Preserving Solr cores (resuming after asserted data was indexed); skipping copySolrConfig."
+        fi
+
+        echo Start solr ...
+        ulimit -n 65000 2>/dev/null || true
+        $SOLR_SCRIPT/solr start --user-managed -Djava.io.tmpdir=$OXO2_DATA/tmp
     fi
 
-    echo Start solr ...
-    ulimit -n 65000 2>/dev/null || true
-    $SOLR_SCRIPT/solr start --user-managed -Djava.io.tmpdir=$OXO2_DATA/tmp
-
+    # Readiness probes run in both modes: even when Solr is externally managed they cheaply confirm
+    # the cores are loaded before the indexing stages POST to them.
     if ! wait_for_solr_url "$SOLR_URL/admin/info/system" "Solr"; then
         exit 1
     fi
@@ -227,6 +242,7 @@ if should_run inferences2json; then
         -profile $NF_PROFILE \
         --inferences_ttl "$OXO2_INFERENCES/crossSet/inferences.ttl" \
         --inference_type SSSOM_INFERENCE \
+        --solr_url "$SOLR_URL" \
         -with-trace    $NXF_LOGS/inferences2jsonCrossSet-trace.txt \
         -with-report   $NXF_LOGS/inferences2jsonCrossSet-report.html \
         -with-timeline $NXF_LOGS/inferences2jsonCrossSet-timeline.html)
@@ -245,8 +261,8 @@ if should_run index-inferred; then
     record_stage index-inferred
 fi
 
-# --- Stop Solr (only if we started it) ---
-if [ "$SOLR_NEEDED" = true ]; then
+# --- Stop Solr (only if we started it; the test harness stops its own externally-managed Solr) ---
+if [ "$SOLR_NEEDED" = true ] && [ "$OXO2_SOLR_UNMANAGED" != true ]; then
     echo  "################### Stopping solr ..."
     $SOLR_SCRIPT/solr stop -p 8983
 fi

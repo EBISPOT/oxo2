@@ -55,22 +55,50 @@ This module exposes no Java API to other OxO2 modules.
 
 ### Environment contract
 
-Reuses the same env vars as `loadData.nextflow`. The harness fails fast if any is missing:
+The tests run against an **isolated** test workspace + Solr, kept separate from the production
+`OXO2_DATA` / `SOLR_HOME` / `OXO2_SOLR_HOST` so a run never wipes a developer's real data or Solr.
+The harness reads the `*_TEST` vars below and injects them into the `loadData.nextflow` subprocess as
+the plain `OXO2_DATA` / `SOLR_HOME` / `SOLR_URL` that script expects. It **fails fast** (`Env.requireAll`)
+if any is missing or blank:
 
-- `OXO2_DATA` — workspace for pipeline intermediates and outputs.
-- `NEXTFLOW_DIR` — Nextflow workdir.
+- `OXO2_DATA_TEST` — workspace for pipeline intermediates and outputs (becomes `OXO2_DATA` downstream).
+- `SOLR_HOME_TEST` — test Solr data directory (becomes `SOLR_HOME` downstream).
+- `OXO2_SOLR_HOST_TEST` — test Solr base URL **with an explicit, non-production port**, e.g.
+  `http://localhost:8984/solr`. The harness parses the port from it to start/stop Solr, and uses it
+  as the query/index URL, so the test Solr never collides with a production Solr on 8983.
+- `NEXTFLOW_DIR` — Nextflow workdir (shared; wiped each run regardless).
 - `SOLR_SCRIPT` — Solr `bin/` directory.
-- `SOLR_HOME` — Solr data directory.
-- `OXO2_SOLR_HOST` — Solr base URL (typically `http://localhost:8983/solr`).
+
+### Solr lifecycle
+
+`SolrLifecycle` owns one isolated test Solr for the whole run, **not** per fixture (the old per-fixture
+stop / on-disk core wipe / start / stop / restart churn dominated the run time):
+
+- `@BeforeAll` (Failsafe IT) / start of `captureExpected`: stop any prior test Solr on the test port →
+  `copySolrConfig.sh` once (fresh empty cores in `SOLR_HOME_TEST`, safe because Solr is down) →
+  `solr start` on the test port → wait for both collections.
+- Before each fixture's pipeline pass: empty both collections with a Solr `delete *:*` + hard commit.
+  Solr stays up, so this replaces `copySolrConfig.sh`'s on-disk wipe (which would need Solr down). The
+  schema never changes between fixtures, so re-laying config is unnecessary.
+- `loadData.nextflow` runs with `OXO2_SOLR_UNMANAGED=true`, so each pass indexes into the
+  already-running, already-cleared collections and skips its own `copySolrConfig` / `solr start` /
+  `solr stop` (see `oxo2-dataload/CONTEXT.md` § Solr lifecycle).
+- `@AfterAll` / end of `captureExpected`: `solr stop`, **unless** `-Doxo2.it.keepSolr=true`, which
+  leaves the test Solr running (with the last fixture's data) for inspection while debugging.
 
 ### Operational consequences
 
-- The integration-test run **destroys** the developer's local `oxo2-mappings` and `oxo2-mappingsets`
-  Solr collections, repeatedly: each fixture is a fresh isolated `loadData.nextflow` pass that wipes
-  `$OXO2_DATA` and the collections. The final fixture's data is what remains in Solr afterwards.
-- Because every fixture is its own pipeline pass, a full `mvn -pl oxo2-integration-tests verify` runs
-  the pipeline once per fixture (tens of minutes). Use `-Doxo2.it.rule=<name>` (with `generateConfig`
-  / `captureExpected` / Failsafe) to scope to one fixture during debugging.
+- The test run no longer touches the developer's production Solr or `OXO2_DATA`: it only wipes
+  `OXO2_DATA_TEST` and the `oxo2-mappings` / `oxo2-mappingsets` collections inside the test Solr
+  (`SOLR_HOME_TEST`, test port). The final fixture's data remains in the test Solr only if
+  `-Doxo2.it.keepSolr=true`; otherwise the run stops it.
+- Caveat: the test Solr is a separate process but is still a local Solr. Running the IT while a
+  production Solr is up on a *different* port is fine; only two Solrs on the *same* port would clash —
+  hence the explicit non-8983 `OXO2_SOLR_HOST_TEST`.
+- Because every fixture is its own pipeline pass, a full `mvn -pl oxo2-integration-tests verify` still
+  runs the pipeline once per fixture, but with Solr started/stopped **once** for the whole suite. Use
+  `-Doxo2.it.rule=<name>` (with `generateConfig` / `captureExpected` / Failsafe) to run a single
+  fixture — Solr is started and stopped around just that one fixture — when chasing a specific bug.
 
 ### Pipeline resource overrides
 
@@ -102,10 +130,14 @@ mvn -pl oxo2-integration-tests exec:java@captureExpected -Doxo2.it.rule=T1
 mvn -pl oxo2-integration-tests exec:java@generateConfig
 
 # Full regression. `verify` is a standard lifecycle phase so `-am` is safe here.
+# Solr is started once before the suite and stopped once after.
 mvn -pl oxo2-integration-tests -am verify
 
-# Single rule.
+# Single rule (start + stop Solr around just this fixture — use while chasing a specific bug).
 mvn -pl oxo2-integration-tests -am verify -Doxo2.it.rule=T1
+
+# Leave the test Solr running afterwards (with the last fixture's data) for inspection.
+mvn -pl oxo2-integration-tests -am verify -Doxo2.it.rule=T1 -Doxo2.it.keepSolr=true
 ```
 
 ### Layer comparison strategy
@@ -122,8 +154,11 @@ and `testcases_expected_output/minimal/<fixture>/` (expected).
 
 ### Known gaps
 
-- **Per-fixture isolation is slow**: each fixture is a full `loadData.nextflow` pass, so a complete
-  `verify` runs the pipeline once per fixture (tens of minutes). This is the cost of asserting cross-set rules per-fixture; scope with `-Doxo2.it.rule=<name>` while iterating.
+- **Per-fixture isolation is still a pipeline pass each**: each fixture is a full `loadData.nextflow`
+  pass, so a complete `verify` runs the pipeline once per fixture. Solr is no longer bounced per
+  fixture (one start/stop for the whole suite; collections cleared with a `delete *:*` between
+  fixtures), which removes the dominant overhead, but the per-fixture Nextflow passes remain the cost
+  of asserting cross-set rules per-fixture. Scope with `-Doxo2.it.rule=<name>` while iterating.
 - **Weak predicates are negative-tested only for `closeMatch`**: `oboInOwl:hasDbXref`,
   `skos:relatedMatch`, `skos:closeMatch`, `rdfs:seeAlso`, and `rdf:type` are deliberately excluded
   from chaining (ADR-0009). `RCE_WEAK_NOCHAIN` is an explicit guard fixture: its

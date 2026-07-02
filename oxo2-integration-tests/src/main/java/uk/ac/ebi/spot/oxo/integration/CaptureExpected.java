@@ -22,28 +22,41 @@ public final class CaptureExpected {
         Env.requireAll();
         ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-        List<RuleFixtures.Fixture> fixtures = RuleFixtures.discover();
-        for (RuleFixtures.Fixture fixture : fixtures) {
-            System.out.println("=== Capturing fixture " + fixture.name + " ("
-                    + fixture.setBaseNames() + ") ===");
-            Pipeline.runLoadDataNextflow(ConfigGenerator.generate(fixture));
+        // One isolated test Solr for the whole capture run (cleared before each fixture), stopped at
+        // the end unless -Doxo2.it.keepSolr=true. Mirrors the Failsafe IT lifecycle.
+        SolrLifecycle.startFresh();
+        try {
+            List<RuleFixtures.Fixture> fixtures = RuleFixtures.discover();
+            for (RuleFixtures.Fixture fixture : fixtures) {
+                System.out.println("=== Capturing fixture " + fixture.name + " ("
+                        + fixture.setBaseNames() + ") ===");
+                SolrLifecycle.clearCollections();
+                Pipeline.runLoadDataNextflow(ConfigGenerator.generate(fixture));
 
-            for (ArtifactPaths.LayerArtifact artifact : ArtifactPaths.artifactsFor(fixture)) {
-                copyCanonical(artifact);
-            }
-
-            ObjectNode numFoundRoot = mapper.createObjectNode();
-            for (String collection : new String[]{SolrCheck.MAPPINGS_COLLECTION, SolrCheck.MAPPINGSETS_COLLECTION}) {
-                ObjectNode counts = mapper.createObjectNode();
-                for (InferenceType type : InferenceType.values()) {
-                    counts.put(type.getCode(), SolrCheck.numFoundByInferenceType(collection, type.getCode()));
+                for (ArtifactPaths.LayerArtifact artifact : ArtifactPaths.artifactsFor(fixture)) {
+                    copyCanonical(artifact);
                 }
-                numFoundRoot.set(collection, counts);
+
+                ObjectNode numFoundRoot = mapper.createObjectNode();
+                for (String collection : new String[]{SolrCheck.MAPPINGS_COLLECTION, SolrCheck.MAPPINGSETS_COLLECTION}) {
+                    ObjectNode counts = mapper.createObjectNode();
+                    for (InferenceType type : InferenceType.values()) {
+                        counts.put(type.getCode(), SolrCheck.numFoundByInferenceType(collection, type.getCode()));
+                    }
+                    numFoundRoot.set(collection, counts);
+                }
+                Path numFoundPath = ArtifactPaths.expectedNumFound(fixture.name);
+                Files.createDirectories(numFoundPath.getParent());
+                Files.writeString(numFoundPath, mapper.writeValueAsString(numFoundRoot) + "\n", StandardCharsets.UTF_8);
+                System.out.println("  [ok]   " + numFoundPath);
             }
-            Path numFoundPath = ArtifactPaths.expectedNumFound(fixture.name);
-            Files.createDirectories(numFoundPath.getParent());
-            Files.writeString(numFoundPath, mapper.writeValueAsString(numFoundRoot) + "\n", StandardCharsets.UTF_8);
-            System.out.println("  [ok]   " + numFoundPath);
+        } finally {
+            if (Env.keepSolr()) {
+                System.out.println("-D" + Env.KEEP_SOLR_PROPERTY + "=true: leaving test Solr running at "
+                        + Env.solrHost());
+            } else {
+                SolrLifecycle.stop();
+            }
         }
     }
 

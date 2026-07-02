@@ -2,6 +2,7 @@ package uk.ac.ebi.spot.oxo.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicNode;
@@ -25,11 +26,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * Each fixture is run through loadData.nextflow in <b>isolation</b> — one pipeline pass over only
  * that fixture's set(s) — so the single {@code oxo2/inferences} cross-set output belongs to exactly
- * that fixture and can be asserted per-rule. Because each pass wipes
- * {@code $OXO2_DATA} and the Solr collections, the per-fixture run and its assertions are
- * interleaved: a fixture's golden-file + Solr assertions run before the next fixture's pass.
- * JUnit executes dynamic containers (and their children) in encounter order, which guarantees that
- * interleaving.
+ * that fixture and can be asserted per-rule. The {@link SolrLifecycle} harness starts one isolated
+ * test Solr for the whole run ({@code @BeforeAll}) and stops it at the end ({@code @AfterAll}, unless
+ * {@code -Doxo2.it.keepSolr=true}); each fixture's pipeline pass first clears the shared collections
+ * with a {@code delete *:*}, so the per-fixture run and its assertions stay interleaved: a fixture's
+ * golden-file + Solr assertions run before the next fixture clears + reloads. JUnit executes dynamic
+ * containers (and their children) in encounter order, which guarantees that interleaving.
+ *
+ * <p>Run one fixture (start + stop Solr around just that fixture) while debugging with
+ * {@code -Doxo2.it.rule=<name>}.
  *
  * See oxo2-integration-tests/CONTEXT.md for the env-var contract and operational consequences.
  */
@@ -38,13 +43,24 @@ public class ChainRulesIntegrationTest {
     private static List<RuleFixtures.Fixture> fixtures;
 
     @BeforeAll
-    static void discoverFixtures() throws Exception {
+    static void startTestSolr() throws Exception {
         Env.requireAll();
         fixtures = RuleFixtures.discover();
         if (fixtures.isEmpty()) {
             throw new IllegalStateException("No fixtures discovered under " + RuleFixtures.rulesDir()
                     + " or " + RuleFixtures.crossSetDir());
         }
+        SolrLifecycle.startFresh();
+    }
+
+    @AfterAll
+    static void stopTestSolr() throws Exception {
+        if (Env.keepSolr()) {
+            System.out.println("-D" + Env.KEEP_SOLR_PROPERTY + "=true: leaving test Solr running at "
+                    + Env.solrHost());
+            return;
+        }
+        SolrLifecycle.stop();
     }
 
     @TestFactory
@@ -58,10 +74,13 @@ public class ChainRulesIntegrationTest {
 
     private List<DynamicTest> fixtureTests(RuleFixtures.Fixture fixture) {
         List<DynamicTest> tests = new ArrayList<>();
-        // First child: the isolated pipeline pass for this fixture. Runs before the assertions in
-        // the same container, and before any later fixture's pass wipes the shared state.
-        tests.add(DynamicTest.dynamicTest("pipeline", () ->
-                Pipeline.runLoadDataNextflow(ConfigGenerator.generate(fixture))));
+        // First child: clear the shared collections, then run the isolated pipeline pass for this
+        // fixture. Runs before the assertions in the same container, and before any later fixture
+        // clears + reloads the shared Solr.
+        tests.add(DynamicTest.dynamicTest("pipeline", () -> {
+            SolrLifecycle.clearCollections();
+            Pipeline.runLoadDataNextflow(ConfigGenerator.generate(fixture));
+        }));
         for (ArtifactPaths.LayerArtifact artifact : ArtifactPaths.artifactsFor(fixture)) {
             tests.add(DynamicTest.dynamicTest(artifact.label(), () -> compareLayer(artifact)));
         }
