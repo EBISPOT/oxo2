@@ -39,4 +39,26 @@ class MappingTsvExporterTest {
         assertThat(MappingTsvExporter.escape("a\"b", ',')).isEqualTo("\"a\"\"b\"");
         assertThat(MappingTsvExporter.escape("plain", ',')).isEqualTo("plain");
     }
+
+    @Test
+    void neutralisesLeadingFormulaTriggers() {
+        // Each formula-trigger character at the start is defanged with a leading apostrophe, in both formats.
+        assertThat(MappingTsvExporter.escape("=1+2", '\t')).isEqualTo("'=1+2");
+        assertThat(MappingTsvExporter.escape("+1", '\t')).isEqualTo("'+1");
+        assertThat(MappingTsvExporter.escape("-1", '\t')).isEqualTo("'-1");
+        assertThat(MappingTsvExporter.escape("@cmd", '\t')).isEqualTo("'@cmd");
+        assertThat(MappingTsvExporter.escape("=1+2", ',')).isEqualTo("'=1+2");
+    }
+
+    @Test
+    void formulaNeutralisationComposesWithCsvQuoting() {
+        // Starts with '=' AND contains a comma: neutralise first, then CSV-quote the result.
+        assertThat(MappingTsvExporter.escape("=SUM(1,2)", ',')).isEqualTo("\"'=SUM(1,2)\"");
+    }
+
+    @Test
+    void leavesTriggerCharacterUntouchedWhenNotLeading() {
+        assertThat(MappingTsvExporter.escape("a=b", ',')).isEqualTo("a=b");
+        assertThat(MappingTsvExporter.escape("EFO:0000400", '\t')).isEqualTo("EFO:0000400");
+    }
 }

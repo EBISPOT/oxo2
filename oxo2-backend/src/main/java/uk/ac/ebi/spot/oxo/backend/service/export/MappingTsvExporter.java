@@ -181,17 +181,41 @@ public class MappingTsvExporter {
         return value.getDataAsString() == null ? "" : value.getDataAsString();
     }
 
+    /**
+     * Characters that make a spreadsheet (Excel, LibreOffice, Sheets) treat a cell as a formula or DDE
+     * command when it opens the exported file — the CSV-injection vector. A leading occurrence of any of
+     * these is neutralised in {@link #neutraliseFormula}. The tab and carriage-return triggers are the
+     * control-character forms of the same attack.
+     */
+    private static final String FORMULA_TRIGGERS = "=+-@\t\r";
+
     /** TSV strips embedded tabs/newlines to spaces; CSV quotes values containing the separator/quote/newline. */
     public static String escape(String value, char separator) {
         if (value == null) {
             return "";
         }
+        String neutralised = neutraliseFormula(value);
         if (separator == ',') {
-            if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
-                return "\"" + value.replace("\"", "\"\"") + "\"";
+            if (neutralised.contains(",") || neutralised.contains("\"")
+                    || neutralised.contains("\n") || neutralised.contains("\r")) {
+                return "\"" + neutralised.replace("\"", "\"\"") + "\"";
             }
-            return value;
+            return neutralised;
         }
-        return value.replace('\t', ' ').replace('\n', ' ').replace('\r', ' ');
+        return neutralised.replace('\t', ' ').replace('\n', ' ').replace('\r', ' ');
+    }
+
+    /**
+     * Defuse CSV/DDE formula injection: if a value begins with a formula-trigger character, prefix it
+     * with a single quote so a spreadsheet renders it as literal text instead of evaluating it. None of
+     * the exported SSSOM slots or v1 columns is a signed number, so this never corrupts a legitimate
+     * value — CURIEs/IRIs start with a letter, distances are small positives, and only free-text labels
+     * could plausibly lead with a trigger, where inertness is the safe outcome.
+     */
+    private static String neutraliseFormula(String value) {
+        if (!value.isEmpty() && FORMULA_TRIGGERS.indexOf(value.charAt(0)) >= 0) {
+            return "'" + value;
+        }
+        return value;
     }
 }
