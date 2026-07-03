@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * OxO v1 {@code /api/search} compatibility adapter (ADR-0004 / ADR-0024). Reproduces v1's request and
@@ -56,6 +57,15 @@ public class V1SearchController {
 
     static final int MAX_IDS = 1000;
     static final int MAX_MAPPINGS_PER_TERM = 1000;
+
+    /**
+     * Allowlist of characters permitted in an input id. Every legitimate CURIE
+     * ({@code DOID:0050686}) or IRI ({@code http://purl.obolibrary.org/obo/DOID_0050686}) is covered;
+     * HTML-significant metacharacters ({@code < > " ' &}) never appear in a valid identifier. Rejecting
+     * anything outside this set at the boundary strips reflected-XSS payloads before an id can reach the
+     * CSV/TSV export writer (CodeQL java/xss, alert #2).
+     */
+    private static final Pattern VALID_ID = Pattern.compile("[\\w:./#~%+-]+");
 
     private static final String[] V1_CSV_COLUMNS = {
             "curie_id", "label", "mapped_curie", "mapped_label",
@@ -219,7 +229,7 @@ public class V1SearchController {
         for (String id : ids) {
             if (id == null) continue;
             String stripped = id.strip();
-            if (!stripped.isEmpty()) {
+            if (!stripped.isEmpty() && VALID_ID.matcher(stripped).matches()) {
                 cleaned.add(stripped);
             }
         }

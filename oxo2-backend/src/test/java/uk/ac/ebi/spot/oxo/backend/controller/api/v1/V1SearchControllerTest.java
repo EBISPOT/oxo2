@@ -16,6 +16,7 @@ import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -83,6 +84,41 @@ class V1SearchControllerTest {
                 .andExpect(jsonPath("$._embedded.searchResults[1].mappingResponseList.length()").value(0))
                 .andExpect(jsonPath("$.page.totalElements").value(2))
                 .andExpect(jsonPath("$._links.self.href").value("/api/search"));
+    }
+
+    @Test
+    void rejectsIdsContainingHtmlMetacharacters() throws Exception {
+        when(solrClient.queryMappings(any(SolrParams.class)))
+                .thenReturn(responseWith(
+                        doc("DOID:9352", "diabetes", "EFO:0000400", "diabetes mellitus", "ASSERTED")));
+
+        String body = """
+                { "ids": ["DOID:9352", "<script>alert(1)</script>"], "mappingTarget": ["EFO"], "distance": 1 }
+                """;
+
+        // The XSS payload fails the input allowlist and is dropped; only the valid CURIE survives, so it
+        // can never reach the CSV/TSV export writer (CodeQL java/xss, alert #2).
+        mockMvc.perform(post("/api/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.searchResults.length()").value(1))
+                .andExpect(jsonPath("$._embedded.searchResults[0].queryId").value("DOID:9352"));
+    }
+
+    @Test
+    void setsNosniffHeaderOnEveryResponse() throws Exception {
+        when(solrClient.queryMappings(any(SolrParams.class))).thenReturn(responseWith());
+
+        String body = """
+                { "ids": ["DOID:9352"], "mappingTarget": ["EFO"], "distance": 1 }
+                """;
+
+        mockMvc.perform(post("/api/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"));
     }
 
     @Test
