@@ -57,11 +57,21 @@ not a path variable, because a mapping-set id is a full IRI and Tomcat rejects t
 would require.
 
 Backwards compatibility with OxO v1 is mostly *behavioural* ([ADR-0004](../docs/adr/0004-backwards-compatible-with-oxo-v1.md)) — the `/api/v2/...` endpoints above use OxO2/SSSOM-shaped JSON; 
-the design constraint is that v1 questions remain answerable. The one **wire-compatible** exception is
-**`POST /api/search`** (and `GET`): the literal v1 path, taking the v1 `MappingSearchRequest`
-(`ids`, `inputSource`, `mappingTarget`, `mappingSource`, `distance`) and returning the v1 HAL
-`PagedResources<SearchResult>` envelope, so existing v1 pipelines run unchanged. See § Cross-ontology
-mapping ([ADR-0024](../docs/adr/0024-cross-ontology-mapping.md)).
+the design constraint is that v1 questions remain answerable. The **wire-compatible** exceptions live at
+the literal v1 paths (not under `/api/v2`), in `controller/api/v1/`:
+
+- **`POST /api/search`** (and `GET`): the v1 batch term-mapping endpoint, taking the v1
+  `MappingSearchRequest` (`ids`, `inputSource`, `mappingTarget`, `mappingSource`, `distance`) and
+  returning the v1 HAL `PagedResources<SearchResult>` envelope. See § Cross-ontology mapping
+  ([ADR-0024](../docs/adr/0024-cross-ontology-mapping.md)).
+- **`GET /api/mappings`**: the v1 read-only mapping listing, returning the v1 HAL
+  `PagedResources<Mapping>` envelope. Optional `fromId` / `toId` filter by term, undirected as in v1;
+  asserted mappings only; weak predicates (`rdfs:subClassOf` / `oboInOwl:hasDbXref`) shown by default
+  with a `hideWeakPredicates` opt-in. Term `uri` is the full IRI and the mapping-level `datasource`
+  identifies the SSSOM mapping set (`mapping_set_id` + title). Remaining v1 `Mapping` fields are
+  documented breaks — null `mappingId`, `scope` derived from the SSSOM predicate, per-item links
+  dropped. Read-only; v1's create/delete verbs and `/{id}` / `/summary` are not ported. See
+  [ADR-0025](../docs/adr/0025-v1-mappings-listing-compatibility.md).
 
 ### API documentation (OpenAPI / Swagger)
 

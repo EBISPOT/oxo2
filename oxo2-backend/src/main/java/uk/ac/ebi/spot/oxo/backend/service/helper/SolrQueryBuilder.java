@@ -327,6 +327,78 @@ public class SolrQueryBuilder {
     }
 
     /**
+     * Query for the OxO v1 {@code GET /api/mappings} compatibility endpoint (ADR-0025). Reproduces v1's
+     * undirected term filter over the mappings index:
+     * <ul>
+     *   <li>both {@code fromId} and {@code toId} → mappings between the two terms in either
+     *       direction;</li>
+     *   <li>{@code fromId} only → mappings with that term as subject <em>or</em> object;</li>
+     *   <li>{@code toId} only → no term filter (v1 ignored a lone {@code toId} and returned all
+     *       mappings; reproduced verbatim rather than "fixed", since the {@code fromId}-only form is
+     *       already undirected and answers the into-a-term question);</li>
+     *   <li>neither → all mappings.</li>
+     * </ul>
+     * Always restricted to asserted mappings (v1 exposed no inference tier here). The weak predicates
+     * {@code rdfs:subClassOf} / {@code oboInOwl:hasDbXref} are shown by default — v1 was built on
+     * xrefs — and hidden only when {@code hideWeakPredicates} is set. Sorted by the unique key so paging
+     * is stable; no same-SPO collapse, so every stored mapping is a distinct row as in v1.
+     */
+    public static SolrQuery buildV1MappingsQuery(String fromId, String toId, boolean hideWeakPredicates,
+                                                 Pageable pageable) {
+        SolrQuery solrQuery = new SolrQuery();
+        solrQuery.setStart((int) pageable.getOffset());
+        solrQuery.setRows(pageable.getPageSize());
+        solrQuery.setQuery(v1MappingsQueryClause(fromId, toId));
+
+        List<String> filterQueriesList = new ArrayList<>();
+        filterQueriesList.add(
+                MappingEnum.INFERENCE_TYPE.getField() + ":" + InferenceType.ASSERTED.getCode());
+        if (hideWeakPredicates) {
+            filterQueriesList.add(weakPredicateExclusionClause());
+        }
+        solrQuery.setFilterQueries(filterQueriesList.toArray(new String[0]));
+
+        solrQuery.setSort(UNIQUE_KEY, SolrQuery.ORDER.asc);
+        return solrQuery;
+    }
+
+    /** The undirected subject/object term clause for v1 {@code /api/mappings} (see above). */
+    private static String v1MappingsQueryClause(String fromId, String toId) {
+        boolean hasFrom = fromId != null && !fromId.isBlank();
+        boolean hasTo = toId != null && !toId.isBlank();
+        if (hasFrom && hasTo) {
+            String fromAsSubject = termIdClause(MappingEnum.SUBJECT_ID, MappingEnum.SUBJECT_IRI, fromId);
+            String fromAsObject = termIdClause(MappingEnum.OBJECT_ID, MappingEnum.OBJECT_IRI, fromId);
+            String toAsSubject = termIdClause(MappingEnum.SUBJECT_ID, MappingEnum.SUBJECT_IRI, toId);
+            String toAsObject = termIdClause(MappingEnum.OBJECT_ID, MappingEnum.OBJECT_IRI, toId);
+            return "((" + fromAsSubject + " AND " + toAsObject + ") OR ("
+                    + toAsSubject + " AND " + fromAsObject + "))";
+        }
+        if (hasFrom) {
+            String fromAsSubject = termIdClause(MappingEnum.SUBJECT_ID, MappingEnum.SUBJECT_IRI, fromId);
+            String fromAsObject = termIdClause(MappingEnum.OBJECT_ID, MappingEnum.OBJECT_IRI, fromId);
+            return "(" + fromAsSubject + " OR " + fromAsObject + ")";
+        }
+        // toId-only (v1 quirk) and the no-argument case both match everything.
+        return "*:*";
+    }
+
+    /**
+     * Exact-match clause for a term on one side, classified by shape: an IRI matches the {@code *_iri}
+     * field; anything else is treated as a CURIE and normalised to its stored representation (prefix
+     * upper-cased, as EntityReference indexes it) before matching the {@code *_id} field.
+     */
+    private static String termIdClause(MappingEnum idField, MappingEnum iriField, String value) {
+        String stripped = value.strip();
+        if (StringUtils.isIri(stripped)) {
+            return iriField.getField() + ":\"" + ClientUtils.escapeQueryChars(stripped) + "\"";
+        }
+        String normalised = new EntityReference(stripped).getDataRepresentation()
+                .map(Object::toString).orElse(stripped);
+        return idField.getField() + ":\"" + ClientUtils.escapeQueryChars(normalised) + "\"";
+    }
+
+    /**
      * Export query for batch term mapping: the subject-side disjunction and batch filters of
      * {@link #buildBatchMapQuery}, flat and sorted by the unique key for cursorMark streaming.
      */

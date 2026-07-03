@@ -792,4 +792,74 @@ class SolrQueryBuilderTest {
                 .anyMatch(filterQuery -> filterQuery.contains(MappingEnum.INFERENCE_TYPE.getField())))
                 .isFalse();
     }
+
+    // ---------- v1 /api/mappings query (ADR-0025) ----------
+
+    private static final String ASSERTED_FILTER =
+            MappingEnum.INFERENCE_TYPE.getField() + ":" + InferenceType.ASSERTED.getCode();
+
+    @Test
+    void v1MappingsFromIdOnlyIsUndirectedAndAssertedByDefault() {
+        SolrQuery solrQuery =
+                SolrQueryBuilder.buildV1MappingsQuery("DOID:0001816", null, false, PAGE_OF_TEN);
+
+        // Undirected: the term matches on either the subject or the object side.
+        String term = ClientUtils.escapeQueryChars("DOID:0001816");
+        assertThat(solrQuery.getQuery()).isEqualTo(
+                "(" + MappingEnum.SUBJECT_ID.getField() + ":\"" + term + "\""
+                        + " OR " + MappingEnum.OBJECT_ID.getField() + ":\"" + term + "\")");
+        assertThat(solrQuery.getFilterQueries()).containsExactly(ASSERTED_FILTER);
+    }
+
+    @Test
+    void v1MappingsNormalisesLowercaseCuriePrefix() {
+        SolrQuery solrQuery =
+                SolrQueryBuilder.buildV1MappingsQuery("doid:0001816", null, false, PAGE_OF_TEN);
+
+        // A lower-cased CURIE prefix is normalised to the stored representation before matching.
+        assertThat(solrQuery.getQuery()).contains(
+                MappingEnum.SUBJECT_ID.getField() + ":\"" + ClientUtils.escapeQueryChars("DOID:0001816") + "\"");
+    }
+
+    @Test
+    void v1MappingsFromAndToIsUndirectedPair() {
+        SolrQuery solrQuery =
+                SolrQueryBuilder.buildV1MappingsQuery("DOID:0001816", "EFO:0000400", false, PAGE_OF_TEN);
+
+        String subjectField = MappingEnum.SUBJECT_ID.getField();
+        String objectField = MappingEnum.OBJECT_ID.getField();
+        String from = ClientUtils.escapeQueryChars("DOID:0001816");
+        String to = ClientUtils.escapeQueryChars("EFO:0000400");
+        assertThat(solrQuery.getQuery()).isEqualTo(
+                "((" + subjectField + ":\"" + from + "\" AND " + objectField + ":\"" + to + "\")"
+                        + " OR (" + subjectField + ":\"" + to + "\" AND "
+                        + objectField + ":\"" + from + "\"))");
+    }
+
+    @Test
+    void v1MappingsToIdOnlyMatchesEverything() {
+        SolrQuery solrQuery =
+                SolrQueryBuilder.buildV1MappingsQuery(null, "EFO:0000400", false, PAGE_OF_TEN);
+
+        // v1 ignored a lone toId and returned all mappings; reproduced verbatim (ADR-0025).
+        assertThat(solrQuery.getQuery()).isEqualTo("*:*");
+    }
+
+    @Test
+    void v1MappingsHidesWeakPredicatesOnlyWhenRequested() {
+        SolrQuery shown = SolrQueryBuilder.buildV1MappingsQuery(null, null, false, PAGE_OF_TEN);
+        assertThat(shown.getFilterQueries()).containsExactly(ASSERTED_FILTER);
+
+        SolrQuery hidden = SolrQueryBuilder.buildV1MappingsQuery(null, null, true, PAGE_OF_TEN);
+        assertThat(hidden.getFilterQueries()).containsExactly(ASSERTED_FILTER, weakPredicateExclusion());
+    }
+
+    @Test
+    void v1MappingsMatchesIriOnTheIriField() {
+        SolrQuery solrQuery = SolrQueryBuilder.buildV1MappingsQuery(
+                "http://purl.obolibrary.org/obo/DOID_0001816", null, false, PAGE_OF_TEN);
+
+        assertThat(solrQuery.getQuery()).contains(MappingEnum.SUBJECT_IRI.getField() + ":\"");
+        assertThat(solrQuery.getQuery()).contains(MappingEnum.OBJECT_IRI.getField() + ":\"");
+    }
 }

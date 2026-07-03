@@ -44,7 +44,8 @@ class OpenApiDocsTest {
                 .andExpect(jsonPath("$.paths['/api/v2/ontologies'].get").exists())
                 .andExpect(jsonPath("$.paths['/api/v2/mappings'].get").exists())
                 .andExpect(jsonPath("$.paths['/api/v2/mappings/batch-map'].post").exists())
-                .andExpect(jsonPath("$.paths['/api/search'].post").exists());
+                .andExpect(jsonPath("$.paths['/api/search'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/mappings'].get").exists());
     }
 
     @Test
