@@ -1,6 +1,7 @@
 import { useState, type JSX, type MouseEvent } from "react";
 import { CheckIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import olsLogo from "/public/logo.svg";
+import { buildOlsTermUrl } from "../../util/olsUrl";
 
 /**
  * Small copy-to-clipboard button. Stops click propagation so it never triggers
@@ -61,6 +62,7 @@ export function EntityRefCell({
     modifier?: string;
 }): JSX.Element {
     const primary = id || iri || "—";
+    const olsUrl = showOlsLink ? buildOlsTermUrl(id, iri) : undefined;
 
     return (
         <div className="flex flex-col gap-0.5 py-1 min-w-0">
@@ -75,10 +77,10 @@ export function EntityRefCell({
                 )}
                 <span className="break-all">{primary}</span>
                 {id && <CopyButton value={id} title="Copy identifier" />}
-                {showOlsLink && id && (
+                {olsUrl && (
                     <a
-                        href={`http://www.ebi.ac.uk/ols4?termId=${encodeURIComponent(id)}`}
-                        title={`View ${id} in OLS`}
+                        href={olsUrl}
+                        title={`View ${primary} in OLS`}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(event) => event.stopPropagation()}

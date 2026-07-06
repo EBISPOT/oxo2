@@ -2,6 +2,7 @@ import { useState, JSX } from "react";
 import { Mapping } from "../../model/Mapping";
 import { EyeIcon } from "@heroicons/react/24/solid";
 import olsLogo from "/public/logo.svg";
+import { buildOlsTermUrl } from "../../util/olsUrl";
 
 export async function copyToClipboard(text: string): Promise<void> {
     if (!navigator.clipboard) {
@@ -39,17 +40,20 @@ export function MappingItem({
 
     function EntityBox({
                            id,
+                           iri,
                            label,
                            isCopied,
                            setCopied,
                            isLeftSide
                        }: {
         id: string;
+        iri: string;
         label: string;
         isCopied: boolean;
         setCopied: (val: boolean) => void;
         isLeftSide: boolean;
     }): JSX.Element {
+        const olsUrl = buildOlsTermUrl(id, iri);
             const entityClasses = `mapping-entity 
                               ${isLeftSide ? 'mapping-entity-left' : 'mapping-entity-right'} 
                               ${alwaysHighlighted ? 'mapping-entity-highlighted' : 'mapping-entity-normal'}`;
@@ -69,18 +73,20 @@ export function MappingItem({
                         }`}
                         onClick={() => copyText(id, setCopied)}
                     />
-                    <a
-                        href={`http://www.ebi.ac.uk/ols4?termId=${encodeURIComponent(id)}`}
-                        title={`View ${id} in OLS`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <img
-                            src={olsLogo}
-                            alt="OLS"
-                            className="h-6 w-6 inline-block icon-spacer"
-                        />
-                    </a>
+                    {olsUrl && (
+                        <a
+                            href={olsUrl}
+                            title={`View ${id} in OLS`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <img
+                                src={olsLogo}
+                                alt="OLS"
+                                className="h-6 w-6 inline-block icon-spacer"
+                            />
+                        </a>
+                    )}
                 </div>
                 <div title={label} className="text-center truncate-text">
                     {label}
@@ -97,6 +103,7 @@ export function MappingItem({
             <div className="w-full lg:w-1/3">
                 <EntityBox
                     id={mapping.subjectId ? mapping.subjectId : mapping.subjectIri}
+                    iri={mapping.subjectIri}
                     label={mapping.subjectLabel}
                     isCopied={isSubjectCopied}
                     setCopied={setIsSubjectCopied}
@@ -116,6 +123,7 @@ export function MappingItem({
             <div className="w-full lg:w-1/3">
                 <EntityBox
                     id={mapping.objectId ? mapping.objectId : mapping.objectIri}
+                    iri={mapping.objectIri}
                     label={mapping.objectLabel}
                     isCopied={isObjectCopied}
                     setCopied={setIsObjectCopied}
