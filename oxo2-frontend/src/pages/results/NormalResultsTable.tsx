@@ -1,14 +1,14 @@
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {emptyMappingPage, MappingPage, fetchMappings, exportMappings, fromJson} from "./MappingResultsSlice";
 import {useQuery} from "@tanstack/react-query";
 import {
     MaterialReactTable,
     type MRT_ColumnDef,
-    type MRT_PaginationState,
     type MRT_SortingState,
     useMaterialReactTable,
 } from 'material-react-table';
+import {useUrlPagination} from "../../util/useUrlPagination";
 import {Mapping} from "../../model/Mapping.ts";
 import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
@@ -99,10 +99,9 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const navigate = useNavigate();
     const [isExporting, setIsExporting] = useState(false);
 
-    const [pagination, setPagination] = useState<MRT_PaginationState>({
-        pageIndex: 0,
-        pageSize: 10,
-    });
+    // Pagination is held in the URL (?page/?size) so returning from a mapping's detail
+    // page restores the page the user was on, rather than resetting to the first page.
+    const [pagination, setPagination] = useUrlPagination();
 
     // Inline field filters live in their own state (Solr field name -> value). They are
     // ephemeral session state (not URL-synced); the Advanced tab owns persistent
@@ -132,10 +131,19 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     }, [fieldFilters]);
 
     // A filter change resets to the first page so results aren't stranded on an
-    // out-of-range page.
+    // out-of-range page. Guarded so it never fires on the initial mount — nor on the
+    // debounce's opening no-op re-set of an empty filter object — otherwise it would
+    // clobber the page restored from the URL when the user returns from a detail page.
+    const lastAppliedFilters = useRef<string | null>(null);
     useEffect(() => {
+        const serialized = JSON.stringify(debouncedFilters);
+        if (lastAppliedFilters.current === null || lastAppliedFilters.current === serialized) {
+            lastAppliedFilters.current = serialized;
+            return;
+        }
+        lastAppliedFilters.current = serialized;
         setPagination((previous) => ({ ...previous, pageIndex: 0 }));
-    }, [debouncedFilters]);
+    }, [debouncedFilters, setPagination]);
 
     const columnFiltersForBackend = useMemo(
         () => Object.entries(debouncedFilters)

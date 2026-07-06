@@ -10,11 +10,11 @@ import {
     MaterialReactTable,
     type MRT_ColumnDef,
     type MRT_ColumnFiltersState,
-    type MRT_PaginationState,
     type MRT_SortingState,
     useMaterialReactTable,
 } from 'material-react-table';
 import {Mapping} from "../../model/Mapping.ts";
+import {useUrlPagination} from "../../util/useUrlPagination";
 
 /**
  * Advanced ("Advanced" tab) results: the full wide multi-column table, kept exactly
@@ -32,10 +32,9 @@ export function AdvancedResultsTable({
 }) {
     const navigate = useNavigate();
 
-    const [pagination, setPagination] = useState<MRT_PaginationState>({
-        pageIndex: 0,
-        pageSize: 10,
-    });
+    // Pagination is held in the URL (?page/?size) so returning from a mapping's detail
+    // page restores the page the user was on, rather than resetting to the first page.
+    const [pagination, setPagination] = useUrlPagination();
 
     const [columnFilters, setColumnFilters] = useState<MRT_ColumnFiltersState>([]);
     const [sorting, setSorting] = useState<MRT_SortingState>([
