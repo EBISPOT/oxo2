@@ -20,17 +20,19 @@ import { INFERENCE_TYPE_LABELS, InferenceType } from "../model/InferenceType";
  *   ?type=  repeated inference-type code, lowercased (omitted when all types selected)
  *   ?filter= repeated `field=value` (value may contain `=`; split on the first one)
  *
- * Two correctness constraints shape this module:
- *   1. react-router's setSearchParams reads the current params from the render closure,
- *      so two setSearchParams calls in one event handler would clobber each other. Every
- *      setter therefore performs a single atomic write, folding the page reset into that
- *      same write (`resetPageOnChange`) rather than issuing a second call.
- *   2. setSearchParams is a fresh function on every URL change (react-router keys it on
- *      the current params). If the setters inherited that instability they would land in
- *      the columns useMemo deps and remount the table headers — snapping open sort/filter
- *      popovers shut — on every page or filter change. So `update` is kept referentially
- *      stable via a ref, and the setters read the current value from refs; every returned
- *      setter is stable for the component's lifetime.
+ * Two properties are load-bearing, not incidental:
+ *   - One write per action. A change to a facet (sort/filter/type) also resets the page,
+ *     so a narrowed result set can't strand the user on an out-of-range page. Both happen
+ *     in a single write (`resetPageOnChange`): react-router derives an updater's `previous`
+ *     from the render closure rather than chaining synchronous calls, so a second write in
+ *     the same handler would silently drop the first — one atomic write is the only correct
+ *     shape regardless.
+ *   - Stable setters. react-router returns a fresh setSearchParams on every URL change. The
+ *     setters must not inherit that instability: they feed the table's memoised column defs,
+ *     and a changing identity would remount the headers (closing any open popover) on every
+ *     page or filter change. We stabilise the writer with one latest-value ref — the standard
+ *     idiom for a stable callback that reads current state — and derive each functional
+ *     updater's previous value from the live params, so no per-facet refs are needed.
  */
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -41,16 +43,19 @@ const TYPE_PARAM = "type";
 const FILTER_PARAM = "filter";
 
 type Updater<T> = T | ((old: T) => T);
+const applyUpdater = <T,>(updater: Updater<T>, current: T): T =>
+    typeof updater === "function" ? (updater as (old: T) => T)(current) : updater;
+
 // Separator for turning a getAll() array into a stable useMemo dependency key (so the memo
 // doesn't recompute just because getAll returns a fresh array each render). A NUL character
 // can't occur in a URL-decoded query value, so distinct arrays never collide to one key.
 const NUL = "\u0000";
 
-/** Shared reader + referentially-stable atomic writer over the URL query string. */
+/** Shared reader + a referentially-stable atomic writer over the URL query string. */
 function useUrlState() {
     const [searchParams, setSearchParams] = useSearchParams();
-    // react-router recreates setSearchParams on every URL change; keep the latest in a ref
-    // so `update` (and thus every setter built on it) stays referentially stable.
+    // react-router recreates setSearchParams on every URL change; hold the latest in a ref so
+    // `update` (and every setter built on it) stays referentially stable for the component's life.
     const setSearchParamsRef = useRef(setSearchParams);
     setSearchParamsRef.current = setSearchParams;
 
@@ -58,9 +63,7 @@ function useUrlState() {
         setSearchParamsRef.current(
             (previous) => {
                 const params = new URLSearchParams(previous);
-                mutate(params);
-                // Resetting the page keeps a narrowed result set from stranding the user on an
-                // out-of-range page; folding it into this write keeps the whole change atomic.
+                mutate(params); // sees the live params, so a functional updater can read its own "old" value
                 if (resetPage) {
                     params.delete(PAGE_PARAM);
                 }
@@ -75,29 +78,33 @@ function useUrlState() {
 
 // ---------- pagination ----------
 
+function readPagination(pageValue: string | null, sizeValue: string | null): MRT_PaginationState {
+    const page = Number(pageValue);
+    const size = Number(sizeValue);
+    return {
+        pageIndex: Number.isFinite(page) && page >= 1 ? Math.floor(page) - 1 : 0,
+        pageSize: Number.isFinite(size) && size >= 1 ? Math.floor(size) : DEFAULT_PAGE_SIZE,
+    };
+}
+
+function writePagination(params: URLSearchParams, next: MRT_PaginationState): void {
+    if (next.pageIndex > 0) params.set(PAGE_PARAM, String(next.pageIndex + 1));
+    else params.delete(PAGE_PARAM);
+    if (next.pageSize !== DEFAULT_PAGE_SIZE) params.set(SIZE_PARAM, String(next.pageSize));
+    else params.delete(SIZE_PARAM);
+}
+
 export function useUrlPagination(): [MRT_PaginationState, (updater: Updater<MRT_PaginationState>) => void] {
     const { searchParams, update } = useUrlState();
     const rawPage = searchParams.get(PAGE_PARAM);
     const rawSize = searchParams.get(SIZE_PARAM);
-    const pagination = useMemo<MRT_PaginationState>(() => {
-        const page = Number(rawPage);
-        const size = Number(rawSize);
-        return {
-            pageIndex: Number.isFinite(page) && page >= 1 ? Math.floor(page) - 1 : 0,
-            pageSize: Number.isFinite(size) && size >= 1 ? Math.floor(size) : DEFAULT_PAGE_SIZE,
-        };
-    }, [rawPage, rawSize]);
+    const pagination = useMemo(() => readPagination(rawPage, rawSize), [rawPage, rawSize]);
 
-    const paginationRef = useRef(pagination);
-    paginationRef.current = pagination;
     const setPagination = useCallback(
         (updater: Updater<MRT_PaginationState>) => {
-            const next = typeof updater === "function" ? updater(paginationRef.current) : updater;
             update((params) => {
-                if (next.pageIndex > 0) params.set(PAGE_PARAM, String(next.pageIndex + 1));
-                else params.delete(PAGE_PARAM);
-                if (next.pageSize !== DEFAULT_PAGE_SIZE) params.set(SIZE_PARAM, String(next.pageSize));
-                else params.delete(SIZE_PARAM);
+                const next = applyUpdater(updater, readPagination(params.get(PAGE_PARAM), params.get(SIZE_PARAM)));
+                writePagination(params, next);
             });
         },
         [update]
@@ -145,12 +152,12 @@ export function useUrlSorting(
     // Keyed on sortKey (not the fresh getAll array) so it only recomputes when the URL changes.
     const sorting = useMemo(() => readSorting(rawSort, defaultSorting), [sortKey, defaultSorting]);
 
-    const sortingRef = useRef(sorting);
-    sortingRef.current = sorting;
     const setSorting = useCallback(
         (updater: Updater<MRT_SortingState>) => {
-            const next = typeof updater === "function" ? updater(sortingRef.current) : updater;
-            update((params) => writeSorting(params, next, defaultSorting), resetPageOnChange);
+            update((params) => {
+                const next = applyUpdater(updater, readSorting(params.getAll(SORT_PARAM), defaultSorting));
+                writeSorting(params, next, defaultSorting);
+            }, resetPageOnChange);
         },
         [update, defaultSorting, resetPageOnChange]
     );
@@ -283,12 +290,12 @@ export function useUrlColumnFilters(
     const filterKey = rawFilters.join(NUL);
     const columnFilters = useMemo(() => readColumnFilters(rawFilters), [filterKey]);
 
-    const columnFiltersRef = useRef(columnFilters);
-    columnFiltersRef.current = columnFilters;
     const setColumnFilters = useCallback(
         (updater: Updater<MRT_ColumnFiltersState>) => {
-            const next = typeof updater === "function" ? updater(columnFiltersRef.current) : updater;
-            update((params) => writeColumnFilters(params, next), resetPageOnChange);
+            update((params) => {
+                const next = applyUpdater(updater, readColumnFilters(params.getAll(FILTER_PARAM)));
+                writeColumnFilters(params, next);
+            }, resetPageOnChange);
         },
         [update, resetPageOnChange]
     );
