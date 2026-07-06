@@ -8,7 +8,8 @@ import {
     type MRT_SortingState,
     useMaterialReactTable,
 } from 'material-react-table';
-import {useUrlPagination} from "../../util/useUrlPagination";
+import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlFieldFilters, fieldFiltersEqual}
+    from "../../util/tableUrlState";
 import {Mapping} from "../../model/Mapping.ts";
 import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
@@ -56,6 +57,10 @@ const OBJECT_SORT_FIELDS: SortFieldDef[] = [
     {field: "object_iri", label: "IRI"},
 ];
 
+// Default sort for the compact table. Module-level so its reference is stable across
+// renders (useUrlSorting memoises against it).
+const DEFAULT_SORTING: MRT_SortingState = [{ id: 'subject_label', desc: false }];
+
 // Same-SPO grouping helpers (ADR-0013). A grouped representative carries all its members (including
 // itself) in groupMembers; an ungrouped row falls back to the single mapping.
 function groupMembersOf(mapping: Mapping): Mapping[] {
@@ -99,66 +104,42 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const navigate = useNavigate();
     const [isExporting, setIsExporting] = useState(false);
 
-    // Pagination is held in the URL (?page/?size) so returning from a mapping's detail
-    // page restores the page the user was on, rather than resetting to the first page.
+    // View state (page, size, sort, inference-type filter, field filters) is held in the
+    // URL so returning from a mapping's detail page restores exactly what the user was
+    // looking at, rather than resetting to the first page with default sort and filters.
+    // Changing the sort or a filter resets to the first page (as before) — the URL hooks
+    // fold that reset into the same write.
     const [pagination, setPagination] = useUrlPagination();
+    const [sorting, setSorting] = useUrlSorting(DEFAULT_SORTING, true);
+    const [inferenceTypes, setInferenceTypes] = useUrlInferenceTypes(initialInferenceTypes, true);
+    const [urlFilters, setUrlFilters] = useUrlFieldFilters();
 
-    // Inline field filters live in their own state (Solr field name -> value). They are
-    // ephemeral session state (not URL-synced); the Advanced tab owns persistent
-    // field filtering. A short debounce keeps typing from hammering the backend.
-    const [fieldFilters, setFieldFilters] = useState<Record<string, string>>({});
-    const [debouncedFilters, setDebouncedFilters] = useState<Record<string, string>>({});
-    const [sorting, setSorting] = useState<MRT_SortingState>([
-        { id: 'subject_label', desc: false }
-    ]);
-
-    // Multi-select inference-type filter for the result rows (ADR-0011); defaults to
-    // {Asserted, SSSOM inference}.
-    const [inferenceTypes, setInferenceTypes] = useState<InferenceType[]>(initialInferenceTypes);
-
-    const handleInferenceTypesChange = useCallback((next: InferenceType[]) => {
-        setInferenceTypes(next);
-        setPagination((previous) => ({ ...previous, pageIndex: 0 }));
-    }, []);
+    // The filter inputs keep their own local state for responsive typing (seeded once from
+    // the URL so a restored filter shows in the inputs); a short debounce copies them to
+    // the URL, which is the applied layer that drives the backend query. The debounced
+    // write only fires when the inputs actually differ from what the URL already holds, so
+    // mounting with a restored filter neither refetches nor clobbers the restored page.
+    const [fieldFilters, setFieldFilters] = useState<Record<string, string>>(() => urlFilters);
+    const initialFieldFilters = useRef(urlFilters).current;
 
     const handleFilterChange = useCallback((field: string, value: string) => {
         setFieldFilters((previous) => ({ ...previous, [field]: value }));
     }, []);
 
     useEffect(() => {
-        const timer = setTimeout(() => setDebouncedFilters(fieldFilters), 400);
-        return () => clearTimeout(timer);
-    }, [fieldFilters]);
-
-    // A filter change resets to the first page so results aren't stranded on an
-    // out-of-range page. Guarded so it never fires on the initial mount — nor on the
-    // debounce's opening no-op re-set of an empty filter object — otherwise it would
-    // clobber the page restored from the URL when the user returns from a detail page.
-    const lastAppliedFilters = useRef<string | null>(null);
-    useEffect(() => {
-        const serialized = JSON.stringify(debouncedFilters);
-        if (lastAppliedFilters.current === null || lastAppliedFilters.current === serialized) {
-            lastAppliedFilters.current = serialized;
+        if (fieldFiltersEqual(fieldFilters, urlFilters)) {
             return;
         }
-        lastAppliedFilters.current = serialized;
-        setPagination((previous) => ({ ...previous, pageIndex: 0 }));
-    }, [debouncedFilters, setPagination]);
+        const timer = setTimeout(() => setUrlFilters(fieldFilters), 400);
+        return () => clearTimeout(timer);
+    }, [fieldFilters, urlFilters, setUrlFilters]);
 
     const columnFiltersForBackend = useMemo(
-        () => Object.entries(debouncedFilters)
+        () => Object.entries(urlFilters)
             .filter(([, value]) => value && value.trim() !== "")
             .map(([id, value]) => ({ id, value: value.trim() })),
-        [debouncedFilters]
+        [urlFilters]
     );
-
-    // The sort popovers compute the full next sort list themselves (single key per
-    // column group, multi-column across groups); we just store it and reset to the
-    // first page so results aren't stranded on an out-of-range page.
-    const handleSortChange = useCallback((next: MRT_SortingState) => {
-        setSorting(next);
-        setPagination((previous) => ({ ...previous, pageIndex: 0 }));
-    }, []);
 
     const mappingSetIdsKey = mappingSetIds.join(",");
     const subjectPrefixesKey = subjectPrefixes.join(",");
@@ -215,8 +196,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Subject</span>
-                        <ColumnFilterPopover title="Subject" fields={SUBJECT_FILTER_FIELDS} onChange={handleFilterChange} />
-                        <ColumnSortPopover title="Subject" fields={SUBJECT_SORT_FIELDS} onApply={handleSortChange} />
+                        <ColumnFilterPopover title="Subject" fields={SUBJECT_FILTER_FIELDS} onChange={handleFilterChange} initialValues={initialFieldFilters} />
+                        <ColumnSortPopover title="Subject" fields={SUBJECT_SORT_FIELDS} onApply={setSorting} />
                     </span>
                 ),
                 Cell: ({ row }) => (
@@ -236,8 +217,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Predicate</span>
-                        <ColumnFilterPopover title="Predicate" fields={PREDICATE_FILTER_FIELDS} onChange={handleFilterChange} />
-                        <ColumnSortPopover title="Predicate" fields={PREDICATE_SORT_FIELDS} onApply={handleSortChange} />
+                        <ColumnFilterPopover title="Predicate" fields={PREDICATE_FILTER_FIELDS} onChange={handleFilterChange} initialValues={initialFieldFilters} />
+                        <ColumnSortPopover title="Predicate" fields={PREDICATE_SORT_FIELDS} onApply={setSorting} />
                     </span>
                 ),
                 Cell: ({ row }) => (
@@ -257,8 +238,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Object</span>
-                        <ColumnFilterPopover title="Object" fields={OBJECT_FILTER_FIELDS} onChange={handleFilterChange} />
-                        <ColumnSortPopover title="Object" fields={OBJECT_SORT_FIELDS} onApply={handleSortChange} />
+                        <ColumnFilterPopover title="Object" fields={OBJECT_FILTER_FIELDS} onChange={handleFilterChange} initialValues={initialFieldFilters} />
+                        <ColumnSortPopover title="Object" fields={OBJECT_SORT_FIELDS} onApply={setSorting} />
                     </span>
                 ),
                 Cell: ({ row }) => (
@@ -283,6 +264,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                             title="Mapping justification"
                             fields={[{ field: "mapping_justification", label: "Mapping justification" }]}
                             onChange={handleFilterChange}
+                            initialValues={initialFieldFilters}
                         />
                     </span>
                 ),
@@ -302,7 +284,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Type</span>
-                        <InferenceTypeFilterPopover value={inferenceTypes} onChange={handleInferenceTypesChange} />
+                        <InferenceTypeFilterPopover value={inferenceTypes} onChange={setInferenceTypes} />
                     </span>
                 ),
                 Cell: ({ row }) => {
@@ -334,6 +316,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                             title="Mapping provider"
                             fields={[{ field: "mapping_provider", label: "Mapping provider" }]}
                             onChange={handleFilterChange}
+                            initialValues={initialFieldFilters}
                         />
                     </span>
                 ),
@@ -369,7 +352,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 },
             },
         ],
-        [handleFilterChange, handleSortChange, inferenceTypes, handleInferenceTypesChange]
+        [handleFilterChange, setSorting, inferenceTypes, setInferenceTypes, initialFieldFilters]
     );
 
     const table = useMaterialReactTable({

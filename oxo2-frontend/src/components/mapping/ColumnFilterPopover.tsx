@@ -15,19 +15,23 @@ export interface FilterFieldDef {
  * keystroke is reported up via onChange; the parent accumulates these into the
  * backend columnFilters list (AND-combined, "contains" semantics). The popover owns
  * its own input state so the table's column definitions need not re-memoise per
- * keystroke. Clicks are kept from propagating so they never toggle column sorting.
+ * keystroke; `initialValues` seeds that state so a filter restored from the URL (e.g.
+ * on Back from a detail page) shows in the input. Clicks are kept from propagating so
+ * they never toggle column sorting.
  */
 export function ColumnFilterPopover({
     title,
     fields,
     onChange,
+    initialValues,
 }: {
     title: string;
     fields: FilterFieldDef[];
     onChange: (field: string, value: string) => void;
+    initialValues?: Record<string, string>;
 }): JSX.Element {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-    const [values, setValues] = useState<Record<string, string>>({});
+    const [values, setValues] = useState<Record<string, string>>(() => initialValues ?? {});
 
     const activeCount = fields.filter((fieldDef) => (values[fieldDef.field] ?? "").trim() !== "").length;
 

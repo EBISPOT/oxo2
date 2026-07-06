@@ -32,7 +32,8 @@ The user interface, served on port 8080 (Vite dev server, Docker, and Kubernetes
 Routes (`App.tsx`):
 
 - **`/`** and **`/home`** → `Home` — landing page with search.
-- **`/search/:curies`** → `MappingResults` — paged mapping results for the given CURIE(s).
+- **`/search/:curies`** → `MappingResults` — paged mapping results for the given CURIE(s). Page, sort, and filters are
+carried in the query string (see § State management), so a result view is shareable and restores on Back from a detail page.
 - **`/map`** → cross-ontology results for `?from=…&to=…` (source→target prefixes), bookmarkable; the
 pasted-term-list (batch) variant is POST-only and not bookmarkable ([ADR-0024](../docs/adr/0024-cross-ontology-mapping.md)).
 - **`/mapping/:id`** → `MappingDetails` (via `MappingDetailsWrapper` to pass state through router) — detail view for a 
@@ -80,6 +81,15 @@ batch (pasted-list) variant also shows an unmapped-inputs panel and mirrors its 
 Server state is handled by TanStack Query (caching, invalidation, retry). Local view state uses React's `useState` / `useReducer`. 
 Files named `*Slice.ts` (e.g. `MappingResultsSlice.ts`, `MappingSetsSlice.ts`, `InfoCardSlice.ts`, `ErrorSlice.ts`) 
 are **not** Redux slices — the naming is residual; there is no Redux store in this codebase.
+
+Results-table **view state** (page, page size, sort, inference-type filter, field filters) lives in the URL query string,
+not component state, via the hooks in `src/util/tableUrlState.ts` (`useUrlPagination`, `useUrlSorting`,
+`useUrlInferenceTypes`, `useUrlFieldFilters`, `useUrlColumnFilters`). Both `NormalResultsTable` and `AdvancedResultsTable`
+use them. Because the results table unmounts when a mapping's detail page opens, holding this in the URL is what restores
+it on Back; it also makes a result view shareable and refresh-stable. Defaults are omitted so an untouched search stays a
+clean URL. Each hook does a single atomic `setSearchParams` write (folding any page reset into it, since react-router reads
+the current params from the render closure) and returns a referentially-stable setter (so table headers don't remount on
+every URL change).
 
 ### Build and run
 

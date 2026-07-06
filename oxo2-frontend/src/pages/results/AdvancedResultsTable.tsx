@@ -1,6 +1,6 @@
-import {useCallback, useMemo, useState} from "react";
+import {useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {InferenceType, DEFAULT_INFERENCE_TYPES} from "../../model/InferenceType";
+import {DEFAULT_INFERENCE_TYPES} from "../../model/InferenceType";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {InferenceTypeFilterPopover} from "../../components/mapping/InferenceTypeFilterPopover";
 import {AdvancedFieldQuery} from "../../model/Search";
@@ -9,12 +9,15 @@ import {useQuery} from "@tanstack/react-query";
 import {
     MaterialReactTable,
     type MRT_ColumnDef,
-    type MRT_ColumnFiltersState,
     type MRT_SortingState,
     useMaterialReactTable,
 } from 'material-react-table';
 import {Mapping} from "../../model/Mapping.ts";
-import {useUrlPagination} from "../../util/useUrlPagination";
+import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlColumnFilters} from "../../util/tableUrlState";
+
+// Default sort for the Advanced table. Module-level so its reference is stable across
+// renders (useUrlSorting memoises against it).
+const DEFAULT_SORTING: MRT_SortingState = [{ id: 'subject_id', desc: false }];
 
 /**
  * Advanced ("Advanced" tab) results: the full wide multi-column table, kept exactly
@@ -32,23 +35,19 @@ export function AdvancedResultsTable({
 }) {
     const navigate = useNavigate();
 
-    // Pagination is held in the URL (?page/?size) so returning from a mapping's detail
-    // page restores the page the user was on, rather than resetting to the first page.
+    // View state (page, size, sort, column filters, inference-type filter) is held in the
+    // URL so returning from a mapping's detail page restores what the user was looking at,
+    // rather than resetting to the first page with default sort and filters. Sorting and
+    // column-filter changes keep the current page (matching this table's prior behaviour);
+    // only the inference-type filter resets to the first page — the URL hooks fold that
+    // reset into the same write.
     const [pagination, setPagination] = useUrlPagination();
-
-    const [columnFilters, setColumnFilters] = useState<MRT_ColumnFiltersState>([]);
-    const [sorting, setSorting] = useState<MRT_SortingState>([
-        { id: 'subject_id', desc: false }
-    ]);
+    const [sorting, setSorting] = useUrlSorting(DEFAULT_SORTING, false);
+    const [columnFilters, setColumnFilters] = useUrlColumnFilters(false);
 
     // Multi-select inference-type filter for the result rows (ADR-0011); defaults to
     // {Asserted, SSSOM inference}. Mirrors the control in NormalResultsTable.
-    const [inferenceTypes, setInferenceTypes] = useState<InferenceType[]>(DEFAULT_INFERENCE_TYPES);
-
-    const handleInferenceTypesChange = useCallback((next: InferenceType[]) => {
-        setInferenceTypes(next);
-        setPagination((previous) => ({ ...previous, pageIndex: 0 }));
-    }, []);
+    const [inferenceTypes, setInferenceTypes] = useUrlInferenceTypes(DEFAULT_INFERENCE_TYPES, true);
 
     const mappingSetIdsKey = mappingSetIds.join(",");
     const advancedKey = JSON.stringify(advancedFieldQueries);
@@ -143,7 +142,7 @@ export function AdvancedResultsTable({
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Type</span>
-                        <InferenceTypeFilterPopover value={inferenceTypes} onChange={handleInferenceTypesChange} />
+                        <InferenceTypeFilterPopover value={inferenceTypes} onChange={setInferenceTypes} />
                     </span>
                 ),
                 Cell: ({ row }) => <InferenceTypeBadge value={row.original.inferenceType} />,
@@ -165,7 +164,7 @@ export function AdvancedResultsTable({
                 header: "License",
             }
         ],
-        [inferenceTypes, handleInferenceTypesChange]
+        [inferenceTypes, setInferenceTypes]
     );
 
     const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
