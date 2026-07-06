@@ -13,11 +13,12 @@ see ADR-0021).
 
 ## Why this works (one paragraph)
 
-Nemo's `trace` is a cheap backward search over the chase's in-memory result tables + `rule_history`,
+Nemo's `trace` is a backward search over the chase's in-memory result tables + `rule_history`,
 **not** a reasoning pass. The reason `nmo --trace-input-file` is slow is that a fresh process
 re-imports `assertedCorpus.nq` and re-runs `sssom.rls` before it can trace, and Nemo keeps no on-disk
-snapshot to skip that. Keep one `ExecutionEngine` resident in memory: pay the chase once at startup,
-then answer many traces cheaply.
+snapshot to skip that. Keep one `ExecutionEngine` resident in memory: pay the chase (~14–15 min) once
+at startup, then answer traces at ~1.2 s typical / ~6 s worst case (measured — see § Validation; not
+milliseconds, because the backward search re-queries the global tables at each derivation step).
 
 ## Architecture
 
@@ -43,18 +44,21 @@ oxo2-frontend ──HTTP──▶ oxo2-backend (Java) ──HTTP──▶ oxo2-e
 | Trace JSON | `ExecutionTrace::json(&handles)` emits the **exact** `--trace-output` shape (`ExecutionTraceListOfInferencesJSON`) that `NemoInferences` parses — zero Java change | `NemoTrace.dict()` is a *different* nested shape; needs a small `nmo_python` addition (expose `trace.json()`) or a Java-side adapter |
 | Concurrency | dedicated worker task + `mpsc`, no GIL | `unsendable` engine + single ASGI worker |
 | Memory / speed | best | fine (GIL irrelevant — one trace at a time anyway) |
-| Effort to stand up | higher | **lowest — use this to validate first** |
+| Effort to stand up | higher | lowest, but `.trace()` **panics ("wrong arena") on IRI facts** — unusable for OxO2 conclusions until fixed upstream |
 
-**Recommendation:** prototype/validate with Python (fastest), ship with Rust (JSON-contract match +
-memory). Both hold the engine resident; the architecture is identical.
+**Recommendation:** Rust. The validation spike hit the `nmo_python` trace panic and fell back to
+the CLI (see § Validation), so Python buys nothing here; the Rust sidecar also matches the JSON
+contract with zero Java change. Both would hold the engine resident; the architecture is identical.
 
 ### Engine API surface (verified against the `nemo` repo)
 
 - Python (`nmo_python`): `eng = NemoEngine(load_file("sssom.rls"))` → `eng.reason()` (the chase, once)
   → `eng.trace("predicate(<s>, <p>, <o>)")` returns a `NemoTrace` (or `None` if not derived);
-  `.dict()` / `.subtraces()` / `.rule()` / `.assignement()` walk it. **Import paths resolve relative
-  to the process CWD** (the binding uses `ExecutionParameters::default()` with no import base path) —
-  run with CWD at the data dir or use absolute paths in `@import`.
+  `.dict()` / `.subtraces()` / `.rule()` / `.assignement()` walk it. **`.trace()` panics ("wrong
+  arena", `arena.rs`) on IRI facts as of v0.10** — hit during validation; the CLI and Rust crate are
+  unaffected. **Import paths resolve relative to the process CWD** (the binding uses
+  `ExecutionParameters::default()` with no import base path) — run with CWD at the data dir or use
+  absolute paths in `@import`.
 - Rust (`nemo` crate): `ExecutionEngine::from_file(RuleFile, ExecutionParameters)` (set the import
   base path via `ExecutionParameters::set_import_manager(ImportManager::new(ResourceProviders::with_base_path(dir)))`)
   → `engine.execute().await` → `engine.trace_facts(vec![fact]).await` → `(trace, handles)` →
@@ -91,9 +95,10 @@ add a backend unit test pinning the exact serialisation.
 
 ## Kubernetes
 
-- **Memory first.** Size `requests.memory` to the full materialisation (~24 GB per ADR-0020 — measure
-  with `nmo <sssom.rls> --report=mem`, i.e. `engine.memory_usage()`), plus headroom; set
-  `limits.memory` just above. Under-sizing → OOMKill → cold re-chase.
+- **Memory first.** Size `requests.memory` to the full materialisation — measured **11.6 GiB peak**
+  on the dev corpus, with no additional trace-serving overhead, so ~16 GB is comfortable — plus
+  headroom; set `limits.memory` just above. Re-measure per corpus with `nmo <sssom.rls>
+  --report=mem` (`engine.memory_usage()`). Under-sizing → OOMKill → cold re-chase.
 - **Probes around a slow start.** `startupProbe` on `/readyz` with a `failureThreshold × periodSeconds`
   budget covering the chase (so the kubelet doesn't kill mid-chase); `readinessProbe` on `/readyz`
   (no traffic until ready); `livenessProbe` on `/healthz` (process only), guarded by the startup probe.
@@ -103,30 +108,48 @@ add a backend unit test pinning the exact serialisation.
   `sssom.rls`+`assertedCorpus.nq`; wait until warm (chase done), then switch the Service selector.
   Tag responses with `data_version`; the frontend requests explanations for the version it displays.
 - **Autoscaling.** HPA is fine, but new replicas are expensive to warm — keep `minReplicas` at
-  steady-state and scale early. Throughput per replica = one trace at a time (fast), so the cache
-  carries most repeat load.
+  steady-state and scale early. Throughput per replica = one trace at a time at ~1.2 s each (~6 s
+  worst case), i.e. under one request per second, so the cache carries most repeat load.
 
-## Validation (do before flipping ADR-0021 to Accepted)
+## Validation (done 2026-07-06 — numbers recorded in ADR-0021 § Context)
 
-Prove the cost model on the real corpus with the Python binding — smallest possible spike:
+The cost model was validated on the full dev corpus via the `nmo` **CLI** on SLURM (jobs 59579148
+and 62712918), timing four independently-chased trace batches (1 random / 100 random / 400
+worst-case / 4000 random conclusions) with per-batch timeouts and `nmo -v` progress logging. The
+plan below had proposed the Python binding; that route is closed — `nmo_python`'s `.trace()`
+panics ("wrong arena") on IRI facts — so `nmo --trace-input-file` (semicolon-separated facts, one
+line) is the way to trace on a warm engine.
 
-1. `pip install` the `nmo_python` wheel (build from `knowsys/nemo`'s `nemo-python`).
-2. Script: `eng = NemoEngine(load_file("sssom.rls"))`; time `eng.reason()` (expect the ~10–20 min
-   chase, once); then time `eng.trace("<a real inferred conclusion>")` and a few more.
-3. **Time the worst case, not just a representative conclusion.** The "sub-second trace" premise is
+Outcome: **passed, with the latency premise revised from sub-second to seconds.** Chase ~14–15 min
+/ ~11.6 GiB; warm traces 1.16 s marginal (2.9 s first, ~1.8 s of it one-off setup); worst case
+(434-node clique) 6.25 s average — seconds, not minutes, so the synchronous-frontend consequence
+holds behind a spinner. Trace-serving adds no RSS over the chase. Per-trace cost scales with
+*store* size, not component size (the backward search re-queries the global tables per derivation
+step), which also rules out bulk precompute on resident engines (~341 h at 16 engines). Remaining
+before flipping ADR-0021 to Accepted: the product call on ~6 s worst-case latency.
+
+The original steps, for reference (step 3's worst-case discipline is what caught the revision):
+
+1. ~~`pip install` the `nmo_python` wheel~~ (binding panics on IRI facts — use the CLI).
+2. Time the chase once, then individual traces on the warm engine.
+3. **Time the worst case, not just a representative conclusion.** The trace premise is
    load-bearing — it is what makes serving explanations synchronously viable — and it is most likely
    to break on a conclusion whose backward derivation subtree fans out widely even though the chase
    is already done. Deliberately trace the deepest / most highly-connected conclusion (one inside the
-   largest `exactMatch` component on the curated corpus) and confirm it still returns fast; if any
-   single trace is minutes rather than sub-second–seconds, the synchronous-frontend consequence
-   weakens and the service must fall back to async for such conclusions.
+   largest `exactMatch` component on the curated corpus); if any single trace is minutes, the
+   synchronous-frontend consequence weakens and the service must fall back to async for such
+   conclusions.
 4. Confirm: chase paid once; each subsequent trace is sub-second–seconds (including the worst case
    above); resident memory ≈ the `--report=mem` figure. Record the numbers in ADR-0021 and set it
    Accepted (and revise ADR-0020's on-demand paragraph + the `/CONTEXT.md` bullet).
 
 ## Open decisions for the team
 
-- Rust sidecar vs Python (JSON-contract + memory vs time-to-ship) — see the table.
+- Whether ~6 s worst-case synchronous latency (conclusions inside the largest identity component)
+  is acceptable behind a spinner, or whether such conclusions need an async fallback / cache
+  pre-warm. This is the one gate left before flipping ADR-0021 to Accepted.
+- ~~Rust sidecar vs Python~~ — resolved 2026-07-06: Rust (the `nmo_python` trace panic closes the
+  Python route; see the table).
 - Where the resident `assertedCorpus.nq` + `sssom.rls` live at runtime, and how they're versioned with
   the index.
 - Replica count vs pod memory budget for expected concurrent explain load.
