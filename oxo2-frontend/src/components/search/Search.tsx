@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { AdvancedFieldQuery, SearchInput, initialSearchState } from "../../model/Search";
+import { LabelMatchMode, LABEL_MATCH_LABELS, LABEL_MATCH_ORDER, DEFAULT_LABEL_MATCH } from "../../model/LabelMatchMode";
 import { ADVANCED_FIELD_NAMES } from "../../model/AdvancedFields";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import React from "react";
@@ -53,6 +54,10 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
     // Cross-ontology mapping (ADR-0024): source/target ontology prefix selectors on the Search tab.
     const [subjectPrefixes, setSubjectPrefixes] = useState<string[]>(searchInput.subjectPrefixes ?? []);
     const [objectPrefixes, setObjectPrefixes] = useState<string[]>(searchInput.objectPrefixes ?? []);
+
+    // Label match mode (ADR-0026): how free-text label queries match. Defaults to case-insensitive
+    // exact; carried in the URL `match` param on submit.
+    const [labelMatch, setLabelMatch] = useState<LabelMatchMode>(searchInput.labelMatch ?? DEFAULT_LABEL_MATCH);
 
     const { data: ontologies } = useQuery({
         queryKey: ["ontologies"], queryFn: fetchOntologies, staleTime: Infinity,
@@ -111,6 +116,11 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
         setObjectPrefixes(searchInput.objectPrefixes ?? []);
     }, [incomingPrefixKey]);
 
+    // Pick up the label match mode arriving via URL after mount.
+    useEffect(() => {
+        setLabelMatch(searchInput.labelMatch ?? DEFAULT_LABEL_MATCH);
+    }, [searchInput.labelMatch]);
+
     const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         const userSearchInput = event.target.value;
         const sanitizedSearchInput = userSearchInput.split(/[\n,]+/).filter(item => item.trim() !== '');
@@ -135,6 +145,10 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
         for (const prefix of objectPrefixes) {
             params.append("to", prefix);
         }
+        // Only carry a non-default match mode; the default keeps URLs clean and matches the backend default.
+        if (labelMatch !== DEFAULT_LABEL_MATCH) {
+            params.append("match", labelMatch);
+        }
         const query = params.toString();
         navigate(`/search/${encodeURIComponent(curies)}${query ? `?${query}` : ""}`);
     };
@@ -148,6 +162,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
         });
         setSubjectPrefixes([]);
         setObjectPrefixes([]);
+        setLabelMatch(DEFAULT_LABEL_MATCH);
     };
 
     const handleAdvancedChange = (field: string, value: string) => {
@@ -271,6 +286,21 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
                             value={searchState.userSearchInput}
                             onChange={handleInputChange}
                         />
+                        <div className="mt-2 flex items-center gap-2 text-tertiary text-sm">
+                            <label htmlFor="label-match" className="whitespace-nowrap">
+                                Label matching:
+                            </label>
+                            <select
+                                id="label-match"
+                                className="input-default text-sm py-1 w-auto"
+                                value={labelMatch}
+                                onChange={(event) => setLabelMatch(event.target.value as LabelMatchMode)}
+                            >
+                                {LABEL_MATCH_ORDER.map((mode) => (
+                                    <option key={mode} value={mode}>{LABEL_MATCH_LABELS[mode]}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                     <div className="flex flex-col gap-2 md:mt-10">
                         <button

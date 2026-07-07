@@ -10,6 +10,7 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchReques
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
 import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
+import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
@@ -63,6 +64,36 @@ public class SolrQueryBuilder {
 
     private static String textGeneralFieldAsNGram(MappingEnum mappingEnum) {
         return mappingEnum.getField() + "_ngram";
+    }
+
+    /**
+     * The case-insensitive exact-match copy of a label field ({@code string_ci}: keyword tokenizer +
+     * lowercase). Populated by copyField in the mappings schema; see ADR-0026.
+     */
+    private static String textGeneralFieldAsCaseInsensitive(MappingEnum mappingEnum) {
+        return mappingEnum.getField() + "_ci";
+    }
+
+    /** The subject/object/predicate label fields a classified free-text clause targets, per match mode. */
+    private static String[] labelFieldsFor(LabelMatchType labelMatch) {
+        LabelMatchType mode = labelMatch == null ? LabelMatchType.DEFAULT : labelMatch;
+        return switch (mode) {
+            case PARTIAL -> new String[]{
+                    MappingEnum.SUBJECT_LABEL.getField(),
+                    MappingEnum.OBJECT_LABEL.getField(),
+                    MappingEnum.PREDICATE_LABEL.getField()
+            };
+            case EXACT_CASE_INSENSITIVE -> new String[]{
+                    textGeneralFieldAsCaseInsensitive(MappingEnum.SUBJECT_LABEL),
+                    textGeneralFieldAsCaseInsensitive(MappingEnum.OBJECT_LABEL),
+                    textGeneralFieldAsCaseInsensitive(MappingEnum.PREDICATE_LABEL)
+            };
+            case EXACT_CASE_SENSITIVE -> new String[]{
+                    textGeneralFieldAsString(MappingEnum.SUBJECT_LABEL),
+                    textGeneralFieldAsString(MappingEnum.OBJECT_LABEL),
+                    textGeneralFieldAsString(MappingEnum.PREDICATE_LABEL)
+            };
+        };
     }
 
     /**
@@ -144,7 +175,7 @@ public class SolrQueryBuilder {
             solrQuery.setQuery(constructUsingQueryFields(request.getQueries()));
             solrQuery.set(QF, constructQueryFields(queryFields));
         } else {
-            solrQuery.setQuery(constructClassifiedQuery(request.getQueries()));
+            solrQuery.setQuery(constructClassifiedQuery(request.getQueries(), request.getLabelMatch()));
         }
     }
 
@@ -636,7 +667,7 @@ public class SolrQueryBuilder {
      * Quoting the value gives a TermQuery on {@code string} fields and a PhraseQuery on
      * {@code text_general} fields after analysis.
      */
-    private static String constructClassifiedQuery(List<String> queries) {
+    private static String constructClassifiedQuery(List<String> queries, LabelMatchType labelMatch) {
         if (queries == null || queries.isEmpty()) {
             return "*:*";
         }
@@ -662,11 +693,9 @@ public class SolrQueryBuilder {
                         MappingEnum.PREDICATE_ID.getField()
                 };
             } else {
-                fields = new String[]{
-                        MappingEnum.SUBJECT_LABEL.getField(),
-                        MappingEnum.OBJECT_LABEL.getField(),
-                        MappingEnum.PREDICATE_LABEL.getField()
-                };
+                // Free text: the match mode (ADR-0026) picks which label field to target — analyzed
+                // (_label), case-insensitive exact (_label_ci), or case-sensitive exact (_label_str).
+                fields = labelFieldsFor(labelMatch);
             }
 
             StringBuilder clause = new StringBuilder("(");

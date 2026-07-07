@@ -1,6 +1,7 @@
 import {useParams, useSearchParams} from "react-router-dom";
 import {Search} from "../../components/search/Search";
 import {AdvancedFieldQuery, SearchInput} from "../../model/Search";
+import {asLabelMatchMode} from "../../model/LabelMatchMode";
 import {ADVANCED_FIELD_NAMES} from "../../model/AdvancedFields";
 import {ThemeProvider, createTheme} from '@mui/material/styles';
 import {NormalResultsTable} from "./NormalResultsTable";
@@ -37,6 +38,8 @@ function MappingResults() {
     // Cross-ontology mapping (ADR-0024): from/to ontology prefixes; "_map" = whole-ontology (no terms).
     const subjectPrefixes = searchParams.getAll("from");
     const objectPrefixes = searchParams.getAll("to");
+    // Label match mode (ADR-0026): how free-text label queries match; absent = case-insensitive exact.
+    const labelMatch = asLabelMatchMode(searchParams.get("match"));
     const isAdvanced = curies === "_advanced";
     const isMap = curies === "_map";
 
@@ -66,6 +69,7 @@ function MappingResults() {
         activeTab: isAdvanced ? "advanced" : "search",
         subjectPrefixes: subjectPrefixes.length > 0 ? subjectPrefixes : undefined,
         objectPrefixes: objectPrefixes.length > 0 ? objectPrefixes : undefined,
+        labelMatch,
     };
 
     return (
@@ -84,6 +88,7 @@ function MappingResults() {
                         mappingSetIds={mappingSetIds}
                         subjectPrefixes={subjectPrefixes}
                         objectPrefixes={objectPrefixes}
+                        labelMatch={labelMatch}
                     />
                 )}
             </ThemeProvider>

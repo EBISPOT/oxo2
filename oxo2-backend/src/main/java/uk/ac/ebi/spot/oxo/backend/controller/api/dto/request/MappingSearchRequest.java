@@ -2,6 +2,7 @@ package uk.ac.ebi.spot.oxo.backend.controller.api.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
+import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.List;
@@ -62,6 +63,15 @@ public class MappingSearchRequest {
     @Schema(description = "Collapse mappings that share the same subject/predicate/object into one "
             + "representative row.", defaultValue = "false")
     private boolean groupBySpo = false;
+
+    // How free-text (label) queries are matched in the classified/normal path (ADR-0026). Only
+    // affects terms that are neither an IRI nor a CURIE; IRI/CURIE terms remain exact *_iri / *_id
+    // lookups regardless. Defaults to case-insensitive exact match when omitted.
+    @Schema(description = "How free-text label queries are matched: PARTIAL (analyzed subsequence), "
+            + "EXACT_CASE_INSENSITIVE (whole label, case-folded), or EXACT_CASE_SENSITIVE (whole "
+            + "label, case-sensitive). Ignored for IRI/CURIE terms.",
+            defaultValue = "EXACT_CASE_INSENSITIVE")
+    private LabelMatchType labelMatch = LabelMatchType.DEFAULT;
 
 
     public List<String> getQueries() {
@@ -176,6 +186,16 @@ public class MappingSearchRequest {
         this.groupBySpo = groupBySpo;
     }
 
+    public LabelMatchType getLabelMatch() {
+        return labelMatch;
+    }
+
+    public void setLabelMatch(LabelMatchType labelMatch) {
+        // Null-tolerant: an explicit JSON null falls back to the default rather than NPE-ing the
+        // classified path.
+        this.labelMatch = labelMatch == null ? LabelMatchType.DEFAULT : labelMatch;
+    }
+
     @Override
     public String toString() {
         return "MappingSearchRequest{" +
@@ -193,6 +213,7 @@ public class MappingSearchRequest {
                 ", subjectPrefixes=" + subjectPrefixes +
                 ", objectPrefixes=" + objectPrefixes +
                 ", groupBySpo=" + groupBySpo +
+                ", labelMatch=" + labelMatch +
                 '}';
     }
 

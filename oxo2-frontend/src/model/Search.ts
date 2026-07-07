@@ -1,3 +1,5 @@
+import { LabelMatchMode, DEFAULT_LABEL_MATCH } from "./LabelMatchMode";
+
 export interface AdvancedFieldQuery {
     field: string;
     value: string;
@@ -12,6 +14,8 @@ export interface SearchInput {
     // Cross-ontology mapping (ADR-0024): source/target ontology (CURIE) prefixes.
     subjectPrefixes?: string[];
     objectPrefixes?: string[];
+    // Label match mode (ADR-0026): how free-text label queries match.
+    labelMatch?: LabelMatchMode;
 }
 
 export const initialSearchState: SearchInput = {
@@ -22,4 +26,5 @@ export const initialSearchState: SearchInput = {
     activeTab: 'search',
     subjectPrefixes: undefined,
     objectPrefixes: undefined,
+    labelMatch: DEFAULT_LABEL_MATCH,
 }

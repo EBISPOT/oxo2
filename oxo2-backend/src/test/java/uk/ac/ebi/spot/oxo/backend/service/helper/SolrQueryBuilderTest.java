@@ -10,6 +10,7 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchReques
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest.ColumnFilter;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
+import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 
 import java.util.Arrays;
@@ -50,6 +51,11 @@ class SolrQueryBuilderTest {
 
     private static String labelStr(MappingEnum labelField) {
         return labelField.getField() + "_str";
+    }
+
+    /** Case-insensitive exact-match label copy targeted by the EXACT_CASE_INSENSITIVE mode (ADR-0026). */
+    private static String labelCi(MappingEnum labelField) {
+        return labelField.getField() + "_ci";
     }
 
     /**
@@ -240,10 +246,12 @@ class SolrQueryBuilderTest {
 
         // All paths now run under edismax so the inference ranking (ADR-0011) applies uniformly.
         assertThat(solrQuery.get(SolrConstants.DEF_TYPE)).isEqualTo(SolrConstants.EDISMAX);
+        // Default label-match mode is EXACT_CASE_INSENSITIVE (ADR-0026), so free text routes to the
+        // *_label_ci fields, not the analyzed *_label fields.
         assertThat(solrQuery.getQuery())
-                .contains(MappingEnum.SUBJECT_LABEL.getField() + ":\"diabetes\"")
-                .contains(MappingEnum.OBJECT_LABEL.getField() + ":\"diabetes\"")
-                .contains(MappingEnum.PREDICATE_LABEL.getField() + ":\"diabetes\"");
+                .contains(labelCi(MappingEnum.SUBJECT_LABEL) + ":\"diabetes\"")
+                .contains(labelCi(MappingEnum.OBJECT_LABEL) + ":\"diabetes\"")
+                .contains(labelCi(MappingEnum.PREDICATE_LABEL) + ":\"diabetes\"");
     }
 
     // ---------- classified-query (default) path ----------
@@ -277,9 +285,10 @@ class SolrQueryBuilderTest {
     }
 
     @Test
-    void classifiedQueryRoutesFreeTextToLabelFields() {
+    void partialMatchRoutesFreeTextToAnalyzedLabelFields() {
         MappingSearchRequest request = baseRequest();
         request.setQueries(List.of("diabetes mellitus"));
+        request.setLabelMatch(LabelMatchType.PARTIAL);
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
@@ -287,7 +296,75 @@ class SolrQueryBuilderTest {
         assertThat(solrQuery.getQuery())
                 .contains(MappingEnum.SUBJECT_LABEL.getField() + ":\"" + escaped + "\"")
                 .contains(MappingEnum.OBJECT_LABEL.getField() + ":\"" + escaped + "\"")
-                .contains(MappingEnum.PREDICATE_LABEL.getField() + ":\"" + escaped + "\"");
+                .contains(MappingEnum.PREDICATE_LABEL.getField() + ":\"" + escaped + "\"")
+                // Not the exact-match copies.
+                .doesNotContain(labelCi(MappingEnum.SUBJECT_LABEL))
+                .doesNotContain(labelStr(MappingEnum.SUBJECT_LABEL));
+    }
+
+    @Test
+    void caseInsensitiveExactIsTheDefaultAndRoutesFreeTextToCiFields() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("Diabetes Mellitus"));
+        // No setLabelMatch(...) — the request default must be EXACT_CASE_INSENSITIVE (ADR-0026).
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        String escaped = ClientUtils.escapeQueryChars("Diabetes Mellitus");
+        assertThat(solrQuery.getQuery())
+                .contains(labelCi(MappingEnum.SUBJECT_LABEL) + ":\"" + escaped + "\"")
+                .contains(labelCi(MappingEnum.OBJECT_LABEL) + ":\"" + escaped + "\"")
+                .contains(labelCi(MappingEnum.PREDICATE_LABEL) + ":\"" + escaped + "\"")
+                // Not the analyzed nor case-sensitive fields.
+                .doesNotContain(MappingEnum.SUBJECT_LABEL.getField() + ":\"")
+                .doesNotContain(labelStr(MappingEnum.SUBJECT_LABEL));
+    }
+
+    @Test
+    void caseSensitiveExactRoutesFreeTextToStrFields() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("Diabetes Mellitus"));
+        request.setLabelMatch(LabelMatchType.EXACT_CASE_SENSITIVE);
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        String escaped = ClientUtils.escapeQueryChars("Diabetes Mellitus");
+        assertThat(solrQuery.getQuery())
+                .contains(labelStr(MappingEnum.SUBJECT_LABEL) + ":\"" + escaped + "\"")
+                .contains(labelStr(MappingEnum.OBJECT_LABEL) + ":\"" + escaped + "\"")
+                .contains(labelStr(MappingEnum.PREDICATE_LABEL) + ":\"" + escaped + "\"")
+                // Not the analyzed nor case-insensitive fields.
+                .doesNotContain(MappingEnum.SUBJECT_LABEL.getField() + ":\"")
+                .doesNotContain(labelCi(MappingEnum.SUBJECT_LABEL));
+    }
+
+    @Test
+    void labelMatchModeIsIgnoredForCurieTerms() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("DOID:0014667"));
+        request.setLabelMatch(LabelMatchType.EXACT_CASE_SENSITIVE);
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        String escaped = ClientUtils.escapeQueryChars("DOID:0014667");
+        // A CURIE is always an exact *_id lookup; the label-match mode does not divert it to a label field.
+        assertThat(solrQuery.getQuery())
+                .contains(MappingEnum.SUBJECT_ID.getField() + ":\"" + escaped + "\"")
+                .doesNotContain("_label");
+    }
+
+    @Test
+    void labelMatchModeIsIgnoredForIriTerms() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("http://example.org/Foo"));
+        request.setLabelMatch(LabelMatchType.EXACT_CASE_SENSITIVE);
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        // An IRI is always an exact *_iri lookup, regardless of the label-match mode.
+        assertThat(solrQuery.getQuery())
+                .contains(MappingEnum.SUBJECT_IRI.getField() + ":\"")
+                .doesNotContain("_label");
     }
 
     @Test
@@ -319,8 +396,10 @@ class SolrQueryBuilderTest {
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
+        // Free text uses the default EXACT_CASE_INSENSITIVE field (ADR-0026); the term itself is
+        // what this test cares about (null/blank skipped, no empty "" clause).
         assertThat(solrQuery.getQuery())
-                .contains(MappingEnum.SUBJECT_LABEL.getField() + ":\"kept\"");
+                .contains(labelCi(MappingEnum.SUBJECT_LABEL) + ":\"kept\"");
         assertThat(solrQuery.getQuery()).doesNotContain("\"\"");
     }
 

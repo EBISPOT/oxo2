@@ -12,6 +12,7 @@ import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlFieldFilter
     from "../../util/tableUrlState";
 import {Mapping} from "../../model/Mapping.ts";
 import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
+import {LabelMatchMode, DEFAULT_LABEL_MATCH} from "../../model/LabelMatchMode";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {InferenceTypeFilterPopover} from "../../components/mapping/InferenceTypeFilterPopover";
 import {IconButton, Tooltip} from "@mui/material";
@@ -98,9 +99,9 @@ function advancedHrefForTriple(mapping: Mapping): string {
  * remains the home for exhaustive per-field filtering (see AdvancedResultsTable).
  */
 export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [], objectPrefixes = [],
-    initialInferenceTypes = DEFAULT_INFERENCE_TYPES }:
+    initialInferenceTypes = DEFAULT_INFERENCE_TYPES, labelMatch = DEFAULT_LABEL_MATCH }:
     { queries: string[]; mappingSetIds: string[]; subjectPrefixes?: string[]; objectPrefixes?: string[];
-      initialInferenceTypes?: InferenceType[] }) {
+      initialInferenceTypes?: InferenceType[]; labelMatch?: LabelMatchMode }) {
     const navigate = useNavigate();
     const [isExporting, setIsExporting] = useState(false);
 
@@ -156,6 +157,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             inferenceTypes.join(","),
             subjectPrefixesKey,
             objectPrefixesKey,
+            labelMatch,
         ],
         queryFn: () =>
             fetchMappings(
@@ -169,7 +171,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 inferenceTypes,
                 true, // group same-SPO mappings into one row (ADR-0013)
                 subjectPrefixes,
-                objectPrefixes
+                objectPrefixes,
+                labelMatch // label match mode (ADR-0026)
             ),
         staleTime: Infinity,
     });
@@ -178,11 +181,11 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const handleExport = useCallback(() => {
         setIsExporting(true);
         exportMappings(queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
-            subjectPrefixes, objectPrefixes)
+            subjectPrefixes, objectPrefixes, labelMatch)
             .catch((error) => console.error("Export failed", error))
             .finally(() => setIsExporting(false));
     }, [queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
-        subjectPrefixes, objectPrefixes]);
+        subjectPrefixes, objectPrefixes, labelMatch]);
 
     const mappingResults: MappingPage = data ? fromJson(data) : emptyMappingPage;
 

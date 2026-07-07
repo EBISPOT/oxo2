@@ -69,6 +69,17 @@
   <fieldType name="rank" class="solr.RankField"/>
   <fieldType name="string" class="solr.StrField" sortMissingLast="true"/>
   <fieldType name="strings" class="solr.StrField" sortMissingLast="true" multiValued="true"/>
+  <!-- Case-insensitive exact match on labels (ADR-0026). KeywordTokenizer keeps the whole value as a
+       single token (unlike text_general, which splits into words); lowercase + trim fold case and
+       surrounding whitespace, so the entire label must equal the folded query. Backs the *_label_ci
+       fields used by the EXACT_CASE_INSENSITIVE label-match mode. -->
+  <fieldType name="string_ci" class="solr.TextField" sortMissingLast="true" omitNorms="true">
+    <analyzer>
+      <tokenizer name="keyword"/>
+      <filter name="lowercase"/>
+      <filter name="trim"/>
+    </analyzer>
+  </fieldType>
   <fieldType name="text_ar" class="solr.TextField" positionIncrementGap="100">
     <analyzer>
       <tokenizer name="standard"/>
@@ -504,6 +515,7 @@
   <field name="object_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="object_label_str" type="string" multiValued="false" indexed="true" stored="false"/>
   <field name="object_label_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
+  <field name="object_label_ci" type="string_ci" multiValued="false" indexed="true" stored="false"/>
   <field name="object_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="object_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="object_source" type="string" multiValued="false" indexed="true" stored="true"/>
@@ -515,6 +527,7 @@
   <field name="predicate_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="predicate_label_str" type="string" multiValued="false" indexed="true" stored="false"/>
   <field name="predicate_label_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
+  <field name="predicate_label_ci" type="string_ci" multiValued="false" indexed="true" stored="false"/>
   <field name="predicate_modifier" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="publication_date" type="pdates" multiValued="false" indexed="true" stored="true"/>
   <field name="reviewer_id" type="strings" multiValued="true" indexed="true" stored="true"/>
@@ -528,6 +541,7 @@
   <field name="subject_label" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_label_str" type="string" multiValued="false" indexed="true" stored="false"/>
   <field name="subject_label_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
+  <field name="subject_label_ci" type="string_ci" multiValued="false" indexed="true" stored="false"/>
   <!-- Grouping key for collapsing same-SPO mappings into one result-view row (ADR-0013): a hash of
        subject_id + predicate_id + predicate_modifier + object_id. Derived at serialization time by
        Mapping.spoKey(); docValues for grouping, not stored (never retrieved). -->
@@ -627,11 +641,14 @@
   <copyField source="object_id" dest="object_id_ngram" maxChars="256"/>
   <copyField source="object_label" dest="object_label_str" maxChars="256"/>
   <copyField source="object_label" dest="object_label_ngram" maxChars="256"/>
+  <copyField source="object_label" dest="object_label_ci" maxChars="256"/>
   <copyField source="predicate_id" dest="predicate_id_ngram" maxChars="256"/>
   <copyField source="predicate_label" dest="predicate_label_str" maxChars="256"/>
   <copyField source="predicate_label" dest="predicate_label_ngram" maxChars="256"/>
+  <copyField source="predicate_label" dest="predicate_label_ci" maxChars="256"/>
   <copyField source="subject_id" dest="subject_id_ngram" maxChars="256"/>
   <copyField source="subject_label" dest="subject_label_str" maxChars="256"/>
   <copyField source="subject_label" dest="subject_label_ngram" maxChars="256"/>
+  <copyField source="subject_label" dest="subject_label_ci" maxChars="256"/>
 </schema>
 

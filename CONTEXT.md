@@ -151,6 +151,16 @@ Affects `oxo2-dataload` (`subject_prefix` / `object_prefix` population + reindex
 (`/api/v2/ontologies`, the prefix-filtered `GET /api/v2/mappings?from=&to=` + `POST …/search`,
 `batch-map`, `?format=` export, the v1 `/api/search` adapter), and `oxo2-frontend` (from/to prefix
 selectors on the Search tab, batch + export UI).
+- **Label matching in a normal search is a configurable mode** — a free-text (label) term in the
+classified/normal search matches by one of three modes: *partial* (the analyzed `*_label` subsequence
+match), *case-insensitive exact* (the whole label folded, via the `*_label_ci` `string_ci` field) — the
+**default** — or *case-sensitive exact* (`*_label_str`). IRI / CURIE terms stay exact `*_iri` / `*_id`
+lookups regardless, and the Advanced tab and batch-map / v1 paths are unaffected. Changing the default
+from partial to case-insensitive exact required a schema field + reindex. See
+[ADR-0026](docs/adr/0026-configurable-label-match-mode.md). Affects `oxo2-dataload` (`string_ci` field
+type + `*_label_ci` fields + reindex), `oxo2-shared` (`LabelMatchType`), `oxo2-backend` (`labelMatch`
+request field + classified-query field selection), and `oxo2-frontend` (the match-mode control on the
+Search tab, carried in the URL `?match=`).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **The dataload is resumable from a chosen (sub)stage** — parameterised by `START_STAGE` (default

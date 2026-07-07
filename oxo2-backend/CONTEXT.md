@@ -143,9 +143,10 @@ cross-set closure is already materialised at dataload ([ADR-0016](../docs/adr/00
 denormalised `subject_prefix` / `object_prefix` fields (subject = source, object = target); the
 bookmarkable `GET /api/v2/mappings?from=&to=` sets the same two filters from query params. `GET
 /api/v2/ontologies` faceting on the same fields drives the count-laden from/to selectors.
-`batch-map` runs the same filters with the input terms classified the way the default search classifies
-them (CURIE → `subject_id`, IRI → `subject_iri`, label → `subject_label`), then computes
-`unmappedInputs` as the input set minus the matched subjects.
+`batch-map` runs the same filters with the input terms classified by shape (CURIE → `subject_id`,
+IRI → `subject_iri`, label → `subject_label` as a partial match — batch-map does **not** expose the
+normal search's label-match mode, see [ADR-0026](../docs/adr/0026-configurable-label-match-mode.md)),
+then computes `unmappedInputs` as the input set minus the matched subjects.
 
 The v1 `POST /api/search` adapter builds the same Solr query, regroups the flat hits **by input term**
 into `SearchResult` / `MappingResponse`, and maps v1's `distance` onto the inference-type tiers —
@@ -154,6 +155,18 @@ into `SearchResult` / `MappingResponse`, and maps v1's `distance` onto the infer
 query-time hop count ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md) left `distance`
 inert), so `MappingResponse.distance` is a coarse direct/indirect sentinel (`1` asserted, `2` inferred),
 not a true depth — a deliberate v1 break recorded in ADR-0024.
+
+#### Free-text label matching
+
+A classified/normal search (`constructClassifiedQuery`) routes each free-text term to an OR over the
+subject/object/predicate fields. An IRI term goes to `*_iri` and a CURIE to `*_id` (both exact
+`string` lookups); a plain **label** term goes to a label field chosen by the request's `labelMatch`
+(`LabelMatchType`, default `EXACT_CASE_INSENSITIVE`): `PARTIAL` → the analyzed `*_label`
+(`text_general`, subsequence phrase), `EXACT_CASE_INSENSITIVE` → `*_label_ci` (`string_ci` = keyword
++ lowercase + trim, whole label case-folded), `EXACT_CASE_SENSITIVE` → `*_label_str` (`string`, whole
+label byte-for-byte). The value is quoted and `ClientUtils`-escaped in every mode. The mode affects
+only the label branch — never IRI/CURIE routing, the Advanced tab, or batch-map/v1. The `*_label_ci`
+fields require a reindex to populate. See [ADR-0026](../docs/adr/0026-configurable-label-match-mode.md).
 
 #### Column-filter matching
 
