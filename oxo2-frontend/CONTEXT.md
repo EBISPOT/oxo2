@@ -76,6 +76,32 @@ prefixes. Results reuse `NormalResultsTable` plus a summary header and an SSSOM-
 batch (pasted-list) variant also shows an unmapped-inputs panel and mirrors its input to
 `sessionStorage` so a refresh re-runs.
 
+### Entry point, corpus and result order (ADR-0027)
+
+The **Search** tab asks one question — *which term, or terms, do you want to map?* — and offers a
+`Single term` / `Multiple terms` toggle over one input. Batch mode adds a local file drop
+(`search/TermFileDrop.tsx`, `.txt/.csv/.tsv`): the file is read in the browser and its terms are
+*appended to the textarea*, never held as a hidden second source of truth, so what runs is always
+what the user can read back. Label-match mode and the restrict-to-mapping-sets table live behind a
+**More options** `<details>`; before, both greeted the user ahead of any typing.
+
+Two controls stay on the surface because they change what the answer *means*:
+
+- **"Where should mappings come from?"** (`search/CorpusSelector.tsx`) — a three-way segmented
+  control over `src/model/MappingSetCategory.ts`, carried in the URL as `?corpus=ontology|curated`
+  and sent as the request's `mappingSetCategory`. `Both` is the default and sends no filter, which
+  is also what keeps results flowing before the reindex that populates `mapping_set_category`. It
+  does **not** hide inferred mappings — that is the results table's inference-type filter.
+- **"Order results by"** — `src/model/SortMode.ts`. It writes the *same* `?sort` param the table's
+  per-column sort popovers write, so the URL stays the single source of truth and the two can never
+  disagree. A per-column sort the control cannot represent reads back as `Best match`.
+
+`Best match` deliberately writes **no** `?sort` at all: an explicit Solr sort replaces `score`, so
+the compact table's old `subject_label asc` default silently discarded the provenance-led ranking
+and ordered alphabetically. `NormalResultsTable`'s `DEFAULT_SORTING` is now `[]` and the backend
+names `score desc` itself. `AdvancedResultsTable` keeps its explicit `subject_id asc` — the Advanced
+surface stays flat and deterministic.
+
 ### State management
 
 Server state is handled by TanStack Query (caching, invalidation, retry). Local view state uses React's `useState` / `useReducer`. 

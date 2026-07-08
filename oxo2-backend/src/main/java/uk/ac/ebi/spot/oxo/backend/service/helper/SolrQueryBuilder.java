@@ -813,16 +813,30 @@ public class SolrQueryBuilder {
      * @param mappingSearchRequest
      * @return
      */
+    /**
+     * Apply the caller's sort, or fall back to relevance.
+     *
+     * <p>The fallback is load-bearing, not cosmetic. An explicit Solr {@code sort} <em>replaces</em>
+     * {@code score}, so any sorted field silently discards the whole provenance ranking
+     * ({@link #RANKING_BOOST}). Worse, {@link #applySpoGrouping} appends {@code spo_key asc} as a
+     * paging tiebreaker: with no sort at all, that tiebreaker would become the <em>primary</em> key and
+     * order the page by an opaque hash. Naming {@code score desc} here keeps relevance primary and
+     * demotes {@code spo_key} to the tiebreaker it was meant to be. Outside grouping this is exactly
+     * Solr's own default, so it changes nothing.
+     */
     private static SolrQuery constructSortedFields(SolrQuery solrQuery, MappingSearchRequest mappingSearchRequest) {
-        if (mappingSearchRequest.getSortedFields() != null) {
-            for (SortedField sortedField : mappingSearchRequest.getSortedFields()) {
-                solrQuery.addSort(
-                        textGeneralToDocValues.containsKey(sortedField.getId()) ?
-                            textGeneralToDocValues.get(sortedField.getId()) :
-                            sortedField.getId().getField(),
-                        sortedField.isDesc() == true ? SolrQuery.ORDER.desc : SolrQuery.ORDER.asc
-                );
-            }
+        List<SortedField> sortedFields = mappingSearchRequest.getSortedFields();
+        if (sortedFields == null || sortedFields.isEmpty()) {
+            solrQuery.addSort(SolrConstants.SCORE, SolrQuery.ORDER.desc);
+            return solrQuery;
+        }
+        for (SortedField sortedField : sortedFields) {
+            solrQuery.addSort(
+                    textGeneralToDocValues.containsKey(sortedField.getId()) ?
+                        textGeneralToDocValues.get(sortedField.getId()) :
+                        sortedField.getId().getField(),
+                    sortedField.isDesc() == true ? SolrQuery.ORDER.desc : SolrQuery.ORDER.asc
+            );
         }
         return solrQuery;
     }

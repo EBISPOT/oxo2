@@ -724,6 +724,53 @@ class SolrQueryBuilderTest {
                 .noneMatch(fq -> fq.contains(MappingEnum.MAPPING_SET_CATEGORY.getField()));
     }
 
+    // ---------- relevance is the default sort, so the ranking is actually visible ----------
+
+    /**
+     * An explicit Solr sort replaces {@code score}, so a default sorted field would silently discard
+     * the whole provenance ranking. Without a caller sort we must name {@code score desc} ourselves.
+     */
+    @Test
+    void noSortedFieldsSortsByRelevance() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.getSortField()).isEqualTo("score desc");
+    }
+
+    /**
+     * Collapse appends spo_key as a paging tiebreaker. It must stay a tiebreaker: if relevance were
+     * not named first, spo_key would become the primary key and order the page by an opaque hash.
+     */
+    @Test
+    void groupedSearchKeepsRelevancePrimaryAndSpoKeyAsTiebreaker() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+        request.setGroupBySpo(true);
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.getSortField())
+                .isEqualTo("score desc," + MappingEnum.SPO_KEY.getField() + " asc");
+    }
+
+    /** An explicit caller sort still wins — the fallback only applies when none was given. */
+    @Test
+    void explicitSortedFieldsReplaceRelevance() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+        SortedField sort = new SortedField();
+        sort.setId(MappingEnum.CONFIDENCE);
+        sort.setDesc(true);
+        request.setSortedFields(List.of(sort));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.getSortField()).isEqualTo(MappingEnum.CONFIDENCE.getField() + " desc");
+    }
+
     /** The export must filter identically to the table, or the download won't match what was shown. */
     @Test
     void exportQueryHonoursMappingSetCategoryFilter() {

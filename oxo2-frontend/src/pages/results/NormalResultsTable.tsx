@@ -13,6 +13,7 @@ import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlFieldFilter
 import {Mapping} from "../../model/Mapping.ts";
 import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
 import {LabelMatchMode, DEFAULT_LABEL_MATCH} from "../../model/LabelMatchMode";
+import {CorpusMode, DEFAULT_CORPUS, corpusToRequest} from "../../model/MappingSetCategory";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {InferenceTypeFilterPopover} from "../../components/mapping/InferenceTypeFilterPopover";
 import {IconButton, Tooltip} from "@mui/material";
@@ -58,9 +59,12 @@ const OBJECT_SORT_FIELDS: SortFieldDef[] = [
     {field: "object_iri", label: "IRI"},
 ];
 
-// Default sort for the compact table. Module-level so its reference is stable across
+// Default sort for the compact table: none, i.e. relevance — the provenance-led ranking (ADR-0027).
+// This is deliberately empty rather than a field: an explicit Solr sort *replaces* `score`, so the
+// previous `subject_label asc` default silently discarded the ranking and ordered alphabetically.
+// The backend names `score desc` when no sort is sent. Module-level so its reference is stable across
 // renders (useUrlSorting memoises against it).
-const DEFAULT_SORTING: MRT_SortingState = [{ id: 'subject_label', desc: false }];
+const DEFAULT_SORTING: MRT_SortingState = [];
 
 // Same-SPO grouping helpers (ADR-0013). A grouped representative carries all its members (including
 // itself) in groupMembers; an ungrouped row falls back to the single mapping.
@@ -99,9 +103,10 @@ function advancedHrefForTriple(mapping: Mapping): string {
  * remains the home for exhaustive per-field filtering (see AdvancedResultsTable).
  */
 export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [], objectPrefixes = [],
-    initialInferenceTypes = DEFAULT_INFERENCE_TYPES, labelMatch = DEFAULT_LABEL_MATCH }:
+    initialInferenceTypes = DEFAULT_INFERENCE_TYPES, labelMatch = DEFAULT_LABEL_MATCH,
+    corpus = DEFAULT_CORPUS }:
     { queries: string[]; mappingSetIds: string[]; subjectPrefixes?: string[]; objectPrefixes?: string[];
-      initialInferenceTypes?: InferenceType[]; labelMatch?: LabelMatchMode }) {
+      initialInferenceTypes?: InferenceType[]; labelMatch?: LabelMatchMode; corpus?: CorpusMode }) {
     const navigate = useNavigate();
     const [isExporting, setIsExporting] = useState(false);
 
@@ -145,6 +150,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const mappingSetIdsKey = mappingSetIds.join(",");
     const subjectPrefixesKey = subjectPrefixes.join(",");
     const objectPrefixesKey = objectPrefixes.join(",");
+    // Which asserted corpora to search (ADR-0027); undefined for "both", which sends no filter.
+    const mappingSetCategory = useMemo(() => corpusToRequest(corpus), [corpus]);
     const { data, isLoading, isError } = useQuery({
         queryKey: [
             "fetchMappings",
@@ -158,6 +165,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             subjectPrefixesKey,
             objectPrefixesKey,
             labelMatch,
+            corpus,
         ],
         queryFn: () =>
             fetchMappings(
@@ -172,7 +180,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 true, // group same-SPO mappings into one row (ADR-0013)
                 subjectPrefixes,
                 objectPrefixes,
-                labelMatch // label match mode (ADR-0026)
+                labelMatch, // label match mode (ADR-0026)
+                mappingSetCategory // asserted corpora (ADR-0027)
             ),
         staleTime: Infinity,
     });
@@ -181,11 +190,11 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const handleExport = useCallback(() => {
         setIsExporting(true);
         exportMappings(queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
-            subjectPrefixes, objectPrefixes, labelMatch)
+            subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory)
             .catch((error) => console.error("Export failed", error))
             .finally(() => setIsExporting(false));
     }, [queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
-        subjectPrefixes, objectPrefixes, labelMatch]);
+        subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory]);
 
     const mappingResults: MappingPage = data ? fromJson(data) : emptyMappingPage;
 

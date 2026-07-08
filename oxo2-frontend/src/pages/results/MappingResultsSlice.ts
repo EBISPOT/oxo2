@@ -10,6 +10,7 @@ import {
 } from '../../model/Mapping';
 import { InferenceType, asInferenceType } from '../../model/InferenceType';
 import { LabelMatchMode } from '../../model/LabelMatchMode';
+import { MappingSetCategory } from '../../model/MappingSetCategory';
 import { post, downloadPost } from '../../app/api';
 
 export interface MappingSearchResponse {
@@ -64,6 +65,9 @@ interface SearchRequest {
     // Label match mode (ADR-0026): how free-text label queries match. Omitted = backend default
     // (case-insensitive exact).
     labelMatch?: LabelMatchMode;
+    // Which asserted corpora to search (ADR-0027): omitted = every corpus. Inferred mappings carry no
+    // category and always pass this filter; use inferenceType to exclude them.
+    mappingSetCategory?: MappingSetCategory[];
 }
 
 // Batch cross-ontology mapping response (ADR-0024): the page of mappings plus the unmapped inputs.
@@ -283,7 +287,8 @@ function buildSearchRequest(queries: string[], page: number, pageSize: number, c
                            advancedFieldQueries?: AdvancedFieldQueryRequest[],
                            inferenceType?: InferenceType[], groupBySpo: boolean = false,
                            subjectPrefixes?: string[], objectPrefixes?: string[],
-                           labelMatch?: LabelMatchMode): SearchRequest {
+                           labelMatch?: LabelMatchMode,
+                           mappingSetCategory?: MappingSetCategory[]): SearchRequest {
     return {
         queries: queries,
         page: page,
@@ -300,6 +305,7 @@ function buildSearchRequest(queries: string[], page: number, pageSize: number, c
         ...(subjectPrefixes && subjectPrefixes.length > 0 ? { subjectPrefixes } : {}),
         ...(objectPrefixes && objectPrefixes.length > 0 ? { objectPrefixes } : {}),
         ...(labelMatch ? { labelMatch } : {}),
+        ...(mappingSetCategory && mappingSetCategory.length > 0 ? { mappingSetCategory } : {}),
     };
 }
 
@@ -310,9 +316,11 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
                               groupBySpo: boolean = false,
                               subjectPrefixes?: string[],
                               objectPrefixes?: string[],
-                              labelMatch?: LabelMatchMode): Promise<MappingSearchResponse> {
+                              labelMatch?: LabelMatchMode,
+                              mappingSetCategory?: MappingSetCategory[]): Promise<MappingSearchResponse> {
     const requestBody = buildSearchRequest(queries, page, pageSize, columnFilters, sorting, mappingSetIds,
-        advancedFieldQueries, inferenceType, groupBySpo, subjectPrefixes, objectPrefixes, labelMatch);
+        advancedFieldQueries, inferenceType, groupBySpo, subjectPrefixes, objectPrefixes, labelMatch,
+        mappingSetCategory);
     return post<SearchRequest, MappingSearchResponse>('/api/v2/mappings/search', requestBody);
 }
 
@@ -323,9 +331,10 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
 export function exportMappings(queries: string[], columnFilters: unknown[], mappingSetIds?: string[],
                                inferenceType?: InferenceType[],
                                subjectPrefixes?: string[], objectPrefixes?: string[],
-                               labelMatch?: LabelMatchMode): Promise<void> {
+                               labelMatch?: LabelMatchMode,
+                               mappingSetCategory?: MappingSetCategory[]): Promise<void> {
     const requestBody = buildSearchRequest(queries, 0, 10, columnFilters, [], mappingSetIds,
-        undefined, inferenceType, false, subjectPrefixes, objectPrefixes, labelMatch);
+        undefined, inferenceType, false, subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory);
     return downloadPost('/api/v2/mappings/search?format=sssom-tsv', requestBody, 'oxo2-mappings.tsv');
 }
 

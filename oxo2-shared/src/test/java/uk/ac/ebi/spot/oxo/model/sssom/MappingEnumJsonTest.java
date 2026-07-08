@@ -29,6 +29,22 @@ class MappingEnumJsonTest {
         assertEquals(MappingEnum.SUBJECT_ID, mappingEnum);
     }
 
+    @Test
+    void deserializesTheNewMappingSetCategoryField() throws Exception {
+        assertEquals(MappingEnum.MAPPING_SET_CATEGORY,
+                objectMapper.readValue("\"mapping_set_category\"", MappingEnum.class));
+    }
+
+    /**
+     * The frontend "Sort by" control posts these two field names as {@code sortedFields[].id}, which
+     * binds to a MappingEnum. If either stopped resolving, picking that option would fail the search.
+     */
+    @Test
+    void deserializesTheFieldsTheSortByControlSends() throws Exception {
+        assertEquals(MappingEnum.CONFIDENCE, objectMapper.readValue("\"confidence\"", MappingEnum.class));
+        assertEquals(MappingEnum.MAPPING_DATE, objectMapper.readValue("\"mapping_date\"", MappingEnum.class));
+    }
+
     /**
      * Regression: Jackson 2.21 treats any public no-arg String getter on an enum as an
      * "as-value" candidate. Adding a second such getter alongside the @JsonValue-annotated
