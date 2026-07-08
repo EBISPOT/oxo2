@@ -22,6 +22,8 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.ebi.spot.oxo.model.sssom.MappingSetCategory;
+
 /**
  * @Todo:
  * 1. Parallelize SSSOM2JSON
@@ -107,6 +109,22 @@ public class SSSOM2JSON {
         String inputDirectory = cmd.getOptionValue("inputDir");
         String outputDirectory = cmd.getOptionValue("outputDir");
 
+        // The OxO curation category of the registry these TSVs came from (ADR-0027). It is not in the
+        // SSSOM data, so the caller — sssom2json.nf, which knows the config — supplies it. An untagged
+        // registry is CURATED, so that is also the default when the option is omitted.
+        MappingSetCategory mappingSetCategory = MappingSetCategory.DEFAULT;
+        String categoryOption = cmd.getOptionValue("category");
+        if (categoryOption != null && !categoryOption.isBlank()) {
+            try {
+                mappingSetCategory = MappingSetCategory.fromCode(categoryOption);
+            } catch (IllegalArgumentException e) {
+                logger.error("Invalid --category '{}'. Expected one of {}.",
+                        categoryOption, java.util.Arrays.toString(MappingSetCategory.values()));
+                System.exit(1);
+                return;
+            }
+        }
+
         if (inputFile != null && inputDirectory != null) {
             logger.error("Cannot specify both inputFile and inputDir");
             formatter.printHelp("SSSOM2JSON", options);
@@ -122,21 +140,23 @@ public class SSSOM2JSON {
         }
 
         logger.info("Output Directory: {}", outputDirectory);
+        logger.info("Mapping Set Category: {}", mappingSetCategory.getCode());
 
         long startTime = System.currentTimeMillis();
         if (inputFile != null) {
             logger.info("Input File: {}", inputFile);
-            processSingleFile(inputFile, outputDirectory);
+            processSingleFile(inputFile, outputDirectory, mappingSetCategory);
         } else {
             logger.info("Input Directory: {}", inputDirectory);
-            processMappingSets(inputDirectory, outputDirectory);
+            processMappingSets(inputDirectory, outputDirectory, mappingSetCategory);
         }
         long endTime = System.currentTimeMillis();
 
         logger.info("Time taken to process SSSOM files: {} s", (endTime - startTime) / 1000);
     }
 
-    private static void processSingleFile(String inputFile, String outputDirectory) throws IOException {
+    private static void processSingleFile(String inputFile, String outputDirectory,
+                                          MappingSetCategory mappingSetCategory) throws IOException {
         File tsvFile = new File(inputFile);
         if (!tsvFile.exists() || !tsvFile.isFile()) {
             throw new IOException("Input file does not exist or is not a file: " + inputFile);
@@ -154,7 +174,7 @@ public class SSSOM2JSON {
         }
 
         try {
-            processFile(tsvFile, mappingSetDirectory, mappingDirectory);
+            processFile(tsvFile, mappingSetDirectory, mappingDirectory, mappingSetCategory);
         } catch (Throwable t) {
             logger.error("Error processing file {}", tsvFile, t);
         }
@@ -164,7 +184,15 @@ public class SSSOM2JSON {
         logger.info("Memory used: {} MB", usedMemoryMB);
     }
 
-    private static void processMappingSets(String inputDirectory, String outputDirectory) throws IOException {
+    /**
+     * Walks every sub-directory of {@code inputDirectory} and applies the one {@code mappingSetCategory}
+     * to all of them. The sssom root holds one sub-directory per config registry, and registries may
+     * differ in category, so this whole-tree mode is only correct for a single-registry tree. The
+     * supported dataload path (sssom2json.nf, ADR-0003) invokes the per-file mode instead, with the
+     * category resolved from the config for that file's registry.
+     */
+    private static void processMappingSets(String inputDirectory, String outputDirectory,
+                                           MappingSetCategory mappingSetCategory) throws IOException {
         Stream<Path> directoriesOfMappingSets = getDirectories(inputDirectory);
 
         String mappingSetDirectory = outputDirectory + File.separator + "mappingSet";
@@ -178,7 +206,8 @@ public class SSSOM2JSON {
             throw new IOException("Error creating output directories", e);
         }
 
-        directoriesOfMappingSets.forEach(path -> processDirectory(path.toString(), mappingSetDirectory, mappingDirectory));
+        directoriesOfMappingSets.forEach(path ->
+                processDirectory(path.toString(), mappingSetDirectory, mappingDirectory, mappingSetCategory));
 
         long usedMemoryBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         double usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0);
@@ -223,6 +252,12 @@ public class SSSOM2JSON {
         Option outputDirectory = new Option("o", "outputDir", true, "Output directory for JSON files");
         outputDirectory.setRequired(true);
         options.addOption(outputDirectory);
+
+        Option category = new Option("c", "category", true,
+                "OxO curation category of the registry these SSSOM files came from: "
+                        + "ONTOLOGY or CURATED (default). Applies to every file processed in this run.");
+        category.setRequired(false);
+        options.addOption(category);
 
         return options;
     }

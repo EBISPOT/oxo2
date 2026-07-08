@@ -1,8 +1,12 @@
 #!/bin/bash
 
 # Check if the correct number of arguments is provided
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <inputDir> <outputDir>"
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+  echo "Usage: $0 <inputDir> <outputDir> [category]"
+  echo "  category: ONTOLOGY or CURATED (default), applied to EVERY set under <inputDir>."
+  echo "  <inputDir> holding more than one registry's sets can therefore only be converted"
+  echo "  correctly when they share a category. loadData.nextflow uses sssom2json.nf, which"
+  echo "  resolves the category per registry from \$OXO2_CONFIG."
   exit 1
 fi
 SCRIPT_DIR=$(dirname $(readlink -f $0))
@@ -10,6 +14,7 @@ SCRIPT_DIR=$(dirname $(readlink -f $0))
 # Assign input parameters to variables
 INPUT_DIR=$1
 OUTPUT_DIR=$2
+CATEGORY=${3:-}
 
 # Check if the output directory exists and delete it
 if [ -d "$OUTPUT_DIR" ]; then
@@ -19,7 +24,7 @@ fi
 
 
 # Run the SSSOM2JSON
-java $JAVA_OPTS -jar $SCRIPT_DIR/oxo2-sssom2json/target/oxo2-sssom2json-1.0.0-SNAPSHOT.jar -i $INPUT_DIR -o $OUTPUT_DIR
+java $JAVA_OPTS -jar $SCRIPT_DIR/oxo2-sssom2json/target/oxo2-sssom2json-1.0.0-SNAPSHOT.jar -i $INPUT_DIR -o $OUTPUT_DIR ${CATEGORY:+-c "$CATEGORY"}
 
 # Check if the command was successful
 if [ $? -eq 0 ]; then

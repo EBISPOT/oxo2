@@ -4,6 +4,7 @@
 params.input_dir = "${System.getenv('OXO2_DATA')}/sssom"
 params.output_dir = "${System.getenv('OXO2_DATA')}/sssom-as-json"
 params.script_dir = params.script_dir ?: "${projectDir}"
+params.config_file = "${System.getenv('OXO2_CONFIG') ?: ''}"
 
 workflow {
     // Output filenames are derived from each input's path RELATIVE to the sssom root, flattened
@@ -14,6 +15,20 @@ workflow {
     // which would otherwise all publish as priority.sssom.json (last-wins). Downstream stages
     // treat the stem as an opaque unique key (they match by *.json glob / read content).
     def sssomRoot = file(params.input_dir).toString()
+
+    // Each mapping set's OxO curation category (ADR-0027) comes from its config registry entry, not
+    // from the SSSOM data, so it is read here and passed to the JAR per file. Without a readable
+    // config every set falls back to CURATED — the conservative default, which claims no ontology
+    // endorsement a set may not have.
+    def configFile = params.config_file ? new File(params.config_file) : null
+    def categoryByRegistryId = [:]
+    if (configFile?.exists()) {
+        categoryByRegistryId = MappingSetCategories.byRegistryId(configFile)
+    } else {
+        log.warn "OXO2_CONFIG not readable (${params.config_file ?: 'unset'}); " +
+                 "treating every mapping set as ${MappingSetCategories.DEFAULT}."
+    }
+
     tsv_files = channel.fromPath("${params.input_dir}/**.tsv")
         .map { tsvPath ->
             FilenameGuard.assertSafe(tsvPath.name)
@@ -23,7 +38,12 @@ workflow {
                 : tsvPath.name
             def stem = relative.replaceAll(/\.tsv$/, '').replace('/', '.')
             FilenameGuard.assertSafe(stem)
-            tuple(stem, tsvPath)
+            // The downloader writes each registry's files to <sssom root>/<registry id>/, so the first
+            // relative path segment names the registry. A TSV sitting directly in the root belongs to
+            // no registry and takes the default category.
+            def registryId = relative.contains('/') ? relative.substring(0, relative.indexOf('/')) : null
+            def category = categoryByRegistryId.getOrDefault(registryId, MappingSetCategories.DEFAULT)
+            tuple(stem, tsvPath, category)
         }
     // Stage every external metadata YAML alongside each TSV so that the JAR's
     // readExternalMetadata() pass finds the matching .yml file in the workdir.
@@ -48,7 +68,7 @@ process SSSOM2JSON {
     publishDir "${params.output_dir}", mode: 'copy', pattern: "{mappingSet,mapping}/*.json"
 
     input:
-    tuple val(stem), path(tsv_file)
+    tuple val(stem), path(tsv_file), val(category)
     path yml_files
 
     output:
@@ -60,6 +80,7 @@ process SSSOM2JSON {
     java ${System.getenv('JAVA_OPTS') ?: ''} \
         -jar "${params.script_dir}/oxo2-sssom2json/target/oxo2-sssom2json-1.0.0-SNAPSHOT.jar" \
         -f "${tsv_file}" \
+        -c "${category}" \
         -o .
 
     # Rename the JAR's mappingSetId-derived output filenames to the input's

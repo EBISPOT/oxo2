@@ -90,6 +90,7 @@ import uk.ac.ebi.spot.oxo.model.sssom.CurieMap;
 import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingSet;
+import uk.ac.ebi.spot.oxo.model.sssom.MappingSetCategory;
 import uk.ac.ebi.spot.oxo.model.sssom.Uri;
 
 /**
@@ -102,7 +103,8 @@ public class TSV2JSON {
 
 
     public static void processDirectory(String directory, String mappingSetOutputDirectory,
-                                        String mappingsOutputDirectory) {
+                                        String mappingsOutputDirectory,
+                                        MappingSetCategory mappingSetCategory) {
 
         Map<String, MappingSet.Builder> filenameToExternalMetadataMap = readExternalMetadata(directory);
 
@@ -119,7 +121,7 @@ public class TSV2JSON {
                             externalMappingSetBuilderOptional = Optional.of(externalMappingBuilderSet);
                         }
                         processOneTSV(path.toFile(), externalMappingSetBuilderOptional,
-                                mappingSetOutputDirectory, mappingsOutputDirectory);
+                                mappingSetOutputDirectory, mappingsOutputDirectory, mappingSetCategory);
                     });
         } catch (Throwable t) {
             logger.error("Error while looking for .yml files in {}", directory, t);
@@ -129,13 +131,15 @@ public class TSV2JSON {
 
     /**
      * Process a single TSV file. The file's directory is used to find external metadata.
-     * 
+     *
      * @param tsvFile The TSV file to process
      * @param mappingSetOutputDirectory Output directory for mapping set JSON files
      * @param mappingsOutputDirectory Output directory for mapping JSON files
+     * @param mappingSetCategory The OxO curation category of the registry this TSV came from (ADR-0027)
      */
     public static void processFile(File tsvFile, String mappingSetOutputDirectory,
-                                   String mappingsOutputDirectory) {
+                                   String mappingsOutputDirectory,
+                                   MappingSetCategory mappingSetCategory) {
         if (!tsvFile.exists() || !tsvFile.isFile()) {
             logger.error("TSV file does not exist or is not a file: {}", tsvFile);
             return;
@@ -162,9 +166,9 @@ public class TSV2JSON {
         }
 
         processOneTSV(tsvFile, externalMappingSetBuilderOptional,
-                mappingSetOutputDirectory, mappingsOutputDirectory);
+                mappingSetOutputDirectory, mappingsOutputDirectory, mappingSetCategory);
     }
-    
+
 
     /**
      * Stream a TSV file straight to its JSON outputs without ever materialising the full
@@ -179,7 +183,8 @@ public class TSV2JSON {
     private static void processOneTSV(File file,
                                        Optional<MappingSet.Builder> externalMappingSetBuilderOptional,
                                        String mappingSetOutputDirectory,
-                                       String mappingsOutputDirectory) {
+                                       String mappingsOutputDirectory,
+                                       MappingSetCategory mappingSetCategory) {
         // Drop prior file's CURIE/URI caches before parsing this one. The caches
         // speed up repeated lookups within a single mapping set, but if left to
         // accumulate across files they retain every distinct entity string for
@@ -228,6 +233,9 @@ public class TSV2JSON {
         // mappings is @JsonIgnore on MappingSet, so the metadata file does not contain
         // them anyway; keeping the field empty avoids retaining references after streaming.
         mappingSetBuilder.mappings(new TreeSet<>());
+        // The curation category is external to SSSOM — it comes from the OxO config entry for the
+        // registry this TSV was downloaded from, not from any TSV column or metadata slot (ADR-0027).
+        mappingSetBuilder.mappingSetCategory(mappingSetCategory.getCode());
         MappingSet mappingSetMetadata = mappingSetBuilder.build();
 
         String baseFilename = mappingSetMetadata.mappingSetId().extractFragmentOrLastPathSegment();
@@ -310,6 +318,10 @@ public class TSV2JSON {
                     mappingBuilder = propagateValuesFromMappingSet(
                             mappingBuilder, embeddedMappingSetBuilderOptional.get(), record);
                 }
+
+                // Denormalised onto every mapping so the backend can filter and rank on it without a
+                // join back to oxo2-mappingsets (ADR-0027). Not a propagated SSSOM slot.
+                mappingBuilder.mappingSetCategory(mappingSetCategory.getCode());
 
                 Mapping mapping = mappingBuilder.build();
                 if (seenMappingIds.add(mapping.mappingId())) {

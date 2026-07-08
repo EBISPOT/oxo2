@@ -102,6 +102,18 @@ HPC path — see § Resumable dataload.
   so distinct sets that share a basename across sub-directories (the five landscape `priority.sssom.tsv` files) don't
   collapse at the flat publish dir. Downstream stages treat the stem as an opaque unique key.
 
+This is also where the **mapping set category** is stamped
+([ADR-0027](../docs/adr/0027-config-driven-mapping-set-category.md)). The category — `ONTOLOGY`
+or `CURATED` — is not in the SSSOM data; it is the `category` key on the config's
+`mapping_registries` entry. Since the downloader writes each registry into
+`<sssom root>/<registry id>/`, `sssom2json.nf` reads `$OXO2_CONFIG` (via
+`lib/MappingSetCategories.groovy`), resolves each TSV's registry from its first relative path
+segment, and passes `-c <category>` to the JAR, which denormalises it onto the set and every one of
+its mappings. An untagged registry — or an unreadable `$OXO2_CONFIG` — is `CURATED`; an unrecognised
+category fails the run. Inferred mappings get no category: an inference chains premises from several
+sets. The JAR's whole-tree `-i` mode applies one category to everything it finds, so it is only
+correct for a single-registry tree.
+
 **3. Inference** — `determineInferences.nextflow` runs the single SSSOM cross-set pass
 ([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)) via `inferSssomCrossSet.nf`: `json2nquads`
 converts each set's JSON to N-Quads carrying `mapping_id`

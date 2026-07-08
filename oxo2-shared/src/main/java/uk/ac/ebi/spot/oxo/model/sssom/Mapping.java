@@ -168,6 +168,11 @@ public record Mapping (
         int explanationLength,
         @JsonProperty(INFERENCE_TYPE)
         InferenceType inferenceType,
+        // The OxO curation category of the mapping's set (ADR-0027), denormalised from the config's
+        // `category` key onto every mapping of the set. Absent on inferred mappings: an inference
+        // chains premises from several sets and so has no single source category.
+        @JsonProperty(MAPPING_SET_CATEGORY)
+        Optional<MappingSetCategory> mappingSetCategory,
         @JsonIgnore
         Optional<InferredMapping> explanation,
         @JsonProperty(EXPLANATION)
@@ -316,6 +321,9 @@ public record Mapping (
         private int distance = 1;
         private int explanationLength = 0;
         private InferenceType inferenceType = InferenceType.ASSERTED;
+        // Left absent by default: only the SSSOM-to-JSON stage, which knows which config registry a
+        // TSV came from, stamps it. Inferred mappings are built here without one (ADR-0027).
+        private Optional<MappingSetCategory> mappingSetCategory = Optional.empty();
         private Optional<InferredMapping> explanation = Optional.empty();
         private Optional<String> explanationAsString = Optional.empty();
         private List<InferredMapping> assertedMappings = new ArrayList<>();
@@ -526,6 +534,16 @@ public record Mapping (
         public Builder inferenceType(String inferenceType) {
             if (inferenceType != null && !inferenceType.isBlank())
                 this.inferenceType = InferenceType.fromCode(inferenceType);
+            return this;
+        }
+
+        // Bound from Solr and from JSON by the code string, as inferenceType above. A blank or absent
+        // value leaves the category unset rather than defaulting it — see the field declaration.
+        @Field(MAPPING_SET_CATEGORY)
+        @JsonProperty(MAPPING_SET_CATEGORY)
+        public Builder mappingSetCategory(String mappingSetCategory) {
+            if (mappingSetCategory != null && !mappingSetCategory.isBlank())
+                this.mappingSetCategory = Optional.of(MappingSetCategory.fromCode(mappingSetCategory));
             return this;
         }
 
@@ -1233,6 +1251,7 @@ public record Mapping (
                     distance,
                     explanationLength,
                     inferenceType,
+                    mappingSetCategory,
                     explanation,
                     explanationAsString,
                     groupMembersAsString,

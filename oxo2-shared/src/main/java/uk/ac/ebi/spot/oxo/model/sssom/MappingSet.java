@@ -95,7 +95,11 @@ public record MappingSet (
         @JsonProperty(SUBJECT_TYPE)
         Optional<EntityTypeEnum> subjectType,
         @JsonProperty(INFERENCE_TYPE)
-        InferenceType inferenceType) {
+        InferenceType inferenceType,
+        // The OxO curation category this set was tagged with in the config (ADR-0027). Absent on the
+        // synthetic `oxo2/inferences` set, which has no single source category.
+        @JsonProperty(MAPPING_SET_CATEGORY)
+        Optional<MappingSetCategory> mappingSetCategory) {
 
     public static MappingSet.Builder builder() {
         return new MappingSet.Builder();
@@ -123,6 +127,7 @@ public record MappingSet (
         private Optional<String> mappingTool = Optional.empty();
         private Optional<String> mappingToolVersion = Optional.empty();
         private InferenceType inferenceType = InferenceType.ASSERTED;
+        private Optional<MappingSetCategory> mappingSetCategory = Optional.empty();
         private Optional<Date> mappingDate = Optional.empty();
         private Optional<Date> publicationDate = Optional.empty();
         private SortedSet<EntityReference> subjectMatchField = new TreeSet<>();
@@ -398,6 +403,15 @@ public record MappingSet (
             return this;
         }
 
+        // Takes the code string, as Mapping.Builder does, so a serialised set round-trips. A blank or
+        // absent value leaves the category unset rather than defaulting it (ADR-0027).
+        @JsonProperty(MAPPING_SET_CATEGORY)
+        public Builder mappingSetCategory(String mappingSetCategory) {
+            if (mappingSetCategory != null && !mappingSetCategory.isBlank())
+                this.mappingSetCategory = Optional.of(MappingSetCategory.fromCode(mappingSetCategory));
+            return this;
+        }
+
         @JsonProperty(MAPPING_DATE)
         public Builder mappingDate(String mappingDate) {
             this.mappingDate = Optional.of(new Date(mappingDate));
@@ -552,7 +566,8 @@ public record MappingSet (
                     subjectSource,
                     subjectSourceVersion,
                     subjectType,
-                    inferenceType
+                    inferenceType,
+                    mappingSetCategory
             );
         }
     }
