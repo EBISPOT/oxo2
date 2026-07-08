@@ -2,7 +2,8 @@
   "mapping_registries" : [
     {
       "id": "evora",
-      "url": "https://ftp.ebi.ac.uk/pub/databases/spot/evora/ictv_ncbitaxon_exact.sssom.tsv"
+      "url": "https://ftp.ebi.ac.uk/pub/databases/spot/evora/ictv_ncbitaxon_exact.sssom.tsv",
+      "category": "curated"
     },
     {
       "id": "mapping_commons",
@@ -11,11 +12,13 @@
         "processed.sssom.tsv.gz",
         "raw.sssom.tsv.gz",
         "mappings.sssom.tsv.gz"
-      ]
+      ],
+      "category": "curated"
     },
     {
       "id": "ols_mappings",
-      "url": "https://ftp.ebi.ac.uk/pub/databases/spot/ols/latest/sssom.tgz"
+      "url": "https://ftp.ebi.ac.uk/pub/databases/spot/ols/latest/sssom.tgz",
+      "category": "ontology"
     }
   ]
 }

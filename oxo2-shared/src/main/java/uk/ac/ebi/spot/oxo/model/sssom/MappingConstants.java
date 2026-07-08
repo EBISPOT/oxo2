@@ -71,6 +71,9 @@ public class MappingConstants {
     public static final String EXPLANATION_LENGTH = "explanation_length";
     public static final String EXPLANATION = "explanation";
     public static final String INFERENCE_TYPE = "inference_type";
+    // OxO curation category (ADR-0027): "ontology" (OLS-derived) vs "curated" (EVORA / Mapping Commons /
+    // curated GitHub repos), carried on each OxO config mapping_registries entry, not an SSSOM property.
+    public static final String MAPPING_SET_CATEGORY = "mapping_set_category";
     public static final String MAPPING_ID = "mapping_id";
     public static final String OBJECT_IRI = "object_iri";
     public static final String PREDICATE_IRI = "predicate_iri";

@@ -2,28 +2,34 @@
   "mapping_registries" : [
     {
       "id": "evora",
-      "url": "https://ftp.ebi.ac.uk/pub/databases/spot/evora/ictv_ncbitaxon_exact.sssom.tsv"
+      "url": "https://ftp.ebi.ac.uk/pub/databases/spot/evora/ictv_ncbitaxon_exact.sssom.tsv",
+      "category": "curated"
     },
     {
       "id": "mondo_diseases",
-      "github_repository": "https://github.com/mapping-commons/disease-mappings"
+      "github_repository": "https://github.com/mapping-commons/disease-mappings",
+      "category": "curated"
     },
     {
       "id": "microbial_traits",
-      "github_repository": "https://github.com/mapping-commons/microbial-trait-mappings"
+      "github_repository": "https://github.com/mapping-commons/microbial-trait-mappings",
+      "category": "curated"
     },
     {
       "id": "lmha-obo-mappings",
-      "github_repository": "https://github.com/mapping-commons/lmha-obo-mappings"
+      "github_repository": "https://github.com/mapping-commons/lmha-obo-mappings",
+      "category": "curated"
     },
     {
       "id": "mh_mapping_initiative",
-      "github_repository": "https://github.com/mapping-commons/mh_mapping_initiative"
+      "github_repository": "https://github.com/mapping-commons/mh_mapping_initiative",
+      "category": "curated"
     },
     {
       "id": "phenotype",
       "github_repository": "https://github.com/mapping-commons/phenotype",
-      "directory": "curation"
+      "directory": "curation",
+      "category": "curated"
     }
   ]
 }

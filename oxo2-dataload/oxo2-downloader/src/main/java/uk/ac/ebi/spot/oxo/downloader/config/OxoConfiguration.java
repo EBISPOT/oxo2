@@ -64,6 +64,17 @@ public class OxoConfiguration {
         @JsonProperty("exclude")
         private final List<String> exclude;
 
+        /**
+         * OxO curation category for this registry: {@code "ontology"} (an ontology's own asserted
+         * cross-references — the OLS bulk export) or {@code "curated"} (EVORA, Mapping Commons, curated
+         * GitHub repositories). This is <em>not</em> an SSSOM property — it is operator knowledge that
+         * cannot be derived from the entry type ({@code url} is used by both the OLS bulk and EVORA).
+         * It is stamped onto every mapping of the set during the dataload as {@code mapping_set_category}
+         * (the codes match {@code MappingSetCategory}). Absent → the set is treated as curated.
+         */
+        @JsonProperty("category")
+        private final Optional<String> category;
+
         public MappingRegistry(Builder builder) {
             this.id = builder.id;
             this.githubRepository = Optional.ofNullable(builder.githubRepository);
@@ -75,6 +86,7 @@ public class OxoConfiguration {
             this.exclude = builder.exclude == null
                     ? Collections.emptyList()
                     : List.copyOf(builder.exclude);
+            this.category = Optional.ofNullable(builder.category);
         }
 
         public String getId() {
@@ -109,6 +121,10 @@ public class OxoConfiguration {
             return exclude;
         }
 
+        public Optional<String> getCategory() {
+            return category;
+        }
+
         public String getPurl() {
             if (getUrl().isPresent()) {
                 return getUrl().get();
@@ -135,6 +151,7 @@ public class OxoConfiguration {
                     ", url=" + url +
                     ", mappingCommonsRegistry=" + mappingCommonsRegistry +
                     ", exclude=" + exclude +
+                    ", category=" + category +
                     '}';
         }
 
@@ -153,6 +170,8 @@ public class OxoConfiguration {
             private String mappingCommonsRegistry;
 
             private List<String> exclude;
+
+            private String category;
 
             public Builder(@JsonProperty("id") String id) {
                 this.id = id;
@@ -199,6 +218,12 @@ public class OxoConfiguration {
             @JsonProperty("exclude")
             public Builder setExclude(List<String> exclude) {
                 this.exclude = exclude;
+                return this;
+            }
+
+            @JsonProperty("category")
+            public Builder setCategory(String category) {
+                this.category = category;
                 return this;
             }
 

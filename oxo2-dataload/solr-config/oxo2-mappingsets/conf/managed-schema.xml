@@ -459,6 +459,7 @@
   <field name="license" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="mapping_date" type="pdates" multiValued="false" indexed="true" stored="true"/>
   <field name="mapping_provider" type="string" multiValued="false" indexed="true" stored="true"/>
+  <field name="mapping_set_category" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="mapping_set_description" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="mapping_set_id" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="mapping_set_source" type="strings" multiValued="true" indexed="false" stored="true"/>
