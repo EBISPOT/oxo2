@@ -1,6 +1,13 @@
 # OxO2
 A SSSOM compliant implementation of OxO that is backwards compatible with OxO version 1
 
+## User documentation
+
+[`docs/user/ui/oxo2-user-interface.html`](docs/user/ui/oxo2-user-interface.html) is a standalone
+guide to the web interface — searching, reading results, how mappings are ranked, and the rough
+edges. A [PDF](docs/user/ui/oxo2-user-interface.pdf) is generated from it. Open either straight from
+disk; no build step, no server.
+
 ## API documentation
 
 The backend publishes an OpenAPI 3 description of its REST API. Once the backend is running

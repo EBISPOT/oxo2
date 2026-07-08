@@ -15,10 +15,13 @@ import { INFERENCE_TYPE_LABELS, INFERENCE_TYPE_ORDER, InferenceType } from "../.
 // Single-select inference-type filter (ADR-0011) living in the "Type" column header, replacing the
 // old toolbar multi-select toggle. With only two inference types the three reachable states are
 // All (both), Asserted only, and SSSOM inference only, so a single-select with an explicit "All"
-// option is equivalent to the old multi-select. "All" sends both codes to the backend; its soft
-// asserted-boost (SolrQueryBuilder RANKING_BOOST: ASSERTED x3 vs SSSOM_INFERENCE x2) then keeps
-// asserted mappings ranked above inferred ones. Mirrors the ColumnFilterPopover idiom: a filter
-// icon (dotted when narrowed to a single type) opening a small popover.
+// option is equivalent to the old multi-select. "All" sends both codes to the backend; the
+// provenance tier of SolrQueryBuilder's RANKING_BOOST (ADR-0027) then keeps asserted mappings ranked
+// above inferred ones — but only while the results are sorted by relevance, since an explicit sort
+// replaces `score`. This is also the only control that hides inferred mappings: the search page's
+// corpus selector never does (an inference belongs to no single corpus). Mirrors the
+// ColumnFilterPopover idiom: a filter icon (dotted when narrowed to a single type) opening a small
+// popover.
 type SelectionKey = "ALL" | InferenceType;
 
 export function InferenceTypeFilterPopover({

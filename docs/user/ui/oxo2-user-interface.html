@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OxO2 — Using the mapping service</title>
+<meta name="description" content="A user's guide to the OxO2 web interface: searching for mappings, reading results, and understanding how they are ranked.">
+<style>
+  :root {
+    --accent:        #d4522c;
+    --accent-hover:  #c7342c;
+    --accent-dark:   #9f2923;
+    --ink:           #292929;
+    --ink-soft:      #525252;
+    --ink-faint:     #757366;
+    --rule:          #e1dfd5;
+    --wash:          #f7f6f2;
+    --wash-warm:     #fff7df;
+    --header-bg:     #21575a;
+    --amber-bg:      #fef3c7;
+    --amber-fg:      #92400e;
+    --grey-bg:       #f3f4f6;
+    --grey-fg:       #374151;
+    --measure:       47rem;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    font-family: "IBM Plex Sans", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--ink);
+    background: #fff;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .band {
+    background: var(--header-bg);
+    color: #fff;
+    padding: 2rem 1.5rem;
+  }
+  .band .inner { max-width: var(--measure); margin: 0 auto; }
+  .band img { height: 48px; display: block; margin-bottom: 1rem; }
+  .band h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .35rem; font-weight: 800; }
+  .band p { margin: 0; color: #c3dedf; font-size: 1.05rem; }
+  .stamp {
+    margin-top: 1.25rem; font-size: .8rem; color: #9bc8ca;
+    border-top: 1px solid rgba(255,255,255,.18); padding-top: .75rem;
+  }
+  .stamp code { color: #e2e868; }
+
+  main { max-width: var(--measure); margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+
+  h2 {
+    font-size: 1.45rem; font-weight: 700; line-height: 1.25;
+    margin: 3rem 0 .25rem; padding-bottom: .4rem;
+    border-bottom: 2px solid var(--rule);
+  }
+  h2 .num { color: var(--accent); font-weight: 800; margin-right: .5rem; }
+  h3 { font-size: 1.08rem; font-weight: 700; margin: 2rem 0 .5rem; color: var(--ink); }
+  h2 + h3 { margin-top: 1.25rem; }
+
+  p { margin: 0 0 1rem; }
+  ul, ol { margin: 0 0 1rem; padding-left: 1.35rem; }
+  li { margin-bottom: .4rem; }
+  li > ul, li > ol { margin-top: .4rem; }
+
+  a { color: var(--accent); }
+  a:hover { color: var(--accent-hover); }
+
+  code, kbd, .field {
+    font-family: "IBM Plex Mono", source-code-pro, "Courier New", monospace;
+    font-size: .875em;
+  }
+  code { background: var(--wash); padding: .1em .35em; border-radius: 3px; }
+  kbd {
+    background: #fff; border: 1px solid #c3c0ab; border-bottom-width: 2px;
+    border-radius: 4px; padding: .05em .4em; font-size: .8em;
+  }
+
+  /* Table of contents */
+  nav.toc {
+    background: var(--wash); border-left: 3px solid var(--accent);
+    padding: 1.1rem 1.4rem; margin: 0 0 1rem; border-radius: 0 6px 6px 0;
+  }
+  nav.toc h2 { border: 0; margin: 0 0 .5rem; padding: 0; font-size: 1rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); }
+  nav.toc ol { margin: 0; padding-left: 1.35rem; columns: 2; column-gap: 2rem; }
+  nav.toc li { margin-bottom: .25rem; break-inside: avoid; }
+  nav.toc a { text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  /* Callouts */
+  .note, .warn, .tip {
+    padding: .9rem 1.1rem; margin: 1.25rem 0; border-radius: 6px;
+    border-left: 4px solid; font-size: .95rem;
+  }
+  .note { background: #f0f6f6; border-color: #389196; }
+  .warn { background: #fdf3ea; border-color: var(--accent); }
+  .tip  { background: #f4f8ea; border-color: #7fa32f; }
+  .note > :last-child, .warn > :last-child, .tip > :last-child { margin-bottom: 0; }
+  .note strong, .warn strong, .tip strong { display: inline; }
+  .callout-label {
+    display: block; font-size: .72rem; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; margin-bottom: .3rem;
+  }
+  .note .callout-label { color: #21575a; }
+  .warn .callout-label { color: var(--accent-dark); }
+  .tip  .callout-label { color: #5f7a23; }
+
+  /* Tables */
+  table { border-collapse: collapse; width: 100%; margin: 1.25rem 0; font-size: .92rem; }
+  caption { caption-side: bottom; text-align: left; font-size: .82rem; color: var(--ink-faint); padding-top: .5rem; }
+  th, td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th { border-bottom: 2px solid #c3c0ab; font-weight: 700; }
+  tbody tr:nth-child(even) { background: #fafaf8; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .table-scroll { overflow-x: auto; }
+  /* A caption is the table's last line; the next paragraph must not butt up against it. */
+  .table-scroll + p { margin-top: 1.25rem; }
+
+  /* Badges mirroring the app */
+  .badge {
+    display: inline-block; padding: .1em .55em; border-radius: 999px;
+    font-size: .72rem; font-weight: 700; white-space: nowrap; vertical-align: middle;
+  }
+  .badge-asserted { background: var(--grey-bg); color: var(--grey-fg); }
+  .badge-inferred { background: var(--amber-bg); color: var(--amber-fg); }
+  .badge-not { background: #dc2626; color: #fff; border-radius: 3px; text-transform: uppercase; }
+  /* The two node badges used inside the explanation graph, not in the results table. */
+  .badge-node-asserted { background: var(--accent-dark); color: #fff; text-transform: uppercase; }
+  .badge-node-inferred { background: #fff; color: #7a5c0f; border: 1px dashed #b88e1b; text-transform: uppercase; }
+
+  /* UI mockups */
+  figure { margin: 1.5rem 0; }
+  figcaption { font-size: .82rem; color: var(--ink-faint); margin-top: .55rem; }
+  .mock {
+    border: 1px solid var(--rule); border-radius: 8px; padding: 1.1rem 1.2rem;
+    background: linear-gradient(to right, #eaeaea, #fff);
+  }
+  .mock-label { font-size: .95rem; color: var(--ink-soft); margin-bottom: .45rem; }
+  .seg { display: inline-flex; gap: .3rem; flex-wrap: wrap; }
+  .seg button {
+    font: inherit; font-size: .9rem; padding: .25rem .7rem; border-radius: 6px;
+    border: 1px solid var(--ink-soft); background: #fff; color: var(--ink-soft); cursor: default;
+  }
+  .seg button[aria-checked="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .hint { font-size: .82rem; color: var(--ink-soft); margin-top: .4rem; }
+  .fake-input {
+    display: block; width: 100%; background: #fff; border: 1px solid #c3c0ab;
+    border-radius: 6px; padding: .5rem .6rem; color: var(--ink-faint); font-size: 1rem;
+  }
+  .fake-select {
+    display: inline-block; background: #fff; border: 1px solid #c3c0ab; border-radius: 6px;
+    padding: .3rem 1.8rem .3rem .6rem; font-size: .95rem;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%), linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+    background-position: right .75rem center, right .55rem center;
+    background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+  }
+
+  svg.diagram { display: block; width: 100%; height: auto; max-width: 100%; }
+
+  .lede {
+    font-size: 1.08rem; color: var(--ink-soft);
+    border-left: 3px solid var(--rule); padding-left: 1rem; margin-bottom: 2rem;
+  }
+
+  dl.glossary dt { font-weight: 700; margin-top: .9rem; }
+  dl.glossary dd { margin: .15rem 0 0; color: var(--ink-soft); }
+
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 3rem 0; }
+
+  footer { font-size: .85rem; color: var(--ink-faint); }
+  footer a { color: var(--ink-faint); }
+
+  /* ---- Print ---- */
+  @page { size: A4; margin: 16mm 15mm 18mm; }
+
+  @media print {
+    body { font-size: 10.5pt; line-height: 1.45; }
+    .band {
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      padding: 1.2rem 0 1.2rem; margin-bottom: 1rem;
+    }
+    .band .inner, main { max-width: none; padding-left: 0; padding-right: 0; }
+    .band { padding-left: 10mm; padding-right: 10mm; }
+    main { padding-top: 0; padding-bottom: 0; }
+    nav.toc { break-after: page; }
+    /* Don't force a page per section — several are half a page and the paper adds up.
+       Keep a heading welded to the text under it, and start the two longest sections clean. */
+    h2 { break-after: avoid; margin-top: 1.6rem; }
+    h2#s5, h2#s6 { break-before: page; margin-top: 0; }
+    h3 { break-after: avoid; }
+    p, li { orphans: 2; widows: 2; }
+    figure, table, .note, .warn, .tip, pre { break-inside: avoid; }
+    tr { break-inside: avoid; }
+    a { color: var(--ink); text-decoration: none; }
+    nav.toc a::after { content: ""; }
+    .mock, .badge, .note, .warn, .tip, thead th, tbody tr:nth-child(even) {
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    footer { break-before: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="band">
+  <div class="inner">
+    <img src="data:image/png;base64,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" alt="OxO">
+    <h1>Using the OxO mapping service</h1>
+    <p>Finding, reading, and trusting mappings between ontology terms.</p>
+    <div class="stamp">
+      A guide to the OxO2 web interface &middot; written 2026-07-08 against branch <code>dev</code>, commit <code>e2efb77</code>.
+      If a control described here is missing from your instance, the instance is older than this document.
+    </div>
+  </div>
+</div>
+
+<main>
+
+<p class="lede">
+  OxO answers one question: <em>this term over here — what is it called over there?</em>
+  You give it a term, it gives you the mappings other people have already published, tells you
+  who published each one and how confident they were, and gets out of the way.
+</p>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s1">What OxO does</a></li>
+    <li><a href="#s2">The screens</a></li>
+    <li><a href="#s3">Searching</a></li>
+    <li><a href="#s4">Advanced search</a></li>
+    <li><a href="#s5">Reading the results</a></li>
+    <li><a href="#s6">How “Best match” ranks</a></li>
+    <li><a href="#s7">The mapping detail page</a></li>
+    <li><a href="#s8">Explaining an inferred mapping</a></li>
+    <li><a href="#s9">Inferred mapping sets</a></li>
+    <li><a href="#s10">Glossary</a></li>
+    <li><a href="#s11">Things that will surprise you</a></li>
+  </ol>
+</nav>
+
+
+<h2 id="s1"><span class="num">1</span>What OxO does</h2>
+
+<p>
+  A <strong>mapping</strong> is a statement that one term means (roughly) the same thing as another. OxO
+  stores mappings in the <a href="https://mapping-commons.github.io/sssom/">SSSOM</a> format, where every
+  mapping is a sentence with three parts:
+</p>
+
+<figure>
+  <svg class="diagram" viewBox="0 0 720 130" role="img" aria-labelledby="triple-title">
+    <title id="triple-title">A mapping is a subject, a predicate and an object</title>
+    <rect x="6" y="34" width="210" height="58" rx="6" fill="#d5d2c4" stroke="#9c9988"/>
+    <text x="111" y="58" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="13" font-weight="700" fill="#292929">MP:0001289</text>
+    <text x="111" y="76" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="12" fill="#525252">cataract</text>
+    <text x="111" y="24" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="10" font-weight="700" letter-spacing="1" fill="#757366">SUBJECT</text>
+
+    <rect x="256" y="34" width="208" height="58" rx="6" fill="#eaeaea" stroke="#c3c0ab"/>
+    <text x="360" y="66" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="13" font-weight="700" fill="#9f2923">skos:exactMatch</text>
+    <text x="360" y="24" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="10" font-weight="700" letter-spacing="1" fill="#757366">PREDICATE</text>
+
+    <rect x="504" y="34" width="210" height="58" rx="6" fill="#d5d2c4" stroke="#9c9988"/>
+    <text x="609" y="58" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="13" font-weight="700" fill="#292929">HP:0000518</text>
+    <text x="609" y="76" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="12" fill="#525252">Cataract</text>
+    <text x="609" y="24" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="10" font-weight="700" letter-spacing="1" fill="#757366">OBJECT</text>
+
+    <line x1="218" y1="63" x2="252" y2="63" stroke="#525252" stroke-width="1.5"/>
+    <line x1="466" y1="63" x2="500" y2="63" stroke="#525252" stroke-width="1.5"/>
+    <polygon points="500,63 492,59 492,67" fill="#525252"/>
+    <text x="360" y="116" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="11" fill="#757366">the predicate says how strongly the two relate</text>
+  </svg>
+  <figcaption>Every row in an OxO result is one of these sentences.</figcaption>
+</figure>
+
+<p>OxO holds mappings from two kinds of source, and the distinction matters when you decide what to trust:</p>
+
+<ul>
+  <li>
+    <strong>Ontologies.</strong> Cross-references an ontology asserts about its own terms — the
+    <code>xref</code>s the ontology maintainers put there themselves.
+  </li>
+  <li>
+    <strong>Curated sets.</strong> Mappings published as standalone SSSOM files, such as EVORA or
+    Mapping Commons, usually the output of a deliberate curation effort.
+  </li>
+</ul>
+
+<p>
+  On top of both, OxO derives new mappings by chaining existing ones: if <code>A exactMatch B</code> and
+  <code>B exactMatch C</code>, then <code>A exactMatch C</code>. These are <strong>inferred</strong>
+  mappings, marked <span class="badge badge-inferred">SSSOM inference</span> throughout the interface,
+  as opposed to <span class="badge badge-asserted">Asserted</span> ones that somebody actually wrote
+  down. An inferred mapping is a real answer, but it is a derived one, and OxO can always show you the
+  chain it came from (§&nbsp;8).
+</p>
+
+
+<h2 id="s2"><span class="num">2</span>The screens</h2>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>Screen</th><th>Address</th><th>What it is for</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Home</strong></td><td><code>/</code></td>
+      <td>The search form, plus links to About, related tools, and the issue tracker.</td>
+    </tr>
+    <tr>
+      <td><strong>Results</strong></td><td><code>/search/&lt;terms&gt;</code></td>
+      <td>The search form again (so you can refine without going back), then the results table.</td>
+    </tr>
+    <tr>
+      <td><strong>Mapping details</strong></td><td><code>/mapping/&lt;id&gt;</code></td>
+      <td>Everything SSSOM records about one mapping, and — if it is inferred — the graph explaining it.</td>
+    </tr>
+    <tr>
+      <td><strong>Inferred sets</strong></td><td><code>/inferences</code></td>
+      <td>Browse the mappings OxO derived, as a mapping set in its own right.</td>
+    </tr>
+    <tr>
+      <td><strong>About</strong></td><td><code>/about</code></td>
+      <td>What OxO is and who maintains it.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  The search form on the Home page and the one above the results are the same component. Refining a
+  search never means navigating backwards.
+</p>
+
+
+<h2 id="s3"><span class="num">3</span>Searching</h2>
+
+<p>
+  The <strong>Search</strong> tab asks one question and puts everything else out of the way. The
+  <strong>Advanced</strong> tab (§&nbsp;4) is a different tool for a different job.
+</p>
+
+<h3>3.1 One term, or many</h3>
+
+<figure>
+  <div class="mock">
+    <div class="seg" style="margin-bottom:.9rem">
+      <button aria-checked="true">Single term</button>
+      <button aria-checked="false">Multiple terms</button>
+    </div>
+    <div class="mock-label">Which term do you want to map?</div>
+    <span class="fake-input">A label, CURIE or IRI — e.g. cataract, MP:0001289</span>
+  </div>
+  <figcaption>Single-term mode. Press <kbd>Enter</kbd> to search.</figcaption>
+</figure>
+
+<p>
+  <strong>Single term</strong> gives you one input box; <kbd>Enter</kbd> searches.
+  <strong>Multiple terms</strong> swaps it for a text area — one term per line — plus a file drop and a
+  running count of how many terms you have. In multiple-term mode <kbd>Enter</kbd> starts a new line, so
+  use the <strong>Search</strong> button.
+</p>
+
+<p>
+  Both modes share the same <strong>Example…</strong> link, which fills the box with something that
+  works. Use it once and you will never need this section again.
+</p>
+
+<h3>3.2 What you can type</h3>
+
+<p>OxO recognises three kinds of term, and you may mix them freely in one search:</p>
+
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Kind</th><th>Example</th><th>How it is matched</th></tr></thead>
+  <tbody>
+    <tr><td>Label</td><td><code>cataract</code></td><td>Against term labels. Exactly, ignoring case, unless you change it (§&nbsp;3.7).</td></tr>
+    <tr><td>CURIE</td><td><code>MP:0001289</code></td><td>Exact identifier lookup. Always exact, whatever the label-matching setting says.</td></tr>
+    <tr><td>IRI</td><td><code>http://purl.obolibrary.org/obo/UBERON_0002107</code></td><td>Exact IRI lookup. Also always exact.</td></tr>
+  </tbody>
+</table>
+<caption>Terms are separated by newlines or commas, and surrounding whitespace is trimmed.</caption>
+</div>
+
+<div class="note">
+  <span class="callout-label">Why label search is exact by default</span>
+  A partial search for <code>cataract</code> also returns <em>“congenital cataract”</em>,
+  <em>“cataract surgery”</em>, and several hundred others — which buries the term you actually meant.
+  Exact-but-case-insensitive is almost always what you want. Switch to <strong>Partial match</strong>
+  under <em>More options</em> when you are exploring rather than looking something up.
+</div>
+
+<h3>3.3 Loading a list of terms from a file</h3>
+
+<p>
+  In multiple-term mode you can drop a <code>.txt</code>, <code>.csv</code> or <code>.tsv</code> file
+  (up to 1&nbsp;MB) onto the dashed box, or click to pick one. The file is read <strong>in your
+  browser</strong> — nothing is uploaded anywhere — and its terms are <em>appended to the text area</em>.
+</p>
+
+<p>
+  That last detail is deliberate. The text area is always the single, visible, editable list of what
+  will be searched. A file never becomes a hidden second source of truth that you cannot inspect.
+  Terms already in the box are not added twice.
+</p>
+
+<h3>3.4 Between which ontologies</h3>
+
+<p>
+  Two optional selectors, <strong>From ontologies</strong> and <strong>To ontologies</strong>, restrict
+  the source and target of the mappings. Each option is annotated with how many mappings it takes part
+  in. The <strong>⇄</strong> button between them swaps the two sides.
+</p>
+
+<p>They compose with the term box in three useful ways:</p>
+
+<ul>
+  <li><strong>Terms only</strong> — every mapping involving those terms.</li>
+  <li><strong>Terms + a target</strong> — a bounded batch lookup: “map these 400 terms into MONDO”.</li>
+  <li><strong>A source, and an empty term box</strong> — the whole ontology: “everything DOID maps to”.</li>
+</ul>
+
+<p>
+  Pick exactly one source and the target list narrows to the ontologies actually reachable from it, with
+  their counts, so you cannot pick a target that will return nothing.
+</p>
+
+<h3>3.5 Where should mappings come from?</h3>
+
+<figure>
+  <div class="mock">
+    <div class="mock-label">Where should mappings come from?</div>
+    <div class="seg">
+      <button aria-checked="false">Ontologies</button>
+      <button aria-checked="false">Curated sets</button>
+      <button aria-checked="true">Both</button>
+    </div>
+    <div class="hint">Everything OxO knows about.</div>
+  </div>
+  <figcaption>The corpus control. The hint underneath changes with your choice.</figcaption>
+</figure>
+
+<p>
+  This is the <strong>Ontologies</strong> / <strong>Curated sets</strong> distinction from §&nbsp;1.
+  <strong>Both</strong> is the default. Choose deliberately: a cross-reference an ontology asserts about
+  its own terms and a mapping a curator drew between two projects are different kinds of evidence, and
+  which you want depends on what you are doing.
+</p>
+
+<div class="warn">
+  <span class="callout-label">This control does not hide inferred mappings</span>
+  An inferred mapping chains premises from several sets at once, so it belongs to no single corpus and
+  always survives this filter. Hiding inferences is a separate control, on the results table
+  (§&nbsp;5.3). If choosing <em>Ontologies</em> leaves you with nothing but
+  <span class="badge badge-inferred">SSSOM inference</span> rows, see §&nbsp;11.
+</div>
+
+<h3>3.6 Order results by</h3>
+
+<figure>
+  <div class="mock">
+    <div class="mock-label">Order results by</div>
+    <span class="fake-select">Best match</span>
+    <div class="hint">Best match ranks by who asserts the mapping, then how strong it is.</div>
+  </div>
+</figure>
+
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Choice</th><th>Order</th><th>Use it when</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Best match</strong> <em>(default)</em></td>
+      <td>OxO’s ranking — see §&nbsp;6.</td>
+      <td>Always, unless you have a reason not to.</td>
+    </tr>
+    <tr>
+      <td><strong>Highest confidence</strong></td>
+      <td>By the mapping’s declared confidence, descending.</td>
+      <td>You care only about the number the publisher put on it.</td>
+    </tr>
+    <tr>
+      <td><strong>Most recent</strong></td>
+      <td>By mapping date, descending.</td>
+      <td>You are checking what changed lately.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <span class="callout-label">Sorting turns ranking off</span>
+  Any explicit sort — from this control or from a column header — <em>replaces</em> the relevance
+  ranking rather than breaking ties within it. Sorting by confidence puts a confidence-0.95 inferred
+  mapping above a confidence-0.9 ontology cross-reference. That is what you asked for; just be aware
+  that you asked for it.
+</div>
+
+<h3>3.7 More options</h3>
+
+<p>Two settings sit behind the <strong>▸ More options</strong> disclosure, because most searches never need them.</p>
+
+<p>
+  <strong>Label matching</strong> controls how free-text terms match, and nothing else — CURIEs and IRIs
+  are always exact lookups.
+</p>
+
+<ul>
+  <li><strong>Exact match (ignore case)</strong> — the default. <code>cataract</code> finds <em>Cataract</em>.</li>
+  <li><strong>Partial match</strong> — substring-ish. Broad; expect volume.</li>
+  <li><strong>Exact match (case-sensitive)</strong> — for when case is meaningful.</li>
+</ul>
+
+<p>
+  <strong>Restrict the search to one or more mapping sets</strong> shows every mapping set OxO holds, with
+  its title, identifier, type and description. Click a row to toggle it. With nothing selected, all sets
+  are searched. The count of selected sets is shown on the <em>More options</em> summary line even when
+  it is collapsed, so a forgotten restriction cannot silently narrow your results.
+</p>
+
+
+<h2 id="s4"><span class="num">4</span>Advanced search</h2>
+
+<p>
+  The <strong>Advanced</strong> tab is a form of every SSSOM field OxO indexes, grouped by
+  Subject, Object, Predicate, Mapping, Authors/Reviewers, Provenance, Asserted mappings, and Other.
+  Fill any combination; <strong>all filled fields are combined with AND</strong>.
+</p>
+
+<p>Matching semantics depend on the field, and the placeholder text in each box tells you which:</p>
+
+<ul>
+  <li><em>“Exact match, case-sensitive”</em> — identifier-like fields (<code>subject_id</code>, <code>license</code>, …).</li>
+  <li><em>“Text search”</em> — prose-like fields (<code>subject_label</code>, <code>comment</code>, …).</li>
+  <li><em>“…(matches any list item)”</em> — the field holds a list; matching any one entry is enough.</li>
+</ul>
+
+<div class="note">
+  <span class="callout-label">What Advanced does not have</span>
+  No corpus control, no <em>Order results by</em>, no from/to ontology selectors: Advanced is a flat,
+  deterministic field query, sorted by subject identifier. Numeric and date fields
+  (<code>confidence</code>, <code>mapping_date</code>, <code>distance</code>, …) are not offered, because
+  they need range inputs rather than a text box. Use Advanced to answer a precise question, and the
+  Search tab to explore.
+</div>
+
+
+<h2 id="s5"><span class="num">5</span>Reading the results</h2>
+
+<h3>5.1 The columns</h3>
+
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Column</th><th>Shows</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Subject</strong>, <strong>Object</strong></td>
+      <td>
+        Identifier (bold), then label, then IRI. Each identifier and IRI has a copy button; subjects and
+        objects also carry an <abbr title="Ontology Lookup Service">OLS</abbr> link that opens the term
+        in a new tab.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Predicate</strong></td>
+      <td>
+        Same three lines, no OLS link. If the mapping carries a predicate modifier, a red
+        <span class="badge badge-not">not</span> badge appears in front of it — that mapping asserts the
+        <em>negation</em>. Do not skim past it.
+      </td>
+    </tr>
+    <tr><td><strong>Mapping justification</strong></td><td>Why the mapping is claimed to hold — e.g. <code>semapv:ManualMappingCuration</code>.</td></tr>
+    <tr><td><strong>Type</strong></td><td><span class="badge badge-asserted">Asserted</span> or <span class="badge badge-inferred">SSSOM inference</span>.</td></tr>
+    <tr><td><strong>Mapping provider</strong></td><td>Who supplied it.</td></tr>
+    <tr><td><strong>Mapping set</strong></td><td>The set’s title, with its identifier and a copy button beneath.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The eye icon at the end of a row opens the mapping detail page (§&nbsp;7).</p>
+
+<h3>5.2 One row can be several mappings</h3>
+
+<p>
+  Two sources may assert the very same subject–predicate–object triple. Rather than repeat the row, OxO
+  collapses them into one <strong>expandable</strong> row. Such a row shows a badge per distinct type and
+  a “<em>n</em> mappings” count; the triangle on the left expands it to the underlying mappings, each with
+  its own justification, provider, set, and eye icon.
+</p>
+
+<p>Where the collapsed members disagree on a field, the cell reads <em>Multiple</em> (or <em>Multiple sets</em>) rather than misleadingly showing one of them. If a triple has more members than the row can carry, a <strong>“+<em>n</em> more — view all in Advanced search”</strong> link takes you to the flat Advanced view filtered to exactly that triple.</p>
+
+<h3>5.3 Narrowing what you see</h3>
+
+<p>
+  The <strong>funnel icon</strong> in a column header opens a filter with one box per underlying field —
+  Subject offers <em>Subject ID</em>, <em>Subject label</em> and <em>Subject IRI</em> separately. Filters
+  are “contains”, are combined with AND across every column, and apply about 400&nbsp;ms after you stop
+  typing. An active filter puts a dot on the funnel.
+</p>
+
+<p>
+  The funnel on the <strong>Type</strong> column is a different beast: a three-way choice of
+  <em>All</em> (the default), <em>Asserted</em> only, or <em>SSSOM inference</em> only.
+  <strong>This is the control that hides inferred mappings</strong> — not the corpus selector.
+</p>
+
+<h3>5.4 Re-ordering</h3>
+
+<p>
+  The <strong>sort icon</strong> in a header lets you sort that column by identifier, label, or IRI,
+  ascending or descending. Sorting is single-key <em>within</em> a column — choosing IRI replaces label —
+  but multi-column <em>across</em> them: sort by Subject, then Object, and each icon shows a small number
+  giving its place in the sort order. <strong>Clear</strong> removes that column from the sort.
+</p>
+
+<p>Remember §&nbsp;3.6: the moment you sort by anything, relevance ranking stops applying.</p>
+
+<h3>5.5 Paging and export</h3>
+
+<p>
+  Page size is 5, 10 (the default), 20, 30, or 50 rows. The <strong>download icon</strong> in the toolbar exports the
+  <em>entire</em> result set — not just the page you are looking at — as SSSOM-compliant TSV, named
+  <code>oxo2-mappings.tsv</code>. Every filter you have applied is honoured by the export.
+</p>
+
+<h3>5.6 The address bar is the state</h3>
+
+<p>
+  Page, page size, sort, type filter and every column filter live in the URL. Three consequences worth
+  knowing:
+</p>
+
+<ul>
+  <li>A results URL is <strong>shareable</strong> and <strong>refresh-stable</strong>. Send it to a colleague and they see what you see.</li>
+  <li>Opening a mapping’s details and pressing <strong>Back</strong> returns you to the same page, sort and filters — not to page 1.</li>
+  <li>Defaults are omitted, so an untouched search has a clean URL.</li>
+</ul>
+
+
+<h2 id="s6"><span class="num">6</span>How “Best match” ranks</h2>
+
+<p>
+  OxO’s ranking rests on one editorial judgement: <strong>trust provenance over predicate</strong>. Who
+  asserts a mapping tells you more about whether to believe it than how strongly the mapping is worded.
+  An ontology that cross-references its own terms is staking its reputation on that statement; a
+  <code>skos:exactMatch</code> in an inferred chain is a computation.
+</p>
+
+<p>
+  So four factors are applied, and they <strong>multiply</strong>. The gaps between provenance levels are
+  wide enough that no combination of the other three can bridge them — the lower tiers order mappings
+  <em>within</em> a provenance level, never across.
+</p>
+
+<figure>
+  <svg class="diagram" viewBox="0 0 720 260" role="img" aria-labelledby="tiers-title">
+    <title id="tiers-title">The four ranking tiers, in order of dominance</title>
+
+    <rect x="0" y="8" width="720" height="56" rx="6" fill="#f7d5b2" stroke="#b75c00"/>
+    <text x="14" y="30" font-family="IBM Plex Sans, Arial" font-size="11" font-weight="700" letter-spacing="1" fill="#894500">TIER 1 · PROVENANCE</text>
+    <text x="14" y="50" font-family="IBM Plex Sans, Arial" font-size="13" fill="#292929">Ontology ×10 000 › Curated ×1 000 › Inferred ×100, ÷5 per extra hop</text>
+    <text x="706" y="42" text-anchor="end" font-family="IBM Plex Sans, Arial" font-size="11" font-style="italic" fill="#894500">decisive</text>
+
+    <rect x="0" y="72" width="720" height="52" rx="6" fill="#f7e7bc" stroke="#b88e1b"/>
+    <text x="14" y="93" font-family="IBM Plex Sans, Arial" font-size="11" font-weight="700" letter-spacing="1" fill="#8a6a14">TIER 2 · PREDICATE STRENGTH</text>
+    <text x="14" y="112" font-family="IBM Plex Sans, Arial" font-size="13" fill="#292929">owl identity ×2.0 › skos:exactMatch ×1.7 › closeMatch ×1.4 › broad/narrow ×1.2 › other ×1.0</text>
+
+    <rect x="0" y="132" width="720" height="52" rx="6" fill="#e2efc4" stroke="#7fa32f"/>
+    <text x="14" y="153" font-family="IBM Plex Sans, Arial" font-size="11" font-weight="700" letter-spacing="1" fill="#5f7a23">TIER 3 · CURATION</text>
+    <text x="14" y="172" font-family="IBM Plex Sans, Arial" font-size="13" fill="#292929">Curated by a human ×1.3 › everything else ×1.0</text>
+
+    <rect x="0" y="192" width="720" height="52" rx="6" fill="#c3dedf" stroke="#389196"/>
+    <text x="14" y="213" font-family="IBM Plex Sans, Arial" font-size="11" font-weight="700" letter-spacing="1" fill="#21575a">TIER 4 · CONFIDENCE</text>
+    <text x="14" y="232" font-family="IBM Plex Sans, Arial" font-size="13" fill="#292929">×(1 + 0.3 × confidence). No declared confidence contributes ×1.0</text>
+    <text x="706" y="226" text-anchor="end" font-family="IBM Plex Sans, Arial" font-size="11" font-style="italic" fill="#21575a">tie-break</text>
+  </svg>
+  <figcaption>All four multiply together, then scale how well the term itself matched.</figcaption>
+</figure>
+
+<p>The arithmetic that makes tier 1 decisive is worth seeing once:</p>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>Mapping</th><th class="num">Tier 1</th><th class="num">Tier 2</th><th class="num">Tier 3</th><th class="num">Tier 4</th><th class="num">Product</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Ontology xref, weakest possible on every other tier</td>
+      <td class="num">10 000</td><td class="num">1.0</td><td class="num">1.0</td><td class="num">1.0</td>
+      <td class="num"><strong>10 000</strong></td>
+    </tr>
+    <tr>
+      <td>Curated mapping, <em>maxing out</em> every other tier</td>
+      <td class="num">1 000</td><td class="num">2.0</td><td class="num">1.3</td><td class="num">1.3</td>
+      <td class="num"><strong>3 380</strong></td>
+    </tr>
+    <tr>
+      <td>One-hop inference, maxing out every other tier</td>
+      <td class="num">100</td><td class="num">2.0</td><td class="num">1.3</td><td class="num">1.3</td>
+      <td class="num"><strong>338</strong></td>
+    </tr>
+  </tbody>
+</table>
+<caption>
+  The best a curated mapping can do (3 380) still loses to the worst an ontology xref can do (10 000).
+  The tiers are a ranking, not a blend.
+</caption>
+</div>
+
+<p>Two consequences of the design that are easy to miss:</p>
+
+<ul>
+  <li>
+    <strong>Logical identity outranks <code>skos:exactMatch</code>.</strong>
+    <code>owl:equivalentClass</code> is a formal claim with entailments; <code>skos:exactMatch</code> means
+    “interchangeable in practice”. The former is the stronger statement, so it ranks above.
+  </li>
+  <li>
+    <strong>Recency is not a ranking factor.</strong> Mapping dates are sparsely populated, and letting a
+    date into the boost would silently reorder results on every query. It is offered as an explicit sort
+    instead (§&nbsp;3.6), where you can see that you chose it.
+  </li>
+</ul>
+
+<p>
+  Ranking scales the score of how well your <em>term</em> matched, so a highly relevant inferred mapping
+  can still appear above a barely-relevant ontology one. That is intentional: relevance to your query
+  comes first, and provenance orders what is relevant.
+</p>
+
+
+<h2 id="s7"><span class="num">7</span>The mapping detail page</h2>
+
+<p>
+  Reached from the eye icon on any result row. It lays out everything SSSOM records about the mapping, in
+  sections that hide themselves when empty — so what you see is what the source actually published:
+</p>
+
+<ul>
+  <li><strong>Mapping</strong> — the triple, rendered large.</li>
+  <li><strong>Inference Details</strong> — for inferred mappings: the asserted mappings it rests on, and the explanation graph (§&nbsp;8).</li>
+  <li><strong>Justification</strong> — mapping justification and confidence.</li>
+  <li><strong>Provenance</strong> — author, creator, reviewer, mapping date, publication date, provider.</li>
+  <li><strong>Mapping Set</strong> — the set’s identifier, title, description, source, version.</li>
+  <li><strong>Additional Information</strong> — licence, comment, mapping tool and version.</li>
+  <li><strong>Subject Details</strong> / <strong>Object Details</strong> — category, type, source, source version.</li>
+</ul>
+
+<div class="warn">
+  <span class="callout-label">A mapping detail URL is not a permalink</span>
+  This page renders the mapping handed to it by the results table. Open a
+  <code>/mapping/&lt;id&gt;</code> URL directly, or press <kbd>F5</kbd> while on it, and you will get
+  <em>“No mapping details available.”</em> To share a specific mapping, share the <em>results</em> URL that
+  finds it — those are stable (§&nbsp;5.6).
+</div>
+
+
+<h2 id="s8"><span class="num">8</span>Explaining an inferred mapping</h2>
+
+<p>
+  When OxO derived a mapping rather than reading it somewhere, it can show you exactly how. The detail
+  page of an inferred mapping ends with a graph: <strong>arrows point from premises to the conclusion</strong>,
+  so the mappings somebody actually asserted sit at the bottom and the derived one sits at the top.
+</p>
+
+<figure>
+  <svg class="diagram" viewBox="0 0 720 300" role="img" aria-labelledby="expl-title">
+    <title id="expl-title">An inferred mapping and the two asserted mappings it was derived from</title>
+
+    <!-- Arrows first: the chain-rule label knocks a white halo out of their shafts, so the
+         arrowheads must clear the halo's top edge (y=109) or they read as blobs, not arrows. -->
+    <line x1="150" y1="188" x2="288" y2="104" stroke="#222" stroke-width="1.4"/>
+    <polygon points="296,99 289.6,107.6 285.4,100.8" fill="#222"/>
+    <line x1="570" y1="188" x2="432" y2="104" stroke="#222" stroke-width="1.4"/>
+    <polygon points="424,99 430.4,107.6 434.6,100.8" fill="#222"/>
+
+    <!-- conclusion -->
+    <rect x="215" y="10" width="290" height="86" rx="5" fill="#fff7df" stroke="#b88e1b" stroke-width="2" stroke-dasharray="5 3"/>
+    <rect x="322" y="18" width="76" height="15" rx="7.5" fill="#fff" stroke="#b88e1b" stroke-dasharray="3 2"/>
+    <text x="360" y="29" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="9" font-weight="700" fill="#7a5c0f">INFERRED</text>
+    <text x="230" y="52" font-family="IBM Plex Sans, Arial" font-size="10" font-weight="700" fill="#6d5f3b">SUBJECT</text>
+    <text x="300" y="52" font-family="IBM Plex Sans, Arial" font-size="11" fill="#292929">cataract (MP:0001289)</text>
+    <text x="230" y="70" font-family="IBM Plex Sans, Arial" font-size="10" font-weight="700" fill="#6d5f3b">PREDICATE</text>
+    <text x="300" y="70" font-family="IBM Plex Sans, Arial" font-size="11" font-weight="700" fill="#9f2923">skos:exactMatch</text>
+    <text x="230" y="88" font-family="IBM Plex Sans, Arial" font-size="10" font-weight="700" fill="#6d5f3b">OBJECT</text>
+    <text x="300" y="88" font-family="IBM Plex Sans, Arial" font-size="11" fill="#292929">Cataract (HP:0000518)</text>
+
+    <!-- The chain rule, exactly as the app renders it beneath an inferred node. -->
+    <rect x="152" y="109" width="416" height="17" rx="3" fill="#fff"/>
+    <text x="360" y="122" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="10.5" fill="#9f2923">(a, SKOS:exactMatch, c) ← (a, SKOS:exactMatch, b), (b, SKOS:exactMatch, c)</text>
+
+    <!-- premise left -->
+    <rect x="10" y="190" width="280" height="86" rx="5" fill="#f2d890" stroke="#9f2923" stroke-width="2"/>
+    <rect x="112" y="198" width="76" height="15" rx="7.5" fill="#9f2923"/>
+    <text x="150" y="209" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="9" font-weight="700" fill="#fff">ASSERTED</text>
+    <text x="22" y="230" font-family="IBM Plex Sans, Arial" font-size="10" fill="#292929">cataract (MP:0001289)</text>
+    <text x="22" y="246" font-family="IBM Plex Sans, Arial" font-size="10" font-weight="700" fill="#9f2923">skos:exactMatch</text>
+    <text x="22" y="262" font-family="IBM Plex Sans, Arial" font-size="10" fill="#292929">cataract (MONDO:0005129)</text>
+    <text x="278" y="272" text-anchor="end" font-family="IBM Plex Sans, Arial" font-size="9" fill="#555">from mp.sssom.tsv</text>
+
+    <!-- premise right -->
+    <rect x="430" y="190" width="280" height="86" rx="5" fill="#f2d890" stroke="#9f2923" stroke-width="2"/>
+    <rect x="532" y="198" width="76" height="15" rx="7.5" fill="#9f2923"/>
+    <text x="570" y="209" text-anchor="middle" font-family="IBM Plex Sans, Arial" font-size="9" font-weight="700" fill="#fff">ASSERTED</text>
+    <text x="442" y="230" font-family="IBM Plex Sans, Arial" font-size="10" fill="#292929">cataract (MONDO:0005129)</text>
+    <text x="442" y="246" font-family="IBM Plex Sans, Arial" font-size="10" font-weight="700" fill="#9f2923">skos:exactMatch</text>
+    <text x="442" y="262" font-family="IBM Plex Sans, Arial" font-size="10" fill="#292929">Cataract (HP:0000518)</text>
+    <text x="698" y="272" text-anchor="end" font-family="IBM Plex Sans, Arial" font-size="9" fill="#555">from mondo.sssom.tsv</text>
+  </svg>
+  <figcaption>Illustrative shape, not a real result. Real chains can be deeper and wider.</figcaption>
+</figure>
+
+<p>Reading the graph:</p>
+
+<ul>
+  <li>
+    <strong>Solid box, dark red border, <span class="badge badge-node-asserted">asserted</span> badge</strong>
+    — a mapping somebody published. Its bottom line names the mapping set it came from, which is how you
+    see that a single inference crosses several sources.
+  </li>
+  <li>
+    <strong>Dashed box, amber border, <span class="badge badge-node-inferred">inferred</span> badge</strong>
+    — a mapping OxO derived. The text below it names the SSSOM chaining rule that produced it, written as
+    <code>conclusion ← premises</code>, with <code>a</code>, <code>b</code>, <code>c</code> standing for
+    the terms being chained.
+  </li>
+  <li>
+    Every arrow points <strong>premise → conclusion</strong>. Follow them upwards to see how the claim was
+    built; follow them down to reach evidence a human wrote.
+  </li>
+</ul>
+
+<p>Drag to pan, and use the controls in the corner to zoom or fit. The nodes are diagrams, not links.</p>
+
+
+<h2 id="s9"><span class="num">9</span>Inferred mapping sets</h2>
+
+<p>
+  OxO’s inferences are themselves published as a mapping set with a resolvable identifier, so
+  <code>/inferences</code> is a real page rather than a dead identifier. It shows the set’s title,
+  description, identifier, and the source sets it was derived from, followed by its mappings in the usual
+  results table.
+</p>
+
+<p>
+  Unlike a normal search this page shows every inference type it holds, regardless of the default type
+  filter — you navigated to a set of inferences, so hiding inferences would be perverse.
+</p>
+
+
+<h2 id="s10"><span class="num">10</span>Glossary</h2>
+
+<dl class="glossary">
+  <dt>Asserted mapping</dt>
+  <dd>A mapping somebody published, in an ontology or in a curated SSSOM file. Badged <span class="badge badge-asserted">Asserted</span>.</dd>
+
+  <dt>Inferred mapping (SSSOM inference)</dt>
+  <dd>A mapping OxO derived by chaining asserted ones. Badged <span class="badge badge-inferred">SSSOM inference</span>. Always explainable (§&nbsp;8).</dd>
+
+  <dt>Mapping set</dt>
+  <dd>A published collection of mappings with its own identifier, title, licence and version.</dd>
+
+  <dt>Mapping set category</dt>
+  <dd>Whether a set is an <em>ontology</em>’s own cross-references or a <em>curated</em> SSSOM file. Drives the corpus control (§&nbsp;3.5) and the top ranking tier (§&nbsp;6). It is an OxO judgement about the source, not something SSSOM records.</dd>
+
+  <dt>CURIE</dt>
+  <dd>A compact identifier: a prefix, a colon, a local name — <code>MP:0001289</code>. Expands to an IRI.</dd>
+
+  <dt>Distance</dt>
+  <dd>How many asserted mappings an inference had to chain. One hop is the strongest; each further hop divides the ranking by five.</dd>
+
+  <dt>Mapping justification</dt>
+  <dd>The SSSOM field saying <em>why</em> a mapping holds — hand-curated, lexically matched, logically reasoned, and so on.</dd>
+
+  <dt>Predicate modifier</dt>
+  <dd>A negation. A mapping carrying one asserts the triple does <em>not</em> hold; the table shows a red <span class="badge badge-not">not</span> badge.</dd>
+
+  <dt>SSSOM</dt>
+  <dd>The Simple Standard for Sharing Ontological Mappings — the vocabulary and TSV format OxO reads, stores and exports.</dd>
+</dl>
+
+
+<h2 id="s11"><span class="num">11</span>Things that will surprise you</h2>
+
+<ol>
+  <li>
+    <p>
+      <strong>“Ontologies” or “Curated sets” returns only inferred mappings.</strong>
+      The corpus of a mapping set is recorded on each mapping when the data is loaded. If your OxO
+      instance was indexed before that field existed, no asserted mapping carries a corpus, so filtering
+      on one excludes them all — and only inferences, which are exempt from the filter, come back.
+      <strong>Both</strong> (the default) is unaffected. A full data load fixes it; ask whoever runs the
+      instance.
+    </p>
+  </li>
+  <li>
+    <p>
+      <strong>Sorting a column silently disables relevance ranking.</strong> There is no “sort within
+      relevance”. See §&nbsp;3.6.
+    </p>
+  </li>
+  <li>
+    <p>
+      <strong>A <code>/mapping/&lt;id&gt;</code> URL does not survive a refresh.</strong> Share the
+      results URL instead. See §&nbsp;7.
+    </p>
+  </li>
+  <li>
+    <p>
+      <strong>The <em>Documentation</em> tab in the site header is a placeholder.</strong> The document
+      you are reading is the documentation.
+    </p>
+  </li>
+  <li>
+    <p>
+      <strong>A red <span class="badge badge-not">not</span> badge inverts the row’s meaning.</strong>
+      It is small and it is easy to skim past, and the mapping says the opposite of what the row appears
+      to say.
+    </p>
+  </li>
+  <li>
+    <p>
+      <strong>Advanced search ignores the corpus and sort controls.</strong> They live on the Search tab
+      only. See §&nbsp;4.
+    </p>
+  </li>
+</ol>
+
+<hr>
+
+<footer>
+  <p>
+    <strong>OxO2</strong> is developed by the Samples, Phenotypes and Ontologies Team (SPOT) at EMBL-EBI.
+    Report a problem, or ask for a feature, at
+    <a href="https://github.com/EBISPOT/oxo2/issues">github.com/EBISPOT/oxo2/issues</a>.
+  </p>
+  <p>
+    This document is generated from <code>docs/user/ui/oxo2-user-interface.html</code> in the OxO2
+    repository. The behaviour it describes is defined by the architectural decision records in
+    <code>docs/adr/</code> — chiefly ADR-0011 (inference type), ADR-0013 (same-triple grouping),
+    ADR-0024 (cross-ontology mapping), ADR-0026 (label matching) and ADR-0027 (mapping set category and
+    provenance-led ranking).
+  </p>
+</footer>
+
+</main>
+</body>
+</html>
