@@ -45,11 +45,20 @@ dropped into a config is.
 
 The field exists to serve two consumers:
 
-- a **source filter** — "search ontologies / curated sets / both", defaulting to both;
+- a **corpus filter** — "search ontologies / curated sets / both", defaulting to both. Inferred
+  mappings always pass it (see Consequences).
 - **provenance-led ranking** — ordering results by who asserts the mapping *before* how strong the
-  predicate is: ontology-asserted, then curator-asserted, then inferred (nearer inferences first),
-  and only then predicate strength (exact › close › broad/narrow › related), curation effort, and
-  confidence.
+  predicate is. Four multiplicative tiers: (1) provenance — ontology-asserted, then
+  curator-asserted, then inferred with nearer inferences first; (2) predicate strength, reusing
+  ADR-0016's split of strict logical identity (`owl:equivalentClass`/`equivalentProperty`/`sameAs`)
+  above `skos:exactMatch`, then `skos:closeMatch`, then broad/narrow, then everything else;
+  (3) curation — hand-curated above everything else; (4) the mapping's own confidence.
+
+The tiers are lexicographic rather than a blend: adjacent provenance values are separated by more
+than the widest combined swing of the tiers below them, so no predicate, curation or confidence
+advantage can lift a curated mapping above an ontology one. Recency, though a natural fifth tier, is
+*not* in the boost — `mapping_date` is sparsely populated and a date function would silently reorder
+every query. It is offered as an explicit sort instead.
 
 `mapping_set_category` is **orthogonal to `inference_type`**. They answer different questions —
 *which corpus is this from* and *was this asserted or derived* — and a mapping carries both. The
@@ -73,6 +82,11 @@ ranking reads them together; neither replaces the other.
 - **Inferred mappings inherit nothing.** An inference derived from premises in several sets has no
   single source category. Its rank comes from `inference_type` and `distance`, below both asserted
   tiers, so it needs none.
+- **The corpus filter never removes inferences.** Because they carry no category, *any* corpus
+  choice would silently drop them, making the control a second, confusing inference-type filter. So
+  the filter ORs `inference_type:SSSOM_INFERENCE` back in: it selects among the asserted corpora,
+  and `inferenceType` independently decides whether inferences appear. To see only what an ontology
+  itself asserts, set both.
 - **Ranking becomes explainable.** "Ontology-asserted, exact match, manually curated" is a sentence
   a novice can read off the result row; the previous multiplicative boost was not legible.
 

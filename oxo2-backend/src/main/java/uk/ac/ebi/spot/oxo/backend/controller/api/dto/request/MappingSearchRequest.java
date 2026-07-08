@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
+import uk.ac.ebi.spot.oxo.model.sssom.MappingSetCategory;
 
 import java.util.List;
 
@@ -48,6 +49,15 @@ public class MappingSearchRequest {
     // boolean `inferred`.
     @Schema(description = "Restrict to these inference types; null/empty returns all types.")
     private List<InferenceType> inferenceType;
+
+    // Which asserted corpora to search (ADR-0027): null/empty = all. Named for the Solr field, not
+    // "source", because mapping_set_source is already an SSSOM slot meaning something else.
+    // Orthogonal to inferenceType: an inferred mapping chains premises from several sets and carries
+    // no category, so it is never removed by this filter — use inferenceType to exclude inferences.
+    @Schema(description = "Restrict asserted mappings to these corpora (ONTOLOGY = an ontology's own "
+            + "cross-references, CURATED = a curated SSSOM file); null/empty searches both. Inferred "
+            + "mappings carry no category and always pass this filter — exclude them via inferenceType.")
+    private List<MappingSetCategory> mappingSetCategory;
 
     // Cross-ontology mapping (ADR-0024): restrict subjects/objects to these ontologies (CURIE
     // prefixes). Each list becomes an OR'd exact-term filter on subject_prefix / object_prefix
@@ -162,6 +172,14 @@ public class MappingSearchRequest {
         this.inferenceType = inferenceType;
     }
 
+    public List<MappingSetCategory> getMappingSetCategory() {
+        return mappingSetCategory;
+    }
+
+    public void setMappingSetCategory(List<MappingSetCategory> mappingSetCategory) {
+        this.mappingSetCategory = mappingSetCategory;
+    }
+
     public List<String> getSubjectPrefixes() {
         return subjectPrefixes;
     }
@@ -210,6 +228,7 @@ public class MappingSearchRequest {
                 ", mappingSetIds=" + mappingSetIds +
                 ", advancedFieldQueries=" + advancedFieldQueries +
                 ", inferenceType=" + inferenceType +
+                ", mappingSetCategory=" + mappingSetCategory +
                 ", subjectPrefixes=" + subjectPrefixes +
                 ", objectPrefixes=" + objectPrefixes +
                 ", groupBySpo=" + groupBySpo +

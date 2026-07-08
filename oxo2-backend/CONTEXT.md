@@ -111,15 +111,43 @@ Queries are built directly with SolrJ `SolrQuery`. There is no JPA, no repositor
 controllers and Solr — this is deliberate ([ADR-0002](../docs/adr/0002-solr-as-sole-data-store.md)). Field names come from constants in `oxo2-shared` (`MappingEnum`, 
 `MappingSetConstants`) so the dataload and backend stay aligned.
 
-#### Inference-type filter and ranking
+#### Corpus and inference-type filters
 
 The `inferenceType` filter (search body, and the mapping-sets `?inferenceType` param) becomes an OR of exact
-`inference_type:<CODE>` term matches; an absent/empty list means all types. Ranking is a **multiplicative**
-edismax `boost` (`SolrQueryBuilder.RANKING_BOOST`), not an additive `bq`: an additive boost is skewed by term
-idf (ASSERTED is common, SSSOM rare) and would invert the intended order. The tier multiplier (asserted 3 &gt;
-SSSOM 2 &gt; OWL 1) is multiplied by a distance factor bounded to `[1.0, 1.4]` (shorter chains higher), kept under
-the 1.5× adjacent-tier ratio so it can never flip the tiers. See
-[ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md).
+`inference_type:<CODE>` term matches; an absent/empty list means all types.
+
+The `mappingSetCategory` filter picks which **asserted corpora** to search — `ONTOLOGY` (an ontology's own
+cross-references) and/or `CURATED` (a curated SSSOM file); an absent/empty list searches both
+([ADR-0027](../docs/adr/0027-config-driven-mapping-set-category.md)). It is named for the Solr field rather
+than "source" because `mapping_set_source` is already an SSSOM slot meaning something else. Inferred mappings
+are ORed back in unconditionally: an inference chains premises from several sets, carries no category, and
+would otherwise be dropped by *any* corpus choice — making this control secretly duplicate `inferenceType`.
+The two axes stay orthogonal. Before the reindex that populates the field, naming a corpus returns only
+inferences, which is why the default emits no clause at all.
+
+#### Provenance-led ranking
+
+Ranking is a **multiplicative** edismax `boost` (`SolrQueryBuilder.RANKING_BOOST`), not an additive `bq`: an
+additive boost is skewed by term idf (ASSERTED is common, SSSOM rare) and would invert the intended order
+([ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)). Four tiers multiply together:
+
+1. **Provenance** — ontology-asserted (10000) &gt; curator-asserted (1000) &gt; inferred (100, divided by 5 per
+   extra hop). Keyed on `inference_type`, so a doc with no category reads as "asserted, corpus unknown" and
+   scores as curated — which is exactly the pre-reindex state, and exactly ADR-0011's old ordering.
+2. **Predicate strength** — strict identity (2.0: `owl:equivalentClass`/`equivalentProperty`/`sameAs`) &gt;
+   `skos:exactMatch` (1.7) &gt; `skos:closeMatch` (1.4) &gt; broad/narrow (1.2) &gt; anything else (1.0). The
+   strict-vs-weak identity split is ADR-0016's, not a second strength model.
+3. **Curation** — `semapv:ManualMappingCuration` (1.3) &gt; anything else (1.0).
+4. **Confidence** — `1 + 0.3 × confidence`; absent confidence contributes exactly 1.
+
+The tiers are **lexicographic, not a blend**: the closest two provenance values differ by 5×, more than the
+widest combined swing of tiers 2–4 (2.0 × 1.3 × 1.3 = 3.38), so no predicate/curation/confidence advantage can
+lift a curated mapping above an ontology one — "trust provenance over predicate". `SolrQueryBuilder`
+`.rankingTiersAreLexicographic()` encodes that inequality and is asserted by a unit test, so a future tweak to
+any constant is checked against it.
+
+Recency is deliberately not a boost factor: `mapping_date` is sparsely populated, and a date function in the
+boost would silently reorder results on every query. It is available as an explicit sort instead.
 
 #### Same-SPO grouping
 

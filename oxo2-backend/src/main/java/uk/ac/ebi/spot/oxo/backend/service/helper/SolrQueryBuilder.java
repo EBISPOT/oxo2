@@ -12,8 +12,10 @@ import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
+import uk.ac.ebi.spot.oxo.model.sssom.MappingSetCategory;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,27 +26,171 @@ public class SolrQueryBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(SolrQueryBuilder.class);
 
+    // ---------- Provenance-led ranking (ADR-0027, superseding ADR-0011's boost) ----------
+    //
+    // Ranking tiers, strongest first. Each tier is a multiplicative factor; the tiers below only ever
+    // break ties within a tier above (see #rankingTiersAreLexicographic below and the unit test of the
+    // same name). "Trust provenance over predicate": who asserts a mapping outweighs how strong the
+    // predicate is, because a skos:exactMatch in an unreviewed lexical-match file is weaker evidence
+    // than an ontology's own skos:closeMatch cross-reference.
+    //
+    //   1. Provenance    ontology-asserted > curator-asserted > inferred (fewer hops first)
+    //   2. Predicate     strict identity > exactMatch > closeMatch > broad/narrow > everything else
+    //   3. Curation      manually curated > everything else
+    //   4. Confidence    the mapping's own confidence, when it declares one
+    //
+    // Recency is deliberately NOT a boost factor: mapping_date is sparsely populated and a date
+    // function in the boost would silently reorder on every query. It is offered as an explicit sort.
+
+    /** Tier 1. An ontology's own asserted cross-references (mapping_set_category = ONTOLOGY). */
+    private static final double ONTOLOGY_BOOST = 10_000;
+    /** Tier 1. A curator's asserted mapping — also the pre-reindex fallback for any asserted doc. */
+    private static final double CURATED_BOOST = 1_000;
+    /** Tier 1. An OxO-derived mapping, at one hop. */
+    private static final double INFERRED_BOOST = 100;
+    /** Tier 1. Each extra inference hop divides the inferred boost by this. */
+    private static final double DISTANCE_DECAY = 5;
+
+    /** Tier 2. owl:equivalentClass / owl:equivalentProperty / owl:sameAs — logical identity (ADR-0016). */
+    private static final double PREDICATE_STRICT_IDENTITY = 2.0;
+    /** Tier 2. skos:exactMatch — interchangeable in practice, but not logical identity (ADR-0016). */
+    private static final double PREDICATE_WEAK_IDENTITY = 1.7;
+    /** Tier 2. skos:closeMatch. */
+    private static final double PREDICATE_CLOSE = 1.4;
+    /** Tier 2. skos:broadMatch / skos:narrowMatch — a hierarchy edge, not a mapping between equals. */
+    private static final double PREDICATE_HIERARCHY = 1.2;
+    /** Tier 2 floor. skos:relatedMatch, oboInOwl:hasDbXref, the crossSpecies predicates, anything else. */
+    private static final double PREDICATE_OTHER = 1.0;
+
+    /** Tier 3. semapv:ManualMappingCuration — a human decided this mapping. */
+    private static final double CURATION_MANUAL = 1.3;
+    /** Tier 3 floor. Lexical matching, logical reasoning, unspecified — anything not hand-curated. */
+    private static final double CURATION_OTHER = 1.0;
+
+    /** Tier 4. confidence in [0,1] scales the boost by 1 + this; absent confidence contributes 1.0. */
+    private static final double CONFIDENCE_WEIGHT = 0.3;
+
     /**
-     * Soft ranking (ADR-0011) as a MULTIPLICATIVE edismax boost function, so a highly relevant
-     * inferred mapping can still outrank a weakly matching asserted one. Multiplicative — not an
-     * additive {@code bq} — because the tier boost must be independent of term idf: ASSERTED is
-     * common (low idf) and SSSOM_INFERENCE rare (high idf), so an additive {@code bq} would
-     * actually boost SSSOM more than ASSERTED, inverting the intended order.
-     *
-     * <p>Tier multiplier ASSERTED (3) &gt; SSSOM_INFERENCE (2), multiplied by
-     * a distance factor 1 + 0.4/(distance+1). The distance factor is bounded to [1.0, 1.4]
-     * (distance 0 -> 1.4, large -> 1.0): a within-tier tie-breaker that favours shorter chains but
-     * is always smaller than the 1.5x adjacent-tier ratio, so it can never invert the tier order
-     * (an SSSOM doc with distance 0 must not outrank an asserted doc at equal relevance). Missing
-     * distance (asserted docs) defaults to 1.
+     * Predicate IRIs by tier-2 strength. A doc matches at most one IRI, so the strengths are unordered
+     * semantically — but the iteration order must be stable, or the generated boost string would differ
+     * between JVM runs. Hence an insertion-ordered map, not {@code Map.of}.
      */
-    private static final String RANKING_BOOST =
-            "mul("
-                + "if(termfreq(" + MappingEnum.INFERENCE_TYPE.getField() + ",'"
-                    + InferenceType.ASSERTED.getCode() + "'),3,"
-                + "if(termfreq(" + MappingEnum.INFERENCE_TYPE.getField() + ",'"
-                    + InferenceType.SSSOM_INFERENCE.getCode() + "'),2,1)),"
-                + "sum(1,div(0.4,sum(def(distance,1),1))))";
+    private static final Map<Double, List<String>> PREDICATE_STRENGTH_IRIS = predicateStrengthIris();
+
+    private static Map<Double, List<String>> predicateStrengthIris() {
+        Map<Double, List<String>> byStrength = new LinkedHashMap<>();
+        byStrength.put(PREDICATE_STRICT_IDENTITY, List.of(
+                "http://www.w3.org/2002/07/owl#equivalentClass",
+                "http://www.w3.org/2002/07/owl#equivalentProperty",
+                "http://www.w3.org/2002/07/owl#sameAs"));
+        byStrength.put(PREDICATE_WEAK_IDENTITY, List.of("http://www.w3.org/2004/02/skos/core#exactMatch"));
+        byStrength.put(PREDICATE_CLOSE, List.of("http://www.w3.org/2004/02/skos/core#closeMatch"));
+        byStrength.put(PREDICATE_HIERARCHY, List.of(
+                "http://www.w3.org/2004/02/skos/core#broadMatch",
+                "http://www.w3.org/2004/02/skos/core#narrowMatch"));
+        return Collections.unmodifiableMap(byStrength);
+    }
+
+    /**
+     * mapping_justification values meaning "a human curated this". A {@code string} field, so the match
+     * is case-sensitive and the prefix casing varies with each set's curie_map — hence both observed
+     * spellings. A justification we do not recognise simply falls to {@link #CURATION_OTHER}, so a
+     * missed spelling costs a tie-break, never a wrong result. (A {@code _ci} copy, as ADR-0026 added
+     * for labels, would remove the guesswork.)
+     */
+    private static final List<String> MANUAL_CURATION_JUSTIFICATIONS = List.of(
+            "semapv:ManualMappingCuration", "SEMAPV:ManualMappingCuration");
+
+    /**
+     * Soft ranking as a MULTIPLICATIVE edismax boost function, so a highly relevant inferred mapping
+     * can still outrank a weakly matching asserted one. Multiplicative — not an additive {@code bq} —
+     * because the tier boost must be independent of term idf: ASSERTED is common (low idf) and
+     * SSSOM_INFERENCE rare (high idf), so an additive {@code bq} would actually boost SSSOM more than
+     * ASSERTED, inverting the intended order (ADR-0011).
+     *
+     * <p>Pre-reindex, {@code mapping_set_category} is empty on every doc (ADR-0027), so every asserted
+     * mapping scores {@link #CURATED_BOOST} and the ranking degrades exactly to ADR-0011's
+     * asserted-over-inferred order rather than to nonsense. Tiers 2–4 read fields that already exist,
+     * so they take effect immediately.
+     */
+    private static final String RANKING_BOOST = "mul("
+            + provenanceFactor() + "," + predicateStrengthFactor() + ","
+            + curationFactor() + "," + confidenceFactor() + ")";
+
+    /**
+     * Tier 1. Keyed on inference_type (always present) rather than on the category, so that a doc with
+     * no category is read as "asserted, corpus unknown" — the pre-reindex state — and not as inferred.
+     * Inferred docs decay by {@link #DISTANCE_DECAY} per hop; a missing distance reads as one hop.
+     */
+    private static String provenanceFactor() {
+        String assertedTier = "if(termfreq(" + MappingEnum.MAPPING_SET_CATEGORY.getField() + ",'"
+                + MappingSetCategory.ONTOLOGY.getCode() + "')," + num(ONTOLOGY_BOOST) + ","
+                + num(CURATED_BOOST) + ")";
+        String inferredTier = "div(" + num(INFERRED_BOOST) + ",pow(" + num(DISTANCE_DECAY)
+                + ",sub(def(" + MappingEnum.DISTANCE.getField() + ",1),1)))";
+        return "if(termfreq(" + MappingEnum.INFERENCE_TYPE.getField() + ",'"
+                + InferenceType.ASSERTED.getCode() + "')," + assertedTier + "," + inferredTier + ")";
+    }
+
+    /**
+     * Tier 2. {@code predicate_iri} is single-valued, so at most one termfreq is 1 and the rest are 0;
+     * {@code max(...)} therefore selects the matching strength, falling through to the
+     * {@link #PREDICATE_OTHER} floor when the predicate is one we do not rank.
+     */
+    private static String predicateStrengthFactor() {
+        String field = MappingEnum.PREDICATE_IRI.getField();
+        StringBuilder factor = new StringBuilder("max(");
+        PREDICATE_STRENGTH_IRIS.forEach((strength, iris) -> {
+            String anyOf = iris.stream()
+                    .map(iri -> "termfreq(" + field + ",'" + iri + "')")
+                    .collect(Collectors.joining(","));
+            factor.append("mul(").append(num(strength)).append(",")
+                    .append(iris.size() == 1 ? anyOf : "sum(" + anyOf + ")").append("),");
+        });
+        return factor.append(num(PREDICATE_OTHER)).append(")").toString();
+    }
+
+    /** Tier 3. Same single-valued {@code max(...)} shape as the predicate factor. */
+    private static String curationFactor() {
+        String field = MappingEnum.MAPPING_JUSTIFICATION.getField();
+        String anyOf = MANUAL_CURATION_JUSTIFICATIONS.stream()
+                .map(justification -> "termfreq(" + field + ",'" + justification + "')")
+                .collect(Collectors.joining(","));
+        return "max(mul(" + num(CURATION_MANUAL) + ",sum(" + anyOf + ")),"
+                + num(CURATION_OTHER) + ")";
+    }
+
+    /** Tier 4. {@code 1 + weight * confidence}; a doc without a confidence contributes exactly 1. */
+    private static String confidenceFactor() {
+        return "sum(1,mul(" + num(CONFIDENCE_WEIGHT) + ",def("
+                + MappingEnum.CONFIDENCE.getField() + ",0)))";
+    }
+
+    /**
+     * The invariant that makes the tiers a ranking rather than a blend: the closest two provenance
+     * values differ by more than the widest possible swing of every lower tier combined, so no
+     * predicate, curation or confidence advantage can lift a curated mapping above an ontology one.
+     * Asserted by {@code SolrQueryBuilderTest#rankingTiersAreLexicographic}; kept here so a future
+     * tweak to any constant above is checked against it.
+     *
+     * @return true when tier 1 strictly dominates tiers 2–4.
+     */
+    static boolean rankingTiersAreLexicographic() {
+        double closestProvenanceRatio = Math.min(
+                Math.min(ONTOLOGY_BOOST / CURATED_BOOST, CURATED_BOOST / INFERRED_BOOST),
+                DISTANCE_DECAY);
+        double widestLowerTierSwing = (PREDICATE_STRICT_IDENTITY / PREDICATE_OTHER)
+                * (CURATION_MANUAL / CURATION_OTHER)
+                * (1 + CONFIDENCE_WEIGHT);
+        return closestProvenanceRatio > widestLowerTierSwing;
+    }
+
+    /** Render a boost constant without a locale-dependent separator or a stray trailing {@code .0}. */
+    private static String num(double value) {
+        return value == Math.rint(value)
+                ? String.valueOf((long) value)
+                : BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
+    }
 
     private static final Map<MappingEnum, String> textGeneralToDocValues = Map.of(
         MappingEnum.OBJECT_LABEL, textGeneralFieldAsString(MappingEnum.OBJECT_LABEL),
@@ -130,11 +276,11 @@ public class SolrQueryBuilder {
         // Build q (and qf on the override path) — see applyQuery for the dispatch order.
         applyQuery(solrQuery, mappingSearchRequest);
 
-        // ADR-0011: every path uses edismax so the soft inference-type + distance ranking applies
+        // ADR-0027: every path uses edismax so the soft provenance-led ranking applies
         // uniformly. The fielded queries on the advanced/classified paths carry their own field
         // selectors, which edismax parses unchanged; qf (set above) only affects the queryFields path.
         solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
-        applyInferenceRanking(solrQuery);
+        applyProvenanceRanking(solrQuery);
 
         solrQuery.setFields(constructFieldList(mappingSearchRequest.getFieldList()));
         // Hide the weak predicates (rdfs:subClassOf, oboInOwl:hasDbXref) by default, unless the caller
@@ -145,6 +291,7 @@ public class SolrQueryBuilder {
                 mappingSearchRequest.getColumnFilters(),
                 mappingSearchRequest.getMappingSetIds(),
                 mappingSearchRequest.getInferenceType(),
+                mappingSearchRequest.getMappingSetCategory(),
                 mappingSearchRequest.getSubjectPrefixes(),
                 mappingSearchRequest.getObjectPrefixes(),
                 excludeWeakPredicates));
@@ -221,7 +368,7 @@ public class SolrQueryBuilder {
         solrQuery.setRows(pageable.getPageSize());
         solrQuery.setQuery(subjectSideDisjunction(terms));
         solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
-        applyInferenceRanking(solrQuery);
+        applyProvenanceRanking(solrQuery);
         solrQuery.setFields(constructFieldList(null));
         solrQuery.setFilterQueries(batchFilterQueries(objectPrefixes, inferenceTypes));
         if (groupBySpo) {
@@ -325,6 +472,7 @@ public class SolrQueryBuilder {
                 request.getColumnFilters(),
                 request.getMappingSetIds(),
                 request.getInferenceType(),
+                request.getMappingSetCategory(),
                 request.getSubjectPrefixes(),
                 request.getObjectPrefixes(),
                 excludeWeakPredicates));
@@ -447,6 +595,7 @@ public class SolrQueryBuilder {
     private static String[] constructFilterQueries(List<MappingSearchRequest.ColumnFilter> queryFilters,
                                                    List<String> mappingSetIds,
                                                    List<InferenceType> inferenceTypes,
+                                                   List<MappingSetCategory> mappingSetCategories,
                                                    List<String> subjectPrefixes,
                                                    List<String> objectPrefixes,
                                                    boolean excludeWeakPredicates) {
@@ -470,6 +619,12 @@ public class SolrQueryBuilder {
         String inferenceClause = inferenceTypeFilterClause(inferenceTypes);
         if (inferenceClause != null) {
             filterQueriesList.add(inferenceClause);
+        }
+
+        // Which asserted corpora to search (ADR-0027).
+        String categoryClause = mappingSetCategoryFilterClause(mappingSetCategories);
+        if (categoryClause != null) {
+            filterQueriesList.add(categoryClause);
         }
 
         if (mappingSetIds != null && !mappingSetIds.isEmpty()) {
@@ -507,6 +662,39 @@ public class SolrQueryBuilder {
                 .map(code -> field + ":" + code)
                 .collect(Collectors.joining(" OR "));
         return clause.isEmpty() ? null : "(" + clause + ")";
+    }
+
+    /**
+     * Which asserted corpora to search (ADR-0027), or null for all of them. {@code mapping_set_category}
+     * is a denormalised string whose values are the MappingSetCategory codes (safe enum names, no
+     * escaping needed).
+     *
+     * <p>Inferred mappings are ORed back in unconditionally. An inference chains premises from several
+     * sets, so it carries no category and would otherwise be silently dropped by <em>any</em> choice of
+     * corpus — making this control secretly duplicate the inference-type filter. The two stay
+     * orthogonal: this one picks the asserted corpora, {@code inferenceType} decides whether
+     * inferences appear at all.
+     *
+     * <p>Before the reindex that populates the field, no asserted doc has a category, so a request
+     * that names one returns only inferences. That is why the default is "all corpora" (no clause).
+     */
+    private static String mappingSetCategoryFilterClause(List<MappingSetCategory> mappingSetCategories) {
+        if (mappingSetCategories == null || mappingSetCategories.isEmpty()) {
+            return null;
+        }
+        String field = MappingEnum.MAPPING_SET_CATEGORY.getField();
+        String clause = mappingSetCategories.stream()
+                .filter(Objects::nonNull)
+                .map(MappingSetCategory::getCode)
+                .distinct()
+                .map(code -> field + ":" + code)
+                .collect(Collectors.joining(" OR "));
+        if (clause.isEmpty()) {
+            return null;
+        }
+        String inferred = MappingEnum.INFERENCE_TYPE.getField() + ":"
+                + InferenceType.SSSOM_INFERENCE.getCode();
+        return "(" + clause + " OR " + inferred + ")";
     }
 
     /**
@@ -779,12 +967,13 @@ public class SolrQueryBuilder {
     }
 
     /**
-     * Apply the soft inference-type + distance ranking (ADR-0011) as a multiplicative edismax
+     * Apply the provenance-led ranking ({@link #RANKING_BOOST}, ADR-0027) as a multiplicative edismax
      * {@code boost} function. Requires {@code defType=edismax}. The boost multiplies the relevance
-     * score, so every tier still appears — asserted/SSSOM just float up, and within the inferred
-     * results shorter chains rank above longer ones — without a hard filter or sort.
+     * score, so every tier still appears — ontology-asserted mappings just float above curated ones,
+     * curated above inferred, and shorter inference chains above longer ones — without a hard filter
+     * or sort.
      */
-    private static void applyInferenceRanking(SolrQuery solrQuery) {
+    private static void applyProvenanceRanking(SolrQuery solrQuery) {
         solrQuery.set(SolrConstants.BOOST, RANKING_BOOST);
     }
 }

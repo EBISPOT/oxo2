@@ -12,6 +12,7 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
+import uk.ac.ebi.spot.oxo.model.sssom.MappingSetCategory;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -605,7 +606,7 @@ class SolrQueryBuilderTest {
                 weakPredicateExclusion());
     }
 
-    // ---------- soft inference ranking (edismax bq/bf, ADR-0011) ----------
+    // ---------- provenance-led ranking (multiplicative edismax boost, ADR-0027) ----------
 
     @Test
     void rankingAppliesMultiplicativeEdismaxBoost() {
@@ -616,14 +617,125 @@ class SolrQueryBuilderTest {
 
         assertThat(solrQuery.get(SolrConstants.DEF_TYPE)).isEqualTo(SolrConstants.EDISMAX);
         String boost = solrQuery.get(SolrConstants.BOOST);
-        String field = MappingEnum.INFERENCE_TYPE.getField();
-        // Multiplicative tier (3/2/1) × distance recip — idf-independent so ASSERTED outranks SSSOM.
+        assertThat(boost).startsWith("mul(");
+
+        // Tier 1: keyed on inference_type, so a doc with no category (pre-reindex) reads as an
+        // asserted mapping of an unknown corpus and scores CURATED, never as an inference.
         assertThat(boost)
-                .startsWith("mul(")
-                .contains("termfreq(" + field + ",'ASSERTED'),3")
-                .contains("termfreq(" + field + ",'SSSOM_INFERENCE'),2")
-                // Distance factor bounded to [1.0, 1.4] so it can't invert the tier order.
-                .contains("sum(1,div(0.4,sum(def(distance,1),1)))");
+                .contains("if(termfreq(" + MappingEnum.INFERENCE_TYPE.getField() + ",'ASSERTED'),"
+                        + "if(termfreq(" + MappingEnum.MAPPING_SET_CATEGORY.getField()
+                        + ",'ONTOLOGY'),10000,1000)")
+                // Inferred: 100, divided by 5 per extra hop; a missing distance reads as one hop.
+                .contains("div(100,pow(5,sub(def(" + MappingEnum.DISTANCE.getField() + ",1),1)))");
+
+        // Tier 2: strict identity (2) > exactMatch (1.7) > closeMatch (1.4) > hierarchy (1.2) > 1.
+        String predicate = MappingEnum.PREDICATE_IRI.getField();
+        assertThat(boost)
+                .contains("mul(2,sum(termfreq(" + predicate + ",'http://www.w3.org/2002/07/owl#equivalentClass')")
+                .contains("mul(1.7,termfreq(" + predicate + ",'http://www.w3.org/2004/02/skos/core#exactMatch'))")
+                .contains("mul(1.4,termfreq(" + predicate + ",'http://www.w3.org/2004/02/skos/core#closeMatch'))")
+                .contains("mul(1.2,sum(termfreq(" + predicate + ",'http://www.w3.org/2004/02/skos/core#broadMatch')");
+
+        // Tiers 3 and 4: manual curation, then the mapping's own confidence.
+        assertThat(boost)
+                .contains("mul(1.3,sum(termfreq(" + MappingEnum.MAPPING_JUSTIFICATION.getField()
+                        + ",'semapv:ManualMappingCuration')")
+                .contains("sum(1,mul(0.3,def(" + MappingEnum.CONFIDENCE.getField() + ",0)))");
+    }
+
+    /**
+     * The property that makes "trust provenance over predicate" true rather than aspirational: the
+     * closest two provenance values must differ by more than the widest combined swing of the tiers
+     * below, so no predicate/curation/confidence advantage can lift a curated mapping above an
+     * ontology one. Verified against a real Solr: an ONTOLOGY doc with a mere closeMatch outranks a
+     * CURATED doc with owl:equivalentClass + manual curation + confidence 1.0.
+     */
+    @Test
+    void rankingTiersAreLexicographic() {
+        assertThat(SolrQueryBuilder.rankingTiersAreLexicographic())
+                .as("provenance must dominate predicate strength, curation and confidence combined")
+                .isTrue();
+    }
+
+    /** The boost is built by string concatenation over a map; it must not vary between JVM runs. */
+    @Test
+    void rankingBoostIsDeterministic() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+        String first = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN).get(SolrConstants.BOOST);
+        String second = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN).get(SolrConstants.BOOST);
+        assertThat(first).isEqualTo(second);
+    }
+
+    // ---------- mapping-set-category (source) filter, ADR-0027 ----------
+
+    @Test
+    void mappingSetCategoryFilterAlwaysKeepsInferences() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+        request.setMappingSetCategory(List.of(MappingSetCategory.ONTOLOGY));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        // An inference chains premises from several sets and carries no category, so it must not be
+        // dropped by a corpus choice — that would make this control duplicate the inference filter.
+        assertThat(solrQuery.getFilterQueries()).containsExactlyInAnyOrder(
+                "(" + MappingEnum.MAPPING_SET_CATEGORY.getField() + ":ONTOLOGY OR "
+                        + MappingEnum.INFERENCE_TYPE.getField() + ":SSSOM_INFERENCE)",
+                weakPredicateExclusion());
+    }
+
+    @Test
+    void mappingSetCategoryFilterOrsBothCategories() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+        request.setMappingSetCategory(List.of(MappingSetCategory.ONTOLOGY, MappingSetCategory.CURATED));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.getFilterQueries()).contains(
+                "(" + MappingEnum.MAPPING_SET_CATEGORY.getField() + ":ONTOLOGY OR "
+                        + MappingEnum.MAPPING_SET_CATEGORY.getField() + ":CURATED OR "
+                        + MappingEnum.INFERENCE_TYPE.getField() + ":SSSOM_INFERENCE)");
+    }
+
+    @Test
+    void noMappingSetCategoryAddsNoFilter() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        // The default searches every corpus — critically, it emits no clause, so it still returns
+        // asserted mappings before the reindex that populates mapping_set_category.
+        assertThat(solrQuery.getFilterQueries())
+                .noneMatch(fq -> fq.contains(MappingEnum.MAPPING_SET_CATEGORY.getField()));
+    }
+
+    @Test
+    void emptyMappingSetCategoryAddsNoFilter() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+        request.setMappingSetCategory(Collections.emptyList());
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.getFilterQueries())
+                .noneMatch(fq -> fq.contains(MappingEnum.MAPPING_SET_CATEGORY.getField()));
+    }
+
+    /** The export must filter identically to the table, or the download won't match what was shown. */
+    @Test
+    void exportQueryHonoursMappingSetCategoryFilter() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+        request.setMappingSetCategory(List.of(MappingSetCategory.CURATED));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildExportQuery(request);
+
+        assertThat(solrQuery.getFilterQueries()).contains(
+                "(" + MappingEnum.MAPPING_SET_CATEGORY.getField() + ":CURATED OR "
+                        + MappingEnum.INFERENCE_TYPE.getField() + ":SSSOM_INFERENCE)");
     }
 
     // ---------- same-SPO grouping (ADR-0013) ----------

@@ -71,6 +71,7 @@ public enum MappingEnum {
     EXPLANATION_LENGTH(MappingConstants.EXPLANATION_LENGTH),
     EXPLANATION(MappingConstants.EXPLANATION),
     INFERENCE_TYPE(MappingConstants.INFERENCE_TYPE),
+    MAPPING_SET_CATEGORY(MappingConstants.MAPPING_SET_CATEGORY),
     MAPPING_ID(MappingConstants.MAPPING_ID),
     OBJECT_IRI(MappingConstants.OBJECT_IRI),
     PREDICATE_IRI(MappingConstants.PREDICATE_IRI),
@@ -98,6 +99,9 @@ public enum MappingEnum {
             // Extension
             MappingEnum.DISTANCE.getField(),
             MappingEnum.INFERENCE_TYPE.getField(),
+            // Empty on every doc until the reindex that populates it (ADR-0027); Solr simply omits
+            // an absent field from the response, so requesting it early is harmless.
+            MappingEnum.MAPPING_SET_CATEGORY.getField(),
 //            MappingEnum.EXPLANATION.getField(),
             MappingEnum.OBJECT_IRI.getField(),
             MappingEnum.PREDICATE_IRI.getField(),
