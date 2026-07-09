@@ -1,44 +1,62 @@
 [ {
+  "asserted_mappings" : [ {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "66c6c17c-a25a-3d29-8b8b-4d022c229453",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+    "object_id" : "EX:C",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "object_label" : "Entity C",
+    "predicate_id" : "SKOS:exactMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "subject_id" : "EX:B",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "subject_label" : "Entity B"
+  } ],
   "distance" : 1,
-  "explanation_length" : 0,
-  "inference_type" : "SSSOM_INFERENCE",
-  "mapping_id" : "17c4e870-f498-3578-929e-f2e6f25da451",
-  "mapping_justification" : "SEMAPV:MappingChaining",
-  "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
-  "mapping_tool" : "OxO Inferences",
-  "object_id" : "EX:A",
-  "object_iri" : "https://w3id.org/oxo2/test/ex/A",
-  "object_label" : "Entity A",
-  "object_prefix" : "EX",
-  "predicate_id" : "SKOS:exactMatch",
-  "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
-  "spo_key" : "91d08de8-afbc-32e1-9ccd-df7a9478ff1e",
-  "subject_id" : "EX:C",
-  "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
-  "subject_label" : "Entity C",
-  "subject_prefix" : "EX"
-}, {
-  "distance" : 1,
-  "explanation_length" : 0,
-  "inference_type" : "SSSOM_INFERENCE",
-  "mapping_id" : "253aa622-d9b4-391e-845e-09b1f04b8325",
-  "mapping_justification" : "SEMAPV:MappingChaining",
-  "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
-  "mapping_tool" : "OxO Inferences",
-  "object_id" : "EX:A",
-  "object_iri" : "https://w3id.org/oxo2/test/ex/A",
-  "object_label" : "Entity A",
-  "object_prefix" : "EX",
-  "predicate_id" : "SKOS:exactMatch",
-  "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
-  "spo_key" : "b28390b9-254a-3fb2-9e21-d8cced8d76ff",
-  "subject_id" : "EX:B",
-  "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
-  "subject_label" : "Entity B",
-  "subject_prefix" : "EX"
-}, {
-  "distance" : 1,
-  "explanation_length" : 0,
+  "explanation" : {
+    "chain_rule_applications" : {
+      "premises" : [ {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "Asserted",
+            "chain_rule_long_form" : "Asserted",
+            "chain_rule_name" : "Asserted"
+          }
+        },
+        "distance" : 1,
+        "mapping_id" : "66c6c17c-a25a-3d29-8b8b-4d022c229453",
+        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+        "object_id" : "EX:C",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+        "object_label" : "Entity C",
+        "predicate_id" : "SKOS:exactMatch",
+        "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+        "subject_id" : "EX:B",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "subject_label" : "Entity B"
+      } ]
+    },
+    "distance" : 1,
+    "mapping_justification" : "SEMAPV:MappingChaining",
+    "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+    "mapping_tool" : "OxO Inferences",
+    "object_id" : "EX:B",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "object_label" : "Entity B",
+    "predicate_id" : "SKOS:exactMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "subject_id" : "EX:C",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "subject_label" : "Entity C"
+  },
+  "explanation_length" : 2,
   "inference_type" : "SSSOM_INFERENCE",
   "mapping_id" : "79f8a833-5028-3ad4-bb6d-13114b6ff4bb",
   "mapping_justification" : "SEMAPV:MappingChaining",
@@ -56,8 +74,107 @@
   "subject_label" : "Entity C",
   "subject_prefix" : "EX"
 }, {
+  "asserted_mappings" : [ {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "66c6c17c-a25a-3d29-8b8b-4d022c229453",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+    "object_id" : "EX:C",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "object_label" : "Entity C",
+    "predicate_id" : "SKOS:exactMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "subject_id" : "EX:B",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "subject_label" : "Entity B"
+  }, {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "7f26d73c-15d8-35f0-9f3e-6f6cb6ecca67",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+    "object_id" : "EX:B",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "object_label" : "Entity B",
+    "predicate_id" : "SKOS:exactMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "subject_id" : "EX:A",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "subject_label" : "Entity A"
+  } ],
   "distance" : 1,
-  "explanation_length" : 0,
+  "explanation" : {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "(?a, <SKOS:exactMatch>, ?c) <- (?a, <SKOS:exactMatch>, ?b), (?b, <SKOS:exactMatch>, ?c)",
+        "chain_rule_long_form" : "(?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c) <- (?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b), (?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c)",
+        "chain_rule_name" : "T10"
+      },
+      "premises" : [ {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "Asserted",
+            "chain_rule_long_form" : "Asserted",
+            "chain_rule_name" : "Asserted"
+          }
+        },
+        "distance" : 1,
+        "mapping_id" : "66c6c17c-a25a-3d29-8b8b-4d022c229453",
+        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+        "object_id" : "EX:C",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+        "object_label" : "Entity C",
+        "predicate_id" : "SKOS:exactMatch",
+        "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+        "subject_id" : "EX:B",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "subject_label" : "Entity B"
+      }, {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "Asserted",
+            "chain_rule_long_form" : "Asserted",
+            "chain_rule_name" : "Asserted"
+          }
+        },
+        "distance" : 1,
+        "mapping_id" : "7f26d73c-15d8-35f0-9f3e-6f6cb6ecca67",
+        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+        "object_id" : "EX:B",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "object_label" : "Entity B",
+        "predicate_id" : "SKOS:exactMatch",
+        "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+        "subject_id" : "EX:A",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+        "subject_label" : "Entity A"
+      } ]
+    },
+    "distance" : 1,
+    "mapping_justification" : "SEMAPV:MappingChaining",
+    "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+    "mapping_tool" : "OxO Inferences",
+    "object_id" : "EX:C",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "object_label" : "Entity C",
+    "predicate_id" : "SKOS:exactMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "subject_id" : "EX:A",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "subject_label" : "Entity A"
+  },
+  "explanation_length" : 3,
   "inference_type" : "SSSOM_INFERENCE",
   "mapping_id" : "b20223b3-82ca-329a-afd5-4b82b861eee4",
   "mapping_justification" : "SEMAPV:MappingChaining",
@@ -73,5 +190,214 @@
   "subject_id" : "EX:A",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
   "subject_label" : "Entity A",
+  "subject_prefix" : "EX"
+}, {
+  "asserted_mappings" : [ {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "66c6c17c-a25a-3d29-8b8b-4d022c229453",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+    "object_id" : "EX:C",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "object_label" : "Entity C",
+    "predicate_id" : "SKOS:exactMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "subject_id" : "EX:B",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "subject_label" : "Entity B"
+  }, {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "7f26d73c-15d8-35f0-9f3e-6f6cb6ecca67",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+    "object_id" : "EX:B",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "object_label" : "Entity B",
+    "predicate_id" : "SKOS:exactMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "subject_id" : "EX:A",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "subject_label" : "Entity A"
+  } ],
+  "distance" : 1,
+  "explanation" : {
+    "chain_rule_applications" : {
+      "premises" : [ {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "(?a, <SKOS:exactMatch>, ?c) <- (?a, <SKOS:exactMatch>, ?b), (?b, <SKOS:exactMatch>, ?c)",
+            "chain_rule_long_form" : "(?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c) <- (?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b), (?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c)",
+            "chain_rule_name" : "T10"
+          },
+          "premises" : [ {
+            "chain_rule_applications" : {
+              "chain_rule" : {
+                "chain_rule_abbreviated" : "Asserted",
+                "chain_rule_long_form" : "Asserted",
+                "chain_rule_name" : "Asserted"
+              }
+            },
+            "distance" : 1,
+            "mapping_id" : "66c6c17c-a25a-3d29-8b8b-4d022c229453",
+            "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+            "object_id" : "EX:C",
+            "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+            "object_label" : "Entity C",
+            "predicate_id" : "SKOS:exactMatch",
+            "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+            "subject_id" : "EX:B",
+            "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+            "subject_label" : "Entity B"
+          }, {
+            "chain_rule_applications" : {
+              "chain_rule" : {
+                "chain_rule_abbreviated" : "Asserted",
+                "chain_rule_long_form" : "Asserted",
+                "chain_rule_name" : "Asserted"
+              }
+            },
+            "distance" : 1,
+            "mapping_id" : "7f26d73c-15d8-35f0-9f3e-6f6cb6ecca67",
+            "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+            "object_id" : "EX:B",
+            "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+            "object_label" : "Entity B",
+            "predicate_id" : "SKOS:exactMatch",
+            "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+            "subject_id" : "EX:A",
+            "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+            "subject_label" : "Entity A"
+          } ]
+        },
+        "distance" : 1,
+        "mapping_justification" : "SEMAPV:MappingChaining",
+        "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+        "mapping_tool" : "OxO Inferences",
+        "object_id" : "EX:C",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+        "object_label" : "Entity C",
+        "predicate_id" : "SKOS:exactMatch",
+        "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+        "subject_id" : "EX:A",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+        "subject_label" : "Entity A"
+      } ]
+    },
+    "distance" : 1,
+    "mapping_justification" : "SEMAPV:MappingChaining",
+    "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+    "mapping_tool" : "OxO Inferences",
+    "object_id" : "EX:A",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "object_label" : "Entity A",
+    "predicate_id" : "SKOS:exactMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "subject_id" : "EX:C",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
+    "subject_label" : "Entity C"
+  },
+  "explanation_length" : 4,
+  "inference_type" : "SSSOM_INFERENCE",
+  "mapping_id" : "17c4e870-f498-3578-929e-f2e6f25da451",
+  "mapping_justification" : "SEMAPV:MappingChaining",
+  "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+  "mapping_tool" : "OxO Inferences",
+  "object_id" : "EX:A",
+  "object_iri" : "https://w3id.org/oxo2/test/ex/A",
+  "object_label" : "Entity A",
+  "object_prefix" : "EX",
+  "predicate_id" : "SKOS:exactMatch",
+  "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+  "spo_key" : "91d08de8-afbc-32e1-9ccd-df7a9478ff1e",
+  "subject_id" : "EX:C",
+  "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
+  "subject_label" : "Entity C",
+  "subject_prefix" : "EX"
+}, {
+  "asserted_mappings" : [ {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "7f26d73c-15d8-35f0-9f3e-6f6cb6ecca67",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+    "object_id" : "EX:B",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "object_label" : "Entity B",
+    "predicate_id" : "SKOS:exactMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "subject_id" : "EX:A",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "subject_label" : "Entity A"
+  } ],
+  "distance" : 1,
+  "explanation" : {
+    "chain_rule_applications" : {
+      "premises" : [ {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "Asserted",
+            "chain_rule_long_form" : "Asserted",
+            "chain_rule_name" : "Asserted"
+          }
+        },
+        "distance" : 1,
+        "mapping_id" : "7f26d73c-15d8-35f0-9f3e-6f6cb6ecca67",
+        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/T10",
+        "object_id" : "EX:B",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "object_label" : "Entity B",
+        "predicate_id" : "SKOS:exactMatch",
+        "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+        "subject_id" : "EX:A",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+        "subject_label" : "Entity A"
+      } ]
+    },
+    "distance" : 1,
+    "mapping_justification" : "SEMAPV:MappingChaining",
+    "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+    "mapping_tool" : "OxO Inferences",
+    "object_id" : "EX:A",
+    "object_iri" : "https://w3id.org/oxo2/test/ex/A",
+    "object_label" : "Entity A",
+    "predicate_id" : "SKOS:exactMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "subject_id" : "EX:B",
+    "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+    "subject_label" : "Entity B"
+  },
+  "explanation_length" : 2,
+  "inference_type" : "SSSOM_INFERENCE",
+  "mapping_id" : "253aa622-d9b4-391e-845e-09b1f04b8325",
+  "mapping_justification" : "SEMAPV:MappingChaining",
+  "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+  "mapping_tool" : "OxO Inferences",
+  "object_id" : "EX:A",
+  "object_iri" : "https://w3id.org/oxo2/test/ex/A",
+  "object_label" : "Entity A",
+  "object_prefix" : "EX",
+  "predicate_id" : "SKOS:exactMatch",
+  "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+  "spo_key" : "b28390b9-254a-3fb2-9e21-d8cced8d76ff",
+  "subject_id" : "EX:B",
+  "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+  "subject_label" : "Entity B",
   "subject_prefix" : "EX"
 } ]

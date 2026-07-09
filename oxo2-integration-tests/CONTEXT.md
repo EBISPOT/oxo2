@@ -5,9 +5,8 @@ See [`/CONTEXT.md`](../CONTEXT.md) for the project-wide glossary and cross-cutti
 ## Purpose
 
 End-to-end integration tests that exercise the full `loadData.nextflow` pipeline against minimal SSSOM
-fixtures and assert against expected output at three layers (Nemo inferred TTL, the bare OxO2
-inferred-mapping JSON, and Solr counts). The Nemo explanation-chain JSON layer is gone: explanations
-are no longer precomputed ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)). Under the
+fixtures and assert against expected output at three layers (Nemo inferred TTL, the OxO2
+inferred-mapping JSON with its explanation chains, and Solr counts). Under the
 single-pass SSSOM reasoning model ([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)) each fixture is run **in isolation** — its own `loadData.nextflow` pass over only its set(s) — so the single cross-set `oxo2/inferences` output belongs to exactly that fixture and can be asserted per-rule.
 The final pass leaves Solr populated for downstream backend / frontend work.
 
@@ -18,13 +17,18 @@ Scope: one minimal single-set fixture per active `ChainRulesEnum` rule under `te
 - **Rule fixture** — a minimal single-set SSSOM TSV at `testcases/minimal/rules/<RULE>.sssom.tsv`
   designed to trigger one chain rule (and accept whatever cascade Nemo derives).
 - **Cross-set fixture** — a directory `testcases/minimal/crossset/<name>/` of two or more SSSOM TSVs
-  whose mappings only chain when reasoned over together, proving cross-set inference. (The inferred
-  set's `mapping_set_source` union is now left empty — recovering it needed the trace, which is no
-  longer run, ADR-0020.)
-- **Expected output layer** — an assertion target for a fixture: the cross-set inferred TTL / bare
-  explained JSON / mappingSet JSON (the single `inferences-*` files) and the per-`inference_type` Solr
-  `numFound`. All mirrored per fixture under `testcases_expected_output/minimal/<fixture>/`.
+  whose mappings only chain when reasoned over together, proving cross-set inference. The inferred set's
+  `mapping_set_source` union is populated again, recovered from the per-leaf `mapping_id` provenance in
+  each explanation chain ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)).
+- **Expected output layer** — an assertion target for a fixture: the cross-set inferred TTL / the
+  explained mapping JSON / the mappingSet JSON, and the per-`inference_type` Solr `numFound`. All
+  mirrored per fixture under `testcases_expected_output/minimal/<fixture>/`.
   `ArtifactPaths.artifactsFor(fixture)` is the single source of truth for the path list.
+  The explained-mapping layer is a **set** of files — `inferences-explained-NNNNN.json`, one per
+  explanation bundle ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)) — so its
+  actual side is a lazily-resolved glob (`artifactsFor` runs before the fixture's pipeline pass, so an
+  eager glob would always be empty) and the comparator merges the bundles before canonicalising. The
+  golden stays one file: `Canonicalisers` sorts arrays, so bundling never reaches it.
 - **Capture mode** — running `mvn ... exec:java@captureExpected` instead of `mvn ... verify`. Runs the
   same per-fixture isolated passes but writes canonicalised actual output to the expected paths
   instead of asserting. Used to baseline a new fixture or refresh after an intentional change.

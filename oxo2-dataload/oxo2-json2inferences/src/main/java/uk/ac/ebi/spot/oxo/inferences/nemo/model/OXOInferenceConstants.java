@@ -2,11 +2,41 @@ package uk.ac.ebi.spot.oxo.inferences.nemo.model;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 
 public class OXOInferenceConstants {
 
     public static final String OXO_MAPPING_TOOL = "OxO Inferences";
     public static final String OXO_MAPPING_JUSTIFICATION = "SEMAPV:MappingChaining";
+
+    /**
+     * The strong predicates of {@code sssom.rls} — the union of {@code identityPredicate/1} and
+     * {@code nonIdentityStrong/1}. These are exactly the predicates that appear in a rule
+     * <em>body</em>, so they are the only asserted edges that can ever be a premise.
+     *
+     * <p>The explanation sharder ({@link uk.ac.ebi.spot.oxo.inferences.nemo.ShardConclusions})
+     * partitions the corpus into connected components over these edges. Every rule in
+     * {@code sssom.rls} joins its head's subject and object through shared body variables, so a
+     * derived {@code mapping(<nil>, s, p, o)} always has {@code s} and {@code o} in one component,
+     * and the whole proof DAG stays inside it. That is what makes a per-component chase yield the
+     * same derivation as a chase of the full corpus (ADR-0028).
+     *
+     * <p><b>Keep in sync with {@code oxo2-json2inferences/sssom.rls}.</b> Adding a predicate to a
+     * rule body there without adding it here would silently split proofs across shards, which
+     * surfaces as inferred mappings emitted with no explanation.
+     */
+    public static final Set<String> STRONG_PREDICATES = Set.of(
+            // identityPredicate/1
+            "http://www.w3.org/2004/02/skos/core#exactMatch",
+            "http://www.w3.org/2002/07/owl#equivalentClass",
+            "http://www.w3.org/2002/07/owl#equivalentProperty",
+            "http://www.w3.org/2002/07/owl#sameAs",
+            // nonIdentityStrong/1
+            "http://www.w3.org/2004/02/skos/core#broadMatch",
+            "http://www.w3.org/2004/02/skos/core#narrowMatch",
+            "https://w3id.org/semapv/vocab/crossSpeciesExactMatch",
+            "https://w3id.org/semapv/vocab/crossSpeciesBroadMatch",
+            "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch");
 
     /**
      * Canonical, EBI-self-hosted base IRI for OxO2 inferred mapping sets (ADR-0012).

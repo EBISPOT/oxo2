@@ -6,16 +6,15 @@ module specifically owns.
 ## Purpose
 
 `oxo2-dataload` is the pipeline that turns a configured list of SSSOM mapping-set URLs into populated Solr collections. 
-It downloads SSSOM TSVs, converts them to OxO2 JSON, runs the Nemo rules engine to derive inferred mappings and their 
-explanation chains, and loads everything into Solr. Orchestration is by Nextflow ([ADR-0003](../docs/adr/0003-nextflow-as-sole-dataload-path.md)).
+It downloads SSSOM TSVs, converts them to OxO2 JSON, runs the Nemo rules engine to derive inferred mappings, traces each
+one's explanation chain against its explanation shard, and loads everything into Solr. Orchestration is by Nextflow ([ADR-0003](../docs/adr/0003-nextflow-as-sole-dataload-path.md)).
 
 ## Vocabulary introduced here
 
-The cross-cutting terms `inferred mapping`, `chain rule`, `explanation`, `explanation chain`, and `facts to trace`
-(defined in `/CONTEXT.md` § Glossary) originate in this module. `inferred mapping` and `chain rule` still describe
-live inference-stage artifacts; `explanation`, `explanation chain`, and `facts to trace` are **dormant** — the
-dataload no longer computes explanations ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)), which
-defers them to a future on-demand service.
+The cross-cutting terms `inferred mapping`, `chain rule`, `explanation`, `explanation chain`, `explanation shard`,
+and `facts to trace` (defined in `/CONTEXT.md` § Glossary) originate in this module. All are live again: the dataload
+precomputes every inferred mapping's explanation by component-sharded chase+trace
+([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md), superseding ADR-0020).
 
 Module-local artifact names worth knowing:
 
@@ -23,14 +22,16 @@ Module-local artifact names worth knowing:
   fed to Nemo as input. The `mapping_id` graph term carries source-mapping provenance through Nemo
   ([ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)). Produced by `json2nquadsNextflow.sh`.
 - **Cross-set corpus** — the concatenation of every set's N-Quads into one file (`assertedCorpus.nq`); the input
-  to SSSOM cross-set reasoning. Produced by `inferSssomCrossSet.nf`. Also the corpus the future on-demand
-  explanation service reasons over ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)).
+  to SSSOM cross-set reasoning, and the corpus `shardConclusions` partitions into explanation shards. Produced by
+  `inferSssomCrossSet.nf`.
 - **Inferred mappings TTL** — `inferences.ttl`, the Turtle export of `INFER_CROSS_SET`: exactly the inferred
-  mappings (asserted echoes already excluded by the `~assertedTriple` rule). The bare inferred-mapping indexer
-  reads it directly; no trace is needed for the *what*.
-- **Trace chunk** / **Chain file** — _dormant_ ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)):
-  the chunked `nmo trace` and per-chunk explanation-chain JSON only existed to precompute explanations, which the
-  dataload no longer does.
+  mappings (asserted echoes already excluded by the `~assertedTriple` rule). It supplies the *what*; `shardConclusions`
+  turns each of its non-self triples into a trace target so the `explain` stage can supply the *why*.
+- **Explanation shard** — `crossSet/shards/shardNNNNN.nq` plus its `shardNNNNN-targets.txt`: one connected component
+  of the corpus's strong-predicate edges, with every asserted quad whose subject and object are both inside it, and the
+  conclusions it owns. Chased and traced independently ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)).
+- **Chain file** — `crossSet/shardChains/shardNNNNN-chains.json`, one shard's `nmo --trace-output`: the derivation DAG
+  of every conclusion that shard owns. `explanations2json` interprets bundles of these into inferred-mapping JSON.
 
 ## Depends on
 
@@ -42,7 +43,7 @@ External:
 Internal (sub-modules):
 - `oxo2-downloader` — fetches SSSOM TSVs from the URLs listed in `OXO2_CONFIG`.
 - `oxo2-sssom2json` — TSV → JSON conversion.
-- `oxo2-json2inferences` — JSON → N-Quads → Nemo infer → trace → explanations JSON. Contains the SSSOM ruleset `sssom.rls`, applied across all mapping sets per [ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md).
+- `oxo2-json2inferences` — JSON → N-Quads → Nemo infer → shard → per-shard trace → explanations JSON. Contains the SSSOM ruleset `sssom.rls`, applied across all mapping sets per [ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md), and `OXOInferenceConstants.STRONG_PREDICATES`, which must list every predicate appearing in a `sssom.rls` rule body.
 - `oxo2-solr-dataload-client` — Solr indexer; caches `EntityDetails` and `<s, p, o>` triples during load.
 - `oxo2-dataload-testing` — test utilities and fixtures.
 
@@ -120,20 +121,35 @@ converts each set's JSON to N-Quads carrying `mapping_id`
 ([ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)); every set's N-Quads is concatenated
 into one corpus (`assertedCorpus.nq`); `nmo` runs `sssom.rls` (strong-predicate transitivity + role chains)
 over the whole corpus to derive mappings that may chain across sets, exported as `inferences.ttl` (the single
-`https://www.ebi.ac.uk/oxo2/inferences` set). **No trace/explain/merge** — explanations are deferred to
-on-demand ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)). A set whose mappings yield no
+`https://www.ebi.ac.uk/oxo2/inferences` set). A set whose mappings yield no
 quads — all using non-inference predicates (e.g. the `ebi-text-mappings` sets are `skos:closeMatch`) or
 lacking a subject/object IRI — produces no `.nq` and is logged (it is still indexed as asserted; it just does
 not enter the inference corpus).
 
-**4. Solr load** — `json2solr.sh` (logic in `oxo2-solr-dataload-client`) indexes the asserted mapping-set and
-mapping JSON first, so the bare inferred-mapping indexer can resolve each inferred subject/object's CURIE and
-label from the already-indexed asserted documents (`DataloadSolr.prefetchEntityDetailsByIris`). That indexer
-then builds **bare** inferred mappings straight from `inferences.ttl` — subject/object/predicate + ids/labels,
-`inference_type = SSSOM_INFERENCE` ([ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)),
-`spo_key`; no explanation chain, asserted evidence, or set-source union, with `distance`/`explanation_length`
-left at their inert model defaults ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)) — and
-indexes them. The Solr client caches `EntityDetails` to avoid redundant queries during load.
+**4. Explanation** — `determineExplanations.nextflow` runs `explainSssomCrossSet.nf`
+([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)). `SHARD_CONCLUSIONS` union-finds
+`assertedCorpus.nq` over the strong predicates, packs whole components into shards capped by **entity count**
+(`--maxShardEntities`, default 1200 — per-trace cost is linear in a shard's dictionary size, not its fact count),
+routes each asserted quad to the shard holding both endpoints, and writes each shard's conclusions from
+`inferences.ttl` as a semicolon-separated trace-target file (self-mappings skipped, since the indexer drops them).
+`EXPLAIN_SHARD` then runs one `nmo` per shard: chase its tiny corpus once, then trace every conclusion it owns.
+Needs no Solr, so it precedes the asserted load. On the dev corpus: 3,607 shards, 29 s to shard, 6.35 CPU-h to
+trace, 20 GB of chain JSON.
+
+Both orchestrators assert `#chain files == #shards` afterwards — Nextflow exits 0 when a *workflow operator* (as
+opposed to a task) throws, so a silently empty explain stage would otherwise index every inferred mapping unexplained.
+
+**5. Solr load** — `json2solr.sh` (logic in `oxo2-solr-dataload-client`) indexes the asserted mapping-set and
+mapping JSON first, so `explanations2json` can resolve each inferred subject/object's CURIE and label — and every
+asserted premise of every chain — from the already-indexed asserted documents (`DataloadSolr.prefetchMappingsByIds`).
+`EXPLANATIONS_TO_JSON` then interprets each *bundle* of shard chain files (default 100 shards per JVM, so process
+startup and the Solr connection amortise) into inferred mappings carrying subject/object/predicate + ids/labels,
+`inference_type = SSSOM_INFERENCE` ([ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)), `spo_key`,
+the `explanation` chain, its `asserted_mappings` evidence, and `explanation_length`. `distance` is deliberately left
+at its inert model default ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md) § Consequences).
+Each bundle's inferred `MappingSet` carries only its own shards' contributing sources, so
+`MERGE_INFERRED_MAPPING_SETS` unions them into the one cross-set set. The Solr client caches `EntityDetails` to avoid
+redundant queries during load.
 
 ### Resumable dataload (local, HPC, Jenkins)
 
@@ -154,16 +170,16 @@ full wipe (local).
 `START_STAGE` (default `download` = full run):
 
 ```
-download → sssom2json → nquads → infer
-         → index-asserted → inferences2json → index-inferred → archive
+download → sssom2json → nquads → infer → shard → explain
+         → index-asserted → explanations2json → index-inferred → archive
 ```
 
-`nquads`/`infer` are the substages of the single cross-set inference (ADR-0016); the rest are the
-download / Solr-load / archive stages. The `trace`/`explain`/`merge` stages were removed with
-explanations and `explanations2json` was replaced by `inferences2json`
-([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md)): `inferences2json` builds the
-bare inferred-mapping JSON from `inferences.ttl` (querying the asserted Solr index for entity
-details), and `index-inferred` posts it to Solr. On HPC, `loadData.hpc` forwards `START_STAGE` to the
+`nquads`/`infer` are the substages of the single cross-set inference (ADR-0016), and `shard`/`explain`
+the substages of the component-sharded chase+trace
+([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)); the rest are the
+download / Solr-load / archive stages. `explanations2json` interprets the shard chain files into
+inferred-mapping JSON (querying the asserted Solr index for entity details and asserted premises),
+and `index-inferred` posts it to Solr. On HPC, `loadData.hpc` forwards `START_STAGE` to the
 batch job via `--export`; locally it is just an environment variable read by `loadData.nextflow`. Either
 way `loadData.lib.sh` validates it against the list and computes which stages to run. `loadData.nextflow`
 has no body for `archive`, so locally that final stage is a no-op (no `solr-data.tar.gz`).
@@ -172,11 +188,11 @@ has no body for `archive`, so locally that final stage is a no-op (no `solr-data
 
 - *Substage resume reads PUBLISHED artifacts, not Nextflow's work dir.* `inferSssomCrossSet.nf`
   exposes the `from_infer` `-entry` workflow, which reads the published `assertedCorpus.nq` under
-  `$OXO2_DATA` and re-runs `INFER_CROSS_SET`. Both orchestrators select it at `START_STAGE=infer` — HPC
-  inline in `loadData.slurm`, locally via `determineInferences.nextflow`. (The
-  `from_trace`/`from_explain`/`from_merge` entry points and their `crossSet/chunks/`,
-  `crossSet/chunkChains/` published artifacts went away with explanations —
-  [ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md).) Because resume never depends on
+  `$OXO2_DATA` and re-runs `INFER_CROSS_SET`. Likewise `explainSssomCrossSet.nf` exposes
+  `from_explain_shard`, which reads the published `crossSet/shards/` and re-runs `EXPLAIN_SHARD`
+  without re-sharding the corpus. Both orchestrators select them at `START_STAGE=infer` / `=explain` —
+  HPC inline in `loadData.slurm`, locally via `determineInferences.nextflow` /
+  `determineExplanations.nextflow`. Because resume never depends on
   `NXF_WORK`, both orchestrators wipe the transient Nextflow dirs on every run — no fragile work-dir
   spelunking, and the result is independent of the container digest.
 - *Stage-aware cleanup preserves earlier stages' outputs.* Each stage "owns" the artifact path(s) it
@@ -184,8 +200,8 @@ has no body for `archive`, so locally that final stage is a no-op (no `solr-data
   `START_STAGE` and later, keeping everything earlier stages produced as the resume inputs. Both the
   Solr on-disk index wipe **and** the Solr-config copy (`copySolrConfig.sh`, which deletes and recreates
   the core dirs) are gated on the same `should_wipe_solr` decision — true only when the asserted load
-  (`index-asserted`) is in scope — so resuming at `inferences2json` / `index-inferred` / `archive` keeps
-  the already-indexed asserted data the bare inferred-mapping indexer queries for entity details. (Gating
+  (`index-asserted`) is in scope — so resuming at `explanations2json` / `index-inferred` / `archive` keeps
+  the already-indexed asserted data `explanations2json` queries for entity details. (Gating
   the config copy on anything looser would re-wipe the asserted cores on a resume — a latent bug
   ADR-0022 fixed.) Solr is started only for runs that reach an indexing stage; `START_STAGE=archive` just
   re-archives the existing `$SOLR_HOME` (HPC only).
@@ -207,7 +223,7 @@ START_STAGE=index-asserted ./loadData.nextflow
 The prerequisite artifacts for the chosen stage must already exist under `$OXO2_DATA` from a
 previous run (e.g. `index-asserted` reads `sssom-as-json/` and the published `inferences.ttl`).
 Because `index-asserted` is in scope here, `should_wipe_solr` is true, so `copySolrConfig.sh`
-re-copies the Solr config and the asserted cores are rebuilt; starting at `inferences2json` or later
+re-copies the Solr config and the asserted cores are rebuilt; starting at `explanations2json` or later
 instead preserves the already-indexed asserted data.
 
 **Jenkins.** The dataload is driven from a **parameterised Freestyle job** (not a `Jenkinsfile`): its
@@ -252,7 +268,10 @@ is a separate Jenkins job.
 `oxo-config-evora.json`, `oxo-config-stress-test*.json`).
 - `OXO2_DATA` — working directory for downloads and intermediate artifacts.
 - `NEXTFLOW_DIR` — Nextflow workdir.
-- `params.trace_chunk_size` (default 20000) — see `inferSssomCrossSet.nf`.
+- `params.max_shard_entities` (default 1200) — cap on an explanation shard's entity count; bounds
+  per-trace cost. See `explainSssomCrossSet.nf`.
+- `params.explain_bundle_size` (default 100) — shards per `EXPLANATIONS_TO_JSON` JVM. See
+  `explanations2json.nf`.
 
 ### Solr config
 
@@ -260,9 +279,9 @@ is a separate Jenkins job.
 them to `$SOLR_HOME` for local runs.
 
 The Solr query/index URL is `$SOLR_URL` (default `http://localhost:8983/solr`), threaded into every
-indexing step **and** into `inferences2json.nf` via `--solr_url` (the inferred-entity CURIE/label
-lookups query the asserted index, so they must hit the same Solr the run indexed into — a non-default
-port would otherwise silently fall back to 8983).
+indexing step **and** into `explanations2json.nf` via `--solr_url` (the inferred-entity CURIE/label
+lookups and asserted-premise lookups query the asserted index, so they must hit the same Solr the run
+indexed into — a non-default port would otherwise silently fall back to 8983).
 
 `OXO2_SOLR_UNMANAGED` (default `false`): when `true`, the caller owns the Solr process and the
 collection wipe, so `loadData.nextflow` skips `copySolrConfig.sh` / `solr start` / `solr stop` and only
@@ -280,6 +299,12 @@ between fixtures with a `delete *:*` (see `oxo2-integration-tests/CONTEXT.md` §
 > a derived `Mapping.spoKey()` accessor that every serialised mapping document (asserted and inferred)
 > carries automatically, so a normal `loadData.nextflow` run populates it. `stored="false"`, so it is never
 > returned in query results.
+
+> **Reindex required (ADR-0028):** explanations are precomputed again, so every inferred mapping doc
+> now carries `explanation`, `asserted_mappings` and a computed `explanation_length`. `asserted_mappings`
+> also changes to `indexed="false"` (it is retrieve-only, like `explanation`): nothing queries, facets or
+> sorts on it, and inverting a ~5.7 kB JSON blob per inferred mapping would cost a large index for no
+> query. A normal `loadData.nextflow` run does a fresh load and so reindexes automatically.
 
 > **Reindex required (ADR-0024):** `oxo2-mappings` gained `subject_prefix` and `object_prefix`
 > (`string`, `indexed`, `docValues`) — the CURIE prefix of `subject_id` / `object_id`, the ontology

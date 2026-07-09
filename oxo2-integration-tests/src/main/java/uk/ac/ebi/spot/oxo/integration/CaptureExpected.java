@@ -61,9 +61,9 @@ public final class CaptureExpected {
     }
 
     private static void copyCanonical(ArtifactPaths.LayerArtifact artifact) throws IOException {
-        Path source = artifact.actual();
+        List<Path> sources = artifact.actual().stream().filter(Files::isRegularFile).toList();
         Path destination = artifact.expected();
-        if (!Files.isRegularFile(source)) {
+        if (sources.isEmpty()) {
             // Layer not produced for this fixture — remove any stale expected so the comparator
             // would flag it if the pipeline later starts producing output here.
             if (Files.isRegularFile(destination)) {
@@ -73,18 +73,26 @@ public final class CaptureExpected {
             return;
         }
         Files.createDirectories(destination.getParent());
-        String content = Files.readString(source, StandardCharsets.UTF_8);
-        String canonical = canonicaliseLayer(content, artifact.layer());
+        // The explained-mapping layer arrives as one file per explanation bundle (ADR-0028); merge
+        // them into the single golden. The canonicaliser sorts, so bundling never shows up here.
+        String canonical = canonicaliseLayer(sources, artifact.layer());
         if (!canonical.endsWith("\n")) canonical = canonical + "\n";
         Files.writeString(destination, canonical, StandardCharsets.UTF_8);
-        System.out.println("  [ok]   " + destination);
+        System.out.println("  [ok]   " + destination + " (from " + sources.size() + " file(s))");
     }
 
-    private static String canonicaliseLayer(String content, ArtifactPaths.Layer layer) throws IOException {
+    private static String canonicaliseLayer(List<Path> sources, ArtifactPaths.Layer layer) throws IOException {
         return switch (layer) {
-            case TTL -> Canonicalisers.canonicaliseTtl(content);
-            case JSON -> Canonicalisers.canonicaliseGenericJson(content);
-            case EXPLAINED -> Canonicalisers.canonicaliseExplainedJson(content);
+            case TTL -> Canonicalisers.canonicaliseTtl(readSingle(sources, layer));
+            case JSON -> Canonicalisers.canonicaliseGenericJson(readSingle(sources, layer));
+            case EXPLAINED -> Canonicalisers.readExplainedJson(sources);
         };
+    }
+
+    private static String readSingle(List<Path> sources, ArtifactPaths.Layer layer) throws IOException {
+        if (sources.size() != 1) {
+            throw new IllegalStateException(layer + " layer expects exactly one file, got: " + sources);
+        }
+        return Files.readString(sources.get(0), StandardCharsets.UTF_8);
     }
 }

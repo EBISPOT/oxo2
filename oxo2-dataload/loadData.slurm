@@ -21,8 +21,9 @@ echo "OxO2 Dataload started at: $dataload_start_time"
 # A full run is START_STAGE=download (the default). Any later value resumes from that
 # (sub)stage, reusing the PUBLISHED artifacts of the earlier stages (which the stage-aware
 # cleanup below deliberately preserves). The `nquads`/`infer` substages map to `-entry` points in
-# inferSssomCrossSet.nf. Explanations are no longer precomputed (ADR-0020), so there is no
-# trace/explain/merge; `inferences2json` builds bare inferred-mapping JSON from inferences.ttl.
+# inferSssomCrossSet.nf, and `shard`/`explain` to `-entry` points in explainSssomCrossSet.nf — the
+# component-sharded chase+trace that restores precomputed explanations (ADR-0028, superseding
+# ADR-0020). `explanations2json` then builds the inferred-mapping JSON from the shard traces.
 # See oxo2-dataload/CONTEXT.md § Resumable dataload.
 # ---------------------------------------------------------------------------
 START_STAGE="${START_STAGE:-download}"
@@ -104,8 +105,8 @@ rm -rf "$NXF_LOGS"/* "$NXF_LOGS"/.*[!.]* 2>/dev/null || true
 oxo2_clean_owned_artifacts
 
 # Solr's on-disk index is wiped only when the asserted load will run from scratch (START_STAGE at
-# or before index-asserted). Resuming at inferences2json / index-inferred / archive must KEEP the
-# asserted data already indexed by an earlier run — inferences2json queries Solr for entity details.
+# or before index-asserted). Resuming at explanations2json / index-inferred / archive must KEEP the
+# asserted data already indexed by an earlier run — explanations2json queries Solr for entity details.
 WIPE_SOLR=false
 if should_wipe_solr; then
     WIPE_SOLR=true
@@ -125,8 +126,8 @@ mkdir -p "$OXO2_INFERENCES/crossSet"
 mkdir -p "$OXO2_DATA/tmp"
 mkdir -p "$SOLR_HOME"
 
-# Solr is needed for the indexing stages (index-asserted, inferences2json, index-inferred):
-# inferences2json resolves entity CURIEs/labels from the asserted index. We start it for any run
+# Solr is needed for the indexing stages (index-asserted, explanations2json, index-inferred):
+# explanations2json resolves entity CURIEs/labels from the asserted index. We start it for any run
 # that reaches one of those; START_STAGE=archive (a re-archive of an existing $SOLR_HOME) does not
 # start Solr.
 SOLR_NEEDED=false
@@ -168,7 +169,7 @@ if [ "$SOLR_NEEDED" = true ]; then
     # --- Copy Solr config (only when wiping) ---
     # copySolrConfig.sh deletes the oxo2-mappings / oxo2-mappingsets core dirs (config AND data) and
     # re-copies empty config. Gate it on WIPE_SOLR, NOT just SOLR_NEEDED: on a resume that preserves
-    # the asserted index (START_STAGE after index-asserted) we must keep the cores, or inferences2json
+    # the asserted index (START_STAGE after index-asserted) we must keep the cores, or explanations2json
     # would query an empty index for entity CURIEs/labels (ADR-0019).
     if [ "$WIPE_SOLR" = true ]; then
         echo "###################" copySolrConfig...
@@ -425,6 +426,55 @@ if should_run infer; then
     record_stage infer
 fi
 
+# --- Stage: explanation (shard -> explain), ADR-0028 ---
+# Component-sharded chase+trace: SHARD_CONCLUSIONS partitions assertedCorpus.nq into per-component
+# shards and assigns every conclusion of inferences.ttl to one; EXPLAIN_SHARD then chases each shard's
+# tiny corpus and traces all of its conclusions. Pure reasoning — no Solr — so it runs BEFORE
+# index-asserted. A resume at START_STAGE=explain re-enters at `-entry from_explain_shard`, reading
+# the published crossSet/shards/. The block runs whenever any explanation substage is in scope
+# (START_STAGE at or before `explain`).
+if should_run explain; then
+    # Safe empty-array expansion (`${arr[@]+...}`) so `set -u` tolerates the full-run case.
+    EXPLAIN_ENTRY_ARGS=()
+    case "$START_STAGE" in
+        explain) EXPLAIN_ENTRY_ARGS=(-entry from_explain_shard) ;;
+        *)       EXPLAIN_ENTRY_ARGS=() ;;  # download|...|shard -> shard first, then explain
+    esac
+    start_time=$(date +%s)
+    echo "###################" "explainSssomCrossSet (component-sharded chase+trace) entry=${START_STAGE}..."
+    nextflow -log "$NXF_LOGS/explainSssomCrossSet.nextflow.log" \
+        -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+        run "$SCRIPT_DIR/explainSssomCrossSet.nf" \
+        -profile "$NF_PROFILE" \
+        ${EXPLAIN_ENTRY_ARGS[@]+"${EXPLAIN_ENTRY_ARGS[@]}"} \
+        -with-trace    "$NXF_LOGS/explainSssomCrossSet-trace.txt" \
+        -with-report   "$NXF_LOGS/explainSssomCrossSet-report.html" \
+        -with-timeline "$NXF_LOGS/explainSssomCrossSet-timeline.html"
+    end_time=$(date +%s)
+    echo "Component-sharded explanation took: $((end_time - start_time)) seconds"
+
+    # Post-condition: one chain file per shard. Nextflow exits 0 when a *workflow operator* (as
+    # opposed to a task) throws, so a silent zero-shard run would otherwise index every inferred
+    # mapping with no explanation. Assert the invariant rather than trust the exit status. A corpus
+    # with no inferences produces no shards and no chains, which satisfies 0 == 0.
+    #
+    # mkdir first: under `set -o pipefail`, `find` on a missing directory fails the whole pipeline,
+    # and a failing command substitution in an assignment aborts under `set -e`.
+    mkdir -p "$OXO2_INFERENCES/crossSet/shards" "$OXO2_INFERENCES/crossSet/shardChains"
+    expected_chains=$(find "$OXO2_INFERENCES/crossSet/shards" -maxdepth 1 -name 'shard*-targets.txt' | wc -l)
+    actual_chains=$(find "$OXO2_INFERENCES/crossSet/shardChains" -maxdepth 1 -name 'shard*-chains.json' | wc -l)
+    if [ "$expected_chains" -ne "$actual_chains" ]; then
+        echo "ERROR: explanation stage produced $actual_chains chain file(s) for $expected_chains shard(s)." >&2
+        echo "       Every shard must yield a trace, or its conclusions ship unexplained." >&2
+        exit 1
+    fi
+    echo "Explained $actual_chains shard(s)."
+
+    # shard + explain run inside one Nextflow process graph; record both boundaries.
+    record_stage shard
+    record_stage explain
+fi
+
 # --- Stage: index asserted mappings to Solr ---
 if should_run index-asserted; then
     start_time=$(date +%s)
@@ -441,31 +491,36 @@ if should_run index-asserted; then
     record_stage index-asserted
 fi
 
-# --- Stage: bare inferred mappings to JSON (SSSOM reasoning across all sets, ADR-0020) ---
-# Runs after the asserted data is indexed: inferences2json resolves each inferred entity's
-# CURIE/label from the asserted Solr index, so the asserted mappings must already be in Solr. The
-# INFERENCES_TO_JSON task runs as its own SLURM job on another node, where Solr is not on localhost,
-# so the main node's Solr URL ($SOLR_URL, the FQDN the readiness probe confirmed reachable
-# cross-node) is passed explicitly: inferences2json.nf otherwise defaults params.solr_url to
-# http://localhost:8983 and exports it over any inherited SOLR_URL, so the task would dial its own
-# node (ConnectException in DataloadSolr.prefetchEntityDetailsByIris). Builds the single
-# oxo2/inferences set (SSSOM_INFERENCE) bare from inferences.ttl — no explanations (ADR-0020).
-if should_run inferences2json; then
+# --- Stage: explained inferred mappings to JSON (SSSOM reasoning across all sets, ADR-0028) ---
+# Runs after the asserted data is indexed: explanations2json resolves each inferred entity's
+# CURIE/label — and every asserted premise of every chain — from the asserted Solr index, so the
+# asserted mappings must already be in Solr. Each EXPLANATIONS_TO_JSON task runs as its own SLURM job
+# on another node, where Solr is not on localhost, so the main node's Solr URL ($SOLR_URL, the FQDN
+# the readiness probe confirmed reachable cross-node) is passed explicitly: explanations2json.nf
+# otherwise defaults params.solr_url to http://localhost:8983 and exports it over any inherited
+# SOLR_URL, so the task would dial its own node (ConnectException in DataloadSolr).
+SHARD_CHAINS_DIR="$OXO2_INFERENCES/crossSet/shardChains"
+if should_run explanations2json && [ -z "$(find "$SHARD_CHAINS_DIR" -maxdepth 1 -name '*-chains.json' -print -quit 2>/dev/null)" ]; then
+    # A corpus with no inferences produces no shards and no chains. explanations2json.nf's
+    # checkIfExists would throw on the empty glob, so skip it and let index-inferred find nothing.
+    echo "No shard chains under $SHARD_CHAINS_DIR (no inferences); skipping explanations2json."
+    record_stage explanations2json
+elif should_run explanations2json; then
     start_time=$(date +%s)
-    echo "###################" "inferences2json (SSSOM, cross-set, bare)..."
-    (cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/inferences2jsonCrossSet.nextflow.log" \
+    echo "###################" "explanations2json (SSSOM, cross-set, explained)..."
+    (cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/explanations2jsonCrossSet.nextflow.log" \
         -c "$SCRIPT_DIR/nextflow/nextflow.config" \
-        run "$SCRIPT_DIR/oxo2-json2inferences/inferences2json.nf" \
+        run "$SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf" \
         -profile "$NF_PROFILE" \
-        --inferences_ttl "$OXO2_INFERENCES/crossSet/inferences.ttl" \
+        --shard_chains_dir "$OXO2_INFERENCES/crossSet/shardChains" \
         --inference_type SSSOM_INFERENCE \
         --solr_url "$SOLR_URL" \
-        -with-trace    "$NXF_LOGS/inferences2jsonCrossSet-trace.txt" \
-        -with-report   "$NXF_LOGS/inferences2jsonCrossSet-report.html" \
-        -with-timeline "$NXF_LOGS/inferences2jsonCrossSet-timeline.html")
+        -with-trace    "$NXF_LOGS/explanations2jsonCrossSet-trace.txt" \
+        -with-report   "$NXF_LOGS/explanations2jsonCrossSet-report.html" \
+        -with-timeline "$NXF_LOGS/explanations2jsonCrossSet-timeline.html")
     end_time=$(date +%s)
-    echo "Bare inferred mappings to JSON (SSSOM cross-set) took: $((end_time - start_time)) seconds"
-    record_stage inferences2json
+    echo "Explained inferred mappings to JSON (SSSOM cross-set) took: $((end_time - start_time)) seconds"
+    record_stage explanations2json
 fi
 
 # --- Stage: index inferred mappings and mapping sets to Solr ---

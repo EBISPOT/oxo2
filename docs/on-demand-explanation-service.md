@@ -1,8 +1,11 @@
 # On-demand explanation service (`oxo2-explain`) — implementation spec
 
-**Status:** design spec for [ADR-0021](adr/0021-on-demand-explanation-resident-nemo-engine.md) (Proposed).
-Read that ADR first for the decision and its consequences. This document is the concrete
-build/deploy plan a future implementation session works from.
+**Status:** DORMANT. Design spec for
+[ADR-0021](adr/0021-on-demand-explanation-resident-nemo-engine.md) (Proposed), whose motivation was
+largely removed by [ADR-0028](adr/0028-component-sharded-explanation-precompute.md): the dataload
+precomputes every explanation again, so nothing in the UI needs an on-demand trace. Kept as the
+concrete build/deploy plan should a synchronous, arbitrary-conclusion explanation API ever be needed
+for conclusions the dataload did not precompute.
 
 ## Goal
 

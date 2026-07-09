@@ -63,8 +63,11 @@ ENV PATH="${PATH}:/opt/nextflow:/opt/nemo:/opt/solr" \
 RUN mkdir -p /opt/oxo
 
 COPY     ./oxo2-dataload/oxo2-json2inferences/sssom.rls \
-         ./oxo2-dataload/oxo2-json2inferences/inferences2json.nf \
-         ./oxo2-dataload/oxo2-json2inferences/inferences2jsonNextflow.sh \
+         ./oxo2-dataload/oxo2-json2inferences/explanations2json.nf \
+         ./oxo2-dataload/oxo2-json2inferences/explanations2jsonNextflow.sh \
+         ./oxo2-dataload/oxo2-json2inferences/mergeInferredMappingSetsNextflow.sh \
+         ./oxo2-dataload/oxo2-json2inferences/nemoExplainShardNextflow.sh \
+         ./oxo2-dataload/oxo2-json2inferences/shardConclusionsNextflow.sh \
          ./oxo2-dataload/oxo2-json2inferences/json2nquadsNextflow.sh \
          ./oxo2-dataload/oxo2-json2inferences/nemoInferMappingsNextflow.sh \
          /opt/oxo/oxo2-dataload/oxo2-json2inferences/
@@ -79,7 +82,7 @@ COPY     ./oxo2-dataload/lib/ \
          /opt/oxo/oxo2-dataload/lib/
 
 # Mirror the dev-tree symlink so Nextflow can auto-load lib/FilenameGuard.groovy
-# when launching subdirectory scripts such as oxo2-json2inferences/inferences2json.nf.
+# when launching subdirectory scripts such as oxo2-json2inferences/explanations2json.nf.
 RUN ln -s ../lib /opt/oxo/oxo2-dataload/oxo2-json2inferences/lib
 
 COPY     ./oxo2-dataload/copySolrConfig.sh \
@@ -87,7 +90,9 @@ COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/downloadMappings.nextflow \
          ./oxo2-dataload/downloadMappings.nf \
          ./oxo2-dataload/determineInferences.nextflow \
+         ./oxo2-dataload/determineExplanations.nextflow \
          ./oxo2-dataload/inferSssomCrossSet.nf \
+         ./oxo2-dataload/explainSssomCrossSet.nf \
          ./oxo2-dataload/json2solr.sh \
          ./oxo2-dataload/loadData.lib.sh \
          ./oxo2-dataload/loadData.nextflow \

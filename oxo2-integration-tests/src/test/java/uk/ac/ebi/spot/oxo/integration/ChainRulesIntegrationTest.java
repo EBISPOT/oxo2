@@ -90,9 +90,11 @@ public class ChainRulesIntegrationTest {
 
     private void compareLayer(ArtifactPaths.LayerArtifact artifact) throws IOException {
         Path expected = artifact.expected();
-        Path actual = artifact.actual();
+        // The explained-mapping layer is one file per explanation bundle (ADR-0028); the others are
+        // a single file. Either way, only the files the pipeline actually produced participate.
+        List<Path> actual = artifact.actual().stream().filter(Files::isRegularFile).toList();
         boolean expectedExists = Files.isRegularFile(expected);
-        boolean actualExists = Files.isRegularFile(actual);
+        boolean actualExists = !actual.isEmpty();
         if (!expectedExists && !actualExists) {
             // Layer not exercised by this fixture (absent on both sides).
             return;
@@ -102,20 +104,27 @@ public class ChainRulesIntegrationTest {
                     "\nRun `mvn -pl oxo2-integration-tests exec:java@captureExpected` to baseline.");
         }
         if (!actualExists) {
-            throw new AssertionError("Actual file missing (pipeline did not produce it): " + actual +
-                    "\nExpected: " + expected);
+            throw new AssertionError("Actual file(s) missing (pipeline did not produce " +
+                    artifact.label() + "): " + artifact.actual() + "\nExpected: " + expected);
         }
         String expectedText = trimTrailingNewline(Files.readString(expected, StandardCharsets.UTF_8));
         String actualText = trimTrailingNewline(readCanonical(actual, artifact.layer()));
         assertEquals(expectedText, actualText, "Layer drift: " + actual + " differs from " + expected);
     }
 
-    static String readCanonical(Path actual, ArtifactPaths.Layer layer) throws IOException {
+    static String readCanonical(List<Path> actual, ArtifactPaths.Layer layer) throws IOException {
         return switch (layer) {
-            case TTL -> Canonicalisers.readTtl(actual);
-            case JSON -> Canonicalisers.readJson(actual);
+            case TTL -> Canonicalisers.readTtl(single(actual, layer));
+            case JSON -> Canonicalisers.readJson(single(actual, layer));
             case EXPLAINED -> Canonicalisers.readExplainedJson(actual);
         };
+    }
+
+    private static Path single(List<Path> paths, ArtifactPaths.Layer layer) {
+        if (paths.size() != 1) {
+            throw new IllegalStateException(layer + " layer expects exactly one file, got: " + paths);
+        }
+        return paths.get(0);
     }
 
     private static String trimTrailingNewline(String text) {

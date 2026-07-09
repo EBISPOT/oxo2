@@ -1,8 +1,14 @@
 package uk.ac.ebi.spot.oxo.integration;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Resolves the assertion-target artifacts for a fixture (ADR-0016), both on the actual side
@@ -12,6 +18,10 @@ import java.util.List;
  * Because each fixture runs in isolation, its single SSSOM cross-set pass produces the one set of
  * inferences-* files asserted here. A layer with no output is simply absent on both sides and the
  * comparator passes it silently.
+ *
+ * The explained-mapping layer is a SET of files, one per explanation bundle (ADR-0028), so its
+ * actual side is a glob. The golden stays a single file: the comparator merges the bundles and the
+ * canonicaliser sorts, so the comparison is independent of how shards were bundled.
  */
 public final class ArtifactPaths {
 
@@ -20,7 +30,20 @@ public final class ArtifactPaths {
     /** Which canonicaliser a layer uses. */
     public enum Layer { TTL, JSON, EXPLAINED }
 
-    public record LayerArtifact(String label, Path actual, Path expected, Layer layer) {}
+    /**
+     * {@code actual} may resolve to several files (one per explanation bundle); {@code expected} is
+     * always one.
+     *
+     * <p>Resolution is deferred: {@code artifactsFor} is called while the dynamic tests are being
+     * *built*, which is before the fixture's pipeline pass has run, so an eagerly-globbed directory
+     * would always come back empty.
+     */
+    public record LayerArtifact(String label, Supplier<List<Path>> actualSupplier, Path expected,
+                                Layer layer) {
+        public List<Path> actual() {
+            return actualSupplier.get();
+        }
+    }
 
     private static Path actualInferences() {
         return Env.oxo2Data().resolve("inferences");
@@ -36,15 +59,15 @@ public final class ArtifactPaths {
         Path expected = expectedRoot(fixture.name);
         List<LayerArtifact> artifacts = new ArrayList<>();
 
-        // SSSOM cross-set inference: a single inferences-* output for the isolated run (ADR-0016).
-        // The Nemo chain JSON layer (inferenceChainsCrossSet/inferences-chains.json) is gone:
-        // explanations are no longer precomputed, so there is no trace/merge output (ADR-0020).
+        // SSSOM cross-set inference: a single inferences-* output for the isolated run (ADR-0016),
+        // now carrying explanation chains again, built per bundle of explanation shards (ADR-0028).
         artifacts.add(layer("crossSet/inferences.ttl",
                 actual.resolve("crossSet").resolve("inferences.ttl"),
                 expected.resolve("crossSet").resolve("inferences.ttl"), Layer.TTL));
-        artifacts.add(layer("solr/mapping/inferences-explained.json",
-                actual.resolve("solr").resolve("mapping").resolve("inferences-explained.json"),
-                expected.resolve("solr").resolve("mapping").resolve("inferences-explained.json"), Layer.EXPLAINED));
+        artifacts.add(new LayerArtifact("solr/mapping/inferences-explained-*.json",
+                () -> explainedMappingFiles(actual),
+                expected.resolve("solr").resolve("mapping").resolve("inferences-explained.json"),
+                Layer.EXPLAINED));
         artifacts.add(layer("solr/mappingSet/inferences-mappingSet.json",
                 actual.resolve("solr").resolve("mappingSet").resolve("inferences-mappingSet.json"),
                 expected.resolve("solr").resolve("mappingSet").resolve("inferences-mappingSet.json"), Layer.JSON));
@@ -52,8 +75,28 @@ public final class ArtifactPaths {
         return artifacts;
     }
 
+    /**
+     * Every bundle's inferred-mapping JSON, in name order. Sorted so a merge is deterministic even
+     * though the canonicaliser would sort the union anyway.
+     */
+    private static List<Path> explainedMappingFiles(Path actualInferences) {
+        Path mappingDir = actualInferences.resolve("solr").resolve("mapping");
+        if (!Files.isDirectory(mappingDir)) {
+            return List.of();
+        }
+        List<Path> files = new ArrayList<>();
+        try (DirectoryStream<Path> stream =
+                     Files.newDirectoryStream(mappingDir, "inferences-explained-*.json")) {
+            stream.forEach(files::add);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed listing explained-mapping bundles in " + mappingDir, e);
+        }
+        files.sort(Comparator.comparing(Path::getFileName));
+        return files;
+    }
+
     private static LayerArtifact layer(String label, Path actual, Path expected, Layer layer) {
-        return new LayerArtifact(label, actual, expected, layer);
+        return new LayerArtifact(label, () -> List.of(actual), expected, layer);
     }
 
     /** Per-fixture inference_type count golden. */

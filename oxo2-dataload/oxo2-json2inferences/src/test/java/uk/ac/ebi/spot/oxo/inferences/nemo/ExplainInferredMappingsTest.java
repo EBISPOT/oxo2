@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ExplainInferredMappingsTest {
 
@@ -120,5 +122,30 @@ class ExplainInferredMappingsTest {
         // when leftMid and rightMid pull it in.
         assertSame(memo.get(leftMid).get(0), memo.get(rightMid).get(0));
         assertEquals(4, memo.size());
+    }
+
+    /**
+     * An asserted leaf's chain rule is *present* with an empty premise list. A dangling node —
+     * NemoHelper could not resolve its derivation — has *no* chain rule application at all. Only the
+     * latter means the shard was not self-contained (ADR-0028); confusing them would either reject
+     * every explanation or silently ship truncated ones.
+     */
+    @Test
+    void assertedLeafIsNotDanglingButAnUnresolvedNodeIs() {
+        InferredMapping leaf = asserted("urn:a", "urn:p", "urn:b");
+        InferredMapping root = inferred("urn:a", "urn:p", "urn:c", ChainRulesEnum.T1, leaf);
+        assertFalse(ExplainInferredMappings.hasDanglingPremise(root, new IdentityHashMap<>()),
+                "a chain bottoming out in ASSERTED leaves is complete");
+
+        InferredMapping unresolved = new InferredMapping();
+        unresolved.setSubjectIRI(new Uri("urn:b"));
+        unresolved.setPredicateIRI(new Uri("urn:p"));
+        unresolved.setObjectIRI(new Uri("urn:c"));
+        unresolved.setChainRuleApplications(Optional.empty());   // NemoHelper found no derivation
+        InferredMapping truncated = inferred("urn:a", "urn:p", "urn:c", ChainRulesEnum.T1, leaf, unresolved);
+
+        assertTrue(ExplainInferredMappings.hasDanglingPremise(truncated, new IdentityHashMap<>()),
+                "a premise with no chainRuleApplications means a premise is missing from the trace");
+        assertTrue(ExplainInferredMappings.hasDanglingPremise(unresolved, new IdentityHashMap<>()));
     }
 }

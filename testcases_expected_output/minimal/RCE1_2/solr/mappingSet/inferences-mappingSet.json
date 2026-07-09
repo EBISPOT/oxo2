@@ -1,7 +1,8 @@
 [ {
   "inference_type" : "SSSOM_INFERENCE",
-  "mapping_set_description" : "Inferred mappings derived via SEMAPV:MappingChaining across all mapping sets (SSSOM reasoning). Explanations are computed on demand.",
+  "mapping_set_description" : "Inferred mappings derived via SEMAPV:MappingChaining across all mapping sets (SSSOM reasoning).",
   "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+  "mapping_set_source" : [ "https://w3id.org/oxo2/test/minimal/rules/RCE1_2" ],
   "mapping_set_title" : "OxO2 SSSOM cross-set inferences",
   "mapping_tool" : "OxO Inferences"
 } ]

@@ -28,11 +28,14 @@ public class MainDispatcher {
                 case "inferences2trace":
                     uk.ac.ebi.spot.oxo.inferences.nemo.Inferences2Trace.main(remainingArgs);
                     break;
+                case "shardConclusions":
+                    uk.ac.ebi.spot.oxo.inferences.nemo.ShardConclusions.main(remainingArgs);
+                    break;
                 case "explanations2json":
                     uk.ac.ebi.spot.oxo.inferences.nemo.ExplainInferredMappings.main(remainingArgs);
                     break;
-                case "inferences2json":
-                    uk.ac.ebi.spot.oxo.inferences.nemo.BareInferredMappings.main(remainingArgs);
+                case "mergeInferredMappingSets":
+                    uk.ac.ebi.spot.oxo.inferences.nemo.MergeInferredMappingSets.main(remainingArgs);
                     break;
                 default:
                     logger.error("Unknown command: {}", command);
@@ -65,7 +68,8 @@ public class MainDispatcher {
         System.out.println("Available commands:");
         System.out.println("  json2nquads  - Creates .nq (N-Quads) file from mappings in .json, carrying mapping_id. ");
         System.out.println("  inferences2trace  - Creates a file of inferences to trace in the format expected by Nemo.");
+        System.out.println("  shardConclusions  - Partitions the corpus into per-component explanation shards (ADR-0028).");
         System.out.println("  explanations2json - Creates a .json file of inferred mappings with their explanations.");
-        System.out.println("  inferences2json   - Creates a .json file of BARE inferred mappings (no explanations, ADR-0020).");
+        System.out.println("  mergeInferredMappingSets - Unions the per-bundle inferred MappingSet source sets into one.");
     }
 }

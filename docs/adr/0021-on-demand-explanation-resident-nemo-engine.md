@@ -1,9 +1,20 @@
 # ADR-0021: On-demand explanations served by a resident Nemo engine
 
 - **Status**: Proposed — cost model validated empirically 2026-07-06 (see Context § measured
-  costs); acceptance now hinges only on the product call on worst-case latency
+  costs). **Motivation largely removed** by
+  [ADR-0028](0028-component-sharded-explanation-precompute.md): explanations are precomputed again,
+  so nothing in the UI now needs an on-demand trace.
 - **Date**: 2026-06-25
 - **Refines**: [ADR-0020](0020-defer-explanations-to-on-demand.md) (revises its cost premise; does not disturb its index-bare decision)
+
+> **2026-07-08 scope note.** This ADR's latency measurements stand: a resident engine over the *whole*
+> corpus still traces one conclusion in ~1.2 s typical / ~6 s worst. What no longer stands is its
+> conclusion that bulk precompute is infeasible ("~341 h at 16 engines"). That figure bounds an
+> architecture where every engine holds the whole 55.9M-fact materialisation; per-trace cost tracks
+> **store size**, not proof size, and a per-component store makes the same trace ~0.3–0.9 ms. See
+> [ADR-0028](0028-component-sharded-explanation-precompute.md). This ADR remains relevant only if a
+> *synchronous, arbitrary-conclusion* explanation API is ever needed for conclusions the dataload did
+> not precompute.
 
 ## Context
 

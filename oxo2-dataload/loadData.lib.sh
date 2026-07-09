@@ -28,8 +28,8 @@ START_STAGE="${START_STAGE:-download}"
 # HPC-only (it writes solr-data.tar.gz); loadData.nextflow has no body for it, so locally the archive
 # stage is a no-op and its owned path simply never exists. Keeping it in the one canonical list lets
 # cleanup and should_run reason over a single sequence for both orchestrators.
-OXO2_STAGES=(download sssom2json nquads infer \
-             index-asserted inferences2json index-inferred archive)
+OXO2_STAGES=(download sssom2json nquads infer shard explain \
+             index-asserted explanations2json index-inferred archive)
 
 # Each stage "owns" the artifact path(s) it (re)generates. On a run starting at START_STAGE we wipe
 # the owned paths of START_STAGE and every later stage, and PRESERVE everything earlier stages
@@ -39,8 +39,10 @@ declare -A OXO2_STAGE_OWNS=(
     [sssom2json]="$OXO2_DATA/sssom-as-json"
     [nquads]="$OXO2_DATA/assertedMappings $OXO2_INFERENCES/crossSet/assertedCorpus.nq"
     [infer]="$OXO2_INFERENCES/crossSet/inferences.ttl"
+    [shard]="$OXO2_INFERENCES/crossSet/shards"
+    [explain]="$OXO2_INFERENCES/crossSet/shardChains"
     [index-asserted]=""
-    [inferences2json]="$OXO2_INFERENCES/solr"
+    [explanations2json]="$OXO2_INFERENCES/solr"
     [index-inferred]=""
     [archive]="$OXO2_INFERENCES/solr-data.tar.gz"
 )
@@ -82,15 +84,17 @@ record_stage() {
 
 # should_wipe_solr: true when the asserted load runs from scratch (START_STAGE at or before
 # index-asserted). Resuming after that preserves the already-indexed asserted data, which
-# inferences2json queries for entity details. Callers gate BOTH the on-disk index wipe AND the
-# Solr-config copy (copySolrConfig.sh deletes the core dirs) on this — gating the config copy on
-# anything looser would re-wipe the asserted cores on a resume.
+# explanations2json queries for entity details and asserted premises. Callers gate BOTH the on-disk
+# index wipe AND the Solr-config copy (copySolrConfig.sh deletes the core dirs) on this — gating the
+# config copy on anything looser would re-wipe the asserted cores on a resume.
 should_wipe_solr() {
     [ "$OXO2_START_INDEX" -le "$(oxo2_stage_index index-asserted)" ]
 }
 
-# solr_needed: true when the run reaches an indexing stage (index-asserted / inferences2json /
+# solr_needed: true when the run reaches an indexing stage (index-asserted / explanations2json /
 # index-inferred). START_STAGE=archive re-archives an existing $SOLR_HOME without starting Solr.
+# The shard/explain stages are pure reasoning and need no Solr, but they precede index-asserted, so
+# a run entering at or before them still reaches the indexing stages.
 solr_needed() {
     [ "$OXO2_START_INDEX" -le "$(oxo2_stage_index index-inferred)" ]
 }

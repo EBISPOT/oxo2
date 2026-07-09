@@ -174,8 +174,22 @@ public final class Canonicalisers {
         return MAPPER.writeValueAsString(canonical);
     }
 
-    public static String readExplainedJson(Path path) throws IOException {
-        return canonicaliseExplainedJson(Files.readString(path, StandardCharsets.UTF_8));
+    /**
+     * Canonicalise the union of the per-bundle inferred-mapping JSONs (ADR-0028). Each file is a
+     * JSON array of mappings; {@link #canonicaliseNode} sorts arrays, so how shards were bundled
+     * across files never reaches the golden.
+     */
+    public static String readExplainedJson(List<Path> paths) throws IOException {
+        ArrayNode merged = MAPPER.createArrayNode();
+        for (Path path : paths) {
+            JsonNode tree = MAPPER.readTree(Files.readString(path, StandardCharsets.UTF_8));
+            if (tree.isArray()) {
+                merged.addAll((ArrayNode) tree);
+            } else {
+                merged.add(tree);
+            }
+        }
+        return canonicaliseExplainedJson(MAPPER.writeValueAsString(merged));
     }
 
     /** Recursively replace any text-valued `asserted_mappings` / `explanation` field with

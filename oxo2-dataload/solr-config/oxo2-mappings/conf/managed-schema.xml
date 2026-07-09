@@ -560,7 +560,11 @@
   <field name="subject_type" type="string" multiValued="false" indexed="true" stored="true"/>
 
 <!-- Extension -->
-  <field name="asserted_mappings" type="text_general" multiValued="true" indexed="true" stored="true"/>
+  <!-- asserted_mappings and explanation hold a JSON document escaped into a single value. Both are
+       retrieve-only: nothing queries, facets or sorts on them (the frontend parses the stored string
+       client-side), so neither is indexed. Inverting the ~5.7 kB explanation and its asserted evidence
+       for each of ~14.9M inferred mappings would cost a large index for no query. See ADR-0028. -->
+  <field name="asserted_mappings" type="text_general" multiValued="true" indexed="false" stored="true"/>
   <field name="distance" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="explanation_length" type="pint" multiValued="false" indexed="true" stored="true"/>
   <field name="inference_type" type="string" indexed="true" stored="true" default="ASSERTED"/>

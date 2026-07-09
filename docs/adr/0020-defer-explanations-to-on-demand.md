@@ -1,8 +1,16 @@
 # ADR-0020: Inferred mappings indexed without explanations; explanations deferred to on-demand
 
-- **Status**: Accepted
+- **Status**: Superseded by [ADR-0028](0028-component-sharded-explanation-precompute.md)
 - **Date**: 2026-06-25
 - **Supersedes**: [ADR-0018](0018-out-of-core-cross-set-explanation.md)
+
+> **Superseded 2026-07-08.** The cost premise below — that explanation must either re-run the full
+> reasoning per trace chunk, or "cannot be scoped to a local sub-corpus" — is wrong. It *can*: every
+> rule in `sssom.rls` chains its head's subject to its object through body atoms, so a conclusion's
+> whole proof lives inside one connected component of the corpus's strong-predicate edges. Chasing
+> per component makes precompute cost 6.35 CPU-h for all 14.9M conclusions, and explanations are back
+> on the dataload. See [ADR-0028](0028-component-sharded-explanation-precompute.md). The rest of this
+> document is retained as the record of why the bare index shipped between 2026-06-25 and 2026-07-08.
 
 ## Context
 

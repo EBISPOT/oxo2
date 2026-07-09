@@ -9,7 +9,7 @@
 # status, so the Jenkins build passes iff the dataload COMPLETED. See oxo2-dataload/CONTEXT.md
 # § Resumable dataload for the Freestyle job configuration.
 #
-# Resume: set START_STAGE (download|sssom2json|nquads|infer|index-asserted|inferences2json|
+# Resume: set START_STAGE (download|sssom2json|nquads|infer|shard|explain|index-asserted|explanations2json|
 # index-inferred|archive). Default download = full run. The nquads/infer substages map to `-entry`
 # points in inferSssomCrossSet.nf (explanations are deferred to on-demand, ADR-0020). See
 # oxo2-dataload/CONTEXT.md § Resumable dataload.

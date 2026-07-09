@@ -37,8 +37,6 @@ import java.util.*;
 public class ExplainInferredMappings {
     private static final Logger logger = LoggerFactory.getLogger(ExplainInferredMappings.class);
 
-    private static final String CHAIN_FILE_SUFFIX = "-chains";
-
     public static void main(String[] args) {
         Options options = getOptions();
         CommandLineParser parser = new DefaultParser();
@@ -77,51 +75,61 @@ public class ExplainInferredMappings {
         // from the per-leaf mapping_id provenance rather than from a single source set.
         boolean crossSet = cmd.hasOption("crossSet");
 
-        boolean singleFileMode = cmd.hasOption("inputFile") && cmd.hasOption("outputFile");
+        String[] inputFilePaths = cmd.getOptionValues("inputFile");
 
-        if (singleFileMode) {
+        if (inputFilePaths != null && inputFilePaths.length > 0 && cmd.hasOption("outputFile")) {
             String sourceMappingSetId = cmd.getOptionValue("sourceMappingSetId");
             if (!crossSet && (sourceMappingSetId == null || sourceMappingSetId.isBlank())) {
-                logger.error("--sourceMappingSetId is required in single-file mode unless --crossSet is set.");
+                logger.error("--sourceMappingSetId is required unless --crossSet is set.");
                 formatter.printHelp("ExplainInferredMappings", options);
                 System.exit(1);
                 return;
             }
             String mappingSetOutputFile = cmd.getOptionValue("mappingSetOutputFile");
             if (mappingSetOutputFile == null || mappingSetOutputFile.isBlank()) {
-                logger.error("--mappingSetOutputFile is required in single-file mode.");
+                logger.error("--mappingSetOutputFile is required.");
                 formatter.printHelp("ExplainInferredMappings", options);
                 System.exit(1);
                 return;
             }
-            processSingleFile(cmd.getOptionValue("inputFile"), cmd.getOptionValue("outputFile"),
+            processTraceBundle(inputFilePaths, cmd.getOptionValue("outputFile"),
                     mappingSetOutputFile, sourceMappingSetId, inferenceType, crossSet);
         } else {
-            logger.error("Invalid arguments. Provide -i inputFile -f outputFile -m mappingSetOutputFile (-x crossSet | -s sourceMappingSetId) for single-file mode.");
+            logger.error("Invalid arguments. Provide -i inputFile [inputFile...] -f outputFile -m mappingSetOutputFile (-x crossSet | -s sourceMappingSetId).");
             formatter.printHelp("ExplainInferredMappings", getOptions());
             System.exit(1);
         }
     }
 
     /**
-     * Process a single file - used for Nextflow parallel processing.
-     * Each invocation creates its own Solr client connection.
+     * Explain one <em>bundle</em> of nmo trace files — under ADR-0028 that is a group of
+     * per-component explanation shards, batched so one JVM (and one Solr connection) amortises over
+     * many shards instead of paying startup per shard. A single trace file is just a bundle of one,
+     * which is what the pre-ADR-0020 per-chunk fan-out passed.
+     *
+     * <p>Bundling is sound because a shard's trace is self-contained: every nil-UUID premise
+     * reachable from its final conclusions also appears as a conclusion in the same file (a proof
+     * never leaves its component). Conclusions are disjoint across shards, so the shared chain store
+     * needs no cross-file de-duplication, and {@code contributingSources} simply accumulates over
+     * the whole bundle.
      */
-    private static void processSingleFile(String inputFilePath, String outputFilePath,
+    private static void processTraceBundle(String[] inputFilePaths, String outputFilePath,
                                            String mappingSetOutputFilePath, String sourceMappingSetId,
                                            InferenceType inferenceType, boolean crossSet) {
         String inferredMappingSetId = crossSet
                 ? OXOInferenceConstants.CROSS_SET_INFERENCES_SET_ID
                 : OXOInferenceConstants.inferredMappingSetIdFor(sourceMappingSetId);
-        logger.info("Single file mode - Input: {}, Output: {}, MappingSet output: {}, Source mapping set: {}, inferred set: {}, inferenceType: {}, crossSet: {}",
-                inputFilePath, outputFilePath, mappingSetOutputFilePath, sourceMappingSetId,
+        logger.info("Trace bundle of {} file(s) - Output: {}, MappingSet output: {}, Source mapping set: {}, inferred set: {}, inferenceType: {}, crossSet: {}",
+                inputFilePaths.length, outputFilePath, mappingSetOutputFilePath, sourceMappingSetId,
                 inferredMappingSetId, inferenceType, crossSet);
 
-        File inputFile = new File(inputFilePath);
-        if (!inputFile.exists() || !inputFile.isFile()) {
-            logger.error("Input file does not exist or is not a file: {}", inputFilePath);
-            System.exit(1);
-            return;
+        for (String inputFilePath : inputFilePaths) {
+            File inputFile = new File(inputFilePath);
+            if (!inputFile.exists() || !inputFile.isFile()) {
+                logger.error("Input file does not exist or is not a file: {}", inputFilePath);
+                System.exit(1);
+                return;
+            }
         }
 
         long startTime = System.currentTimeMillis();
@@ -141,13 +149,15 @@ public class ExplainInferredMappings {
             recordsFile = File.createTempFile("oxo2-chain-records", ".bin", tempDir);
             finalConclusionsFile = File.createTempFile("oxo2-final-conclusions", ".txt", tempDir);
             Set<String> assertedMappingIds = new HashSet<>();
-            long finalConclusionCount;
-            logger.info("Indexing inference chains to disk: {}", inputFilePath);
+            long finalConclusionCount = 0;
             try (OnDiskChainStore.Builder builder = new OnDiskChainStore.Builder(recordsFile);
                  BufferedWriter finalConclusionWriter =
                          Files.newBufferedWriter(finalConclusionsFile.toPath())) {
-                finalConclusionCount = indexChainsFile(inputFilePath, builder, assertedMappingIds,
-                        finalConclusionWriter);
+                for (String inputFilePath : inputFilePaths) {
+                    logger.info("Indexing inference chains to disk: {}", inputFilePath);
+                    finalConclusionCount += indexChainsFile(inputFilePath, builder, assertedMappingIds,
+                            finalConclusionWriter);
+                }
                 store = builder.build();
             }
             logger.info("Indexed {} inferences; {} final conclusions; {} asserted ids to prefetch",
@@ -186,7 +196,7 @@ public class ExplainInferredMappings {
                 logger.warn("Skipping inferred MappingSet emission because no inferred mappings were produced for inferred set {}",
                         inferredMappingSetId);
             }
-            logger.info("Successfully completed processing for file: {}", inputFilePath);
+            logger.info("Successfully completed processing for {} trace file(s)", inputFilePaths.length);
 
             solrClient.close();
         } catch (Exception e) {
@@ -197,7 +207,7 @@ public class ExplainInferredMappings {
                     logger.error("Error closing Solr", t);
                 }
             }
-            logger.error("Error processing file: {}", inputFilePath, e);
+            logger.error("Error processing trace bundle: {}", Arrays.toString(inputFilePaths), e);
             System.exit(1);
         } finally {
             if (store != null) {
@@ -212,7 +222,7 @@ public class ExplainInferredMappings {
         }
 
         long endTime = System.currentTimeMillis();
-        logger.info("Single file processing took {} s", (endTime - startTime) / 1000);
+        logger.info("Trace bundle processing took {} s", (endTime - startTime) / 1000);
     }
 
     /** Max distinct sub-chains kept in the Pass-2 LRU; eviction only forces a (rare) recompute. */
@@ -406,12 +416,15 @@ public class ExplainInferredMappings {
     /**
      * Resolve an inferred mapping's subject/predicate/object CURIEs + labels from the asserted Solr
      * index ({@link DataloadSolr#queryEntityDetailsForIRI}, served from the entity cache the caller
-     * must have populated — by chain-leaf prefetch on the explanation path, or by
-     * {@link DataloadSolr#prefetchEntityDetailsByIris} on the bare path) and return a
-     * {@link Mapping.Builder} carrying the s/p/o + ids/labels, justification, tool, set id, and
-     * inference type. The fields common to every inferred mapping doc; the explanation-derived
-     * fields (explanation, asserted evidence, explanationLength, distance) are added by the caller
-     * that has them. Shared by the explanation path and the bare inferred-mapping indexer (ADR-0020).
+     * must have populated via {@link DataloadSolr#prefetchMappingsByIds} over the chain's asserted
+     * leaves) and return a {@link Mapping.Builder} carrying the s/p/o + ids/labels, justification,
+     * tool, set id, and inference type — the fields common to every inferred mapping doc. The
+     * explanation-derived fields (explanation, asserted evidence, explanationLength) are added by
+     * the caller that has them.
+     *
+     * <p>The leaf prefetch suffices: an inferred conclusion's endpoints are always the endpoints of
+     * some asserted premise in its own proof, because every rule chains its head's subject and
+     * object through body atoms.
      */
     static Mapping.Builder baseInferredMappingBuilder(DataloadSolr solrClient, String subjectIRI,
             String predicateIRI, String objectIRI, String inferredMappingSetId,
@@ -464,13 +477,14 @@ public class ExplainInferredMappings {
             return 0;
         }
 
-        // Per-mapping memos for the two recursive walks over one InferredMapping chain. They are
+        // Per-mapping memos for the recursive walks over one InferredMapping chain. They are
         // cleared at the top of each iteration (below) so they stay bounded to a single chain
         // instead of growing across the whole stream. Identity-keyed is correct because, within one
         // chain, NemoHelper hands back one object per distinct conclusion; even if the bounded LRU
         // ever forced a duplicate, the walks' outputs are identity-independent.
         IdentityHashMap<InferredMapping, List<InferredMapping>> assertedMemo = new IdentityHashMap<>();
         IdentityHashMap<InferredMapping, Integer> lengthMemo = new IdentityHashMap<>();
+        IdentityHashMap<InferredMapping, Boolean> danglingMemo = new IdentityHashMap<>();
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new Jdk8Module());
@@ -483,6 +497,7 @@ public class ExplainInferredMappings {
         SequenceWriter seqWriter = null;
         long written = 0;
         int processed = 0;
+        long danglingChains = 0;
         boolean closedCleanly = false;
         try {
             while (inferredMappings.hasNext()) {
@@ -491,6 +506,7 @@ public class ExplainInferredMappings {
                 // memos to keep them bounded to one chain.
                 assertedMemo.clear();
                 lengthMemo.clear();
+                danglingMemo.clear();
                 try {
                     if (inferredMapping.getSubjectIRI() == null || inferredMapping.getPredicateIRI() == null ||
                         inferredMapping.getObjectIRI() == null) {
@@ -504,6 +520,18 @@ public class ExplainInferredMappings {
                     if (inferredMapping.getChainRuleApplications().isPresent() &&
                         inferredMapping.getChainRuleApplications().get().getPremises().isEmpty()) {
                         logger.debug("Skipping mapping with no premises - hence it is an asserted mapping: {}", inferredMapping);
+                        continue;
+                    }
+                    // A node whose chainRuleApplications is ABSENT (as opposed to present-but-empty,
+                    // which is an asserted leaf) means NemoHelper could not find its derivation in
+                    // the chain store. Under ADR-0028 that cannot happen — a proof never leaves its
+                    // shard — so it signals a broken shard, not a bad mapping. Left unchecked it
+                    // emits a doc with a truncated explanation and no asserted evidence, which is
+                    // indistinguishable from an ADR-0020 bare doc. Count it and fail the task below.
+                    if (hasDanglingPremise(inferredMapping, danglingMemo)) {
+                        logger.error("Dangling explanation chain for {}: a premise is missing from the "
+                                + "trace. The shard is not self-contained.", inferredMapping);
+                        danglingChains++;
                         continue;
                     }
 
@@ -521,6 +549,12 @@ public class ExplainInferredMappings {
                     // Reuse the shared entity-resolution + base builder so the s/p/o + ids/labels
                     // are built one place — the same place the bare inferred-mapping indexer uses
                     // (ADR-0020) — then add the explanation-derived fields that only the trace gives.
+                    // `distance` is deliberately NOT set (ADR-0028). It stays at the model's inert
+                    // default of 1. calculateMappingDistance() counts distinct CURIE prefixes minus
+                    // one, not chain depth, and can return -1 or 0; SolrQueryBuilder's ranking boost
+                    // is div(INFERRED_BOOST, pow(5, distance-1)), so a distance of -1 would boost an
+                    // inferred mapping 25x ABOVE an asserted one. Populating it is a one-line change
+                    // once that decay has been re-designed and evaluated.
                     Mapping.Builder mappingBuilder = baseInferredMappingBuilder(solrClient,
                             inferredMapping.getSubjectIRI().asStringIRI(),
                             inferredMapping.getPredicateIRI().asStringIRI(),
@@ -528,8 +562,7 @@ public class ExplainInferredMappings {
                             inferredMappingSetId, inferenceType)
                         .explanation(inferredMapping)
                         .assertedMappings(assertedEvidence)
-                        .explanationLength(explanationLength(inferredMapping, lengthMemo))
-                        .distance(calculateMappingDistance(inferredMapping));
+                        .explanationLength(explanationLength(inferredMapping, lengthMemo));
                     // Single-source inference records its one source set. In cross-set inference a
                     // mapping can draw on several sets (captured in the explanation and the set-level
                     // source union), so a single mappingSource would be lossy — leave it unset.
@@ -572,6 +605,15 @@ public class ExplainInferredMappings {
         }
 
         logger.info("Finished streaming inferred mappings: {} processed, {} written", processed, written);
+
+        if (danglingChains > 0) {
+            // Fail rather than quietly under-explain: a dangling chain means the shard corpus was
+            // missing a premise, so every mapping in this bundle is suspect.
+            throw new IOException(danglingChains + " inferred mapping(s) had a dangling explanation "
+                    + "chain — the trace files are not self-contained. Check that "
+                    + "OXOInferenceConstants.STRONG_PREDICATES covers every predicate appearing in a "
+                    + "sssom.rls rule body.");
+        }
 
         if (written > 0) {
             logger.info("Mappings successfully streamed to {} ({} mappings, {} bytes)",
@@ -640,55 +682,57 @@ public class ExplainInferredMappings {
         return length;
     }
 
-    private static int calculateMappingDistance(InferredMapping explanation) {
-        Set<String> extractedParts = new HashSet<>();
+    /**
+     * True if any node below {@code explanation} has no {@code chainRuleApplications} at all — i.e.
+     * {@link NemoHelper} could not resolve its derivation. An asserted leaf is <em>present</em> with
+     * an empty premise list, so it is not dangling. Memoized over the DAG; shared sub-chains are
+     * visited once.
+     */
+    static boolean hasDanglingPremise(InferredMapping explanation,
+                                      IdentityHashMap<InferredMapping, Boolean> memo) {
+        Boolean cached = memo.get(explanation);
+        if (cached != null) return cached;
 
-        extractParts(explanation.getSubjectIRI().asStringIRI(), extractedParts);
-        extractParts(explanation.getObjectIRI().asStringIRI(), extractedParts);
+        // Provisionally false so a cycle (which nmo never emits) cannot recurse forever.
+        memo.put(explanation, Boolean.FALSE);
 
-        if (explanation.getChainRuleApplications().isEmpty())
-            return extractedParts.size() - 1;
-
-
-        for (InferredMapping premise: explanation.getChainRuleApplications().get().getPremises()) {
-            extractParts(premise.getSubjectIRI().asStringIRI(), extractedParts);
-            extractParts(premise.getObjectIRI().asStringIRI(), extractedParts);
+        if (explanation.getChainRuleApplications().isEmpty()) {
+            memo.put(explanation, Boolean.TRUE);
+            return true;
         }
-
-        return extractedParts.size() - 1;
-    }
-
-    private static void extractParts(String input, Set<String> extractedParts) {
-        if (input != null) {
-            String[] parts = input.split("/");
-            String lastPart = parts[parts.length - 1];
-            if (lastPart.contains("_")) {
-                extractedParts.add(lastPart.split("_")[0]);
+        for (InferredMapping premise : explanation.getChainRuleApplications().get().getPremises()) {
+            if (hasDanglingPremise(premise, memo)) {
+                memo.put(explanation, Boolean.TRUE);
+                return true;
             }
         }
+        return false;
     }
 
     private static Options getOptions() {
         Options options = new Options();
 
-        // Single file mode options (for Nextflow parallel processing)
+        // One or more nmo trace files, processed together as a bundle by a single JVM.
         Option inputFile = new Option("i", "inputFile", true,
-                "Single input file to process (for parallel processing with Nextflow)");
+                "nmo --trace-output JSON file(s) to explain. Repeatable, or several paths after one "
+                        + "-i; all are processed as one bundle sharing a chain store and Solr client.");
+        inputFile.setArgs(Option.UNLIMITED_VALUES);
         inputFile.setRequired(false);
         options.addOption(inputFile);
 
         Option outputFile = new Option("f", "outputFile", true,
-                "Single output file (for parallel processing with Nextflow)");
+                "Output file for the bundle's inferred mappings (JSON array).");
         outputFile.setRequired(false);
         options.addOption(outputFile);
 
         Option mappingSetOutputFile = new Option("m", "mappingSetOutputFile", true,
-                "Output file for the inferred MappingSet JSON metadata (single-file mode).");
+                "Output file for the inferred MappingSet JSON metadata. In cross-set mode this "
+                        + "carries only the bundle's PARTIAL source union; merge across bundles.");
         mappingSetOutputFile.setRequired(false);
         options.addOption(mappingSetOutputFile);
 
         Option sourceMappingSetId = new Option("s", "sourceMappingSetId", true,
-                "Source mapping set ID (URI) whose chain file is being processed (single-file mode).");
+                "Source mapping set ID (URI) whose chain file is being processed.");
         sourceMappingSetId.setRequired(false);
         options.addOption(sourceMappingSetId);
 

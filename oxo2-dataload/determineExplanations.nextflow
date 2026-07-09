@@ -1,0 +1,61 @@
+#!/bin/bash
+
+OXO2_INFERENCES=$OXO2_DATA/inferences
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export SCRIPT_DIR
+
+echo OXO2_INFERENCES=$OXO2_INFERENCES
+echo SCRIPT_DIR=$SCRIPT_DIR
+
+# Component-sharded chase+trace (ADR-0028): partition assertedCorpus.nq into per-component shards,
+# then chase+trace each shard so every inferred mapping gets a Nemo derivation. Pure reasoning — no
+# Solr — so this runs before index-asserted.
+mkdir -p $OXO2_INFERENCES/crossSet
+
+# Optional extra config layered on top of the base nextflow.config (test harness
+# uses this to pick the `test` profile in oxo2-integration-tests/nextflow-test.config).
+NF_EXTRA_CONFIG_ARG=""
+if [ -n "${NF_EXTRA_CONFIG:-}" ]; then
+    NF_EXTRA_CONFIG_ARG="-c ${NF_EXTRA_CONFIG}"
+fi
+
+# Resume support (ADR-0019): `shard` and `explain` are the two substages of one Nextflow process
+# graph. Resuming at START_STAGE=explain re-enters at EXPLAIN_SHARD via `-entry from_explain_shard`,
+# reading the previously PUBLISHED crossSet/shards/ instead of re-sharding the corpus. Any earlier
+# START_STAGE runs the default workflow {} from assertedCorpus.nq + inferences.ttl. Mirrors the entry
+# selection in loadData.slurm.
+EXPLAIN_ENTRY_ARGS=()
+case "${START_STAGE:-download}" in
+    explain) EXPLAIN_ENTRY_ARGS=(-entry from_explain_shard) ;;
+esac
+
+start_time=$(date +%s)
+echo "Explain: component-sharded chase+trace (explainSssomCrossSet.nf, entry=${START_STAGE:-download})"
+(nextflow -log $NXF_LOGS/explainSssomCrossSet.nextflow.log \
+    -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
+    run $SCRIPT_DIR/explainSssomCrossSet.nf \
+    -profile ${NF_PROFILE:-standard} \
+    ${EXPLAIN_ENTRY_ARGS[@]+"${EXPLAIN_ENTRY_ARGS[@]}"} \
+    -with-trace    $NXF_LOGS/explainSssomCrossSet-trace.txt \
+    -with-report   $NXF_LOGS/explainSssomCrossSet-report.html \
+    -with-timeline $NXF_LOGS/explainSssomCrossSet-timeline.html) || exit 1
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+echo "Component-sharded explanation took: ${elapsed} seconds"
+
+# Post-condition: one chain file per shard. Nextflow exits 0 when a *workflow operator* (as opposed
+# to a task) throws — a MissingPropertyException in a channel closure, say — so a silent zero-shard
+# run would otherwise sail through here and index every inferred mapping with no explanation. Assert
+# the invariant instead of trusting the exit status. A corpus with no inferences produces no shards
+# and no chains, which satisfies 0 == 0.
+SHARDS_DIR="$OXO2_INFERENCES/crossSet/shards"
+CHAINS_DIR="$OXO2_INFERENCES/crossSet/shardChains"
+mkdir -p "$SHARDS_DIR" "$CHAINS_DIR"
+expected_chains=$(find "$SHARDS_DIR" -maxdepth 1 -name 'shard*-targets.txt' | wc -l)
+actual_chains=$(find "$CHAINS_DIR" -maxdepth 1 -name 'shard*-chains.json' | wc -l)
+if [ "$expected_chains" -ne "$actual_chains" ]; then
+    echo "ERROR: explanation stage produced $actual_chains chain file(s) for $expected_chains shard(s)." >&2
+    echo "       Every shard must yield a trace, or its conclusions ship unexplained." >&2
+    exit 1
+fi
+echo "Explained $actual_chains shard(s)."
