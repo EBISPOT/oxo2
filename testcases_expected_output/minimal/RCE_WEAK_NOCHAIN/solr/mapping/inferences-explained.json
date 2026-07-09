@@ -22,6 +22,11 @@
   "distance" : 1,
   "explanation" : {
     "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "(?b, <OWL:equivalentClass>, ?a) <- (?a, <OWL:equivalentClass>, ?b)",
+        "chain_rule_long_form" : "(?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?a) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b)",
+        "chain_rule_name" : "SYM-equivalentClass"
+      },
       "premises" : [ {
         "chain_rule_applications" : {
           "chain_rule" : {

@@ -22,6 +22,11 @@
   "distance" : 1,
   "explanation" : {
     "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "(?b, <OWL:equivalentClass>, ?a) <- (?a, <OWL:equivalentClass>, ?b)",
+        "chain_rule_long_form" : "(?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?a) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b)",
+        "chain_rule_name" : "SYM-equivalentClass"
+      },
       "premises" : [ {
         "chain_rule_applications" : {
           "chain_rule" : {
@@ -124,6 +129,46 @@
       "premises" : [ {
         "chain_rule_applications" : {
           "chain_rule" : {
+            "chain_rule_abbreviated" : "(?b, <OWL:equivalentClass>, ?a) <- (?a, <OWL:equivalentClass>, ?b)",
+            "chain_rule_long_form" : "(?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?a) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b)",
+            "chain_rule_name" : "SYM-equivalentClass"
+          },
+          "premises" : [ {
+            "chain_rule_applications" : {
+              "chain_rule" : {
+                "chain_rule_abbreviated" : "Asserted",
+                "chain_rule_long_form" : "Asserted",
+                "chain_rule_name" : "Asserted"
+              }
+            },
+            "distance" : 1,
+            "mapping_id" : "00bffda9-ea1e-319d-9ca5-01efab569070",
+            "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/RCE2_1",
+            "object_id" : "EX:C",
+            "object_iri" : "https://w3id.org/oxo2/test/ex/C",
+            "object_label" : "Entity C",
+            "predicate_id" : "OWL:equivalentClass",
+            "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
+            "subject_id" : "EX:B",
+            "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
+            "subject_label" : "Entity B"
+          } ]
+        },
+        "distance" : 1,
+        "mapping_justification" : "SEMAPV:MappingChaining",
+        "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
+        "mapping_tool" : "OxO Inferences",
+        "object_id" : "EX:B",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "object_label" : "Entity B",
+        "predicate_id" : "OWL:equivalentClass",
+        "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
+        "subject_id" : "EX:C",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
+        "subject_label" : "Entity C"
+      }, {
+        "chain_rule_applications" : {
+          "chain_rule" : {
             "chain_rule_abbreviated" : "(?b, <SKOS:narrowMatch>, ?a) <- (?a, <SKOS:broadMatch>, ?b)",
             "chain_rule_long_form" : "(?b, <http://www.w3.org/2004/02/skos/core#narrowMatch>, ?a) <- (?a, <http://www.w3.org/2004/02/skos/core#broadMatch>, ?b)",
             "chain_rule_name" : "RI2"
@@ -161,41 +206,6 @@
         "subject_id" : "EX:B",
         "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
         "subject_label" : "Entity B"
-      }, {
-        "chain_rule_applications" : {
-          "premises" : [ {
-            "chain_rule_applications" : {
-              "chain_rule" : {
-                "chain_rule_abbreviated" : "Asserted",
-                "chain_rule_long_form" : "Asserted",
-                "chain_rule_name" : "Asserted"
-              }
-            },
-            "distance" : 1,
-            "mapping_id" : "00bffda9-ea1e-319d-9ca5-01efab569070",
-            "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/RCE2_1",
-            "object_id" : "EX:C",
-            "object_iri" : "https://w3id.org/oxo2/test/ex/C",
-            "object_label" : "Entity C",
-            "predicate_id" : "OWL:equivalentClass",
-            "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
-            "subject_id" : "EX:B",
-            "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
-            "subject_label" : "Entity B"
-          } ]
-        },
-        "distance" : 1,
-        "mapping_justification" : "SEMAPV:MappingChaining",
-        "mapping_set_id" : "https://www.ebi.ac.uk/oxo2/inferences",
-        "mapping_tool" : "OxO Inferences",
-        "object_id" : "EX:B",
-        "object_iri" : "https://w3id.org/oxo2/test/ex/B",
-        "object_label" : "Entity B",
-        "predicate_id" : "OWL:equivalentClass",
-        "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
-        "subject_id" : "EX:C",
-        "subject_iri" : "https://w3id.org/oxo2/test/ex/C",
-        "subject_label" : "Entity C"
       } ]
     },
     "distance" : 1,
@@ -279,26 +289,17 @@
       "premises" : [ {
         "chain_rule_applications" : {
           "chain_rule" : {
-            "chain_rule_abbreviated" : "Asserted",
-            "chain_rule_long_form" : "Asserted",
-            "chain_rule_name" : "Asserted"
-          }
-        },
-        "distance" : 1,
-        "mapping_id" : "fe8243b9-4413-33de-81cc-a7ee52d97bfa",
-        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/RCE2_1",
-        "object_id" : "EX:B",
-        "object_iri" : "https://w3id.org/oxo2/test/ex/B",
-        "object_label" : "Entity B",
-        "predicate_id" : "SKOS:broadMatch",
-        "predicate_iri" : "http://www.w3.org/2004/02/skos/core#broadMatch",
-        "subject_id" : "EX:A",
-        "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
-        "subject_label" : "Entity A"
-      }, {
-        "chain_rule_applications" : {
+            "chain_rule_abbreviated" : "(?b, <OWL:equivalentClass>, ?a) <- (?a, <OWL:equivalentClass>, ?b)",
+            "chain_rule_long_form" : "(?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?a) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b)",
+            "chain_rule_name" : "SYM-equivalentClass"
+          },
           "premises" : [ {
             "chain_rule_applications" : {
+              "chain_rule" : {
+                "chain_rule_abbreviated" : "(?b, <OWL:equivalentClass>, ?a) <- (?a, <OWL:equivalentClass>, ?b)",
+                "chain_rule_long_form" : "(?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?a) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b)",
+                "chain_rule_name" : "SYM-equivalentClass"
+              },
               "premises" : [ {
                 "chain_rule_applications" : {
                   "chain_rule" : {
@@ -346,6 +347,25 @@
         "subject_id" : "EX:B",
         "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
         "subject_label" : "Entity B"
+      }, {
+        "chain_rule_applications" : {
+          "chain_rule" : {
+            "chain_rule_abbreviated" : "Asserted",
+            "chain_rule_long_form" : "Asserted",
+            "chain_rule_name" : "Asserted"
+          }
+        },
+        "distance" : 1,
+        "mapping_id" : "fe8243b9-4413-33de-81cc-a7ee52d97bfa",
+        "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/rules/RCE2_1",
+        "object_id" : "EX:B",
+        "object_iri" : "https://w3id.org/oxo2/test/ex/B",
+        "object_label" : "Entity B",
+        "predicate_id" : "SKOS:broadMatch",
+        "predicate_iri" : "http://www.w3.org/2004/02/skos/core#broadMatch",
+        "subject_id" : "EX:A",
+        "subject_iri" : "https://w3id.org/oxo2/test/ex/A",
+        "subject_label" : "Entity A"
       } ]
     },
     "distance" : 1,
