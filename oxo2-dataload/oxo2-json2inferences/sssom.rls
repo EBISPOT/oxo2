@@ -1,4 +1,5 @@
 %! OxO2 SSSOM reasoning rules, applied ACROSS ALL MAPPING SETS (ADR-0016).
+%! For reference, SSSOM chain rules are defined here: https://mapping-commons.github.io/sssom/dev/chaining-rules/.
 %!
 %! Transitivity, symmetry/inverse, and role chains over the STRONG mapping/equivalence predicates
 %! only. Subsumption (rdfs:subClassOf/subPropertyOf, no longer derived by OxO2) and the weak/noisy
