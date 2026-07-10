@@ -42,8 +42,7 @@ and feeds only `inferredMapping`, never the traced `mapping` facts — a sub-cor
 conclusion either. The shard is neither missing a premise nor able to add one.
 
 The dev corpus decomposes into **1,442,981 components over 4,353,186 entities, the largest just 434
-nodes** (the ADR-0017 cross-set closure component-size guard holds). So the store a trace runs
-against drops from 55.9M facts to a few thousand.
+nodes**. So the store a trace runs against drops from 55.9M facts to a few thousand.
 
 ## Decision
 

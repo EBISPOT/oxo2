@@ -199,7 +199,7 @@ CURIEs expand against a bundled **Bioregistry** prefix-map snapshot (`oxo2-share
 fallback `curie_map` — applied only to sets that declare no prefixes of their own. The sssom2json output filename is the 
 input's sssom-root-relative path flattened, so same-basename sets across sub-directories don't collide. See 
 [ADR-0015](docs/adr/0015-default-prefix-map-and-metadata-synthesis-for-bare-sssom.md). Affects `oxo2-shared`, `oxo2-dataload` 
-(sssom2json). NB: recovering the `priority` views feeds the ~569 MB gene view into the SSSOM cross-set pass — the closure-explosion guard ([ADR-0016](docs/adr/0016-single-pass-sssom-reasoning.md)) is now load-bearing.
+(sssom2json). NB: recovering the `priority` views feeds the ~569 MB gene view into the SSSOM cross-set pass **unguarded** — the component-size guard intended to bound its closure ([ADR-0017](docs/adr/0017-cross-set-inference-corpus-component-size-guard.md)) was scoped but never built, so the pass is safe only because the loaded priority views form no giant strong-predicate component.
 - **Explanation shard sizing** — the corpus is partitioned into per-component explanation shards, each capped at `max_shard_entities = 1200` entities (in `explainSssomCrossSet.nf`), and their traces are interpreted `explain_bundle_size = 100` shards per JVM (in `explanations2json.nf`). The entity cap bounds per-trace cost, which is linear in a shard's dictionary size; the bundle size amortises JVM and Solr-connection startup. Tactical sizing choices under [ADR-0028](docs/adr/0028-component-sharded-explanation-precompute.md), not separate decisions.
 
 ## End-to-end flow

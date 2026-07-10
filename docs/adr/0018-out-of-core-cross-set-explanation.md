@@ -15,8 +15,10 @@ the entire cross-set closure.
 On the dev corpus the merged chains file reached ~20 GB on disk, whose parsed object graph runs well
 past 100 GB. The first cross-set HPC run OOM'd; raising the heap is a brute-force dead end (we briefly
 sized the SLURM task to 320 GB just to attempt a verification run). The closure size is the binding
-constraint, and it grows with the corpus even with the priority-view / component-size guard limiting
-the inference explosion upstream.
+constraint, and it grows with the corpus even with the priority-view `exclude`
+([ADR-0014](0014-mapping-commons-registry-via-specifications-json.md)) keeping the raw SeMRA assemblies
+out upstream (the further component-size guard on the inference corpus this assumed,
+[ADR-0017](0017-cross-set-inference-corpus-component-size-guard.md), was never built).
 
 On-demand explanation (compute a chain only when a user inspects a mapping) was rejected: `distance`
 is a user-facing filter facet, so it must be materialised for every inferred mapping at load time.

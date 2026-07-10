@@ -64,5 +64,5 @@ ADR-0028 would trace it cheaply. It is not reinstated here because it earns no f
 original reasoning does not already cover, not because of cost.
 
 **RG2 therefore stays excluded on chase-and-space grounds that are independent of, and untouched by,
-the ADR-0028 explanation rework.** Reconsidering it would require a component-size guard on the chase
-(cf. ADR-0017's cross-set closure component-size guard), not a cheaper trace.
+the ADR-0028 explanation rework.** Reconsidering it would require a component-size guard on the chase,
+not a cheaper trace.
