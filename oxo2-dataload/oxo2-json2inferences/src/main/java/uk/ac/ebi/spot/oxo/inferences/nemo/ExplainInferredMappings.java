@@ -20,6 +20,7 @@ import uk.ac.ebi.spot.oxo.inferences.nemo.model.NemoInferences;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.OXOInferenceConstants;
 import uk.ac.ebi.spot.oxo.model.sssom.ChainRulesEnum;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
+import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
 import uk.ac.ebi.spot.oxo.model.sssom.InferredMapping;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingSet;
@@ -498,6 +499,7 @@ public class ExplainInferredMappings {
         long written = 0;
         int processed = 0;
         long danglingChains = 0;
+        long foldedCycleChains = 0;
         boolean closedCleanly = false;
         try {
             while (inferredMappings.hasNext()) {
@@ -533,6 +535,21 @@ public class ExplainInferredMappings {
                                 + "trace. The shard is not self-contained.", inferredMapping);
                         danglingChains++;
                         continue;
+                    }
+                    // Defence-in-depth for ADR-0029: nmo's DAG is acyclic over raw IRIs, but two IRIs
+                    // that alias one entity fold to a single CURIE and can make a premise restate an
+                    // ancestor conclusion — a non-well-founded (circular) explanation. IRI overrides
+                    // prevent this at the source; this flags any aliased prefix not yet covered so it
+                    // can be added to iri-prefix-overrides.json. Observability only — the doc is still
+                    // emitted (the conclusion is valid; only its proof is redundant).
+                    if (hasFoldedCycle(inferredMapping)) {
+                        foldedCycleChains++;
+                        if (foldedCycleChains <= 20) {
+                            logger.warn("Non-well-founded explanation (a conclusion restates an ancestor "
+                                    + "after CURIE-folding) for {}. An aliased prefix is not yet in "
+                                    + "iri-prefix-overrides.json (ADR-0029); add it and re-run.",
+                                    foldedSpoKey(inferredMapping));
+                        }
                     }
 
                     List<InferredMapping> assertedEvidence =
@@ -605,6 +622,13 @@ public class ExplainInferredMappings {
         }
 
         logger.info("Finished streaming inferred mappings: {} processed, {} written", processed, written);
+
+        if (foldedCycleChains > 0) {
+            logger.warn("{} inferred mapping(s) had a non-well-founded (folded-cycle) explanation caused "
+                    + "by an aliased entity IRI. Run PrefixDivergenceDetector, add the offending "
+                    + "prefix(es) to iri-prefix-overrides.json, and re-run the dataload (ADR-0029).",
+                    foldedCycleChains);
+        }
 
         if (danglingChains > 0) {
             // Fail rather than quietly under-explain: a dangling chain means the shard corpus was
@@ -688,6 +712,48 @@ public class ExplainInferredMappings {
      * an empty premise list, so it is not dangling. Memoized over the DAG; shared sub-chains are
      * visited once.
      */
+    /**
+     * True if any descendant of {@code explanation} restates an ancestor's folded (CURIE-level) S-P-O,
+     * i.e. the conclusion appears inside its own proof. nmo's trace DAG is acyclic over raw IRIs, so a
+     * folded cycle means two IRIs alias one entity (e.g. divergent {@code MESH} stems) — the ADR-0029
+     * failure mode. Path-scoped: a fact reused across sibling branches is fine; only ancestor reuse
+     * counts. This is a detector, not the fix — {@code iri-prefix-overrides.json} prevents it upstream.
+     */
+    static boolean hasFoldedCycle(InferredMapping explanation) {
+        return hasFoldedCycle(explanation, new HashSet<>());
+    }
+
+    private static boolean hasFoldedCycle(InferredMapping node, Set<String> ancestorSpoKeys) {
+        String spoKey = foldedSpoKey(node);
+        if (!ancestorSpoKeys.add(spoKey)) {
+            return true;
+        }
+        if (node.getChainRuleApplications().isPresent()) {
+            for (InferredMapping premise : node.getChainRuleApplications().get().getPremises()) {
+                if (hasFoldedCycle(premise, ancestorSpoKeys)) {
+                    return true;
+                }
+            }
+        }
+        ancestorSpoKeys.remove(spoKey);
+        return false;
+    }
+
+    /** The folded (CURIE-level) subject/predicate/object identity of a node; falls back to the IRI. */
+    private static String foldedSpoKey(InferredMapping node) {
+        return foldedTerm(node.getSubjectId(), node.getSubjectIRI()) + " "
+                + foldedTerm(node.getPredicateId(), node.getPredicateIRI()) + " "
+                + foldedTerm(node.getObjectId(), node.getObjectIRI());
+    }
+
+    /** The CURIE when the node carries one, else the raw IRI. Tolerates a null or empty Optional. */
+    private static String foldedTerm(Optional<EntityReference> curie, Object iri) {
+        if (curie != null && curie.isPresent()) {
+            return curie.get().getDataAsString();
+        }
+        return String.valueOf(iri);
+    }
+
     static boolean hasDanglingPremise(InferredMapping explanation,
                                       IdentityHashMap<InferredMapping, Boolean> memo) {
         Boolean cached = memo.get(explanation);

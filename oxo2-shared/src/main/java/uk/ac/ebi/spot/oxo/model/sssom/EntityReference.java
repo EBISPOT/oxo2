@@ -84,7 +84,16 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
         String suffix = this.dataAsString.substring(index + 1);
 
         if (prefix.toLowerCase().startsWith("http")) {
-            return Optional.of(new Uri(dataAsString));
+            // A full IRI: canonicalise a known host-alias of an overridden prefix (e.g.
+            // identifiers.org/mesh -> id.nlm.nih.gov/mesh); non-overridden IRIs pass through. ADR-0029.
+            return Optional.of(new Uri(PrefixIriOverrides.canonicalizeIri(dataAsString)));
+        }
+
+        // An override pins the canonical IRI stem for this prefix, ahead of the set's own curie_map
+        // and the Bioregistry fallback, so aliased sets can never mint two IRIs for one entity. ADR-0029.
+        String overrideStem = PrefixIriOverrides.canonicalStem(prefix);
+        if (overrideStem != null) {
+            return Optional.of(new Uri(overrideStem + suffix));
         }
 
         if ( curieMap.dataRepresentation.isEmpty()) {

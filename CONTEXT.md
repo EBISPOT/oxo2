@@ -128,6 +128,14 @@ multi-select (absent = all); the UI shows {Asserted, SSSOM inference} and ranks 
 so the trace attributes each premise to its exact asserted mapping and source set; inferred conclusions use the nil UUID. See 
 [ADR-0010](docs/adr/0010-carry-mapping-provenance-via-nquads.md). Affects `oxo2-dataload` (N-Quads emit, rule arity, explanation 
 builder) and `oxo2-mappings` (`mapping_id` becomes `indexed`).
+- **Entity IRIs are canonicalised via a curated override table** — SSSOM sets disagree on the IRI 
+stem for some prefixes (e.g. `MESH:` as `id.nlm.nih.gov` vs `identifiers.org`), which would give Nemo 
+two nodes for one entity and produce duplicate conclusions plus circular explanations. A curated 
+`iri-prefix-overrides.json` pins one canonical stem per problematic prefix, applied at 
+`EntityReference.toUri` ahead of the set's curie_map and the Bioregistry fallback (ADR-0015); 
+`PrefixDivergenceDetector` surfaces new candidates. See 
+[ADR-0029](docs/adr/0029-canonical-entity-iri-overrides.md). Affects `oxo2-shared` (override loader + 
+expansion), `oxo2-sssom2json` (detector), and `oxo2-json2inferences` (folded-cycle guard).
 - **Inference-set IRIs are resolvable under the OxO2 base** — inference sets live under 
 `https://www.ebi.ac.uk/oxo2/inferences[/…]` and resolve to an OxO2 mapping-set view. See 
 [ADR-0012](docs/adr/0012-resolvable-inference-set-iris.md). Affects `oxo2-dataload` (set ids), `oxo2-backend` (`GET 

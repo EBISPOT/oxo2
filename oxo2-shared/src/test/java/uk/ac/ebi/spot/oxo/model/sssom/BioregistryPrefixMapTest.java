@@ -26,7 +26,13 @@ class BioregistryPrefixMapTest {
     void curiesExpandAgainstTheBundledMap() {
         CurieMap curieMap = new CurieMap(CurieMap.convertMapToString(BioregistryPrefixMap.get()));
 
-        assertEquals("https://meshb.nlm.nih.gov/record/ui?ui=D000050",
+        // MESH is pinned by the ADR-0029 override, so it resolves to the curated canonical stem
+        // rather than the Bioregistry preferred form (https://meshb.nlm.nih.gov/record/ui?ui=).
+        assertEquals("http://id.nlm.nih.gov/mesh/D000050",
                 new EntityReference("mesh:D000050").toUri(curieMap).orElseThrow().getDataAsString());
+
+        // A prefix with no override still expands against the Bioregistry preferred IRI.
+        assertEquals("http://purl.obolibrary.org/obo/DOID_0080213",
+                new EntityReference("doid:0080213").toUri(curieMap).orElseThrow().getDataAsString());
     }
 }

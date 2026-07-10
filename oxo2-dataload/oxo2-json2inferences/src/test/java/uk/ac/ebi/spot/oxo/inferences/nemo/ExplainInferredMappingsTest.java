@@ -148,4 +148,30 @@ class ExplainInferredMappingsTest {
                 "a premise with no chainRuleApplications means a premise is missing from the trace");
         assertTrue(ExplainInferredMappings.hasDanglingPremise(unresolved, new IdentityHashMap<>()));
     }
+
+    /**
+     * A well-founded proof — even one that reuses the same fact in two sibling branches — is not a
+     * cycle. Only a descendant restating an ancestor's S-P-O is (ADR-0029 folded-alias failure mode).
+     */
+    @Test
+    void wellFoundedProofIsNotAFoldedCycleEvenWithASharedFact() {
+        InferredMapping shared = asserted("urn:a", "urn:p", "urn:b");
+        InferredMapping left = inferred("urn:a", "urn:p", "urn:c", ChainRulesEnum.T1, shared);
+        InferredMapping right = inferred("urn:c", "urn:p", "urn:d", ChainRulesEnum.T1, shared);
+        InferredMapping root = inferred("urn:a", "urn:p", "urn:d", ChainRulesEnum.T1, left, right);
+
+        assertFalse(ExplainInferredMappings.hasFoldedCycle(root),
+                "a fact reused across sibling branches is not a cycle");
+    }
+
+    @Test
+    void descendantRestatingAnAncestorIsAFoldedCycle() {
+        // root: a exactMatch b  <-  (a exactMatch c)  where (a exactMatch c) is proved using (a exactMatch b)
+        InferredMapping rootRestated = asserted("urn:a", "urn:p", "urn:b");
+        InferredMapping intermediate = inferred("urn:a", "urn:p", "urn:c", ChainRulesEnum.T1, rootRestated);
+        InferredMapping root = inferred("urn:a", "urn:p", "urn:b", ChainRulesEnum.T1, intermediate);
+
+        assertTrue(ExplainInferredMappings.hasFoldedCycle(root),
+                "the root's S-P-O reappears inside its own proof");
+    }
 }

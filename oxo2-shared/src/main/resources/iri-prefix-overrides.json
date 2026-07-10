@@ -1,0 +1,55 @@
+{
+  "_comment": "Canonical entity-IRI overrides for prefixes whose SSSOM sets disagree on the IRI stem (ADR-0029). Keyed by UPPERCASE CURIE prefix (EntityReference upper-cases before lookup, so this also covers lower-case declarations like 'mesh'). 'canonical' wins over the set's own curie_map AND the Bioregistry fallback, so an entity always expands to one IRI regardless of how a set spelled it. 'aliases' are alternate stems rewritten to 'canonical' when a source hands us a full IRI (longest alias wins, which keeps overlapping stems like OMIM 'MIM:' vs OMIMPS 'MIM:PS' disjoint). Candidates come from PrefixDivergenceDetector; this list is CURATED — it holds only prefixes verified to be true aliases of one entity space with an identity-IRI canonical. Deliberately excluded: prefix COLLISIONS where one prefix names two different things (GEO = Geographical Entity Ontology vs NCBI GEO datasets), curie_map corruption (AFO, *_2 duplicate prefixes, double-expanded OBO PURLs, unknown_prefix placeholders), and resolver-URL/structure/publication identifiers out of the disease-mapping domain.",
+  "MESH": {
+    "canonical": "http://id.nlm.nih.gov/mesh/",
+    "aliases": ["http://identifiers.org/mesh/", "https://meshb.nlm.nih.gov/record/ui?ui="]
+  },
+  "UMLS": {
+    "canonical": "http://linkedlifedata.com/resource/umls/id/",
+    "aliases": ["https://uts.nlm.nih.gov/uts/umls/concept/"]
+  },
+  "SCTID": {
+    "canonical": "http://snomed.info/id/",
+    "aliases": ["http://purl.bioontology.org/ontology/SNOMEDCT/", "http://purl.obolibrary.org/obo/SCTID_"]
+  },
+  "ICD10CM": {
+    "canonical": "http://purl.bioontology.org/ontology/ICD10CM/",
+    "aliases": ["https://www.icd10data.com/search?s="]
+  },
+  "MEDGEN": {
+    "canonical": "http://identifiers.org/medgen/",
+    "aliases": ["https://www.ncbi.nlm.nih.gov/medgen/"]
+  },
+  "MEDDRA": {
+    "canonical": "http://identifiers.org/meddra/",
+    "aliases": ["https://bioportal.bioontology.org/ontologies/MEDDRA?p=classes&conceptid="]
+  },
+  "OMIM": {
+    "canonical": "https://omim.org/entry/",
+    "aliases": ["https://www.omim.org/entry/", "https://omim.org/MIM:", "http://identifiers.org/omim/"]
+  },
+  "OMIMPS": {
+    "canonical": "https://omim.org/phenotypicSeries/PS",
+    "aliases": ["https://omim.org/MIM:PS"]
+  },
+  "HGNC": {
+    "canonical": "http://identifiers.org/hgnc/",
+    "aliases": ["https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:"]
+  },
+  "FMA": {
+    "canonical": "http://purl.obolibrary.org/obo/FMA_",
+    "aliases": ["https://www.ebi.ac.uk/ols4/ontologies/fma/terms?obo_id=FMA:"]
+  },
+  "MA": {
+    "canonical": "http://purl.obolibrary.org/obo/MA_",
+    "aliases": ["http://www.informatics.jax.org/searches/AMA.cgi?id=MA:"]
+  },
+  "EMAPA": {
+    "canonical": "http://purl.obolibrary.org/obo/EMAPA_",
+    "aliases": ["http://www.informatics.jax.org/vocab/gxd/anatomy/EMAPA:"]
+  },
+  "SO": {
+    "canonical": "http://purl.obolibrary.org/obo/SO_",
+    "aliases": ["http://www.sequenceontology.org/browser/current_svn/term/SO:"]
+  }
+}
