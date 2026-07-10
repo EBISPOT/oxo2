@@ -46,7 +46,11 @@ workflow {
 process EXPLANATIONS_TO_JSON {
     tag "Explanations2JSON: bundle ${bundle_id} (${trace_files.size()} shards)"
 
-    publishDir "${params.output_dir}/mapping", mode: 'copy', overwrite: true,
+    // 'move', not 'copy': the explained JSON is this run's largest artifact (tens of GB) and is
+    // terminal — index-inferred reads it from the published dir, no Nextflow process stages it — so
+    // moving it out of the work dir instead of copying halves its on-disk peak. The per-bundle
+    // mappingSet output is excluded by the pattern, so it still reaches MERGE via the channel.
+    publishDir "${params.output_dir}/mapping", mode: 'move', overwrite: true,
         pattern: "inferences-explained-*.json"
 
     input:
@@ -84,7 +88,9 @@ process EXPLANATIONS_TO_JSON {
 process MERGE_INFERRED_MAPPING_SETS {
     tag "Merge inferred MappingSet source union"
 
-    publishDir "${params.output_dir}/mappingSet", mode: 'copy', overwrite: true,
+    // 'move' for the same reason: the merged mappingSet is terminal (index-inferred reads it from
+    // the published dir). Tiny, so the disk win is negligible — kept consistent with the mapping side.
+    publishDir "${params.output_dir}/mappingSet", mode: 'move', overwrite: true,
         pattern: "inferences-mappingSet.json"
 
     input:
