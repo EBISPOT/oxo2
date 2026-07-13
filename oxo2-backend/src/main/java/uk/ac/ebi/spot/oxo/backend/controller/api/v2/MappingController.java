@@ -104,9 +104,17 @@ public class MappingController {
     @Operation(
             summary = "Search mappings",
             description = """
-                    Full mapping search: free-text queries over selected fields, column/advanced \
-                    field filters, multi-select inference-type filter, sorting, paging, and optional \
-                    same-SPO row collapsing.
+                    Full mapping search: free-text queries, column/advanced field filters, \
+                    multi-select inference-type filter, sorting, paging, and optional same-SPO row \
+                    collapsing.
+
+                    **Subject-side matching.** A mapping search is asked from the subject's \
+                    perspective, so each query term matches the subject side only: an IRI → \
+                    `subject_iri`, a CURIE → `subject_id` (prefix normalised), anything else → the \
+                    subject label field selected by `labelMatch`. Mappings *into* a term via a \
+                    strong (symmetric or inverted) predicate are still found, because the inference \
+                    closure materialises the reverse row. Use `queryFields` or the advanced field \
+                    queries to target other fields explicitly.
 
                     **Default predicate filtering.** By convention `rdfs:subClassOf` and \
                     `oboInOwl:hasDbXref` mappings are hidden by default, matched on the canonical \

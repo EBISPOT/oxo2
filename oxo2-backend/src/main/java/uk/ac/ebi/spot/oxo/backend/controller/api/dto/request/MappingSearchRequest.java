@@ -11,12 +11,15 @@ import java.util.List;
 @Schema(description = "Mapping-search request: free-text queries, filters, sorting and paging.")
 public class MappingSearchRequest {
 
-    @Schema(description = "Free-text query terms, OR-ed together and matched against `queryFields`.",
+    @Schema(description = "Search terms, OR-ed together. A mapping search is asked from the "
+            + "subject's perspective, so by default each term matches the subject side only: an IRI "
+            + "→ `subject_iri`, a CURIE → `subject_id` (prefix normalised), anything else → the "
+            + "subject label field selected by `labelMatch`.",
             example = "[\"diabetes\"]")
     private List<String> queries;
 
-    @Schema(description = "Fields the free-text `queries` are matched against. Defaults to the "
-            + "text-searchable fields when omitted.")
+    @Schema(description = "Fields the free-text `queries` are matched against, overriding the "
+            + "default subject-side matching.")
     private List<MappingEnum> queryFields;
     @Schema(description = "Fields to return for each mapping. Defaults to the minimal result set when omitted.")
     private List<MappingEnum> fieldList;
@@ -75,11 +78,11 @@ public class MappingSearchRequest {
     private boolean groupBySpo = false;
 
     // How free-text (label) queries are matched in the classified/normal path (ADR-0026). Only
-    // affects terms that are neither an IRI nor a CURIE; IRI/CURIE terms remain exact *_iri / *_id
-    // lookups regardless. Defaults to case-insensitive exact match when omitted.
-    @Schema(description = "How free-text label queries are matched: PARTIAL (analyzed subsequence), "
-            + "EXACT_CASE_INSENSITIVE (whole label, case-folded), or EXACT_CASE_SENSITIVE (whole "
-            + "label, case-sensitive). Ignored for IRI/CURIE terms.",
+    // affects terms that are neither an IRI nor a CURIE; IRI/CURIE terms remain exact subject_iri /
+    // subject_id lookups regardless (ADR-0030). Defaults to case-insensitive exact match when omitted.
+    @Schema(description = "How free-text label queries are matched against the subject label: "
+            + "PARTIAL (analyzed subsequence), EXACT_CASE_INSENSITIVE (whole label, case-folded), or "
+            + "EXACT_CASE_SENSITIVE (whole label, case-sensitive). Ignored for IRI/CURIE terms.",
             defaultValue = "EXACT_CASE_INSENSITIVE")
     private LabelMatchType labelMatch = LabelMatchType.DEFAULT;
 

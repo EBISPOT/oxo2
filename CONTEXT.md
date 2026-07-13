@@ -162,10 +162,22 @@ Affects `oxo2-dataload` (`subject_prefix` / `object_prefix` population + reindex
 (`/api/v2/ontologies`, the prefix-filtered `GET /api/v2/mappings?from=&to=` + `POST …/search`,
 `batch-map`, `?format=` export, the v1 `/api/search` adapter), and `oxo2-frontend` (from/to prefix
 selectors on the Search tab, batch + export UI).
+- **The default search matches the subject side only** — a mapping is a directed *subject → predicate
+→ object* statement, and a mapping search is asked from the subject's perspective, so the classified
+(default) search matches each term against the subject column alone (IRI → `subject_iri`, CURIE →
+`subject_id`, label → the subject label field the match mode picks) via the one `subjectSideClause`
+shared with batch mapping (ADR-0024) and the v1 adapter. Mappings *into* a term are still found when the
+predicate is strong — the closure ([ADR-0016](docs/adr/0016-single-pass-sssom-reasoning.md))
+materialises the symmetric/inverse row whose subject is the term — but weak, non-closed predicates
+(`skos:closeMatch`, `oboInOwl:hasDbXref`, …) become directional and are reached via the Advanced tab or
+the v1 listing. The Advanced tab, `queryFields` and column filters still target any field. Query-only
+change, no reindex. See [ADR-0030](docs/adr/0030-subject-side-default-search.md). Affects `oxo2-backend`
+(classified-query construction) and `oxo2-frontend` (search copy).
 - **Label matching in a normal search is a configurable mode** — a free-text (label) term in the
-classified/normal search matches by one of three modes: *partial* (the analyzed `*_label` subsequence
-match), *case-insensitive exact* (the whole label folded, via the `*_label_ci` `string_ci` field) — the
-**default** — or *case-sensitive exact* (`*_label_str`). IRI / CURIE terms stay exact `*_iri` / `*_id`
+classified/normal search matches the **subject** label ([ADR-0030](docs/adr/0030-subject-side-default-search.md))
+by one of three modes: *partial* (the analyzed `subject_label` subsequence match), *case-insensitive
+exact* (the whole label folded, via the `subject_label_ci` `string_ci` field) — the **default** — or
+*case-sensitive exact* (`subject_label_str`). IRI / CURIE terms stay exact `subject_iri` / `subject_id`
 lookups regardless, and the Advanced tab and batch-map / v1 paths are unaffected. Changing the default
 from partial to case-insensitive exact required a schema field + reindex. See
 [ADR-0026](docs/adr/0026-configurable-label-match-mode.md). Affects `oxo2-dataload` (`string_ci` field

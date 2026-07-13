@@ -220,25 +220,13 @@ public class SolrQueryBuilder {
         return mappingEnum.getField() + "_ci";
     }
 
-    /** The subject/object/predicate label fields a classified free-text clause targets, per match mode. */
-    private static String[] labelFieldsFor(LabelMatchType labelMatch) {
+    /** The subject label field a classified free-text clause targets, per match mode (ADR-0026). */
+    private static String subjectLabelFieldFor(LabelMatchType labelMatch) {
         LabelMatchType mode = labelMatch == null ? LabelMatchType.DEFAULT : labelMatch;
         return switch (mode) {
-            case PARTIAL -> new String[]{
-                    MappingEnum.SUBJECT_LABEL.getField(),
-                    MappingEnum.OBJECT_LABEL.getField(),
-                    MappingEnum.PREDICATE_LABEL.getField()
-            };
-            case EXACT_CASE_INSENSITIVE -> new String[]{
-                    textGeneralFieldAsCaseInsensitive(MappingEnum.SUBJECT_LABEL),
-                    textGeneralFieldAsCaseInsensitive(MappingEnum.OBJECT_LABEL),
-                    textGeneralFieldAsCaseInsensitive(MappingEnum.PREDICATE_LABEL)
-            };
-            case EXACT_CASE_SENSITIVE -> new String[]{
-                    textGeneralFieldAsString(MappingEnum.SUBJECT_LABEL),
-                    textGeneralFieldAsString(MappingEnum.OBJECT_LABEL),
-                    textGeneralFieldAsString(MappingEnum.PREDICATE_LABEL)
-            };
+            case PARTIAL -> MappingEnum.SUBJECT_LABEL.getField();
+            case EXACT_CASE_INSENSITIVE -> textGeneralFieldAsCaseInsensitive(MappingEnum.SUBJECT_LABEL);
+            case EXACT_CASE_SENSITIVE -> textGeneralFieldAsString(MappingEnum.SUBJECT_LABEL);
         };
     }
 
@@ -309,7 +297,7 @@ public class SolrQueryBuilder {
      * <ol>
      *   <li>advancedFieldQueries non-empty → AND-joined per-field clauses (Advanced tab).</li>
      *   <li>queryFields non-empty → legacy edismax/qf path (caller-pinned fields).</li>
-     *   <li>otherwise → classified-by-shape path (default search).</li>
+     *   <li>otherwise → classified-by-shape path (default search, subject side — ADR-0030).</li>
      * </ol>
      * Do not silently rewire — each path is independent and documented.
      */
@@ -357,8 +345,9 @@ public class SolrQueryBuilder {
      * Display query for batch term mapping: subjects matched to the given input terms (source-side
      * only — a batch input is a source, never an object), objects restricted to the target ontologies.
      * Each input is classified by shape (IRI → subject_iri, CURIE → subject_id, else label →
-     * subject_label) — the default search's classification, but on the subject side alone. Reuses the
-     * soft ranking, field list, default weak-predicate exclusion and same-SPO collapse of /search.
+     * subject_label) — the default search's subject-side classification (ADR-0030), pinned to partial
+     * label matching (batch-map does not expose the label-match mode, ADR-0026). Reuses the soft
+     * ranking, field list, default weak-predicate exclusion and same-SPO collapse of /search.
      */
     public static SolrQuery buildBatchMapQuery(List<String> terms, List<String> objectPrefixes,
                                                List<InferenceType> inferenceTypes, boolean groupBySpo,
@@ -401,10 +390,22 @@ public class SolrQueryBuilder {
     }
 
     /**
-     * The subject-side query clause for one input term, classified by shape, or null if blank. Public
-     * so the batch controller can recompute an input's clause to look up its {@code facet.query} count.
+     * The subject-side query clause for one input term, classified by shape with partial label
+     * matching, or null if blank. Public so the batch controller can recompute an input's clause to
+     * look up its {@code facet.query} count.
      */
     public static String subjectSideClause(String term) {
+        return subjectSideClause(term, LabelMatchType.PARTIAL);
+    }
+
+    /**
+     * The subject-side query clause for one term, classified by shape, or null if blank. IRI →
+     * subject_iri; CURIE → subject_id, normalised to its stored representation (prefix upper-cased)
+     * so a lower-cased input still matches; anything else → the subject label field the match mode
+     * selects (ADR-0026). The one classification behind the default search (ADR-0030), batch-map and
+     * the v1 adapter.
+     */
+    private static String subjectSideClause(String term, LabelMatchType labelMatch) {
         if (term == null) {
             return null;
         }
@@ -418,27 +419,18 @@ public class SolrQueryBuilder {
             field = MappingEnum.SUBJECT_IRI.getField();
             value = stripped;
         } else if (StringUtils.isCurie(stripped)) {
-            // Normalise the CURIE to its stored representation (prefix upper-cased) so a lower-cased
-            // input still matches the indexed subject_id.
             field = MappingEnum.SUBJECT_ID.getField();
             value = new EntityReference(stripped).getDataRepresentation()
                     .map(Object::toString).orElse(stripped);
         } else {
-            field = MappingEnum.SUBJECT_LABEL.getField();
+            field = subjectLabelFieldFor(labelMatch);
             value = stripped;
         }
         return "(" + field + ":\"" + ClientUtils.escapeQueryChars(value) + "\")";
     }
 
     private static String subjectSideDisjunction(List<String> terms) {
-        if (terms == null || terms.isEmpty()) {
-            return "*:*";
-        }
-        String query = terms.stream()
-                .map(SolrQueryBuilder::subjectSideClause)
-                .filter(Objects::nonNull)
-                .collect(Collectors.joining(" OR "));
-        return query.isEmpty() ? "*:*" : query;
+        return constructClassifiedQuery(terms, LabelMatchType.PARTIAL);
     }
 
     /**
@@ -735,9 +727,9 @@ public class SolrQueryBuilder {
     /**
      * True when the request explicitly constrains a predicate field — via a column filter or an
      * advanced field query carrying a non-blank value. Such a caller is asking about predicates
-     * directly, so the default weak-predicate exclusion is switched off for that request. Note the
-     * default (classified) search path that merely searches {@code predicate_*} alongside subject and
-     * object does <em>not</em> count: that is a broad term search, not an explicit predicate filter.
+     * directly, so the default weak-predicate exclusion is switched off for that request. The
+     * default (classified) search path never counts: it matches the subject side only (ADR-0030),
+     * so a main-box term can never constitute a predicate filter.
      */
     private static boolean hasExplicitPredicateFilter(MappingSearchRequest request) {
         List<MappingSearchRequest.ColumnFilter> columnFilters = request.getColumnFilters();
@@ -859,61 +851,25 @@ public class SolrQueryBuilder {
     }
 
     /**
-     * Default query construction. Classifies each term by shape and emits a parenthesised
-     * OR-clause across the type-appropriate fields:
-     * <ul>
-     *   <li>IRI ({@code http(s)://...}) → subject_iri / object_iri / predicate_iri</li>
-     *   <li>CURIE ({@code prefix:local}) → subject_id / object_id / predicate_id</li>
-     *   <li>Free text → subject_label / object_label / predicate_label (phrase match)</li>
-     * </ul>
-     * Quoting the value gives a TermQuery on {@code string} fields and a PhraseQuery on
-     * {@code text_general} fields after analysis.
+     * Default query construction. A mapping search is asked from the subject's perspective
+     * (ADR-0030), so each term becomes a {@link #subjectSideClause} — IRI → subject_iri, CURIE →
+     * subject_id (normalised to its stored representation), free text → the subject label field the
+     * match mode selects (ADR-0026) — and the clauses OR together. Mappings <em>into</em> a term via
+     * a strong predicate are still found: the inference closure materialises the symmetric/inverse
+     * row, whose subject is the term.
      */
     private static String constructClassifiedQuery(List<String> queries, LabelMatchType labelMatch) {
         if (queries == null || queries.isEmpty()) {
             return "*:*";
         }
 
-        List<String> clauses = new ArrayList<>();
-        for (String raw : queries) {
-            if (raw == null) continue;
-            String term = raw.strip();
-            if (term.isEmpty()) continue;
-
-            String escaped = ClientUtils.escapeQueryChars(term);
-            String[] fields;
-            if (StringUtils.isIri(term)) {
-                fields = new String[]{
-                        MappingEnum.SUBJECT_IRI.getField(),
-                        MappingEnum.OBJECT_IRI.getField(),
-                        MappingEnum.PREDICATE_IRI.getField()
-                };
-            } else if (StringUtils.isCurie(term)) {
-                fields = new String[]{
-                        MappingEnum.SUBJECT_ID.getField(),
-                        MappingEnum.OBJECT_ID.getField(),
-                        MappingEnum.PREDICATE_ID.getField()
-                };
-            } else {
-                // Free text: the match mode (ADR-0026) picks which label field to target — analyzed
-                // (_label), case-insensitive exact (_label_ci), or case-sensitive exact (_label_str).
-                fields = labelFieldsFor(labelMatch);
-            }
-
-            StringBuilder clause = new StringBuilder("(");
-            for (int i = 0; i < fields.length; i++) {
-                if (i > 0) clause.append(" OR ");
-                clause.append(fields[i]).append(":\"").append(escaped).append("\"");
-            }
-            clause.append(")");
-            clauses.add(clause.toString());
-        }
-
-        if (clauses.isEmpty()) {
+        String query = queries.stream()
+                .map(term -> subjectSideClause(term, labelMatch))
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining(" OR "));
+        if (query.isEmpty()) {
             return "*:*";
         }
-
-        String query = String.join(" OR ", clauses);
         logger.debug("Classified query string: {}", query);
         return query;
     }

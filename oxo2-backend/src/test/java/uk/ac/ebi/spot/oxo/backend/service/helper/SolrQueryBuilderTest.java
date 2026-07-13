@@ -248,31 +248,33 @@ class SolrQueryBuilderTest {
         // All paths now run under edismax so the inference ranking (ADR-0011) applies uniformly.
         assertThat(solrQuery.get(SolrConstants.DEF_TYPE)).isEqualTo(SolrConstants.EDISMAX);
         // Default label-match mode is EXACT_CASE_INSENSITIVE (ADR-0026), so free text routes to the
-        // *_label_ci fields, not the analyzed *_label fields.
+        // subject_label_ci field — subject side only (ADR-0030).
         assertThat(solrQuery.getQuery())
                 .contains(labelCi(MappingEnum.SUBJECT_LABEL) + ":\"diabetes\"")
-                .contains(labelCi(MappingEnum.OBJECT_LABEL) + ":\"diabetes\"")
-                .contains(labelCi(MappingEnum.PREDICATE_LABEL) + ":\"diabetes\"");
+                .doesNotContain(labelCi(MappingEnum.OBJECT_LABEL))
+                .doesNotContain(labelCi(MappingEnum.PREDICATE_LABEL));
     }
 
     // ---------- classified-query (default) path ----------
 
     @Test
-    void classifiedQueryRoutesIriToIriFields() {
+    void classifiedQueryRoutesIriToSubjectIriFieldOnly() {
         MappingSearchRequest request = baseRequest();
         request.setQueries(List.of("http://example.org/Foo"));
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
+        // Subject side only (ADR-0030) — the query must not fan out to the object/predicate fields.
+        // predicate_iri still appears in the weak-predicate exclusion fq, but never in q.
         assertThat(solrQuery.getQuery())
                 .contains(MappingEnum.SUBJECT_IRI.getField() + ":\"")
-                .contains(MappingEnum.OBJECT_IRI.getField() + ":\"")
-                .contains(MappingEnum.PREDICATE_IRI.getField() + ":\"")
+                .doesNotContain(MappingEnum.OBJECT_IRI.getField() + ":")
+                .doesNotContain(MappingEnum.PREDICATE_IRI.getField() + ":")
                 .doesNotContain(MappingEnum.SUBJECT_LABEL.getField() + ":\"");
     }
 
     @Test
-    void classifiedQueryRoutesCurieToIdFields() {
+    void classifiedQueryRoutesCurieToSubjectIdFieldOnly() {
         MappingSearchRequest request = baseRequest();
         request.setQueries(List.of("DOID:0014667"));
 
@@ -281,12 +283,26 @@ class SolrQueryBuilderTest {
         String escaped = ClientUtils.escapeQueryChars("DOID:0014667");
         assertThat(solrQuery.getQuery())
                 .contains(MappingEnum.SUBJECT_ID.getField() + ":\"" + escaped + "\"")
-                .contains(MappingEnum.OBJECT_ID.getField() + ":\"" + escaped + "\"")
-                .contains(MappingEnum.PREDICATE_ID.getField() + ":\"" + escaped + "\"");
+                .doesNotContain(MappingEnum.OBJECT_ID.getField() + ":")
+                .doesNotContain(MappingEnum.PREDICATE_ID.getField() + ":");
     }
 
     @Test
-    void partialMatchRoutesFreeTextToAnalyzedLabelFields() {
+    void classifiedQueryNormalisesCuriePrefixToStoredCase() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("doid:0014667"));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        // The classified path shares the batch subject-side classification (ADR-0030), so a
+        // lower-cased prefix is normalised to the stored representation before matching subject_id.
+        assertThat(solrQuery.getQuery())
+                .contains(MappingEnum.SUBJECT_ID.getField() + ":\""
+                        + ClientUtils.escapeQueryChars("DOID:0014667") + "\"");
+    }
+
+    @Test
+    void partialMatchRoutesFreeTextToAnalyzedSubjectLabelField() {
         MappingSearchRequest request = baseRequest();
         request.setQueries(List.of("diabetes mellitus"));
         request.setLabelMatch(LabelMatchType.PARTIAL);
@@ -296,15 +312,15 @@ class SolrQueryBuilderTest {
         String escaped = ClientUtils.escapeQueryChars("diabetes mellitus");
         assertThat(solrQuery.getQuery())
                 .contains(MappingEnum.SUBJECT_LABEL.getField() + ":\"" + escaped + "\"")
-                .contains(MappingEnum.OBJECT_LABEL.getField() + ":\"" + escaped + "\"")
-                .contains(MappingEnum.PREDICATE_LABEL.getField() + ":\"" + escaped + "\"")
+                .doesNotContain(MappingEnum.OBJECT_LABEL.getField() + ":")
+                .doesNotContain(MappingEnum.PREDICATE_LABEL.getField() + ":")
                 // Not the exact-match copies.
                 .doesNotContain(labelCi(MappingEnum.SUBJECT_LABEL))
                 .doesNotContain(labelStr(MappingEnum.SUBJECT_LABEL));
     }
 
     @Test
-    void caseInsensitiveExactIsTheDefaultAndRoutesFreeTextToCiFields() {
+    void caseInsensitiveExactIsTheDefaultAndRoutesFreeTextToSubjectCiField() {
         MappingSearchRequest request = baseRequest();
         request.setQueries(List.of("Diabetes Mellitus"));
         // No setLabelMatch(...) — the request default must be EXACT_CASE_INSENSITIVE (ADR-0026).
@@ -314,15 +330,15 @@ class SolrQueryBuilderTest {
         String escaped = ClientUtils.escapeQueryChars("Diabetes Mellitus");
         assertThat(solrQuery.getQuery())
                 .contains(labelCi(MappingEnum.SUBJECT_LABEL) + ":\"" + escaped + "\"")
-                .contains(labelCi(MappingEnum.OBJECT_LABEL) + ":\"" + escaped + "\"")
-                .contains(labelCi(MappingEnum.PREDICATE_LABEL) + ":\"" + escaped + "\"")
+                .doesNotContain(labelCi(MappingEnum.OBJECT_LABEL))
+                .doesNotContain(labelCi(MappingEnum.PREDICATE_LABEL))
                 // Not the analyzed nor case-sensitive fields.
                 .doesNotContain(MappingEnum.SUBJECT_LABEL.getField() + ":\"")
                 .doesNotContain(labelStr(MappingEnum.SUBJECT_LABEL));
     }
 
     @Test
-    void caseSensitiveExactRoutesFreeTextToStrFields() {
+    void caseSensitiveExactRoutesFreeTextToSubjectStrField() {
         MappingSearchRequest request = baseRequest();
         request.setQueries(List.of("Diabetes Mellitus"));
         request.setLabelMatch(LabelMatchType.EXACT_CASE_SENSITIVE);
@@ -332,8 +348,8 @@ class SolrQueryBuilderTest {
         String escaped = ClientUtils.escapeQueryChars("Diabetes Mellitus");
         assertThat(solrQuery.getQuery())
                 .contains(labelStr(MappingEnum.SUBJECT_LABEL) + ":\"" + escaped + "\"")
-                .contains(labelStr(MappingEnum.OBJECT_LABEL) + ":\"" + escaped + "\"")
-                .contains(labelStr(MappingEnum.PREDICATE_LABEL) + ":\"" + escaped + "\"")
+                .doesNotContain(labelStr(MappingEnum.OBJECT_LABEL))
+                .doesNotContain(labelStr(MappingEnum.PREDICATE_LABEL))
                 // Not the analyzed nor case-insensitive fields.
                 .doesNotContain(MappingEnum.SUBJECT_LABEL.getField() + ":\"")
                 .doesNotContain(labelCi(MappingEnum.SUBJECT_LABEL));
@@ -928,8 +944,8 @@ class SolrQueryBuilderTest {
     @Test
     void plainSearchMatchingPredicateDoesNotBypassWeakPredicateExclusion() {
         MappingSearchRequest request = baseRequest();
-        // Typing a CURIE into the main box routes to predicate_id (among subject/object) via the
-        // classified path — that is a broad search, not an explicit predicate filter, so the
+        // A CURIE typed into the main box routes to subject_id only (ADR-0030) — never a predicate
+        // field — so a plain search can never constitute an explicit predicate filter and the
         // exclusion must still apply.
         request.setQueries(List.of("rdfs:subClassOf"));
 

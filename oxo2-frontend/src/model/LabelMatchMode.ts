@@ -1,7 +1,8 @@
-// Label match mode (ADR-0026): how a free-text (label) query is matched in a normal search.
-// The codes match the backend LabelMatchType enum and are sent verbatim as the request
-// `labelMatch` and carried in the URL `match` param. Only free-text terms are affected; IRI/CURIE
-// terms are always exact *_iri / *_id lookups regardless of the mode.
+// Label match mode (ADR-0026): how a free-text (label) query is matched against the subject label
+// in a normal search (subject-side matching, ADR-0030). The codes match the backend LabelMatchType
+// enum and are sent verbatim as the request `labelMatch` and carried in the URL `match` param. Only
+// free-text terms are affected; IRI/CURIE terms are always exact subject_iri / subject_id lookups
+// regardless of the mode.
 
 export type LabelMatchMode = 'PARTIAL' | 'EXACT_CASE_INSENSITIVE' | 'EXACT_CASE_SENSITIVE';
 

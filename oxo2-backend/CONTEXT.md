@@ -184,17 +184,34 @@ query-time hop count ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-deman
 inert), so `MappingResponse.distance` is a coarse direct/indirect sentinel (`1` asserted, `2` inferred),
 not a true depth — a deliberate v1 break recorded in ADR-0024.
 
+#### Subject-side default search
+
+A mapping is a directed *subject → predicate → object* statement, and a mapping search is asked from
+the subject's perspective, so the classified/normal search (`constructClassifiedQuery`) matches the
+**subject side only** ([ADR-0030](../docs/adr/0030-subject-side-default-search.md)). Each term becomes
+a `subjectSideClause` — the one subject-side classifier shared with batch mapping (ADR-0024) and the
+v1 `/api/search` adapter: an IRI → `subject_iri`, a CURIE → `subject_id` (normalised to its stored
+prefix casing via `EntityReference`), anything else → the subject label field the `labelMatch` mode
+selects. Terms OR together. The Advanced tab, `queryFields` and column filters still reach the object
+and predicate fields — subject-side matching is only the *default* path.
+
+Mappings *into* a term are not lost when the predicate is strong: the inference closure
+([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)) materialises the symmetric/inverse row
+(the four equivalence predicates, `skos:exactMatch`, broad/narrow and crossSpecies inverses), whose
+subject is the term. Weak predicates (`skos:closeMatch`, `skos:relatedMatch`, `oboInOwl:hasDbXref`,
+`rdfs:seeAlso`) are not closed, so a term appearing only as the *object* of a weak predicate is
+directional and reached through the Advanced tab or the v1 listing instead.
+
 #### Free-text label matching
 
-A classified/normal search (`constructClassifiedQuery`) routes each free-text term to an OR over the
-subject/object/predicate fields. An IRI term goes to `*_iri` and a CURIE to `*_id` (both exact
-`string` lookups); a plain **label** term goes to a label field chosen by the request's `labelMatch`
-(`LabelMatchType`, default `EXACT_CASE_INSENSITIVE`): `PARTIAL` → the analyzed `*_label`
-(`text_general`, subsequence phrase), `EXACT_CASE_INSENSITIVE` → `*_label_ci` (`string_ci` = keyword
-+ lowercase + trim, whole label case-folded), `EXACT_CASE_SENSITIVE` → `*_label_str` (`string`, whole
-label byte-for-byte). The value is quoted and `ClientUtils`-escaped in every mode. The mode affects
-only the label branch — never IRI/CURIE routing, the Advanced tab, or batch-map/v1. The `*_label_ci`
-fields require a reindex to populate. See [ADR-0026](../docs/adr/0026-configurable-label-match-mode.md).
+A plain **label** term (neither IRI nor CURIE) goes to a subject label field chosen by the request's
+`labelMatch` (`LabelMatchType`, default `EXACT_CASE_INSENSITIVE`): `PARTIAL` → the analyzed
+`subject_label` (`text_general`, subsequence phrase), `EXACT_CASE_INSENSITIVE` → `subject_label_ci`
+(`string_ci` = keyword + lowercase + trim, whole label case-folded), `EXACT_CASE_SENSITIVE` →
+`subject_label_str` (`string`, whole label byte-for-byte). The value is quoted and `ClientUtils`-escaped
+in every mode. The mode affects only the label branch — never IRI/CURIE routing, the Advanced tab, or
+batch-map/v1. The `*_label_ci` fields require a reindex to populate. See
+[ADR-0026](../docs/adr/0026-configurable-label-match-mode.md).
 
 #### Column-filter matching
 
