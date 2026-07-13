@@ -45,7 +45,16 @@ class OpenApiDocsTest {
                 .andExpect(jsonPath("$.paths['/api/v2/mappings'].get").exists())
                 .andExpect(jsonPath("$.paths['/api/v2/mappings/batch-map'].post").exists())
                 .andExpect(jsonPath("$.paths['/api/search'].post").exists())
-                .andExpect(jsonPath("$.paths['/api/mappings'].get").exists());
+                .andExpect(jsonPath("$.paths['/api/mappings'].get").exists())
+                // SSSOM-API surface (ADR-0032).
+                .andExpect(jsonPath("$.paths['/api/sssom/mappings'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/sssom/mappings/{id}'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/sssom/entities'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/sssom/mapping_sets'].get").exists())
+                // set-scoped mappings are a mapping_set_id query param on /mappings, not a sub-path
+                .andExpect(jsonPath(
+                        "$.paths['/api/sssom/mappings'].get.parameters[?(@.name=='mapping_set_id')]").exists())
+                .andExpect(jsonPath("$.paths['/api/sssom/stats'].get").exists());
     }
 
     @Test

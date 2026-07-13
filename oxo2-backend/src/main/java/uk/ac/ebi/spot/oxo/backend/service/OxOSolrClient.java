@@ -91,6 +91,27 @@ public class OxOSolrClient {
         return new MappingSearchResponse(mappingPage);
     }
 
+    /**
+     * Page of mappings plus the raw {@link QueryResponse}, so the SSSOM-API surface (ADR-0032) can read
+     * the facet/stats components that fill its envelope's {@code facets} block off the same query — one
+     * round trip settles both the page and the facets.
+     */
+    public record SssomMappingResult(Page<Mapping> page, QueryResponse response) {
+    }
+
+    /**
+     * Run a SSSOM-API mapping query, returning the collapsed-or-flat page (the same page-building the
+     * v2 search uses) together with the {@link QueryResponse} carrying the facets.
+     */
+    public SssomMappingResult querySssomMappings(SolrParams params, Pageable pageable) throws Exception {
+        QueryResponse response = solrMappingClient.query(params);
+        boolean collapsed = params.getBool(SolrConstants.EXPAND, false);
+        Page<Mapping> mappingPage = collapsed
+                ? buildCollapsedPage(response, pageable)
+                : buildFlatPage(response, pageable);
+        return new SssomMappingResult(mappingPage, response);
+    }
+
     private Page<Mapping> buildFlatPage(QueryResponse response, Pageable pageable) {
         List<Mapping> mappings = response.getBeans(Mapping.Builder.class).stream()
                 .map(Mapping.Builder::build)

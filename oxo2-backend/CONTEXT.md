@@ -73,6 +73,34 @@ the literal v1 paths (not under `/api/v2`), in `controller/api/v1/`:
   dropped. Read-only; v1's create/delete verbs and `/{id}` / `/summary` are not ported. See
   [ADR-0025](../docs/adr/0025-v1-mappings-listing-compatibility.md).
 
+### SSSOM-API compatibility (`/api/sssom`)
+
+A third surface implements the [mapping-commons SSSOM API spec](https://github.com/mapping-commons/sssom-api),
+so ecosystem tooling can point at OxO2 with a base-URL change. See
+[ADR-0032](../docs/adr/0031-sssom-spec-api.md); in `controller/api/sssom/`. Every list endpoint returns
+the reference envelope `{data, pagination, facets}` with **1-based** `page` / `limit` (default 20, max
+100) and absolute previous/next links; same-SPO rows are collapsed and no predicate is hidden by
+default. `?format=sssom-tsv` / `tsv` / `csv` streams an SSSOM file (an OxO2 extension).
+
+- **`GET /api/sssom/mappings?filter=field|operator|value`** — repeatable, AND-joined filters.
+  Operators `eq` / `ge` / `gt` / `le` / `lt` / `contains`; `field` is any SSSOM or OxO2 extension slot.
+- **`GET /api/sssom/mappings/{id}`** — one mapping by `mapping_id` (bare mapping, not the envelope; 404).
+- **`GET /api/sssom/mappings/{field}/{*value}`** — the equality shorthand of the filter grammar.
+- **`POST /api/sssom/entities`** — body `{curies, mapping_justification?, predicate_id?}`; mappings
+  where a curie is the subject **or** object.
+- **`GET /api/sssom/mapping_sets?filter=…`** — the mapping sets (stored slots; no facets block).
+- **`GET /api/sssom/mappings?mapping_set_id=<IRI>`** — the mappings of one set. The reference nests
+  these as `/mapping_sets/{id}/mappings`, but the id is a full IRI (unusable as a path variable) and the
+  result is mappings, not sets — so the scope is a `mapping_set_id` filter on `/mappings`, equivalent to
+  `filter=mapping_set_id|eq|<IRI>`.
+- **`GET /api/sssom/stats`** — `{nb_mapping, nb_mapping_set, nb_mapping_provider, nb_entity}`;
+  `nb_entity` is a HLL estimate over the `entity_id` copy-field, low until the next full dataload.
+
+`SssomQueryBuilder` builds the Solr queries (reusing `SolrQueryBuilder`'s provenance ranking and
+same-SPO collapse), `SssomResultMapper` assembles the envelope, and `SssomMappingService` centralises
+paging / faceting / linking / export for the mapping-returning endpoints. Facets come from Solr's
+facet/stats components on the same query as the page — never by streaming rows, unlike the reference.
+
 ### API documentation (OpenAPI / Swagger)
 
 The API is self-described via springdoc-openapi. The generated OpenAPI 3 spec is served at
