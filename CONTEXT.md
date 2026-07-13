@@ -184,6 +184,19 @@ from partial to case-insensitive exact required a schema field + reindex. See
 type + `*_label_ci` fields + reindex), `oxo2-shared` (`LabelMatchType`), `oxo2-backend` (`labelMatch`
 request field + classified-query field selection), and `oxo2-frontend` (the match-mode control on the
 Search tab, carried in the URL `?match=`).
+- **OxO2 exposes the mapping-commons SSSOM API at `/api/sssom`** — a third API surface (beside
+`/api/v2` and the v1 compat paths) implementing the [SSSOM spec](https://github.com/mapping-commons/sssom-api):
+`/mappings` (with a `filter=field|operator|value` grammar, plus a `mapping_set_id` param scoping to one
+set — the reference's `/mapping_sets/{id}/mappings`), `/mappings/{id}`, `/mappings/{field}/{value}`,
+`/entities`, `/mapping_sets` and `/stats`. Matches the reference envelope
+`{data, pagination, facets}` (1-based `page`/`limit`, absolute links, Solr-native facets) and fixes its
+pathologies (400 not 302; facets from the facet/stats components, not a full result-set scan). Serves
+asserted **and** inferred mappings with their extension slots, same-SPO collapsed, hiding no predicate.
+Reuses the provenance ranking and collapse of the v2 search. `nb_entity` in `/stats` is a HLL estimate
+over a new additive `entity_id` copy-field (subject ∪ object) that is empty until the next full dataload.
+See [ADR-0032](docs/adr/0032-sssom-spec-api.md). Affects `oxo2-backend` (`controller/api/sssom/`,
+`SssomQueryBuilder` / `SssomResultMapper`, `server.forward-headers-strategy`) and `oxo2-dataload`
+(the `entity_id` field + copyFields on the mappings schema).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **The dataload is resumable from a chosen (sub)stage** — parameterised by `START_STAGE` (default

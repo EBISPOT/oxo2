@@ -325,7 +325,7 @@ public class SolrQueryBuilder {
      * reflect only what passed the inference-type filter. The main sort (set above) orders the
      * representatives, with {@code spo_key} appended as a total-order tiebreaker so paging is stable.
      */
-    private static void applySpoGrouping(SolrQuery solrQuery) {
+    public static void applySpoGrouping(SolrQuery solrQuery) {
         String spoKey = MappingEnum.SPO_KEY.getField();
         solrQuery.addFilterQuery(String.format(
                 SolrConstants.COLLAPSE_FQ_TEMPLATE, spoKey, SolrConstants.REPRESENTATIVE_SORT));
@@ -943,7 +943,7 @@ public class SolrQueryBuilder {
      * curated above inferred, and shorter inference chains above longer ones — without a hard filter
      * or sort.
      */
-    private static void applyProvenanceRanking(SolrQuery solrQuery) {
+    public static void applyProvenanceRanking(SolrQuery solrQuery) {
         solrQuery.set(SolrConstants.BOOST, RANKING_BOOST);
     }
 }

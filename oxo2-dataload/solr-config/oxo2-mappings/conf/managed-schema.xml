@@ -553,6 +553,12 @@
        (never retrieved directly). A bare IRI with no CURIE prefix leaves these empty. -->
   <field name="subject_prefix" type="string" multiValued="false" indexed="true" stored="false" docValues="true"/>
   <field name="object_prefix" type="string" multiValued="false" indexed="true" stored="false" docValues="true"/>
+  <!-- Both sides' entity ids unioned into one multiValued field, so the SSSOM-API /stats endpoint
+       (ADR-0031) can estimate the distinct-entity count with a single unique(entity_id) aggregation.
+       Populated by copyField from subject_id + object_id; docValues for the aggregation, not stored
+       (never retrieved). Empty on docs indexed before this field was added, exactly as
+       mapping_set_category was — nb_entity reads low until the next full dataload repopulates it. -->
+  <field name="entity_id" type="strings" multiValued="true" indexed="false" stored="false" docValues="true"/>
   <field name="subject_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_source" type="string" multiValued="false" indexed="true" stored="true"/>
@@ -655,5 +661,8 @@
   <copyField source="subject_label" dest="subject_label_str" maxChars="256"/>
   <copyField source="subject_label" dest="subject_label_ngram" maxChars="256"/>
   <copyField source="subject_label" dest="subject_label_ci" maxChars="256"/>
+  <!-- Union subject_id and object_id into entity_id for the /stats distinct-entity estimate (ADR-0031). -->
+  <copyField source="subject_id" dest="entity_id"/>
+  <copyField source="object_id" dest="entity_id"/>
 </schema>
 
