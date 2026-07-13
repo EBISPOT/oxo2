@@ -410,6 +410,33 @@ code {
   font-weight: 700;
 }
 
+/* Source-set footer of an asserted node: names the mapping set the asserted premise came from.
+   Mirrors the inferred node's rule footer — a dashed divider, an uppercase label, then the full
+   mapping-set IRI wrapped (overflow-wrap) so it is never clipped, rather than truncated to one line. */
+.mapping-node-source {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(159, 41, 35, 0.4);
+  text-align: left;
+}
+
+.mapping-node-source-label {
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9f2923;
+}
+
+.mapping-node-source-value {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #4a2a08;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 /* Chain-rule footer rendered inside an inferred node, below the S/P/O rows.
    The rule is split into one line per part (see splitRuleIntoLines) so it no longer stretches
    the node onto a single line or overlaps the incoming premise edges and their arrowheads. */
@@ -421,6 +448,17 @@ code {
   line-height: 1.35;
   color: #7a5c0f;
   text-align: left;
+}
+
+/* Section heading naming the rule footer, so users recognise the bottom block of an inferred node
+   as the chain rule that produced the conclusion rather than more mapping fields. */
+.mapping-node-rule-label {
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b0893a;
 }
 
 /* One complete rule part: a parenthesised triple, optionally led by the implication arrow or

@@ -74,6 +74,7 @@ const ESTIMATED_CHARS_PER_LINE = 30;
 const RULE_CHARS_PER_LINE = 46;
 const RULE_LINE_HEIGHT = 15;
 const RULE_FOOTER_PADDING = 14; // separator margin + padding above the wrapped rule text
+const RULE_LABEL_HEIGHT = 16; // the "Rule applied" heading above the wrapped rule text
 
 // All nodes share a fixed width. The chain-rule text wraps inside the node rather than
 // stretching it onto a single non-wrapping line, which previously produced very wide,
@@ -129,7 +130,17 @@ function estimateRuleFooterHeight(node: Node): number {
     const visualLineCount = splitRuleIntoLines(node.data.chainRule).reduce((count, line) => {
         return count + Math.max(1, Math.ceil(line.length / RULE_CHARS_PER_LINE));
     }, 0);
-    return RULE_FOOTER_PADDING + Math.max(1, visualLineCount) * RULE_LINE_HEIGHT;
+    return RULE_FOOTER_PADDING + RULE_LABEL_HEIGHT + Math.max(1, visualLineCount) * RULE_LINE_HEIGHT;
+}
+
+function estimateSourceFooterHeight(node: Node): number {
+    if (node.type !== 'asserted' || !node.data.mappingSet) {
+        return 0;
+    }
+    // The full mapping-set IRI wraps inside the node (see CustomNodeAsserted); reserve space for the
+    // "Source set" label plus the wrapped IRI so dagre sizes the node to fit it, matching the rule footer.
+    const wrappedLineCount = Math.max(1, Math.ceil(node.data.mappingSet.length / RULE_CHARS_PER_LINE));
+    return RULE_FOOTER_PADDING + RULE_LABEL_HEIGHT + wrappedLineCount * RULE_LINE_HEIGHT;
 }
 
 function estimateWrappedLineCount(text: string): number {
@@ -141,12 +152,10 @@ function estimateWrappedLineCount(text: string): number {
 function estimateNodeHeight(node: Node): number {
     const labelHeight = estimateWrappedLineCount(node.data.label) * NODE_LINE_HEIGHT;
     const chainRuleHeight = estimateRuleFooterHeight(node);
-    // Asserted nodes carry an extra source-mapping-set line.
-    const sourceLabelHeight = node.type === 'asserted' && node.data.mappingSet
-        ? NODE_LINE_HEIGHT
-        : 0;
+    // Asserted nodes carry a labelled source-mapping-set footer that wraps the full IRI.
+    const sourceFooterHeight = estimateSourceFooterHeight(node);
 
-    return Math.max(MIN_NODE_HEIGHT, labelHeight + NODE_VERTICAL_PADDING + chainRuleHeight + sourceLabelHeight);
+    return Math.max(MIN_NODE_HEIGHT, labelHeight + NODE_VERTICAL_PADDING + chainRuleHeight + sourceFooterHeight);
 }
 
 const layoutElements = (nodes: Node[], edges: Edge[], direction = 'BT') => {
@@ -325,6 +334,7 @@ function CustomNodeInferred({ data }: { data: CustomNodeData }) {
             <MappingNodeContent data={data} />
             {ruleLines.length > 0 && (
                 <div className="mapping-node-rule">
+                    <div className="mapping-node-rule-label">Rule applied</div>
                     {ruleLines.map((line, index) => {
                         const isBody = bodyStartIndex !== -1 && index >= bodyStartIndex;
                         const lineClass = isBody
@@ -358,19 +368,11 @@ function CustomNodeAsserted({ data }: { data: CustomNodeData }) {
             <div className="mapping-node-badge mapping-node-badge-asserted">Asserted</div>
             <MappingNodeContent data={data} />
             {data.mappingSet && (
-                <div
-                    className="mapping-node-source"
-                    title={data.mappingSet}
-                    style={{
-                        maxWidth: data.width ? data.width - 24 : 260,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        fontSize: "11px",
-                        color: "#555",
-                    }}
-                >
-                    from {data.mappingSet}
+                <div className="mapping-node-source">
+                    <div className="mapping-node-source-label">Source mapping set</div>
+                    <div className="mapping-node-source-value" title={data.mappingSet}>
+                        {data.mappingSet}
+                    </div>
                 </div>
             )}
         </div>
