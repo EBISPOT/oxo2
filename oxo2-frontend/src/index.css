@@ -410,24 +410,92 @@ code {
   font-weight: 700;
 }
 
-.handle-label {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: small;
+/* Source-set footer of an asserted node: names the mapping set the asserted premise came from.
+   Mirrors the inferred node's rule footer — a dashed divider, an uppercase label, then the full
+   mapping-set IRI wrapped (overflow-wrap) so it is never clipped, rather than truncated to one line. */
+.mapping-node-source {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(159, 41, 35, 0.4);
+  text-align: left;
+}
+
+.mapping-node-source-label {
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: #9f2923;
-  pointer-events: none;
-  user-select: none;
-  z-index: 2;
-  width: 100%;
-  white-space: nowrap;
-  overflow-wrap: normal;
 }
 
-.handle-label-top {
-  top: -18px;
+.mapping-node-source-value {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #4a2a08;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
-.handle-label-bottom {
-  bottom: -18px;
+/* Chain-rule footer rendered inside an inferred node, below the S/P/O rows.
+   The rule is split into one line per part (see splitRuleIntoLines) so it no longer stretches
+   the node onto a single line or overlaps the incoming premise edges and their arrowheads. */
+.mapping-node-rule {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(184, 142, 27, 0.55);
+  font-size: 11px;
+  line-height: 1.35;
+  color: #7a5c0f;
+  text-align: left;
+}
+
+/* Section heading naming the rule footer, so users recognise the bottom block of an inferred node
+   as the chain rule that produced the conclusion rather than more mapping fields. */
+.mapping-node-rule-label {
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b0893a;
+}
+
+/* One complete rule part: a parenthesised triple, optionally led by the implication arrow or
+   trailed by its separating comma. Kept whole on one line where it fits, so a matching '(' and
+   ')' never split across lines; only a part too long for the node width wraps, as a last resort. */
+.mapping-node-rule-line {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Head (conclusion) of the rule: emphasised so it stands apart from the premises. */
+.mapping-node-rule-head {
+  font-weight: 700;
+  color: #4a3707;
+}
+
+/* Body (premises) of the rule: muted and indented, subordinate to the head above. The whole body
+   block is indented from the head; every premise line shares this left gutter so the triples align
+   under one another, and the arrow hangs back into the gutter (see .mapping-node-rule-arrow) rather
+   than pushing the first triple out of alignment. */
+.mapping-node-rule-body {
+  font-weight: 400;
+  color: #977b3c;
+  padding-left: 30px;
+}
+
+/* The implication arrow, enlarged and coloured so the head/body break is obvious at a glance.
+   It hangs left into the premise gutter (margin-left = -(width + margin-right)) so the triple that
+   follows it lines up with the premise triples on the lines below. */
+.mapping-node-rule-arrow {
+  display: inline-block;
+  width: 16px;
+  margin-left: -18px;
+  margin-right: 2px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  color: #9f2923;
 }
