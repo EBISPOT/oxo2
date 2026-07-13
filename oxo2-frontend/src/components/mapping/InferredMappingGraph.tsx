@@ -63,25 +63,73 @@ interface GraphData {
 
 type CoordinateExtent = [[number, number], [number, number]];
 
-const minNodeWidth = 280;
+const NODE_WIDTH = 340;
 
-const CHAIN_RULE_LABEL_HEIGHT = 18; // Height of the label extending below node
 const MIN_NODE_HEIGHT = 60; // Minimum height for nodes with 3 lines of text
 const NODE_LINE_HEIGHT = 18;
 const NODE_VERTICAL_PADDING = 34;
-const ESTIMATED_CHARS_PER_LINE = 34;
-const CHAIN_RULE_CHAR_WIDTH = 7;
-const CHAIN_RULE_HORIZONTAL_PADDING = 24;
+const ESTIMATED_CHARS_PER_LINE = 30;
+// The chain-rule footer wraps inside the node (see CustomNodeInferred); estimate its
+// rendered height from the wrapped line count so dagre reserves vertical space for it.
+const RULE_CHARS_PER_LINE = 46;
+const RULE_LINE_HEIGHT = 15;
+const RULE_FOOTER_PADDING = 14; // separator margin + padding above the wrapped rule text
 
-function estimateNodeWidth(node: Node): number {
-    if (node.type !== 'inferred' || !node.data.chainRule) {
-        return minNodeWidth;
+// All nodes share a fixed width. The chain-rule text wraps inside the node rather than
+// stretching it onto a single non-wrapping line, which previously produced very wide,
+// lopsided nodes and a sprawling layout.
+function estimateNodeWidth(): number {
+    return NODE_WIDTH;
+}
+
+// Split a chain-rule string into display lines at top-level (depth-0) boundaries so that each
+// parenthesised triple stays intact — a matching '(' and ')' always land on the same line, which
+// makes the rule far easier to read than arbitrary browser wrapping. The implication arrow starts
+// a new line (it introduces the rule body); a top-level comma (which separates body atoms) ends
+// the line it closes. Example:
+//   (a, P, c) ← (a, P, b), (b, P, c)
+// becomes
+//   (a, P, c)
+//   ← (a, P, b),
+//   (b, P, c)
+function splitRuleIntoLines(rule: string): string[] {
+    const lines: string[] = [];
+    let current = '';
+    let depth = 0;
+    for (const char of rule) {
+        if (char === '←' && depth === 0) {
+            if (current.trim()) {
+                lines.push(current.trim());
+            }
+            current = char;
+            continue;
+        }
+        if (char === '(') {
+            depth++;
+        } else if (char === ')') {
+            depth--;
+        }
+        current += char;
+        if (char === ',' && depth === 0) {
+            lines.push(current.trim());
+            current = '';
+        }
     }
+    if (current.trim()) {
+        lines.push(current.trim());
+    }
+    return lines;
+}
 
-    return Math.max(
-        minNodeWidth,
-        node.data.chainRule.length * CHAIN_RULE_CHAR_WIDTH + CHAIN_RULE_HORIZONTAL_PADDING
-    );
+function estimateRuleFooterHeight(node: Node): number {
+    if (node.type !== 'inferred' || !node.data.chainRule) {
+        return 0;
+    }
+    // Each rule part occupies its own line; a part longer than the node width wraps further.
+    const visualLineCount = splitRuleIntoLines(node.data.chainRule).reduce((count, line) => {
+        return count + Math.max(1, Math.ceil(line.length / RULE_CHARS_PER_LINE));
+    }, 0);
+    return RULE_FOOTER_PADDING + Math.max(1, visualLineCount) * RULE_LINE_HEIGHT;
 }
 
 function estimateWrappedLineCount(text: string): number {
@@ -92,9 +140,7 @@ function estimateWrappedLineCount(text: string): number {
 
 function estimateNodeHeight(node: Node): number {
     const labelHeight = estimateWrappedLineCount(node.data.label) * NODE_LINE_HEIGHT;
-    const chainRuleHeight = node.type === 'inferred' && node.data.chainRule
-        ? CHAIN_RULE_LABEL_HEIGHT
-        : 0;
+    const chainRuleHeight = estimateRuleFooterHeight(node);
     // Asserted nodes carry an extra source-mapping-set line.
     const sourceLabelHeight = node.type === 'asserted' && node.data.mappingSet
         ? NODE_LINE_HEIGHT
@@ -108,16 +154,16 @@ const layoutElements = (nodes: Node[], edges: Edge[], direction = 'BT') => {
     const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
     dagreGraph.setGraph({
         rankdir: direction, // Direction: BT (bottom-top), TB, LR, RL
-        nodesep: 200,        // Space between nodes
-        ranksep: 80,       // Space between ranks
+        nodesep: 70,         // Space between sibling nodes (uniform node width, so keep tight)
+        ranksep: 90,         // Space between ranks
         marginx: 20,        // Horizontal margin
         marginy: 20,         // Vertical margin
-        edgesep: 50 
+        edgesep: 30
     });
 
     
     nodes.forEach((node) => {
-        const width = estimateNodeWidth(node);
+        const width = estimateNodeWidth();
         const height = estimateNodeHeight(node);
         node.data.width = width;
         node.data.height = height;
@@ -152,7 +198,7 @@ function getGraphExtent(nodes: Node[], padding = 240): CoordinateExtent {
     }
 
     const bounds = nodes.reduce((acc, node) => {
-        const width = node.data.width ?? minNodeWidth;
+        const width = node.data.width ?? NODE_WIDTH;
         const height = node.data.height ?? MIN_NODE_HEIGHT;
 
         return {
@@ -267,19 +313,38 @@ function MappingNodeContent({ data }: { data: CustomNodeData }) {
 }
 
 function CustomNodeInferred({ data }: { data: CustomNodeData }) {
+    // Distinguish the rule's head (conclusion) from its body (premises): the head is every line
+    // before the implication arrow, the body is the arrow line and everything after it. The head
+    // is emphasised, the body muted and indented, and the arrow itself enlarged/coloured.
+    const ruleLines = data.chainRule ? splitRuleIntoLines(data.chainRule) : [];
+    const bodyStartIndex = ruleLines.findIndex(line => line.startsWith('←'));
     return (
         <div className="custom-node-inferred" style={{ position: "relative", width: data.width }}>
-            <div style={{ position: "relative", height: 0 }}>
-                <Handle type="source" position={Position.Top} />
-            </div>
+            <Handle type="source" position={Position.Top} />
             <div className="mapping-node-badge mapping-node-badge-inferred">Inferred</div>
             <MappingNodeContent data={data} />
-            <div className="handle-label handle-label-bottom" >
-                <Handle type="target" position={Position.Bottom}/>
-                {data.chainRule && (
-                    <div>{data.chainRule}</div>
-                )}
-            </div>
+            {ruleLines.length > 0 && (
+                <div className="mapping-node-rule">
+                    {ruleLines.map((line, index) => {
+                        const isBody = bodyStartIndex !== -1 && index >= bodyStartIndex;
+                        const lineClass = isBody
+                            ? "mapping-node-rule-line mapping-node-rule-body"
+                            : "mapping-node-rule-line mapping-node-rule-head";
+                        if (line.startsWith('←')) {
+                            // Drop the arrow and the space after it: the arrow renders in its own
+                            // hanging gutter (with margin-right for the gap), so the triple must
+                            // start flush at the gutter to align with the premise lines below it.
+                            return (
+                                <div key={index} className={lineClass}>
+                                    <span className="mapping-node-rule-arrow">←</span>{line.slice(1).trimStart()}
+                                </div>
+                            );
+                        }
+                        return <div key={index} className={lineClass}>{line}</div>;
+                    })}
+                </div>
+            )}
+            <Handle type="target" position={Position.Bottom} />
         </div>
     );
 }
