@@ -94,7 +94,29 @@ Deliberate choices and deviations from the reference, all documented on the endp
   filter on a field absent from the sets collection would make Solr fault ("undefined field").
 - The reference's per-request facet cost (a full result-set scan) does not apply: OxO2's facets are
   Solr-native and bounded, so a filter that matches millions of rows still facets in one cheap pass.
-- **Not yet exercised against a live Solr.** The query shapes, envelope, facet/stats wiring, paging and
-  error semantics are covered by unit and full-context Spring tests, but the Solr-side semantics
-  (`json.facet unique(entity_id)`, `stats.field` on the confidence point field, collapse+facet
-  interaction, range syntax) should be smoke-tested against a loaded index before release.
+- **Verified against a live Solr (2026-07-13).** A local `oxo-config-test.json` dataload (186,073
+  mappings across 3 sets — 184,232 asserted + 1,841 SSSOM-inferred — with the new `entity_id`
+  copy-field populated) was smoke-tested end to end, exercising the Solr-side semantics the unit and
+  full-context Spring tests could not. Every endpoint returns the documented shapes: the
+  `{data, pagination, facets}` envelope with correct absolute paging links; the `filter=` operators
+  (`eq`, `ge`, `gt`, `le`, `lt`, `contains`) AND-joined with the `mapping_set_id` scope;
+  `/mappings/{id}`; the `{field}/{value}` shorthand; `POST /entities` matching subject **or** object;
+  `/mapping_sets`; the `?format=sssom-tsv` full-set export (streams the whole matching set, honouring
+  filters/scope); and `400`s for a bad filter/field/operator and bad paging. `/stats` resolves the
+  machinery that was the main unverified risk: `nb_entity` via `json.facet unique(entity_id)` returned
+  171,329, matching a direct Solr query exactly — the `entity_id` field was populated on this load, so
+  the reindex caveat above did not bite. Three behaviours could not be exercised because this
+  fixture's data lacks the inputs, not because the code is untested:
+  - **Same-SPO collapse dedup.** This corpus has zero same-SPO collisions (`matches == ngroups ==
+    186073`), so the collapse post-filter runs (`group_members` populated) but never merges two rows.
+    The `total_items = group count` arithmetic is confirmed to return correct counts, but the dedup
+    itself stays unobserved; a fixture with overlapping triples is needed to prove it.
+  - **Confidence facet/stats/range with real values.** No document carries a `confidence`, so the
+    `stats.field` min/max come back null and `confidence|ge|…` returns 0 — the empty path is graceful,
+    but a populated confidence field is unproven.
+  - **`distance > 1`.** Every mapping is `distance=1` (no ≥3-ontology chains), so ADR-0031's span is
+    not observable on this corpus.
+- **Two minor rough edges observed, not yet addressed.** Paging `400`s (`limit=0`, `page=0`, `page=-1`)
+  return an empty body while filter `400`s carry a message — a small inconsistency. And
+  `?format=sssom-tsv` silently ignores `limit`/`page` (correct for a full export, but undocumented on
+  the endpoint).
