@@ -77,7 +77,7 @@ the literal v1 paths (not under `/api/v2`), in `controller/api/v1/`:
 
 A third surface implements the [mapping-commons SSSOM API spec](https://github.com/mapping-commons/sssom-api),
 so ecosystem tooling can point at OxO2 with a base-URL change. See
-[ADR-0032](../docs/adr/0031-sssom-spec-api.md); in `controller/api/sssom/`. Every list endpoint returns
+[ADR-0032](../docs/adr/0032-sssom-spec-api.md); in `controller/api/sssom/`. Every list endpoint returns
 the reference envelope `{data, pagination, facets}` with **1-based** `page` / `limit` (default 20, max
 100) and absolute previous/next links; same-SPO rows are collapsed and no predicate is hidden by
 default. `?format=sssom-tsv` / `tsv` / `csv` streams an SSSOM file (an OxO2 extension).
