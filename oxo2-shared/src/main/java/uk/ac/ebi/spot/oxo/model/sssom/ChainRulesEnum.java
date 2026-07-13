@@ -20,13 +20,24 @@ public enum ChainRulesEnum {
     RCE1_1("RCE1-1", "(?a, ?p, ?c) <- (?a, <http://www.w3.org/2002/07/owl#equivalentClass>, ?b), (?b, ?p, ?c)",
             "(?a, ?p, ?c) <- (?a, <OWL:equivalentClass>, ?b), (?b, ?p, ?c)",
             false),
-    RCE1_2("RCE1-2", "(?a, ?p, ?c) <- (?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b), (?b, ?p, ?c)",
+    // Weak (skos:exactMatch) bridge in the leading position, split by predicate strength (ADR-0016):
+    // a strict-identity ?p caps the conclusion at skos:exactMatch (RCE1-2a); a hierarchy/crossSpecies
+    // ?p propagates unchanged (RCE1-2b). One entry per RCE1-2* rule in sssom.rls — the trace names
+    // them, so these names must stay in sync with those rule names exactly.
+    RCE1_2A("RCE1-2a", "(?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c) <- (?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b), (?b, ?p, ?c)",
+            "(?a, <SKOS:exactMatch>, ?c) <- (?a, <SKOS:exactMatch>, ?b), (?b, ?p, ?c)",
+            false),
+    RCE1_2B("RCE1-2b", "(?a, ?p, ?c) <- (?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b), (?b, ?p, ?c)",
             "(?a, ?p, ?c) <- (?a, <SKOS:exactMatch>, ?b), (?b, ?p, ?c)",
             false),
     RCE2_1("RCE2-1", "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <http://www.w3.org/2002/07/owl#equivalentClass>, ?c)",
             "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <OWL:equivalentClass>, ?c)",
             false),
-    RCE2_2("RCE2-2", "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c)",
+    // Weak (skos:exactMatch) bridge in the trailing position, split by predicate strength as above.
+    RCE2_2A("RCE2-2a", "(?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c) <- (?a, ?p, ?b), (?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c)",
+            "(?a, <SKOS:exactMatch>, ?c) <- (?a, ?p, ?b), (?b, <SKOS:exactMatch>, ?c)",
+            false),
+    RCE2_2B("RCE2-2b", "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c)",
             "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <SKOS:exactMatch>, ?c)",
             false),
     T1("T1",

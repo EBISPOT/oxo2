@@ -121,6 +121,11 @@
   "distance" : 1,
   "explanation" : {
     "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "(?a, ?p, ?c) <- (?a, <SKOS:exactMatch>, ?b), (?b, ?p, ?c)",
+        "chain_rule_long_form" : "(?a, ?p, ?c) <- (?a, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?b), (?b, ?p, ?c)",
+        "chain_rule_name" : "RCE1-2b"
+      },
       "premises" : [ {
         "chain_rule_applications" : {
           "chain_rule" : {
@@ -276,6 +281,11 @@
   "distance" : 1,
   "explanation" : {
     "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <SKOS:exactMatch>, ?c)",
+        "chain_rule_long_form" : "(?a, ?p, ?c) <- (?a, ?p, ?b), (?b, <http://www.w3.org/2004/02/skos/core#exactMatch>, ?c)",
+        "chain_rule_name" : "RCE2-2b"
+      },
       "premises" : [ {
         "chain_rule_applications" : {
           "chain_rule" : {
