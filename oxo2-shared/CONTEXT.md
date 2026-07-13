@@ -53,7 +53,8 @@ See the class Javadoc for the SSSOM Mapping spec link.
 `InferredMapping` is a class (not a record) and carries:
 - subject/predicate/object IDs, IRIs, and labels;
 - `mapping_set_id` (per [ADR-0001](../docs/adr/0001-inference-scope-per-mapping-set.md) — every inferred mapping is scoped to one set);
-- `distance` (default 1) — the hop count along the chain;
+- `distance` (default 1) — the mapping's ontology span: distinct CURIE prefixes across the explanation
+  DAG minus one, floored at 1 ([ADR-0031](../docs/adr/0031-inferred-mapping-distance-as-ontology-span.md));
 - `ChainRuleApplications` (optional) — the chain rules that produced this mapping.
 
 Constants classes (`MappingConstants`, `MappingSetConstants`) hold the SSSOM field-name string keys used by both Jackson 

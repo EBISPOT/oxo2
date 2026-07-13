@@ -1,0 +1,7 @@
+<https://w3id.org/oxo2/test/ex/A> <http://www.w3.org/2002/07/owl#equivalentClass> <https://w3id.org/oxo2/test/ex/A> .
+<https://w3id.org/oxo2/test/ex/A> <http://www.w3.org/2002/07/owl#equivalentClass> <https://w3id.org/oxo2/test/ez/C> .
+<https://w3id.org/oxo2/test/ey/B> <http://www.w3.org/2002/07/owl#equivalentClass> <https://w3id.org/oxo2/test/ex/A> .
+<https://w3id.org/oxo2/test/ey/B> <http://www.w3.org/2002/07/owl#equivalentClass> <https://w3id.org/oxo2/test/ey/B> .
+<https://w3id.org/oxo2/test/ez/C> <http://www.w3.org/2002/07/owl#equivalentClass> <https://w3id.org/oxo2/test/ex/A> .
+<https://w3id.org/oxo2/test/ez/C> <http://www.w3.org/2002/07/owl#equivalentClass> <https://w3id.org/oxo2/test/ey/B> .
+<https://w3id.org/oxo2/test/ez/C> <http://www.w3.org/2002/07/owl#equivalentClass> <https://w3id.org/oxo2/test/ez/C> .

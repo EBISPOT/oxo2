@@ -120,15 +120,16 @@ Two independent checks on the model:
   holds a JSON document escaped into one value and is retrieve-only — nothing queries, facets or
   sorts on it; the frontend parses the stored string client-side. Inverting it for ~14.9M inferred
   mappings would cost a large index for no query.
-- **`distance` stays at its inert default of 1, deliberately.** `calculateMappingDistance` counts
+- **`distance` stays at its inert default of 1, deliberately.** ~~`calculateMappingDistance` counts
   *distinct CURIE prefixes minus one*, not chain depth, and returns `-1` when no endpoint has an
-  underscore-bearing local name. `SolrQueryBuilder`'s inferred-tier boost is
+  underscore-bearing local name.~~ **Superseded by [ADR-0031](0031-inferred-mapping-distance-as-ontology-span.md):**
+  `distance` is now populated as the ontology span (distinct CURIE prefixes minus one, floored at 1),
+  which removes the `-1`/`0` underflow that made this unsafe. The original concern still explains
+  *why* it was left inert here: `SolrQueryBuilder`'s inferred-tier boost is
   `div(INFERRED_BOOST, pow(5, distance-1))` — rewritten by
   [ADR-0027](0027-config-driven-mapping-set-category.md) from the additive form ADR-0020
-  documented — so a `distance = -1` doc would be boosted **25× above an asserted mapping**.
-  Populating it is a one-line change in `ExplainInferredMappings` once that decay is redesigned;
-  until then ranking behaves exactly as it does today. `explanation_length` *is* populated and is
-  well-defined.
+  documented — so a `distance = -1` doc would have been boosted **25× above an asserted mapping**.
+  `explanation_length` *is* populated and is well-defined.
 - **Disk.** The dev corpus produces 3.4 GB of shard corpora + targets, 20.3 GB of shard trace JSON,
   and an estimated ~85 GB of `inferences-explained-*.json` (measured mean proof DAG 10.4 nodes, p99
   36, at ~550 B per serialized node ⇒ ~5.7 kB/doc). The last figure is not new — it is what the

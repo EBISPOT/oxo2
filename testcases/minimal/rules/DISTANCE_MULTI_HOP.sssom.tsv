@@ -1,0 +1,11 @@
+# mapping_set_id: https://w3id.org/oxo2/test/minimal/rules/DISTANCE_MULTI_HOP
+# mapping_set_title: Test fixture for multi-ontology inferred-mapping distance (ADR-0031)
+# license: https://creativecommons.org/publicdomain/zero/1.0/
+# curie_map:
+#   ex: https://w3id.org/oxo2/test/ex/
+#   ey: https://w3id.org/oxo2/test/ey/
+#   ez: https://w3id.org/oxo2/test/ez/
+#   OWL: http://www.w3.org/2002/07/owl#
+subject_id	subject_label	predicate_id	object_id	object_label
+ex:A	Entity A	OWL:equivalentClass	ey:B	Entity B
+ey:B	Entity B	OWL:equivalentClass	ez:C	Entity C

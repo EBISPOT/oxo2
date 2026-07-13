@@ -145,8 +145,9 @@ asserted premise of every chain — from the already-indexed asserted documents 
 `EXPLANATIONS_TO_JSON` then interprets each *bundle* of shard chain files (default 100 shards per JVM, so process
 startup and the Solr connection amortise) into inferred mappings carrying subject/object/predicate + ids/labels,
 `inference_type = SSSOM_INFERENCE` ([ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)), `spo_key`,
-the `explanation` chain, its `asserted_mappings` evidence, and `explanation_length`. `distance` is deliberately left
-at its inert model default ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md) § Consequences).
+the `explanation` chain, its `asserted_mappings` evidence, `explanation_length`, and `distance` —
+the mapping's ontology span (distinct CURIE prefixes across the explanation DAG minus one, floored at 1;
+[ADR-0031](../docs/adr/0031-inferred-mapping-distance-as-ontology-span.md)).
 Each bundle's inferred `MappingSet` carries only its own shards' contributing sources, so
 `MERGE_INFERRED_MAPPING_SETS` unions them into the one cross-set set. The Solr client caches `EntityDetails` to avoid
 redundant queries during load.

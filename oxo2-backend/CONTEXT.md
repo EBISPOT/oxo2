@@ -180,8 +180,9 @@ The v1 `POST /api/search` adapter builds the same Solr query, regroups the flat 
 into `SearchResult` / `MappingResponse`, and maps v1's `distance` onto the inference-type tiers —
 `distance=1` → `inference_type:ASSERTED` only; `distance≠1` (incl. `-1`) → no tier filter
 (`ASSERTED ∪ SSSOM_INFERENCE`), so "unlimited" still returns the direct mappings. OxO2 has no
-query-time hop count ([ADR-0020](../docs/adr/0020-defer-explanations-to-on-demand.md) left `distance`
-inert), so `MappingResponse.distance` is a coarse direct/indirect sentinel (`1` asserted, `2` inferred),
+query-time hop count, and the stored `distance` is an ontology span rather than a v1 hop count
+([ADR-0031](../docs/adr/0031-inferred-mapping-distance-as-ontology-span.md)), so
+`MappingResponse.distance` is a coarse direct/indirect sentinel (`1` asserted, `2` inferred),
 not a true depth — a deliberate v1 break recorded in ADR-0024.
 
 #### Subject-side default search

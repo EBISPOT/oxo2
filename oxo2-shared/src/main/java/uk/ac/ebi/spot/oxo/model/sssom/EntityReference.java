@@ -72,6 +72,21 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
         return this.getDataAsString().compareTo(o.getDataAsString());
     }
 
+    /**
+     * The CURIE prefix that identifies the ontology this entity belongs to (DOID:0001816 → "DOID") —
+     * OxO2's notion of a term's ontology (ADR-0024), and the value emitted as the Solr
+     * {@code subject_prefix} / {@code object_prefix} fields and counted for a mapping's
+     * {@code distance} (ADR-0031). Derived from the normalised representation (the prefix-upper-cased
+     * CURIE) so the same ontology never splits into two prefix buckets across differently-cased
+     * sources. Empty for a bare IRI that never resolved to a CURIE.
+     */
+    public Optional<String> getCuriePrefix() {
+        String normalised = getDataRepresentation().orElseGet(this::getDataAsString);
+        if (normalised == null || !StringUtils.isCurie(normalised))
+            return Optional.empty();
+        return Optional.of(normalised.substring(0, normalised.indexOf(':')));
+    }
+
     public Optional<Uri> toUri(CurieMap curieMap) {
 
         int index = this.dataAsString.indexOf(':');

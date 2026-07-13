@@ -171,7 +171,8 @@ and `testcases_expected_output/minimal/<fixture>/` (expected).
   inference is the symmetric edge `B owl:equivalentClass A` of the strong asserted
   `A owl:equivalentClass B` (`SSSOM_INFERENCE` numFound 1) — no longer a zero-inference fixture. The other weak predicates have no dedicated
   fixture and are covered only by every fixture's exact-count `numFound` assertion.
-- **`distance`/`explanation_length` are inert**: explanations are no longer computed (ADR-0020), so
-  every bare inferred doc carries the model defaults (`distance` 1, `explanation_length` 0). They are
-  captured in the goldens but no longer derived from a chain; the fields are removed from the model
-  and Solr schema in the deferred surface cleanup.
+- **`distance`/`explanation_length` are derived and asserted in the goldens**: explanations are
+  precomputed again (ADR-0028), so each inferred doc carries a real `explanation_length` and a
+  `distance` — the ontology span (ADR-0031). The single-prefix fixtures are all one ontology, hence
+  `distance` 1; the `DISTANCE_MULTI_HOP` fixture spans three synthetic ontologies (`ex`/`ey`/`ez`) and
+  captures `distance` 2 for its three-ontology conclusions, exercising the span end-to-end.

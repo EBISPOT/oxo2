@@ -239,15 +239,10 @@ public record Mapping (
     }
 
     private static String curiePrefixOf(EntityReference reference) {
-        // Use the normalised representation (the prefix-upper-cased CURIE), the same value serialised to
-        // the subject_id / object_id Solr field, so the derived prefix matches the stored CURIE's case
-        // and the same ontology never splits into two prefix buckets across differently-cased sources.
-        String idAsString = reference.getDataRepresentation()
-                .map(Object::toString)
-                .orElseGet(reference::getDataAsString);
-        if (idAsString == null || !StringUtils.isCurie(idAsString))
-            return null;
-        return idAsString.substring(0, idAsString.indexOf(':'));
+        // Single source of truth for "the ontology a term belongs to" — the prefix-upper-cased CURIE,
+        // matched to the value counted for a mapping's distance (ADR-0031). See
+        // EntityReference#getCuriePrefix.
+        return reference.getCuriePrefix().orElse(null);
     }
 
 

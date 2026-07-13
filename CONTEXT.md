@@ -55,7 +55,7 @@ sources. It carries `inference_type`; its IRI resolves to an OxO2 mapping-set vi
 asserted *meaning* of a triple, collapsed into a single row in the Search and Inferences result views (see § Cross-cutting constraints). 
 Identified by the denormalised `spo_key` field. A relation and its negation (`predicate_modifier = Not`) form **different** groups. 
 _Avoid_: collapsed row, duplicate mappings, SPO group.
-- **Representative mapping** — the member of a **mapping group** shown as its parent row: the highest inference-tier member (`ASSERTED` over `SSSOM_INFERENCE`; the "shorter chains first" tie-break remains dropped — `explanation_length` is precomputed again, but `distance` is deliberately left inert, [ADR-0028](docs/adr/0028-component-sharded-explanation-precompute.md)). Its subject/predicate/object are the ones displayed; the remaining 
+- **Representative mapping** — the member of a **mapping group** shown as its parent row: the highest inference-tier member (`ASSERTED` over `SSSOM_INFERENCE`; the "shorter chains first" tie-break remains dropped as a grouping rule, though `explanation_length` and `distance` are both precomputed again — [ADR-0028](docs/adr/0028-component-sharded-explanation-precompute.md), [ADR-0031](docs/adr/0031-inferred-mapping-distance-as-ontology-span.md)). Its subject/predicate/object are the ones displayed; the remaining 
 members are reached by expanding the row.
 - **Ontology prefix** — the CURIE prefix of a `subject_id` / `object_id` (`DOID:0001816` → `DOID`).
 OxO2's notion of an "ontology" or v1 "datasource": there is no ontology entity, only the prefix.
@@ -100,10 +100,15 @@ corpus, and traces all of that shard's conclusions against the warm engine. Per-
 size of the store being traced against, not the size of the proof: ~0.3–0.9 ms per conclusion sharded
 versus ~6.2 s against the full 55.9M-fact materialisation. All 14.9M inferred mappings cost 6.35 CPU-h.
 Every inferred mapping therefore ships with its `explanation` chain, `asserted_mappings` evidence,
-`explanation_length`, and the inferred set's `mapping_set_source` union. `distance` is deliberately
-left at its inert default (its ranking decay was never re-designed). See
+`explanation_length`, `distance`, and the inferred set's `mapping_set_source` union. See
 [ADR-0028](docs/adr/0028-component-sharded-explanation-precompute.md) (supersedes ADR-0020, which
 supersedes ADR-0018). Affects `oxo2-dataload` (the `shard`/`explain`/`explanations2json` stages).
+- **Inferred `distance` is the ontology span** — the number of distinct CURIE prefixes (OxO2's notion
+of a term's ontology, ADR-0024) across every subject/object in the explanation DAG, minus one, floored
+at 1: an asserted or ≤2-ontology mapping is distance 1, three ontologies is 2, and so on. It drives the
+inferred ranking tier's per-hop decay. Reverses ADR-0028's "left inert" default. See
+[ADR-0031](docs/adr/0031-inferred-mapping-distance-as-ontology-span.md). Affects `oxo2-shared`
+(`EntityReference.getCuriePrefix`) and `oxo2-dataload` (`ExplainInferredMappings`).
 - **On-demand explanations are served by a resident Nemo engine (Proposed; motivation largely
 removed by ADR-0028)** — the once-deferred explanation service runs the cross-set chase **once at startup** and keeps the Nemo
 `ExecutionEngine` resident, turning each single-conclusion explanation into a cheap backward trace
@@ -155,8 +160,10 @@ a graph at query time the way OxO v1 did, because the SSSOM cross-set closure
 ([ADR-0016](docs/adr/0016-single-pass-sssom-reasoning.md)) is already materialised. v1's
 `POST /api/search` is honoured wire-for-wire (HAL `SearchResult` envelope), but v1's query-time
 `distance` (hop count) degrades to a tier toggle (`1` = asserted, `≠1` = asserted ∪ inferred) — a
-deliberate v1 semantic break, since hop counts cannot be reproduced over a flattened closure
-([ADR-0028](docs/adr/0028-component-sharded-explanation-precompute.md) keeps `distance` inert). See
+deliberate v1 semantic break, since v1 hop counts cannot be reproduced over a flattened closure. The
+stored `distance` is now populated as an ontology span, not a v1 hop count
+([ADR-0031](docs/adr/0031-inferred-mapping-distance-as-ontology-span.md)), so v1's per-mapping
+`distance` stays a coarse `asserted ? 1 : 2` sentinel. See
 [ADR-0024](docs/adr/0024-cross-ontology-mapping.md) (under [ADR-0004](docs/adr/0004-backwards-compatible-with-oxo-v1.md)).
 Affects `oxo2-dataload` (`subject_prefix` / `object_prefix` population + reindex), `oxo2-backend`
 (`/api/v2/ontologies`, the prefix-filtered `GET /api/v2/mappings?from=&to=` + `POST …/search`,

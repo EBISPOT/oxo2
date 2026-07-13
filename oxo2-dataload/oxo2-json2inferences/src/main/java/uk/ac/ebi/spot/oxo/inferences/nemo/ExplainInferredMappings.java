@@ -563,15 +563,18 @@ public class ExplainInferredMappings {
                         }
                     }
 
+                    // `distance` = how many ontologies this mapping spans, minus one (ADR-0031).
+                    // OxO2's notion of a term's ontology is its CURIE prefix (ADR-0024): an asserted
+                    // mapping, or an inferred one whose entities lie in at most two ontologies, is
+                    // distance 1; three ontologies is 2, and so on. Set it on the explanation root too
+                    // so the serialised proof reports the same span as the doc. See
+                    // calculateMappingDistance.
+                    int distance = calculateMappingDistance(inferredMapping);
+                    inferredMapping.setDistance(distance);
+
                     // Reuse the shared entity-resolution + base builder so the s/p/o + ids/labels
                     // are built one place — the same place the bare inferred-mapping indexer uses
                     // (ADR-0020) — then add the explanation-derived fields that only the trace gives.
-                    // `distance` is deliberately NOT set (ADR-0028). It stays at the model's inert
-                    // default of 1. calculateMappingDistance() counts distinct CURIE prefixes minus
-                    // one, not chain depth, and can return -1 or 0; SolrQueryBuilder's ranking boost
-                    // is div(INFERRED_BOOST, pow(5, distance-1)), so a distance of -1 would boost an
-                    // inferred mapping 25x ABOVE an asserted one. Populating it is a one-line change
-                    // once that decay has been re-designed and evaluated.
                     Mapping.Builder mappingBuilder = baseInferredMappingBuilder(solrClient,
                             inferredMapping.getSubjectIRI().asStringIRI(),
                             inferredMapping.getPredicateIRI().asStringIRI(),
@@ -579,7 +582,8 @@ public class ExplainInferredMappings {
                             inferredMappingSetId, inferenceType)
                         .explanation(inferredMapping)
                         .assertedMappings(assertedEvidence)
-                        .explanationLength(explanationLength(inferredMapping, lengthMemo));
+                        .explanationLength(explanationLength(inferredMapping, lengthMemo))
+                        .distance(distance);
                     // Single-source inference records its one source set. In cross-set inference a
                     // mapping can draw on several sets (captured in the explanation and the set-level
                     // source union), so a single mappingSource would be lossy — leave it unset.
@@ -704,6 +708,58 @@ public class ExplainInferredMappings {
         }
         memo.put(explanation, length);
         return length;
+    }
+
+    /**
+     * Distance = the number of distinct ontologies the mapping spans, minus one (ADR-0031). OxO2's
+     * notion of a term's ontology is its CURIE prefix (ADR-0024 — the same value emitted as
+     * {@code subject_prefix} / {@code object_prefix}), so this counts the distinct prefixes of every
+     * subject and object across the whole explanation DAG: the conclusion plus all premises,
+     * transitively. An asserted mapping, or an explanation confined to at most two ontologies, is
+     * distance 1; three ontologies is 2, and so on.
+     *
+     * <p>Floored at 1 so a wholly intra-ontology chain still ranks as a direct mapping and, crucially,
+     * so the {@code SolrQueryBuilder} decay {@code div(INFERRED_BOOST, pow(5, distance-1))} can never
+     * exceed the asserted tier — a distance below 1 would boost an inferred mapping <em>above</em> a
+     * curated one. Predicates are not counted; only the mapped entities (subject/object) contribute.
+     */
+    static int calculateMappingDistance(InferredMapping explanation) {
+        Set<String> ontologies = new HashSet<>();
+        collectOntologyPrefixes(explanation, ontologies,
+                Collections.newSetFromMap(new IdentityHashMap<>()));
+        return Math.max(1, ontologies.size() - 1);
+    }
+
+    /**
+     * Depth-first collect the CURIE prefix of every subject and object in the sub-DAG rooted at
+     * {@code node}. Identity-visited so shared sub-chains (diamonds) are walked once; nmo's trace DAG
+     * is acyclic over object identity, so this always terminates.
+     */
+    private static void collectOntologyPrefixes(InferredMapping node, Set<String> ontologies,
+                                                Set<InferredMapping> visited) {
+        if (node == null || !visited.add(node)) return;
+        addOntologyPrefix(node.getSubjectId(), ontologies);
+        addOntologyPrefix(node.getObjectId(), ontologies);
+        if (node.getChainRuleApplications().isPresent()) {
+            List<InferredMapping> premises = node.getChainRuleApplications().get().getPremises();
+            if (premises != null) {
+                for (InferredMapping premise : premises) {
+                    collectOntologyPrefixes(premise, ontologies, visited);
+                }
+            }
+        }
+    }
+
+    /**
+     * Add an entity's CURIE prefix to {@code ontologies}, if it has one. The {@code subjectId} /
+     * {@code objectId} fields are unset {@link Optional} references on a node that only carried IRIs,
+     * so the null guard keeps a sparsely-populated node from aborting the walk (it just contributes no
+     * ontology, and the distance floor still yields a direct mapping).
+     */
+    private static void addOntologyPrefix(Optional<EntityReference> entityId, Set<String> ontologies) {
+        if (entityId != null) {
+            entityId.flatMap(EntityReference::getCuriePrefix).ifPresent(ontologies::add);
+        }
     }
 
     /**
