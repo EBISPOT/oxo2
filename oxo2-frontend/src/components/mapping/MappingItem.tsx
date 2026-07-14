@@ -60,7 +60,12 @@ export function MappingItem({
         
         return (
             <div className={entityClasses}>
-                <div className="text-center font-bold">
+                {label && (
+                    <div title={label} className="text-center font-bold truncate-text">
+                        {label}
+                    </div>
+                )}
+                <div className={`text-center ${label ? "text-sm" : "font-bold"}`}>
                     <span
                         className="pr-2 cursor-pointer wrap-slash break-words"
                     >
@@ -88,9 +93,6 @@ export function MappingItem({
                         </a>
                     )}
                 </div>
-                <div title={label} className="text-center truncate-text">
-                    {label}
-                </div>
             </div>
         );
     }
@@ -112,11 +114,16 @@ export function MappingItem({
             </div>
 
             <div className={predicateClasses}>
-                <div title={mapping.predicateId} className="text-center font-bold">
+                {mapping.predicateLabel && (
+                    <div title={mapping.predicateLabel} className="text-center font-bold truncate-text">
+                        {mapping.predicateLabel}
+                    </div>
+                )}
+                <div
+                    title={mapping.predicateId}
+                    className={`text-center ${mapping.predicateLabel ? "text-sm" : "font-bold"}`}
+                >
                     {mapping.predicateId ? mapping.predicateId : mapping.predicateIri }
-                </div>
-                <div title={mapping.predicateLabel} className="text-center truncate-text">
-                    {mapping.predicateLabel}
                 </div>
             </div>
 
