@@ -171,7 +171,10 @@ the sides whose own prefix is `P` are folded — so a shard's counts are exact a
 ontology's entity map, not the corpus's. A `__none__` sentinel shard catches entities whose CURIE never
 resolved to a prefix (a bare IRI, ADR-0024); without it they would belong to no shard and vanish from
 the typeahead silently. Measured on the current corpus: MONDO's 438k mappings fold to 33.6k distinct
-entities in 43 s at 478 MB RSS.
+entities in 43 s at 478 MB RSS. The **largest** shard is NCBITAXON — 5.73M subject-side mappings folding
+to roughly 2.8M entities (~2.74M distinct subjects + 286k distinct objects), 83x MONDO — and it is that
+entity count, not the corpus, that `ENTITIES_FOR_PREFIX`'s 4 GB is sized against (~2x its ~2 GB
+extrapolated peak).
 
 **7. Entity load** — `json2solr.sh` posts `$OXO2_DATA/entities/<PREFIX>.json` into `oxo2-entities`.
 
