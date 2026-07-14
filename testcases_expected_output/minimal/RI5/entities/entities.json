@@ -6,8 +6,14 @@
   "label" : "Entity A",
   "mapping_count" : 2,
   "object_count" : 1,
+  "object_count_hasdbxref" : 0,
+  "object_count_strong" : 1,
+  "object_count_subclassof" : 0,
   "prefix" : "EX",
-  "subject_count" : 1
+  "subject_count" : 1,
+  "subject_count_hasdbxref" : 0,
+  "subject_count_strong" : 1,
+  "subject_count_subclassof" : 0
 }, {
   "id" : "EX:B",
   "iri" : "https://w3id.org/oxo2/test/ex/B",
@@ -16,6 +22,12 @@
   "label" : "Entity B",
   "mapping_count" : 2,
   "object_count" : 1,
+  "object_count_hasdbxref" : 0,
+  "object_count_strong" : 1,
+  "object_count_subclassof" : 0,
   "prefix" : "EX",
-  "subject_count" : 1
+  "subject_count" : 1,
+  "subject_count_hasdbxref" : 0,
+  "subject_count_strong" : 1,
+  "subject_count_subclassof" : 0
 } ]

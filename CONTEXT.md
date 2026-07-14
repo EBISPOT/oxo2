@@ -235,6 +235,22 @@ collection, the `mappings2entities` stage, and the seven `_str` twins — a boun
 re-inference), `oxo2-shared` (`EntityConstants`, `FilterMatchType`, `EntitySide`), `oxo2-backend`
 (`SuggestController`, `EntitySuggestQueryBuilder`) and `oxo2-frontend` (the suggest components and the
 48-field tier map).
+- **The weak predicates are a user-visible control, and the typeahead obeys it** — `rdfs:subClassOf`
+and `oboInOwl:hasDbXref` assert no equivalence and swamp an OLS-derived corpus, so both stay hidden by
+default; but each is now independently revealable by a checkbox (search page and Predicate column
+header), carried as `includeWeakPredicates` on the request and `wp` in the URL. Crucially the **entity
+typeahead is filtered by the same selection**: `oxo2-entities` counts are bucketed per side and per
+predicate (`{subject,object}_count_{strong,subclassof,hasdbxref}`), and a suggest filters, ranks and
+labels on the buckets the checkboxes currently make visible. Suggesting on the unfiltered totals
+instead is what let the typeahead offer 46,783 entities on a corpus whose default search could reach
+3,714 — 92% of suggestions completed to an empty table. A suggestion must be a promise that the search
+returns something. `WeakPredicate` in `oxo2-shared` is the single source of truth, because the search
+filter and the entity fold must agree on the pair by construction. See
+[ADR-0035](docs/adr/0035-weak-predicates-as-a-user-visible-control.md). Affects `oxo2-shared`
+(`WeakPredicate`, `EntityConstants`), `oxo2-dataload` (the fold now reads `predicate_iri`; the entity
+schema gains six count fields; `copySolrConfig entities-only` now wipes rather than skips),
+`oxo2-backend` (`SolrQueryBuilder`, `EntitySuggestQueryBuilder`, `SuggestController`) and
+`oxo2-frontend` (the two checkboxes, the `wp` URL param).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **The dataload is resumable from a chosen (sub)stage** — parameterised by `START_STAGE` (default

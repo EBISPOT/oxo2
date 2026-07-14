@@ -8,6 +8,7 @@ import uk.ac.ebi.spot.oxo.model.sssom.FilterMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingSetCategory;
+import uk.ac.ebi.spot.oxo.model.sssom.WeakPredicate;
 
 import java.util.List;
 
@@ -89,6 +90,15 @@ public class MappingSearchRequest {
             defaultValue = "EXACT_CASE_INSENSITIVE")
     private LabelMatchType labelMatch = LabelMatchType.DEFAULT;
 
+    // Which weak predicates the user has asked to see (ADR-0035). Empty/null — the default — hides
+    // both, which is the behaviour every caller had before the checkboxes existed. Independently
+    // switchable rather than one flag: ontology hierarchy and loose cross-references are different
+    // questions, and wanting one is no reason to be shown the other.
+    @Schema(description = "Show these normally-hidden predicates: `subClassOf`, `hasDbXref`. "
+            + "Null/empty hides both. An explicit filter on a predicate field overrides this and "
+            + "shows whatever matches, so a filter can never return nothing.")
+    private List<WeakPredicate> includeWeakPredicates;
+
 
     /**
      * A shallow copy. Used by the contextual value suggest (ADR-0034), which needs to build the live
@@ -116,7 +126,17 @@ public class MappingSearchRequest {
         copy.objectPrefixes = this.objectPrefixes;
         copy.groupBySpo = this.groupBySpo;
         copy.labelMatch = this.labelMatch;
+        copy.includeWeakPredicates = this.includeWeakPredicates;
         return copy;
+    }
+
+    /** Never null, so callers can iterate it without a guard. */
+    public List<WeakPredicate> getIncludeWeakPredicates() {
+        return includeWeakPredicates == null ? List.of() : includeWeakPredicates;
+    }
+
+    public void setIncludeWeakPredicates(List<WeakPredicate> includeWeakPredicates) {
+        this.includeWeakPredicates = includeWeakPredicates;
     }
 
     public List<String> getQueries() {

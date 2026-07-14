@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.spot.oxo.model.entity.EntityConstants;
 import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
+import uk.ac.ebi.spot.oxo.model.sssom.WeakPredicate;
 
 import java.io.File;
 import java.io.OutputStream;
@@ -80,7 +81,14 @@ public class Mappings2Entities {
     private static final String OBJECT_IRI = "object_iri";
     private static final String OBJECT_PREFIX = "object_prefix";
 
-    /** Rows per cursorMark page. Six small stored fields per doc, so a large page is cheap. */
+    /**
+     * Read so each sighting can be bucketed by predicate (ADR-0035). The canonical IRI, not
+     * {@code predicate_id}, because the CURIE's prefix and casing vary by source set — the same
+     * reason {@code SolrQueryBuilder} matches its exclusion on the IRI.
+     */
+    private static final String PREDICATE_IRI = "predicate_iri";
+
+    /** Rows per cursorMark page. Seven small stored fields per doc, so a large page is cheap. */
     private static final int PAGE_SIZE = 20_000;
 
     public static void main(String[] args) throws Exception {
@@ -173,7 +181,8 @@ public class Mappings2Entities {
 
         SolrQuery query = new SolrQuery("*:*");
         query.addFilterQuery(shardFilter(prefix));
-        query.setFields(SUBJECT_ID, SUBJECT_LABEL, SUBJECT_IRI, OBJECT_ID, OBJECT_LABEL, OBJECT_IRI);
+        query.setFields(SUBJECT_ID, SUBJECT_LABEL, SUBJECT_IRI, OBJECT_ID, OBJECT_LABEL, OBJECT_IRI,
+                PREDICATE_IRI);
         query.setRows(PAGE_SIZE);
         // cursorMark requires a total ordering, so the sort must end in the uniqueKey.
         query.setSort(SolrQuery.SortClause.asc("id"));
@@ -237,10 +246,28 @@ public class Mappings2Entities {
             return;
         }
 
+        // Null for any predicate the default search shows — the common case. Bucketing on the way in
+        // is what lets the typeahead offer exactly the entities the user's current predicate
+        // checkboxes will actually return (ADR-0035).
+        WeakPredicate weakPredicate = weakPredicateOf(string(document, PREDICATE_IRI));
+
         entities.computeIfAbsent(id, key -> new EntityDoc(key, curiePrefix.orElse(null)))
                 .observe(string(document, asSubject ? SUBJECT_LABEL : OBJECT_LABEL),
                         string(document, asSubject ? SUBJECT_IRI : OBJECT_IRI),
-                        asSubject);
+                        asSubject, weakPredicate);
+    }
+
+    /** The weak predicate this IRI names, or null when it names any other (i.e. a strong) predicate. */
+    private static WeakPredicate weakPredicateOf(String predicateIri) {
+        if (predicateIri == null) {
+            return null;
+        }
+        for (WeakPredicate candidate : WeakPredicate.values()) {
+            if (candidate.iri().equals(predicateIri)) {
+                return candidate;
+            }
+        }
+        return null;
     }
 
     private static String string(SolrDocument document, String field) {
@@ -270,6 +297,18 @@ public class Mappings2Entities {
                 json.writeNumberField(EntityConstants.MAPPING_COUNT, entity.mappingCount());
                 json.writeBooleanField(EntityConstants.IS_SUBJECT, entity.subjectCount() > 0);
                 json.writeBooleanField(EntityConstants.IS_OBJECT, entity.objectCount() > 0);
+
+                // The buckets the typeahead filters and ranks on (ADR-0035). Written unconditionally,
+                // zeros included: the suggest sums the enabled buckets as a function query, and a
+                // missing docValue would make the whole sum unusable rather than merely zero.
+                json.writeNumberField(EntityConstants.SUBJECT_COUNT_STRONG, entity.subjectCountStrong());
+                json.writeNumberField(EntityConstants.OBJECT_COUNT_STRONG, entity.objectCountStrong());
+                for (WeakPredicate weakPredicate : WeakPredicate.values()) {
+                    json.writeNumberField(EntityConstants.subjectCountField(weakPredicate),
+                            entity.subjectCount(weakPredicate));
+                    json.writeNumberField(EntityConstants.objectCountField(weakPredicate),
+                            entity.objectCount(weakPredicate));
+                }
                 json.writeEndObject();
             }
             json.writeEndArray();

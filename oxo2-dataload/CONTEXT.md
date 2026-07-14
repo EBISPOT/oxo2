@@ -158,11 +158,29 @@ redundant queries during load.
 
 **6. Entity derivation** — `mappings2entities.nf` (JAR in `oxo2-mappings2entities`) folds the
 denormalised mappings index into `oxo2-entities`: **one document per DISTINCT entity**, carrying its
-CURIE, label, IRI, prefix, subject/object membership and mapping count
+CURIE, label, IRI, prefix, subject/object membership and mapping counts
 ([ADR-0034](../docs/adr/0034-entity-collection-for-typeahead.md)). It reads the **Solr index**, not the
 JSON on disk — the index is the only place asserted *and* inferred mappings both live — so it runs
 **after `index-inferred`**, not before: an inferred mapping's subject may appear only as an *object* in
 the asserted data, and deriving earlier would drop it from the subject-side suggest.
+
+The counts are bucketed by **predicate as well as side** —
+`{subject,object}_count_{strong,subclassof,hasdbxref}`, where *strong* is any predicate that is not
+weak ([ADR-0035](../docs/adr/0035-weak-predicates-as-a-user-visible-control.md)). This is why the fold
+reads `predicate_iri` at all. A search hides `rdfs:subClassOf` and `oboInOwl:hasDbXref` unless the user
+ticks them, so a single total tells the typeahead nothing about whether a suggestion will return rows:
+an entity can hold a thousand xrefs and still be invisible to a default search. Summing the enabled
+buckets gives the count the search will actually produce, which is what the suggest filters and ranks
+on. If you add a weak predicate, add it to `WeakPredicate` in `oxo2-shared` — the fold and
+`SolrQueryBuilder`'s exclusion both derive from it, and they must not drift apart.
+
+> **Rebuilding the read model:** `START_STAGE=mappings2entities` re-derives the whole collection from
+> the already-indexed mappings, with no re-inference and no re-explanation. It calls
+> `copySolrConfig.sh entities-only`, which **wipes and re-lays the `oxo2-entities` core** (leaving
+> `oxo2-mappings` and `oxo2-mappingsets` alone). It must wipe: skipping an existing core would keep the
+> old managed-schema, so a newly added entity field would never exist and the suggest would query a
+> field Solr does not have. Wiping a read model is free — every document in it is a pure function of
+> `oxo2-mappings` — and it also clears entities the current mappings no longer derive.
 
 `LIST_PREFIXES` facets `subject_prefix`/`object_prefix` (791 prefixes on the current corpus) and
 `ENTITIES_FOR_PREFIX` then runs one JVM per prefix. The prefix shard is what bounds memory: every

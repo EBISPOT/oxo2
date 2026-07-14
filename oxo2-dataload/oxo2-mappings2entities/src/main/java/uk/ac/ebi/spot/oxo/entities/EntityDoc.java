@@ -1,5 +1,10 @@
 package uk.ac.ebi.spot.oxo.entities;
 
+import uk.ac.ebi.spot.oxo.model.sssom.WeakPredicate;
+
+import java.util.EnumMap;
+import java.util.Map;
+
 /**
  * One accumulating {@code oxo2-entities} document while a prefix shard is being folded (ADR-0034).
  *
@@ -12,6 +17,13 @@ package uk.ac.ebi.spot.oxo.entities;
  * arbitrate between them, so the first non-blank sighting is taken rather than the last, which at
  * least makes the result independent of how many blank sightings follow it. The CURIE is the
  * identity, so it is never overwritten.
+ *
+ * <p><b>Counts are bucketed by predicate as well as by side</b> (ADR-0035). A search hides the weak
+ * predicates unless the user asks for them, so a single total would tell the typeahead nothing about
+ * whether a suggestion will actually return rows: an entity can hold a thousand
+ * {@code oboInOwl:hasDbXref} mappings and still be invisible to a default search. Summing the buckets
+ * the user has enabled gives the true visible count, which is what the suggest both filters and ranks
+ * on.
  */
 final class EntityDoc {
 
@@ -19,8 +31,14 @@ final class EntityDoc {
     private final String prefix;
     private String label;
     private String iri;
-    private long subjectCount;
-    private long objectCount;
+
+    /** Sightings whose predicate is NOT weak — the ones a default search shows. */
+    private long subjectCountStrong;
+    private long objectCountStrong;
+
+    /** Sightings per weak predicate, each independently switchable by the user. */
+    private final Map<WeakPredicate, Long> subjectCountsWeak = new EnumMap<>(WeakPredicate.class);
+    private final Map<WeakPredicate, Long> objectCountsWeak = new EnumMap<>(WeakPredicate.class);
 
     EntityDoc(String id, String prefix) {
         this.id = id;
@@ -30,19 +48,27 @@ final class EntityDoc {
     /**
      * Record one sighting of this entity on one side of one mapping.
      *
-     * @param asSubject true when the entity is this mapping's subject, false when it is the object
+     * @param asSubject     true when the entity is this mapping's subject, false when it is the object
+     * @param weakPredicate the mapping's predicate when it is weak, else null — null is the common
+     *                      case and means "strong", i.e. any predicate the search shows by default
      */
-    void observe(String observedLabel, String observedIri, boolean asSubject) {
+    void observe(String observedLabel, String observedIri, boolean asSubject,
+                 WeakPredicate weakPredicate) {
         if (isBlank(label) && !isBlank(observedLabel)) {
             label = observedLabel;
         }
         if (isBlank(iri) && !isBlank(observedIri)) {
             iri = observedIri;
         }
-        if (asSubject) {
-            subjectCount++;
+        if (weakPredicate == null) {
+            if (asSubject) {
+                subjectCountStrong++;
+            } else {
+                objectCountStrong++;
+            }
         } else {
-            objectCount++;
+            Map<WeakPredicate, Long> counts = asSubject ? subjectCountsWeak : objectCountsWeak;
+            counts.merge(weakPredicate, 1L, Long::sum);
         }
     }
 
@@ -62,21 +88,43 @@ final class EntityDoc {
         return iri;
     }
 
-    long subjectCount() {
-        return subjectCount;
+    long subjectCountStrong() {
+        return subjectCountStrong;
     }
 
+    long objectCountStrong() {
+        return objectCountStrong;
+    }
+
+    long subjectCount(WeakPredicate weakPredicate) {
+        return subjectCountsWeak.getOrDefault(weakPredicate, 0L);
+    }
+
+    long objectCount(WeakPredicate weakPredicate) {
+        return objectCountsWeak.getOrDefault(weakPredicate, 0L);
+    }
+
+    /** Every subject-side sighting, weak predicates included. Display only — see the class note. */
+    long subjectCount() {
+        return subjectCountStrong + sum(subjectCountsWeak);
+    }
+
+    /** Every object-side sighting, weak predicates included. Display only — see the class note. */
     long objectCount() {
-        return objectCount;
+        return objectCountStrong + sum(objectCountsWeak);
     }
 
     /**
      * Total mappings this entity participates in. An entity that is both the subject and the object
      * of the same mapping (a self-mapping) is counted twice, which is the honest reading of "how
-     * many mapping endpoints is this entity" and is what the popularity boost wants.
+     * many mapping endpoints is this entity".
      */
     long mappingCount() {
-        return subjectCount + objectCount;
+        return subjectCount() + objectCount();
+    }
+
+    private static long sum(Map<WeakPredicate, Long> counts) {
+        return counts.values().stream().mapToLong(Long::longValue).sum();
     }
 
     private static boolean isBlank(String value) {

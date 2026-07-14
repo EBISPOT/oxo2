@@ -6,8 +6,14 @@
   "label" : "Entity A",
   "mapping_count" : 4,
   "object_count" : 2,
+  "object_count_hasdbxref" : 0,
+  "object_count_strong" : 2,
+  "object_count_subclassof" : 0,
   "prefix" : "EX",
-  "subject_count" : 2
+  "subject_count" : 2,
+  "subject_count_hasdbxref" : 0,
+  "subject_count_strong" : 2,
+  "subject_count_subclassof" : 0
 }, {
   "id" : "EY:B",
   "iri" : "https://w3id.org/oxo2/test/ey/B",
@@ -16,8 +22,14 @@
   "label" : "Entity B",
   "mapping_count" : 4,
   "object_count" : 2,
+  "object_count_hasdbxref" : 0,
+  "object_count_strong" : 2,
+  "object_count_subclassof" : 0,
   "prefix" : "EY",
-  "subject_count" : 2
+  "subject_count" : 2,
+  "subject_count_hasdbxref" : 0,
+  "subject_count_strong" : 2,
+  "subject_count_subclassof" : 0
 }, {
   "id" : "EZ:C",
   "iri" : "https://w3id.org/oxo2/test/ez/C",
@@ -26,6 +38,12 @@
   "label" : "Entity C",
   "mapping_count" : 4,
   "object_count" : 2,
+  "object_count_hasdbxref" : 0,
+  "object_count_strong" : 2,
+  "object_count_subclassof" : 0,
   "prefix" : "EZ",
-  "subject_count" : 2
+  "subject_count" : 2,
+  "subject_count_hasdbxref" : 0,
+  "subject_count_strong" : 2,
+  "subject_count_subclassof" : 0
 } ]

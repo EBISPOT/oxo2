@@ -130,7 +130,14 @@ entity labels and a suggester over the five values of `predicate_modifier` are n
 a typeahead over a free-prose comment field is noise.
 
 - **The main search box** (`EntitySuggest`) — server-side entity suggest over `oxo2-entities`,
-  subject-side only (ADR-0030). Picking one fills the CURIE and runs the normal search.
+  subject-side only (ADR-0030). Picking one fills the CURIE and runs the normal search. It is also
+  filtered by the two **weak-predicate checkboxes**
+  ([ADR-0035](../docs/adr/0035-weak-predicates-as-a-user-visible-control.md)): with both unticked — the
+  default — an entity whose every mapping is a `subClassOf` or a `hasDbXref` is not offered at all,
+  because picking it would land on an empty table. The checkboxes live on the search page *and* in the
+  Predicate column header, and travel in the URL as `wp` so the box and the table below it are always
+  filtered by the same selection. `includeWeakPredicates` is therefore not a display preference on the
+  suggest call — pass the wrong set and the dropdown offers entities the search then hides.
 - **The result-table column filters** (`ValueSuggest`, in `ColumnFilterPopover`) — **contextual**: the
   values are faceted over the *live search*, so a suggestion can never yield zero rows, and each arrives
   with the count of mappings behind it. It sends the very request `fetchMappings` sends, built by the

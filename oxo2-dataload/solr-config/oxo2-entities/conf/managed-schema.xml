@@ -105,14 +105,27 @@
   <!-- CURIE prefix (ADR-0024), e.g. MONDO. Filters the suggest by the from/to ontology selectors. -->
   <field name="prefix" type="string" indexed="true" stored="true" docValues="true"/>
 
-  <!-- Popularity. mapping_count is the multiplicative ranking boost; the side counts and flags let a
-       suggest restrict to entities that actually appear on the side being searched (the main search
-       box is subject-side only, ADR-0030). -->
+  <!-- Totals over EVERY predicate. Display only: a search hides the weak predicates by default, so
+       these overcount what a suggestion would actually return. Do not filter or rank on them. -->
   <field name="mapping_count" type="plong" indexed="true" stored="true" docValues="true"/>
   <field name="subject_count" type="plong" indexed="true" stored="true" docValues="true"/>
   <field name="object_count" type="plong" indexed="true" stored="true" docValues="true"/>
   <field name="is_subject" type="boolean" indexed="true" stored="true" docValues="true"/>
   <field name="is_object" type="boolean" indexed="true" stored="true" docValues="true"/>
+
+  <!-- Per-side counts split by predicate bucket (ADR-0035). THESE are what the typeahead filters and
+       ranks on: summing the buckets the user has enabled gives exactly the number of mappings their
+       search will return, so a suggestion can never yield an empty table. "Strong" is every predicate
+       that is not weak; rdfs:subClassOf and oboInOwl:hasDbXref get a bucket each because they are
+       independently switchable. Split by side as well as predicate so a subject-side typeahead does
+       not rank an entity on mappings in which it is the object. docValues: they are read as function
+       queries (the boost, and the visible-count pseudo-field), never inverted. -->
+  <field name="subject_count_strong" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="object_count_strong" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="subject_count_subclassof" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="object_count_subclassof" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="subject_count_hasdbxref" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="object_count_hasdbxref" type="plong" indexed="true" stored="true" docValues="true"/>
 
   <!-- Prefix-match targets. Never stored — they exist only to be searched. -->
   <field name="id_prefix_ngram" type="string_edge_ngram" indexed="true" stored="false"/>

@@ -13,6 +13,7 @@ import uk.ac.ebi.spot.oxo.model.sssom.FilterMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
+import uk.ac.ebi.spot.oxo.model.sssom.WeakPredicate;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingSetCategory;
 
 import java.util.Arrays;
@@ -67,10 +68,15 @@ class SolrQueryBuilderTest {
      * production clause so these tests fail if either the excluded IRIs or the clause shape drift.
      */
     private static String weakPredicateExclusion() {
+        return exclusionOf(
+                "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+                "http://www.geneontology.org/formats/oboInOwl#hasDbXref");
+    }
+
+    /** The exclusion clause for exactly these IRIs — one ticked checkbox leaves only the other. */
+    private static String exclusionOf(String... iris) {
         String field = MappingEnum.PREDICATE_IRI.getField();
-        String excluded = Stream.of(
-                        "http://www.w3.org/2000/01/rdf-schema#subClassOf",
-                        "http://www.geneontology.org/formats/oboInOwl#hasDbXref")
+        String excluded = Stream.of(iris)
                 .map(iri -> field + ":\"" + ClientUtils.escapeQueryChars(iri) + "\"")
                 .collect(Collectors.joining(" OR "));
         return "*:* -(" + excluded + ")";
@@ -875,6 +881,49 @@ class SolrQueryBuilderTest {
                 .doesNotContain(MappingEnum.PREDICATE_ID.getField() + ":")
                 .contains("subClassOf")
                 .contains("hasDbXref");
+    }
+
+    /**
+     * The search-side half of ADR-0035's checkboxes. Ticking one predicate must lift the exclusion for
+     * that one ALONE — the two are independently switchable, so asking to see the hierarchy is not a
+     * request to also be shown every loose cross-reference.
+     */
+    @Test
+    void tickingOneWeakPredicateShowsItAndKeepsHidingTheOther() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+        request.setIncludeWeakPredicates(List.of(WeakPredicate.HAS_DB_XREF));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.getFilterQueries())
+                .containsExactly(exclusionOf("http://www.w3.org/2000/01/rdf-schema#subClassOf"));
+        assertThat(solrQuery.getFilterQueries()[0]).doesNotContain("hasDbXref");
+    }
+
+    @Test
+    void tickingBothWeakPredicatesLeavesNoExclusionAtAll() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+        request.setIncludeWeakPredicates(
+                List.of(WeakPredicate.SUB_CLASS_OF, WeakPredicate.HAS_DB_XREF));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        // No no-op all-docs clause left behind: with nothing hidden there is nothing to subtract.
+        assertThat(solrQuery.getFilterQueries()).isEmpty();
+    }
+
+    /** The default is unchanged by the new parameter: an absent list still hides both. */
+    @Test
+    void anAbsentIncludeListStillHidesBothWeakPredicates() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("diabetes"));
+        request.setIncludeWeakPredicates(null);
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
     }
 
     @Test

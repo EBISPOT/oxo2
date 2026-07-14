@@ -10,6 +10,7 @@ import {
     type EntitySuggestion,
 } from "../../pages/results/SuggestSlice";
 import { useDebouncedValue } from "../../util/useDebouncedValue";
+import type { WeakPredicate } from "../../model/WeakPredicate";
 
 /**
  * Typeahead over entities (ADR-0034): type a label or CURIE prefix, get the entities it could
@@ -33,6 +34,7 @@ export function EntitySuggest({
     onSubmit,
     side = 'subject',
     prefixes = [],
+    includeWeakPredicates = [],
     label,
     placeholder,
     inputId,
@@ -46,6 +48,11 @@ export function EntitySuggest({
     onSubmit?: () => void;
     side?: EntitySide;
     prefixes?: string[];
+    /**
+     * The predicate checkboxes of the search this box feeds (ADR-0035). Not cosmetic: it decides what
+     * is suggestable at all, so it must match the search or a pick can land on an empty table.
+     */
+    includeWeakPredicates?: WeakPredicate[];
     label?: string;
     placeholder?: string;
     inputId?: string;
@@ -56,9 +63,13 @@ export function EntitySuggest({
     // Query on the DEBOUNCED value but render against the live one, so the box never lags the
     // keyboard even though the network does.
     const enabled = open && debouncedValue.trim().length >= MIN_SUGGEST_LENGTH;
+    const weakPredicateKey = includeWeakPredicates.join(",");
     const { data: suggestions, isFetching } = useQuery({
-        queryKey: ["suggestEntities", debouncedValue.trim(), side, prefixes.join(",")],
-        queryFn: () => fetchEntitySuggestions(debouncedValue.trim(), side, prefixes),
+        // weakPredicateKey is part of the key: ticking a box changes WHICH entities are suggestable,
+        // so a cached list from the other state would be wrong, not merely stale.
+        queryKey: ["suggestEntities", debouncedValue.trim(), side, prefixes.join(","), weakPredicateKey],
+        queryFn: () =>
+            fetchEntitySuggestions(debouncedValue.trim(), side, prefixes, includeWeakPredicates),
         enabled,
         staleTime: 5 * 60_000,
     });

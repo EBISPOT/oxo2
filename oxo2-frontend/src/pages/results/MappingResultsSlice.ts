@@ -10,6 +10,7 @@ import {
 } from '../../model/Mapping';
 import { InferenceType, asInferenceType } from '../../model/InferenceType';
 import { LabelMatchMode } from '../../model/LabelMatchMode';
+import { WeakPredicate } from '../../model/WeakPredicate';
 import { MappingSetCategory } from '../../model/MappingSetCategory';
 import { get, post, downloadPost, HttpError } from '../../app/api';
 
@@ -68,6 +69,9 @@ interface SearchRequest {
     // Which asserted corpora to search (ADR-0027): omitted = every corpus. Inferred mappings carry no
     // category and always pass this filter; use inferenceType to exclude them.
     mappingSetCategory?: MappingSetCategory[];
+    // Normally-hidden predicates the user has ticked (ADR-0035): omitted = hide both rdfs:subClassOf
+    // and oboInOwl:hasDbXref, which is the default every caller had before the checkboxes existed.
+    includeWeakPredicates?: WeakPredicate[];
 }
 
 // Batch cross-ontology mapping response (ADR-0024): the page of mappings plus the unmapped inputs.
@@ -293,7 +297,8 @@ export function buildSearchRequest(queries: string[], page: number, pageSize: nu
                            inferenceType?: InferenceType[], groupBySpo: boolean = false,
                            subjectPrefixes?: string[], objectPrefixes?: string[],
                            labelMatch?: LabelMatchMode,
-                           mappingSetCategory?: MappingSetCategory[]): SearchRequest {
+                           mappingSetCategory?: MappingSetCategory[],
+                           includeWeakPredicates?: WeakPredicate[]): SearchRequest {
     return {
         queries: queries,
         page: page,
@@ -311,6 +316,8 @@ export function buildSearchRequest(queries: string[], page: number, pageSize: nu
         ...(objectPrefixes && objectPrefixes.length > 0 ? { objectPrefixes } : {}),
         ...(labelMatch ? { labelMatch } : {}),
         ...(mappingSetCategory && mappingSetCategory.length > 0 ? { mappingSetCategory } : {}),
+        // Absent means "hide both", which is what the backend defaults to (ADR-0035).
+        ...(includeWeakPredicates && includeWeakPredicates.length > 0 ? { includeWeakPredicates } : {}),
     };
 }
 
@@ -341,10 +348,11 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
                               subjectPrefixes?: string[],
                               objectPrefixes?: string[],
                               labelMatch?: LabelMatchMode,
-                              mappingSetCategory?: MappingSetCategory[]): Promise<MappingSearchResponse> {
+                              mappingSetCategory?: MappingSetCategory[],
+                              includeWeakPredicates?: WeakPredicate[]): Promise<MappingSearchResponse> {
     const requestBody = buildSearchRequest(queries, page, pageSize, columnFilters, sorting, mappingSetIds,
         advancedFieldQueries, inferenceType, groupBySpo, subjectPrefixes, objectPrefixes, labelMatch,
-        mappingSetCategory);
+        mappingSetCategory, includeWeakPredicates);
     return post<SearchRequest, MappingSearchResponse>('/api/v2/mappings/search', requestBody);
 }
 
@@ -356,9 +364,13 @@ export function exportMappings(queries: string[], columnFilters: unknown[], mapp
                                inferenceType?: InferenceType[],
                                subjectPrefixes?: string[], objectPrefixes?: string[],
                                labelMatch?: LabelMatchMode,
-                               mappingSetCategory?: MappingSetCategory[]): Promise<void> {
+                               mappingSetCategory?: MappingSetCategory[],
+                               includeWeakPredicates?: WeakPredicate[]): Promise<void> {
+    // The export must carry the checkbox state too, or the downloaded TSV would hold rows the user
+    // could not see on screen (or, worse, be missing the ones they had asked for).
     const requestBody = buildSearchRequest(queries, 0, 10, columnFilters, [], mappingSetIds,
-        undefined, inferenceType, false, subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory);
+        undefined, inferenceType, false, subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory,
+        includeWeakPredicates);
     return downloadPost('/api/v2/mappings/search?format=sssom-tsv', requestBody, 'oxo2-mappings.tsv');
 }
 

@@ -1,4 +1,5 @@
 import { get, post } from '../../app/api';
+import { WeakPredicate } from '../../model/WeakPredicate';
 
 /**
  * Typeahead suggestions (ADR-0034).
@@ -14,6 +15,11 @@ export interface EntitySuggestion {
     label?: string;
     iri?: string;
     prefix?: string;
+    /**
+     * How many mappings picking this suggestion will actually return — the entity's mappings on the
+     * side being searched, counting only the predicates currently ticked (ADR-0035). Not the entity's
+     * total: showing that would promise rows the search then hides. Always ≥ 1.
+     */
     mappingCount: number;
 }
 
@@ -51,11 +57,17 @@ export const MIN_SUGGEST_LENGTH = 2;
  *
  * `side` defaults to subject on the caller's side: the main search box matches the subject side only
  * (ADR-0030), so suggesting an entity that appears solely as an object would complete to zero rows.
+ *
+ * `includeWeakPredicates` MUST be the same selection the search this completes into will use
+ * (ADR-0035). It is not a display preference: it decides which entities are suggestable at all. Pass
+ * the wrong set and the dropdown offers entities whose every mapping the search then hides — you pick
+ * one, and the table comes back empty.
  */
 export function fetchEntitySuggestions(
     query: string,
     side: EntitySide = 'subject',
     prefixes: string[] = [],
+    includeWeakPredicates: WeakPredicate[] = [],
     size = 10,
 ): Promise<EntitySuggestion[]> {
     const params = new URLSearchParams();
@@ -64,6 +76,9 @@ export function fetchEntitySuggestions(
     params.set('size', String(size));
     for (const prefix of prefixes) {
         params.append('prefix', prefix);
+    }
+    for (const predicate of includeWeakPredicates) {
+        params.append('includeWeakPredicates', predicate);
     }
     return get<EntitySuggestionResponse[]>(`/api/v2/suggest/entities?${params.toString()}`)
         .then((response) => response.map(fromEntitySuggestionResponse));

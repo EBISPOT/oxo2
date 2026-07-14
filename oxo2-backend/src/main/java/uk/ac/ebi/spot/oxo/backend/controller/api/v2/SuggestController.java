@@ -30,6 +30,7 @@ import uk.ac.ebi.spot.oxo.backend.service.helper.SuggestFields;
 import uk.ac.ebi.spot.oxo.model.entity.EntityConstants;
 import uk.ac.ebi.spot.oxo.model.entity.EntitySide;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
+import uk.ac.ebi.spot.oxo.model.sssom.WeakPredicate;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -75,8 +76,12 @@ public class SuggestController {
                     + "\"MONDO:0000001\"). Results rank a leading-edge match above a mid-label token "
                     + "match, and are boosted by how many mappings the entity participates in. A query "
                     + "shorter than " + EntitySuggestQueryBuilder.MIN_QUERY_LENGTH + " characters "
-                    + "returns an empty list without querying Solr.")
+                    + "returns an empty list without querying Solr.\n\n"
+                    + "Only entities a search would actually return are suggested: an entity whose "
+                    + "every mapping uses a hidden predicate is offered only once "
+                    + "`includeWeakPredicates` asks for that predicate (ADR-0035).")
     @ApiResponse(responseCode = "200", description = "Matching entities, most relevant first")
+    @ApiResponse(responseCode = "400", description = "Unknown value in includeWeakPredicates")
     @GetMapping("/entities")
     public ResponseEntity<List<EntitySuggestion>> suggestEntities(
             @Parameter(description = "What the user has typed so far.", example = "mel")
@@ -86,6 +91,13 @@ public class SuggestController {
                     + "search box uses SUBJECT, because the default search matches the subject side "
                     + "only (ADR-0030) — suggesting an object-only entity would complete to no rows.")
             @RequestParam(name = "side", required = false) EntitySide side,
+
+            @Parameter(description = "Suggest entities whose mappings use these normally-hidden "
+                    + "predicates too: `subClassOf`, `hasDbXref`. Must match the checkbox state of the "
+                    + "search this completes into, or a suggestion could return no rows.",
+                    example = "hasDbXref")
+            @RequestParam(name = "includeWeakPredicates", required = false)
+            List<String> includeWeakPredicates,
 
             @Parameter(description = "Restrict to these CURIE prefixes (ontologies).", example = "MONDO")
             @RequestParam(name = "prefix", required = false) List<String> prefixes,
@@ -99,16 +111,41 @@ public class SuggestController {
             return ResponseEntity.ok(List.of());
         }
 
+        List<WeakPredicate> weakPredicates = parseWeakPredicates(includeWeakPredicates);
+        if (weakPredicates == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
         try {
             SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                    query, side, prefixes, size);
+                    query, side, prefixes, weakPredicates, size);
             QueryResponse response = solrClient.queryEntities(solrQuery);
             return ResponseEntity.ok(toSuggestions(response));
         } catch (Exception queryFailure) {
-            logger.error("Error suggesting entities (q={}, side={}, prefixes={})",
-                    query, side, prefixes, queryFailure);
+            logger.error("Error suggesting entities (q={}, side={}, prefixes={}, weak={})",
+                    query, side, prefixes, includeWeakPredicates, queryFailure);
             return ResponseEntity.status(500).build();
         }
+    }
+
+    /**
+     * Null when any code is unknown, so the caller can answer 400. Silently dropping an unrecognised
+     * predicate would hand back suggestions filtered differently from the search the caller believes
+     * it is completing — the exact class of mismatch ADR-0035 exists to remove.
+     */
+    private static List<WeakPredicate> parseWeakPredicates(List<String> codes) {
+        if (codes == null) {
+            return List.of();
+        }
+        List<WeakPredicate> parsed = new ArrayList<>();
+        for (String code : codes) {
+            WeakPredicate predicate = WeakPredicate.fromCode(code);
+            if (predicate == null) {
+                return null;
+            }
+            parsed.add(predicate);
+        }
+        return parsed;
     }
 
     private static List<EntitySuggestion> toSuggestions(QueryResponse response) {
@@ -119,7 +156,9 @@ public class SuggestController {
                     string(document, EntityConstants.LABEL),
                     string(document, EntityConstants.IRI),
                     string(document, EntityConstants.PREFIX),
-                    number(document, EntityConstants.MAPPING_COUNT)));
+                    // The count under the caller's checkbox state, computed by Solr as an fl function
+                    // — not the stored mapping_count, which counts predicates the search hides.
+                    number(document, EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT)));
         }
         return suggestions;
     }
