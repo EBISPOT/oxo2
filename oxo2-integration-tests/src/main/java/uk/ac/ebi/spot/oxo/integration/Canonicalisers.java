@@ -122,6 +122,30 @@ public final class Canonicalisers {
         return canonicaliseGenericJson(Files.readString(path, StandardCharsets.UTF_8));
     }
 
+    /**
+     * Canonicalise the union of the per-CURIE-prefix entity shards (ADR-0034). Each file is a JSON
+     * array of entity documents; {@link #canonicaliseNode} sorts arrays, so how the corpus was
+     * sharded by prefix never reaches the golden — which is the point, since the shard set depends on
+     * the fixture's ontologies rather than on anything under test.
+     */
+    public static String readMergedJson(List<Path> paths) throws IOException {
+        return canonicaliseGenericJson(MAPPER.writeValueAsString(mergeArrays(paths)));
+    }
+
+    /** The concatenation of several JSON-array files into one array. */
+    private static ArrayNode mergeArrays(List<Path> paths) throws IOException {
+        ArrayNode merged = MAPPER.createArrayNode();
+        for (Path path : paths) {
+            JsonNode tree = MAPPER.readTree(Files.readString(path, StandardCharsets.UTF_8));
+            if (tree.isArray()) {
+                merged.addAll((ArrayNode) tree);
+            } else {
+                merged.add(tree);
+            }
+        }
+        return merged;
+    }
+
     private static JsonNode canonicaliseNode(JsonNode node) {
         if (node.isObject()) {
             ObjectNode source = (ObjectNode) node;
@@ -180,16 +204,7 @@ public final class Canonicalisers {
      * across files never reaches the golden.
      */
     public static String readExplainedJson(List<Path> paths) throws IOException {
-        ArrayNode merged = MAPPER.createArrayNode();
-        for (Path path : paths) {
-            JsonNode tree = MAPPER.readTree(Files.readString(path, StandardCharsets.UTF_8));
-            if (tree.isArray()) {
-                merged.addAll((ArrayNode) tree);
-            } else {
-                merged.add(tree);
-            }
-        }
-        return canonicaliseExplainedJson(MAPPER.writeValueAsString(merged));
+        return canonicaliseExplainedJson(MAPPER.writeValueAsString(mergeArrays(paths)));
     }
 
     /** Recursively replace any text-valued `asserted_mappings` / `explanation` field with

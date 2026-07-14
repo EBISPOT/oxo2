@@ -21,8 +21,8 @@ Scope: one minimal single-set fixture per active `ChainRulesEnum` rule under `te
   `mapping_set_source` union is populated again, recovered from the per-leaf `mapping_id` provenance in
   each explanation chain ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)).
 - **Expected output layer** — an assertion target for a fixture: the cross-set inferred TTL / the
-  explained mapping JSON / the mappingSet JSON, and the per-`inference_type` Solr `numFound`. All
-  mirrored per fixture under `testcases_expected_output/minimal/<fixture>/`.
+  explained mapping JSON / the mappingSet JSON / the derived entity documents, and the Solr `numFound`
+  counts. All mirrored per fixture under `testcases_expected_output/minimal/<fixture>/`.
   `ArtifactPaths.artifactsFor(fixture)` is the single source of truth for the path list.
   The explained-mapping layer is a **set** of files — `inferences-explained-NNNNN.json`, one per
   explanation bundle ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)) — so its
@@ -80,8 +80,10 @@ stop / on-disk core wipe / start / stop / restart churn dominated the run time):
 
 - `@BeforeAll` (Failsafe IT) / start of `captureExpected`: stop any prior test Solr on the test port →
   `copySolrConfig.sh` once (fresh empty cores in `SOLR_HOME_TEST`, safe because Solr is down) →
-  `solr start` on the test port → wait for both collections.
-- Before each fixture's pipeline pass: empty both collections with a Solr `delete *:*` + hard commit.
+  `solr start` on the test port → wait for all three collections.
+- Before each fixture's pipeline pass: empty all three collections with a Solr `delete *:*` + hard
+  commit. `oxo2-entities` must be cleared too, or one fixture's entities would be counted into the
+  next fixture's assertions.
   Solr stays up, so this replaces `copySolrConfig.sh`'s on-disk wipe (which would need Solr down). The
   schema never changes between fixtures, so re-laying config is unnecessary.
 - `loadData.nextflow` runs with `OXO2_SOLR_UNMANAGED=true`, so each pass indexes into the
@@ -93,8 +95,8 @@ stop / on-disk core wipe / start / stop / restart churn dominated the run time):
 ### Operational consequences
 
 - The test run no longer touches the developer's production Solr or `OXO2_DATA`: it only wipes
-  `OXO2_DATA_TEST` and the `oxo2-mappings` / `oxo2-mappingsets` collections inside the test Solr
-  (`SOLR_HOME_TEST`, test port). The final fixture's data remains in the test Solr only if
+  `OXO2_DATA_TEST` and the `oxo2-mappings` / `oxo2-mappingsets` / `oxo2-entities` collections inside
+  the test Solr (`SOLR_HOME_TEST`, test port). The final fixture's data remains in the test Solr only if
   `-Doxo2.it.keepSolr=true`; otherwise the run stops it.
 - Caveat: the test Solr is a separate process but is still a local Solr. Running the IT while a
   production Solr is up on a *different* port is fine; only two Solrs on the *same* port would clash —
@@ -154,7 +156,17 @@ and `testcases_expected_output/minimal/<fixture>/` (expected).
 | Inferred TTL | `crossSet/inferences.ttl` | Expand commas, sort N-Triples lexically, text-equal. |
 | OxO2 inferred JSON (bare) | `solr/mapping/inferences-explained.json` | Recursive key + array sort, text-equal. (Bare docs carry no embedded `asserted_mappings` / `explanation` strings to unwrap — ADR-0020.) |
 | MappingSet JSON | `solr/mappingSet/inferences-mappingSet.json` | Jackson tree, recursive key + array sort, text-equal. |
-| Solr | `oxo2-mappings` / `oxo2-mappingsets` | per-`inference_type` `numFound` (ASSERTED / SSSOM_INFERENCE) matches `numFound.json`. |
+| Entity documents | `entities/entities.json` | Merge the per-prefix shards, recursive key + array sort, text-equal. |
+| Solr | `oxo2-mappings` / `oxo2-mappingsets` / `oxo2-entities` | per-`inference_type` `numFound` (ASSERTED / SSSOM_INFERENCE) for the two mapping collections, plus the `oxo2-entities` total, matches `numFound.json`. |
+
+The **entity layer is the one whose actual side is rooted at `$OXO2_DATA/entities`, not
+`$OXO2_DATA/inferences/`** — it is folded from the Solr index by `mappings2entities`
+([ADR-0034](../docs/adr/0034-entity-collection-for-typeahead.md)) after `index-inferred`, so it is not
+reasoner output at all. Its golden pins the documents, not just the count: that is what catches a
+wrong label/IRI pick, a miscounted degree, and an entity reachable only as the *object* of an inferred
+mapping being dropped from the subject-side suggest. The `oxo2-entities` total in `numFound.json` is
+the **distinct-entity count** (the collection carries no `inference_type`), so a fold that stopped
+deduping shows up there as the mapping count.
 
 ### Known gaps
 

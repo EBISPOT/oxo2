@@ -28,7 +28,7 @@ public final class ArtifactPaths {
     private ArtifactPaths() {}
 
     /** Which canonicaliser a layer uses. */
-    public enum Layer { TTL, JSON, EXPLAINED }
+    public enum Layer { TTL, JSON, EXPLAINED, ENTITIES }
 
     /**
      * {@code actual} may resolve to several files (one per explanation bundle); {@code expected} is
@@ -72,6 +72,15 @@ public final class ArtifactPaths {
                 actual.resolve("solr").resolve("mappingSet").resolve("inferences-mappingSet.json"),
                 expected.resolve("solr").resolve("mappingSet").resolve("inferences-mappingSet.json"), Layer.JSON));
 
+        // The per-entity typeahead read model (ADR-0034). Rooted at $OXO2_DATA/entities, NOT under
+        // inferences/: it is folded from the Solr index after index-inferred, not produced by the
+        // reasoner. Pinning the documents — not just the count — is what makes this layer worth
+        // having: it catches a wrong label/IRI pick, a miscounted degree, and an entity that appears
+        // only on the object side of an inferred mapping being dropped.
+        artifacts.add(new LayerArtifact("entities/*.json",
+                () -> globSorted(Env.oxo2Data().resolve("entities"), "*.json"),
+                expected.resolve("entities").resolve("entities.json"), Layer.ENTITIES));
+
         return artifacts;
     }
 
@@ -80,16 +89,23 @@ public final class ArtifactPaths {
      * though the canonicaliser would sort the union anyway.
      */
     private static List<Path> explainedMappingFiles(Path actualInferences) {
-        Path mappingDir = actualInferences.resolve("solr").resolve("mapping");
-        if (!Files.isDirectory(mappingDir)) {
+        return globSorted(actualInferences.resolve("solr").resolve("mapping"),
+                "inferences-explained-*.json");
+    }
+
+    /**
+     * The files matching {@code glob} in {@code directory}, in name order — empty if the directory
+     * does not exist, which is how a layer a fixture never exercises stays absent on the actual side.
+     */
+    private static List<Path> globSorted(Path directory, String glob) {
+        if (!Files.isDirectory(directory)) {
             return List.of();
         }
         List<Path> files = new ArrayList<>();
-        try (DirectoryStream<Path> stream =
-                     Files.newDirectoryStream(mappingDir, "inferences-explained-*.json")) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory, glob)) {
             stream.forEach(files::add);
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed listing explained-mapping bundles in " + mappingDir, e);
+            throw new UncheckedIOException("Failed listing " + glob + " in " + directory, e);
         }
         files.sort(Comparator.comparing(Path::getFileName));
         return files;

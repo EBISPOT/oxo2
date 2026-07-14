@@ -567,7 +567,10 @@ fi
 if should_run mappings2entities; then
     start_time=$(date +%s)
     echo "###################" mappings2entities...
-    (cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/mappings2entities.nextflow.log" \
+    # Checked: this stage's failure mode is SILENT — an unchecked failure records the stage and
+    # carries on, leaving an empty oxo2-entities collection, which reads as "the typeahead finds
+    # nothing" rather than as a broken load.
+    if ! (cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/mappings2entities.nextflow.log" \
         -c "$SCRIPT_DIR/nextflow/nextflow.config" \
         run "$SCRIPT_DIR/mappings2entities.nf" \
         -profile "$NF_PROFILE" \
@@ -575,7 +578,10 @@ if should_run mappings2entities; then
         --output_dir "$OXO2_DATA/entities" \
         -with-trace    "$NXF_LOGS/mappings2entities-trace.txt" \
         -with-report   "$NXF_LOGS/mappings2entities-report.html" \
-        -with-timeline "$NXF_LOGS/mappings2entities-timeline.html")
+        -with-timeline "$NXF_LOGS/mappings2entities-timeline.html"); then
+        echo "mappings2entities failed; oxo2-entities would be empty or partial. See $NXF_LOGS/mappings2entities.nextflow.log" >&2
+        exit 1
+    fi
     end_time=$(date +%s)
     echo "Deriving entities from the mappings index took: $((end_time - start_time)) seconds"
     record_stage mappings2entities

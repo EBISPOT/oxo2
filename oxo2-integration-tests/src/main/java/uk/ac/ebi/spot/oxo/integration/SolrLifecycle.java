@@ -39,7 +39,7 @@ public final class SolrLifecycle {
     private SolrLifecycle() {}
 
     /** Stop any prior test Solr, lay down fresh empty cores in {@code SOLR_HOME_TEST}, start Solr on
-     *  the test port, and wait until both collections answer queries. Solr is down while
+     *  the test port, and wait until every collection answers queries. Solr is down while
      *  copySolrConfig.sh runs, so its on-disk core wipe is safe here. */
     public static void startFresh() throws IOException, InterruptedException {
         stop();                 // a previous run may have left the test Solr up on this port
@@ -52,7 +52,7 @@ public final class SolrLifecycle {
         System.out.println("Test Solr ready at " + Env.solrHost());
     }
 
-    /** Empty both collections ({@code delete *:*} + hard commit). Fast — no Solr restart. Called
+    /** Empty every collection ({@code delete *:*} + hard commit). Fast — no Solr restart. Called
      *  before every fixture's pipeline pass so each fixture's numFound is that fixture's data only. */
     public static void clearCollections() throws IOException, InterruptedException {
         String base = Env.solrHost().replaceAll("/+$", "");
