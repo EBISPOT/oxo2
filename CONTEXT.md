@@ -109,6 +109,15 @@ at 1: an asserted or ≤2-ontology mapping is distance 1, three ontologies is 2,
 inferred ranking tier's per-hop decay. Reverses ADR-0028's "left inert" default. See
 [ADR-0031](docs/adr/0031-inferred-mapping-distance-as-ontology-span.md). Affects `oxo2-shared`
 (`EntityReference.getCuriePrefix`) and `oxo2-dataload` (`ExplainInferredMappings`).
+- **Explanations are well-founded — the chase never copies an asserted triple** — every derivation
+rule in `sssom.rls` guards its own head with `~assertedTriple(s, p, o)`, so no nil-UUID copy is
+derived for a triple some set already asserts. Without the guard an involution (`SYM-*` twice, or
+`RI4` then `RI5`) re-derives an asserted fact as a *distinct* atom: Nemo's trace stays acyclic over
+its 4-ary atoms, but folding the `mapping_id` away for display collapses the two into one triple and
+the conclusion appears inside its own proof. The guard is output-preserving — it changes proofs, not
+conclusions. See [ADR-0033](docs/adr/0033-well-founded-explanations.md). Affects `oxo2-dataload`
+(`sssom.rls`, `ExplainInferredMappings.hasFoldedCycle`) and `oxo2-integration-tests` (the
+`explanation well-founded` assertion).
 - **On-demand explanations are served by a resident Nemo engine (Proposed; motivation largely
 removed by ADR-0028)** — the once-deferred explanation service runs the cross-set chase **once at startup** and keeps the Nemo
 `ExecutionEngine` resident, turning each single-conclusion explanation into a cheap backward trace

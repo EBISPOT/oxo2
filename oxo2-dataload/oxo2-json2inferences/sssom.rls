@@ -24,6 +24,24 @@
 %! Facts are N-Quads `<s> <p> <o> <urn:uuid:mapping_id> .` (ADR-0010); Nemo imports them in
 %! graph-first order, so the mapping_id is the first term. Inferred conclusions carry the nil
 %! UUID. Rules are named (#[name(...)]) so the Nemo trace identifies them by name, not body text.
+%!
+%! WELL-FOUNDED EXPLANATIONS (ADR-0033). Every derivation rule below carries a
+%! `~assertedTriple(s, p, o)` guard on its own head, so the chase NEVER derives a nil-UUID copy of a
+%! triple that some set already asserts. Without it, an asserted triple and its derived copy are
+%! DISTINCT atoms (the mapping_id differs), so an involution — SYM-* twice, or RI4 then RI5 — can
+%! re-derive an asserted triple as a nil-copy. Nemo's trace stays acyclic over 4-ary atoms, but
+%! ExplainInferredMappings projects the mapping_id away, and the two atoms fold into one triple:
+%! the proof then shows the conclusion inside its own derivation. The guard removes those redundant
+%! copies, which makes the atom -> triple projection collapse-free: for any triple, EITHER it is
+%! asserted (only leaf atoms, no premises) OR it is derived (one nil atom). A cyclic proof is then
+%! impossible, because each case is ruled out — an asserted ancestor is a leaf, a derived ancestor
+%! can have no asserted descendant restating it, and two derived nodes would mean an atom is its own
+%! ancestor, which Nemo's DAG forbids.
+%!
+%! The guard is output-preserving: the removed nil-copies are exactly the triples `inferredMapping`
+%! already excludes via `~assertedTriple`, and every rule body matches the asserted copy instead, so
+%! the fixpoint over TRIPLES — hence the exported inference set — is unchanged. It only shrinks the
+%! store and forces each proof onto the asserted fact it was always entitled to use.
 
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
@@ -62,75 +80,83 @@ strongPredicate(?p) :- nonIdentityStrong(?p) .
 
 % ---- Transitivity, one rule per strong predicate ----
 #[name("T1")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, owl:equivalentClass, ?c) :- mapping(?id1, ?a, owl:equivalentClass, ?b), mapping(?id2, ?b, owl:equivalentClass, ?c) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, owl:equivalentClass, ?c) :- mapping(?id1, ?a, owl:equivalentClass, ?b), mapping(?id2, ?b, owl:equivalentClass, ?c), ~assertedTriple(?a, owl:equivalentClass, ?c) .
 #[name("T2")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, owl:equivalentProperty, ?c) :- mapping(?id1, ?a, owl:equivalentProperty, ?b), mapping(?id2, ?b, owl:equivalentProperty, ?c) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, owl:equivalentProperty, ?c) :- mapping(?id1, ?a, owl:equivalentProperty, ?b), mapping(?id2, ?b, owl:equivalentProperty, ?c), ~assertedTriple(?a, owl:equivalentProperty, ?c) .
 #[name("T3")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, owl:sameAs, ?c) :- mapping(?id1, ?a, owl:sameAs, ?b), mapping(?id2, ?b, owl:sameAs, ?c) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, owl:sameAs, ?c) :- mapping(?id1, ?a, owl:sameAs, ?b), mapping(?id2, ?b, owl:sameAs, ?c), ~assertedTriple(?a, owl:sameAs, ?c) .
 #[name("T6")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, semapv:crossSpeciesBroadMatch, ?c) :- mapping(?id1, ?a, semapv:crossSpeciesBroadMatch, ?b), mapping(?id2, ?b, semapv:crossSpeciesBroadMatch, ?c) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, semapv:crossSpeciesBroadMatch, ?c) :- mapping(?id1, ?a, semapv:crossSpeciesBroadMatch, ?b), mapping(?id2, ?b, semapv:crossSpeciesBroadMatch, ?c), ~assertedTriple(?a, semapv:crossSpeciesBroadMatch, ?c) .
 #[name("T7")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, semapv:crossSpeciesExactMatch, ?c) :- mapping(?id1, ?a, semapv:crossSpeciesExactMatch, ?b), mapping(?id2, ?b, semapv:crossSpeciesExactMatch, ?c) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, semapv:crossSpeciesExactMatch, ?c) :- mapping(?id1, ?a, semapv:crossSpeciesExactMatch, ?b), mapping(?id2, ?b, semapv:crossSpeciesExactMatch, ?c), ~assertedTriple(?a, semapv:crossSpeciesExactMatch, ?c) .
 #[name("T8")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, semapv:crossSpeciesNarrowMatch, ?c) :- mapping(?id1, ?a, semapv:crossSpeciesNarrowMatch, ?b), mapping(?id2, ?b, semapv:crossSpeciesNarrowMatch, ?c) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, semapv:crossSpeciesNarrowMatch, ?c) :- mapping(?id1, ?a, semapv:crossSpeciesNarrowMatch, ?b), mapping(?id2, ?b, semapv:crossSpeciesNarrowMatch, ?c), ~assertedTriple(?a, semapv:crossSpeciesNarrowMatch, ?c) .
 #[name("T9")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:broadMatch, ?c) :- mapping(?id1, ?a, skos:broadMatch, ?b), mapping(?id2, ?b, skos:broadMatch, ?c) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:broadMatch, ?c) :- mapping(?id1, ?a, skos:broadMatch, ?b), mapping(?id2, ?b, skos:broadMatch, ?c), ~assertedTriple(?a, skos:broadMatch, ?c) .
 #[name("T10")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:exactMatch, ?c) :- mapping(?id1, ?a, skos:exactMatch, ?b), mapping(?id2, ?b, skos:exactMatch, ?c) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:exactMatch, ?c) :- mapping(?id1, ?a, skos:exactMatch, ?b), mapping(?id2, ?b, skos:exactMatch, ?c), ~assertedTriple(?a, skos:exactMatch, ?c) .
 #[name("T11")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:narrowMatch, ?c) :- mapping(?id1, ?a, skos:narrowMatch, ?b), mapping(?id2, ?b, skos:narrowMatch, ?c) .
-
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:narrowMatch, ?c) :-
+    mapping(?id1, ?a, skos:narrowMatch, ?b), mapping(?id2, ?b, skos:narrowMatch, ?c),
+    ~assertedTriple(?a, skos:narrowMatch, ?c) .
 % ---- Symmetry of the equivalence predicates (OxO2 extension; SSSOM defines no RI rule for these) ----
 #[name("SYM-equivalentClass")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, owl:equivalentClass, ?a) :- mapping(?id1, ?a, owl:equivalentClass, ?b) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, owl:equivalentClass, ?a) :- mapping(?id1, ?a, owl:equivalentClass, ?b), ~assertedTriple(?b, owl:equivalentClass, ?a) .
 #[name("SYM-equivalentProperty")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, owl:equivalentProperty, ?a) :- mapping(?id1, ?a, owl:equivalentProperty, ?b) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, owl:equivalentProperty, ?a) :- mapping(?id1, ?a, owl:equivalentProperty, ?b), ~assertedTriple(?b, owl:equivalentProperty, ?a) .
 #[name("SYM-sameAs")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, owl:sameAs, ?a) :- mapping(?id1, ?a, owl:sameAs, ?b) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, owl:sameAs, ?a) :- mapping(?id1, ?a, owl:sameAs, ?b), ~assertedTriple(?b, owl:sameAs, ?a) .
 #[name("SYM-exactMatch")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, skos:exactMatch, ?a) :- mapping(?id1, ?a, skos:exactMatch, ?b) .
-
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, skos:exactMatch, ?a) :-
+    mapping(?id1, ?a, skos:exactMatch, ?b),
+    ~assertedTriple(?b, skos:exactMatch, ?a) .
 % ---- SKOS broad/narrow inverse (SSSOM RI1/RI2) ----
 #[name("RI1")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, skos:broadMatch, ?a) :- mapping(?id1, ?a, skos:narrowMatch, ?b) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, skos:broadMatch, ?a) :- mapping(?id1, ?a, skos:narrowMatch, ?b), ~assertedTriple(?b, skos:broadMatch, ?a) .
 #[name("RI2")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, skos:narrowMatch, ?a) :- mapping(?id1, ?a, skos:broadMatch, ?b) .
-
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, skos:narrowMatch, ?a) :-
+    mapping(?id1, ?a, skos:broadMatch, ?b),
+    ~assertedTriple(?b, skos:narrowMatch, ?a) .
 % ---- crossSpecies inverse (SSSOM RI3/RI4/RI5) ----
 #[name("RI3")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, semapv:crossSpeciesExactMatch, ?a) :- mapping(?id1, ?a, semapv:crossSpeciesExactMatch, ?b) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, semapv:crossSpeciesExactMatch, ?a) :- mapping(?id1, ?a, semapv:crossSpeciesExactMatch, ?b), ~assertedTriple(?b, semapv:crossSpeciesExactMatch, ?a) .
 #[name("RI4")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, semapv:crossSpeciesBroadMatch, ?a) :- mapping(?id1, ?a, semapv:crossSpeciesNarrowMatch, ?b) .
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, semapv:crossSpeciesBroadMatch, ?a) :- mapping(?id1, ?a, semapv:crossSpeciesNarrowMatch, ?b), ~assertedTriple(?b, semapv:crossSpeciesBroadMatch, ?a) .
 #[name("RI5")]
-mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, semapv:crossSpeciesNarrowMatch, ?a) :- mapping(?id1, ?a, semapv:crossSpeciesBroadMatch, ?b) .
-
+mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?b, semapv:crossSpeciesNarrowMatch, ?a) :-
+    mapping(?id1, ?a, semapv:crossSpeciesBroadMatch, ?b),
+    ~assertedTriple(?b, semapv:crossSpeciesNarrowMatch, ?a) .
 % ---- Role chains over identity edges (ADR-0016) ----
 % RCE1 (leading bridge). Strict-identity bridge owl:equivalentClass PRESERVES the propagated predicate.
 #[name("RCE1-1")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
-    mapping(?id1, ?a, owl:equivalentClass, ?b), mapping(?id2, ?b, ?p, ?c), strongPredicate(?p) .
+    mapping(?id1, ?a, owl:equivalentClass, ?b), mapping(?id2, ?b, ?p, ?c), strongPredicate(?p),
+    ~assertedTriple(?a, ?p, ?c) .
 % Weak bridge skos:exactMatch: identity conclusions CAP to skos:exactMatch (RCE1-2a); hierarchy and
 % crossSpecies predicates propagate unchanged (RCE1-2b). An exactMatch edge never yields owl:* identity.
 #[name("RCE1-2a")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:exactMatch, ?c) :-
-    mapping(?id1, ?a, skos:exactMatch, ?b), mapping(?id2, ?b, ?p, ?c), identityPredicate(?p) .
+    mapping(?id1, ?a, skos:exactMatch, ?b), mapping(?id2, ?b, ?p, ?c), identityPredicate(?p),
+    ~assertedTriple(?a, skos:exactMatch, ?c) .
 #[name("RCE1-2b")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
-    mapping(?id1, ?a, skos:exactMatch, ?b), mapping(?id2, ?b, ?p, ?c), nonIdentityStrong(?p) .
-
+    mapping(?id1, ?a, skos:exactMatch, ?b), mapping(?id2, ?b, ?p, ?c), nonIdentityStrong(?p),
+    ~assertedTriple(?a, ?p, ?c) .
 % RCE2 (trailing bridge). Strict-identity bridge owl:equivalentClass PRESERVES the propagated predicate.
 #[name("RCE2-1")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
-    mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, owl:equivalentClass, ?c), strongPredicate(?p) .
+    mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, owl:equivalentClass, ?c), strongPredicate(?p),
+    ~assertedTriple(?a, ?p, ?c) .
 % Weak bridge skos:exactMatch: identity conclusions CAP to skos:exactMatch (RCE2-2a); hierarchy and
 % crossSpecies predicates propagate unchanged (RCE2-2b).
 #[name("RCE2-2a")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, skos:exactMatch, ?c) :-
-    mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, skos:exactMatch, ?c), identityPredicate(?p) .
+    mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, skos:exactMatch, ?c), identityPredicate(?p),
+    ~assertedTriple(?a, skos:exactMatch, ?c) .
 #[name("RCE2-2b")]
 mapping(<urn:uuid:00000000-0000-0000-0000-000000000000>, ?a, ?p, ?c) :-
-    mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, skos:exactMatch, ?c), nonIdentityStrong(?p) .
-
+    mapping(?id1, ?a, ?p, ?b), mapping(?id2, ?b, skos:exactMatch, ?c), nonIdentityStrong(?p),
+    ~assertedTriple(?a, ?p, ?c) .
 % Inferred = derivable but not asserted in ANY set (EDB negation over the projected triple).
 inferredMapping(?s, ?p, ?o) :- mapping(?id, ?s, ?p, ?o), ~assertedTriple(?s, ?p, ?o) .
 
