@@ -41,6 +41,8 @@ const SIZE_PARAM = "size";
 const SORT_PARAM = "sort";
 const TYPE_PARAM = "type";
 const FILTER_PARAM = "filter";
+/** Fields whose filter value was picked from a suggestion, so matches EXACTly (ADR-0034). */
+const EXACT_PARAM = "fx";
 
 type Updater<T> = T | ((old: T) => T);
 const applyUpdater = <T,>(updater: Updater<T>, current: T): T =>
@@ -256,6 +258,35 @@ export function useUrlFieldFilters(): [Record<string, string>, (filters: Record<
     );
 
     return [filters, setFilters];
+}
+
+// ---------- exact-match filters (ADR-0034) ----------
+
+/**
+ * Which field filters were PICKED from a suggestion rather than typed.
+ *
+ * A picked value came out of the index and is unambiguous, so it filters EXACTly; a typed value is a
+ * fragment, so it keeps the existing "contains" behaviour. Carried as its own repeatable `fx=<field>`
+ * param rather than by extending the `filter=<field>=<value>` encoding — that encoding is shared with
+ * the Advanced table's column filters, and widening it would ripple somewhere this feature has no
+ * business touching. Bookmarkable like every other bit of table state here.
+ */
+export function useUrlExactFilters(): [Set<string>, (fields: Set<string>) => void] {
+    const { searchParams, update } = useUrlState();
+    const rawExact = searchParams.getAll(EXACT_PARAM);
+    const exactKey = rawExact.join(NUL);
+    const exact = useMemo(() => new Set(rawExact.filter((field) => field.trim() !== "")), [exactKey]);
+
+    const setExact = useCallback(
+        (fields: Set<string>) => update((params) => {
+            params.delete(EXACT_PARAM);
+            [...fields].filter((field) => field.trim() !== "")
+                .forEach((field) => params.append(EXACT_PARAM, field));
+        }, true),
+        [update]
+    );
+
+    return [exact, setExact];
 }
 
 // ---------- column filters (MRT-shaped, for the Advanced table) ----------

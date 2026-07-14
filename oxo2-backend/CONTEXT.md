@@ -43,6 +43,21 @@ mapping into the targets). Input is capped (default 1 000 terms).
 - **`GET /api/v2/ontologies`** — distinct CURIE prefixes with counts (drives the Search-tab from/to
 selectors); `?forSubject=<prefix>` facets `object_prefix` over that subject subset to return reachable
 targets with counts.
+- **`GET /api/v2/suggest/entities?q=&side=&prefix=&size=`** — the entity typeahead
+([ADR-0034](../docs/adr/0034-entity-collection-for-typeahead.md)). Reads `oxo2-entities` (one document
+per DISTINCT entity), not `oxo2-mappings`, which is denormalised and would suggest an entity once per
+mapping. Prefix-of-any-token on the label (so `mel` reaches "malignant melanoma"), whole-string prefix
+on the CURIE (so `MONDO:00` is a prefix of `MONDO:0000001`); a leading-edge match outranks a mid-label
+token match, and popularity (`mapping_count`) breaks ties. `side` defaults to SUBJECT, because the
+default search matches the subject side only (ADR-0030) — suggesting an object-only entity would
+complete to zero rows. A query under two characters returns `[]` without touching Solr.
+- **`GET /api/v2/suggest/values?field=&size=`** — every distinct value of one controlled-vocabulary
+field, most common first. Meant to be fetched once and filtered client-side. Only low-cardinality fields
+are permitted (400 otherwise): a global facet on an entity field would enumerate millions of terms, and
+one on a `text_general` field would return analyzed tokens rather than values.
+- **`POST /api/v2/suggest/values`** — the same, but **scoped to a live search**, so a suggested filter
+value can never yield zero rows and arrives with the count of mappings behind it. Body wraps the very
+`MappingSearchRequest` the result table is showing (see § Querying patterns).
 
 `?format=` (default `json`; plus `sssom-tsv` / `csv` / `tsv`) on `search`, the prefix-filtered
 `GET /api/v2/mappings`, and `batch-map` negotiates the representation: a non-`json` format streams the
@@ -126,9 +141,17 @@ SolrJ brings (which lacks `@Schema.$dynamicRef()` and would otherwise fail spec 
 - `controller/api/v2/` — REST controllers (`MappingController`, `MappingSetController`).
 - `controller/api/dto/request/` — request DTOs: `MappingSearchRequest`, `FieldQuery`, `SortedField`, `SortOrderEnum`.
 - `controller/api/dto/response/` — response DTOs: `MappingSearchResponse`, `MappingSetSummary`.
-- `service/OxOSolrClient.java` — single SolrJ-backed service exposing `query(...)` over the `oxo2-mappings` collection 
-and `queryMappingSets(...)` over `oxo2-mappingsets`.
+- `service/OxOSolrClient.java` — single SolrJ-backed service exposing `query(...)` over the `oxo2-mappings` collection,
+`queryMappingSets(...)` over `oxo2-mappingsets`, and `queryEntities(...)` over `oxo2-entities`
+([ADR-0034](../docs/adr/0034-entity-collection-for-typeahead.md)).
 - `service/helper/SolrQueryBuilder.java` — translates `MappingSearchRequest` into a `SolrQuery` (filters, sort, paging).
+Also builds the two value-suggest queries, because the contextual one has to reuse the real search query (below).
+- `service/helper/EntitySuggestQueryBuilder.java` — the entity typeahead query, against `oxo2-entities`. A *peer* of
+`SolrQueryBuilder`, not an extension: a different collection with a different schema and no `MappingEnum`.
+- `service/helper/SuggestFields.java` — which fields may be faceted for suggestions, and which Solr field a facet on
+them must actually read.
+- `service/SuggestFacetWarmup.java` — warms the facet caches on startup (the `string` fields have no docValues, so the
+first facet on one uninverts it).
 - `service/helper/SolrConstants.java` — Solr field-name constants for this module's queries.
 - `exception/GlobalExceptionHandler.java` — top-level exception translation.
 - `config/OpenApiConfig.java` — OpenAPI 3 `info` metadata for the Swagger docs (see § API documentation).
@@ -259,6 +282,28 @@ Performance note: `*word*` is a leading wildcard that scans the n-gram term dict
 Solr's `filterCache` makes a repeated filter ~1 ms, but each distinct value a user types is a
 cold query. This is the cost of preserving partial-word (substring) matching; a phrase query
 on the plain `text_general` field would be ~50× faster but match whole words only.
+
+### Suggest queries (ADR-0034)
+
+Two invariants worth stating, because both are easy to break and neither fails loudly.
+
+**The contextual value suggest must REUSE `buildSolrQuery`, never rebuild the filters.** Its
+suggestions have to be scoped by exactly what the visible result set is scoped by — the other column
+filters, the weak-predicate exclusion, the corpus / inference-type / ontology-prefix / mapping-set
+filters. So `buildValueSuggestQuery` builds the *real* search query and then turns it into a `rows=0`
+facet request. Two things are deliberately undone: the same-SPO collapse (a facet counts documents; the
+collapse only picks a representative row for display, and leaving it on would make the counts disagree
+with the filter the user is about to apply) and the in-progress filter on the field being suggested
+(otherwise the facet is scoped by the half-typed value it is trying to complete). A regression test
+compares the two filter-query lists directly.
+
+**`facet.prefix` is a raw byte prefix — not analyzed, not query-parsed, not case-folded.** So it must
+never be `escapeQueryChars`-escaped (escaping is a query-syntax concern; here it would put literal
+backslashes into the term). And because the faceted field preserves the original casing — it must, or a
+suggestion would come back as `mondo:0005148` — a case-sensitive prefix would miss "Melanoma" for a user
+typing `mel`. The suggest therefore issues the prefix under several casings and merges the buckets. This
+covers real label and CURIE casing; it does **not** cover a mid-token camelCase boundary (`oboinowl`
+will not find `oboInOwl:hasDbXref`), which is the accepted, recorded gap in ADR-0034.
 
 ### Configuration
 

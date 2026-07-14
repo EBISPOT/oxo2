@@ -26,7 +26,7 @@ services:
     volumes:
       - solr-data:/mnt/oxo/solr-data
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS 'http://localhost:8983/solr/oxo2-mappings/select?q=*:*&rows=0' >/dev/null && curl -fsS 'http://localhost:8983/solr/oxo2-mappingsets/select?q=*:*&rows=0' >/dev/null"]
+      test: ["CMD-SHELL", "curl -fsS 'http://localhost:8983/solr/oxo2-mappings/select?q=*:*&rows=0' >/dev/null && curl -fsS 'http://localhost:8983/solr/oxo2-mappingsets/select?q=*:*&rows=0' >/dev/null && curl -fsS 'http://localhost:8983/solr/oxo2-entities/select?q=*:*&rows=0' >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 18

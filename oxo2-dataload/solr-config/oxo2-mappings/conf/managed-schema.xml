@@ -579,6 +579,24 @@
   <field name="predicate_iri" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_iri" type="string" multiValued="false" indexed="true" stored="true"/>
 
+  <!-- Whole-value twins for the controlled-vocabulary fields that are text_general (ADR-0034).
+       Faceting a text_general field returns its ANALYZED TOKENS, not its values — an autocomplete
+       built on that would offer "the" and "disease" as completions of a mapping set title. These
+       string twins carry the whole value with its original casing, so the Advanced-tab vocabulary
+       suggest can facet them for distinct values and an exact filter can match one back.
+
+       They are explicit fields, not the dynamic *_str (which is docValues-only, indexed="false", so
+       it can be faceted but never filtered on). Same shape as the *_label_str twins above; the
+       multiValued ones mirror their source. Populated by copyField, so they need a re-post of the
+       mappings (START_STAGE=index-asserted) — not a re-inference. -->
+  <field name="subject_category_str" type="string" multiValued="false" indexed="true" stored="false"/>
+  <field name="object_category_str" type="string" multiValued="false" indexed="true" stored="false"/>
+  <field name="mapping_tool_str" type="string" multiValued="false" indexed="true" stored="false"/>
+  <field name="mapping_set_title_str" type="string" multiValued="false" indexed="true" stored="false"/>
+  <field name="author_label_str" type="string" multiValued="true" indexed="true" stored="false"/>
+  <field name="creator_label_str" type="string" multiValued="true" indexed="true" stored="false"/>
+  <field name="reviewer_label_str" type="string" multiValued="true" indexed="true" stored="false"/>
+
   <dynamicField name="*_txt_en_split_tight" type="text_en_splitting_tight" indexed="true" stored="true"/>
   <dynamicField name="*_descendent_path" type="descendent_path" indexed="true" stored="true"/>
   <dynamicField name="*_ancestor_path" type="ancestor_path" indexed="true" stored="true"/>
@@ -664,5 +682,14 @@
   <!-- Union subject_id and object_id into entity_id for the /stats distinct-entity estimate (ADR-0031). -->
   <copyField source="subject_id" dest="entity_id"/>
   <copyField source="object_id" dest="entity_id"/>
+
+  <!-- Whole-value twins backing the Advanced-tab vocabulary suggest (ADR-0034). -->
+  <copyField source="subject_category" dest="subject_category_str" maxChars="256"/>
+  <copyField source="object_category" dest="object_category_str" maxChars="256"/>
+  <copyField source="mapping_tool" dest="mapping_tool_str" maxChars="256"/>
+  <copyField source="mapping_set_title" dest="mapping_set_title_str" maxChars="256"/>
+  <copyField source="author_label" dest="author_label_str" maxChars="256"/>
+  <copyField source="creator_label" dest="creator_label_str" maxChars="256"/>
+  <copyField source="reviewer_label" dest="reviewer_label_str" maxChars="256"/>
 </schema>
 

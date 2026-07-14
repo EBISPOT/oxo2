@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Schema for the oxo2-entities collection: one document per DISTINCT entity (ADR-0034).
+
+  Why this collection exists: oxo2-mappings is denormalised (one document per mapping), so an entity
+  appears once per mapping it participates in and the index has no per-entity view. Its only n-gram
+  fields are *infix* (text_ngram, min 1 max 35) — built to back the "contains" column filters, and
+  both wrong and expensive for a typeahead. This collection is the per-entity read model: it is
+  derived from the indexed mappings by the mappings2entities dataload stage and can be rebuilt on its
+  own (START_STAGE=mappings2entities) without re-running inference or reindexing the mappings.
+
+  Deliberately NOT a Solr SuggestComponent: a suggester takes no filter query (so it could honour
+  neither the subject-side default search of ADR-0030 nor the ontology filters), and over the
+  denormalised mappings index it would suggest once per mapping rather than once per entity.
+-->
+<schema name="oxo2-entities" version="1.7">
+
+  <uniqueKey>id</uniqueKey>
+
+  <fieldType name="string" class="solr.StrField" sortMissingLast="true"/>
+  <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+  <fieldType name="plong" class="solr.LongPointField"/>
+
+  <!--
+    Not used by any field below. They exist because solrconfig.xml's stock
+    AddSchemaFieldsUpdateProcessorFactory names them in its typeMapping list, and that factory
+    resolves its field types when the CORE LOADS — so a missing type is a core-load failure, not a
+    dormant one. Schemaless field creation is itself turned OFF for this collection
+    (update.autoCreateFields=false in core.properties): the whole point of oxo2-entities is a
+    deliberate schema, and a typo'd field name in the dataload JSON must fail loudly rather than
+    quietly become a new field nobody queries.
+  -->
+  <fieldType name="strings" class="solr.StrField" sortMissingLast="true" multiValued="true"/>
+  <fieldType name="booleans" class="solr.BoolField" sortMissingLast="true" multiValued="true"/>
+  <fieldType name="plongs" class="solr.LongPointField" multiValued="true"/>
+  <fieldType name="pdoubles" class="solr.DoublePointField" multiValued="true"/>
+  <fieldType name="pdates" class="solr.DatePointField" multiValued="true"/>
+
+  <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
+    <analyzer type="index">
+      <tokenizer name="standard"/>
+      <filter words="stopwords.txt" ignoreCase="true" name="stop"/>
+      <filter name="lowercase"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer name="standard"/>
+      <filter words="stopwords.txt" ignoreCase="true" name="stop"/>
+      <filter ignoreCase="true" expand="true" name="synonymGraph" synonyms="synonyms.txt"/>
+      <filter name="lowercase"/>
+    </analyzer>
+  </fieldType>
+
+  <!--
+    Prefix-of-ANY-token, for labels. StandardTokenizer splits the label into words and each word is
+    edge-n-grammed, so typing "mel" matches "malignant melanoma" and not merely labels that literally
+    begin with "mel". N-grams at INDEX time only: the query analyzer must emit the typed term whole,
+    or every query would itself be exploded into its own prefixes and match almost everything.
+    preserveOriginal keeps tokens longer than maxGramSize matchable in full.
+  -->
+  <fieldType name="text_edge_ngram" class="solr.TextField" positionIncrementGap="100">
+    <analyzer type="index">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.EdgeNGramFilterFactory" minGramSize="1" maxGramSize="25" preserveOriginal="true"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+    </analyzer>
+  </fieldType>
+
+  <!--
+    Whole-STRING prefix, for CURIEs and for ranking a label by its leading edge. KeywordTokenizer
+    keeps the value as one token, so the ':' in MONDO:0000001 is not a token boundary and "MONDO:00"
+    is a genuine prefix of it. Boosted above text_edge_ngram at query time so an entity whose label
+    STARTS with the typed text outranks one that merely contains a word starting with it.
+  -->
+  <fieldType name="string_edge_ngram" class="solr.TextField" omitNorms="true">
+    <analyzer type="index">
+      <tokenizer class="solr.KeywordTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.TrimFilterFactory"/>
+      <filter class="solr.EdgeNGramFilterFactory" minGramSize="1" maxGramSize="60" preserveOriginal="true"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer class="solr.KeywordTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.TrimFilterFactory"/>
+    </analyzer>
+  </fieldType>
+
+  <!-- The entity itself. `id` is the CURIE (e.g. MONDO:0005148) and is the uniqueKey: that is what
+       makes this collection deduplicated by construction. -->
+  <field name="id" type="string" indexed="true" stored="true" required="true"/>
+  <field name="label" type="text_general" indexed="true" stored="true" multiValued="false"/>
+  <field name="label_str" type="string" indexed="true" stored="false" docValues="true"/>
+
+  <!-- No edge-n-gram on the IRI, deliberately (ADR-0034). Every OBO IRI begins
+       http://purl.obolibrary.org/obo/, so the n-grams for the first ~31 characters would each carry a
+       posting list of every OBO entity — pathological to index and useless as a discriminator. Exact
+       match is what pasting a full IRI actually wants; typing a partial one is served by the label
+       and CURIE fields instead. -->
+  <field name="iri" type="string" indexed="true" stored="true"/>
+
+  <!-- CURIE prefix (ADR-0024), e.g. MONDO. Filters the suggest by the from/to ontology selectors. -->
+  <field name="prefix" type="string" indexed="true" stored="true" docValues="true"/>
+
+  <!-- Popularity. mapping_count is the multiplicative ranking boost; the side counts and flags let a
+       suggest restrict to entities that actually appear on the side being searched (the main search
+       box is subject-side only, ADR-0030). -->
+  <field name="mapping_count" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="subject_count" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="object_count" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="is_subject" type="boolean" indexed="true" stored="true" docValues="true"/>
+  <field name="is_object" type="boolean" indexed="true" stored="true" docValues="true"/>
+
+  <!-- Prefix-match targets. Never stored — they exist only to be searched. -->
+  <field name="id_prefix_ngram" type="string_edge_ngram" indexed="true" stored="false"/>
+  <field name="label_prefix_ngram" type="string_edge_ngram" indexed="true" stored="false"/>
+  <field name="label_ngram" type="text_edge_ngram" indexed="true" stored="false" multiValued="false"/>
+
+  <field name="_version_" type="plong" indexed="false" stored="false"/>
+
+  <!-- Nothing copies into _text_; it exists only because the stock solrconfig.xml names it as the
+       default query field (df). Every query this collection serves is fielded (see
+       EntitySuggestQueryBuilder), so df is never exercised — but an undefined df field is a
+       core-load footgun waiting for the first bare q=. The mappings schema carries it for the same
+       reason. -->
+  <field name="_text_" type="text_general" indexed="true" stored="false" multiValued="true"/>
+
+  <!-- The stock add-schema-fields typeMapping copies any auto-created String field to *_str. Schemaless
+       creation is off, so nothing should ever land here — but the dynamic field must exist for the
+       factory to resolve its copyField destination at core load. -->
+  <dynamicField name="*_str" type="strings" docValues="true" indexed="false" stored="false"/>
+
+  <copyField source="id" dest="id_prefix_ngram" maxChars="128"/>
+  <copyField source="label" dest="label_prefix_ngram" maxChars="128"/>
+  <copyField source="label" dest="label_ngram" maxChars="256"/>
+  <copyField source="label" dest="label_str" maxChars="256"/>
+
+</schema>

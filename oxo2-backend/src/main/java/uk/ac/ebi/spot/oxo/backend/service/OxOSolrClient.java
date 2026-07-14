@@ -35,6 +35,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class OxOSolrClient {
     private SolrClient solrMappingClient;
     private SolrClient solrMappingSetClient;
+    private SolrClient solrEntityClient;
 
     @Value("${solr.url}")
     private String solrUrl;
@@ -63,10 +64,23 @@ public class OxOSolrClient {
                 .withConnectionTimeout(connectionTimeoutMillis, MILLISECONDS)
                 .withIdleTimeout(socketTimeoutMillis, MILLISECONDS)
                 .build();
+        this.solrEntityClient = new HttpJdkSolrClient.Builder(solrUrl + "/oxo2-entities")
+                .withConnectionTimeout(connectionTimeoutMillis, MILLISECONDS)
+                .withIdleTimeout(socketTimeoutMillis, MILLISECONDS)
+                .build();
     }
 
     public QueryResponse queryMappingSets(SolrParams params) throws Exception {
         return solrMappingSetClient.query(params);
+    }
+
+    /**
+     * Raw query against the oxo2-entities collection — the per-entity typeahead read model (ADR-0034).
+     * Returns the {@link QueryResponse} directly: an entity document is not a {@link Mapping} and has
+     * no bean, and the suggest endpoint maps it straight to its DTO.
+     */
+    public QueryResponse queryEntities(SolrParams params) throws Exception {
+        return solrEntityClient.query(params);
     }
 
     /**
@@ -166,8 +180,26 @@ public class OxOSolrClient {
         return objectMapper.writeValueAsString(root);
     }
 
+    /**
+     * Close every client. This used to close only the mapping client, leaking the mapping-set one;
+     * with a third collection (ADR-0034) that omission would leak two. Each close is guarded so one
+     * failure cannot strand the others.
+     */
     @PreDestroy
-    public void close() throws Exception {
-        solrMappingClient.close();
+    public void close() {
+        closeQuietly(solrMappingClient, "oxo2-mappings");
+        closeQuietly(solrMappingSetClient, "oxo2-mappingsets");
+        closeQuietly(solrEntityClient, "oxo2-entities");
+    }
+
+    private static void closeQuietly(SolrClient client, String collection) {
+        if (client == null) {
+            return;
+        }
+        try {
+            client.close();
+        } catch (Exception closeFailure) {
+            logger.warn("Failed to close the Solr client for {}", collection, closeFailure);
+        }
     }
 }

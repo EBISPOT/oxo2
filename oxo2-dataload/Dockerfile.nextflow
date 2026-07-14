@@ -11,14 +11,15 @@ COPY oxo2-dataload/oxo2-downloader/pom.xml /build/oxo2-dataload/oxo2-downloader/
 COPY oxo2-dataload/oxo2-json2inferences/pom.xml /build/oxo2-dataload/oxo2-json2inferences/
 COPY oxo2-dataload/oxo2-sssom2json/pom.xml /build/oxo2-dataload/oxo2-sssom2json/
 COPY oxo2-dataload/oxo2-solr-dataload-client/pom.xml /build/oxo2-dataload/oxo2-solr-dataload-client/
+COPY oxo2-dataload/oxo2-mappings2entities/pom.xml /build/oxo2-dataload/oxo2-mappings2entities/
 COPY oxo2-integration-tests/pom.xml /build/oxo2-integration-tests/
 
-RUN mvn -B -pl :oxo2-downloader,:oxo2-json2inferences,:oxo2-sssom2json -am dependency:go-offline -fae || true
+RUN mvn -B -pl :oxo2-downloader,:oxo2-json2inferences,:oxo2-sssom2json,:oxo2-mappings2entities -am dependency:go-offline -fae || true
 
 COPY oxo2-shared/ /build/oxo2-shared/
 COPY oxo2-dataload/ /build/oxo2-dataload/
 
-RUN mvn -B -pl :oxo2-downloader,:oxo2-json2inferences,:oxo2-sssom2json -am -DskipTests install
+RUN mvn -B -pl :oxo2-downloader,:oxo2-json2inferences,:oxo2-sssom2json,:oxo2-mappings2entities -am -DskipTests install
 
 
 FROM eclipse-temurin:25-jdk-noble
@@ -80,6 +81,7 @@ COPY     ./oxo2-dataload/copySolrConfig.sh \
          ./oxo2-dataload/inferSssomCrossSet.nf \
          ./oxo2-dataload/explainSssomCrossSet.nf \
          ./oxo2-dataload/json2solr.sh \
+         ./oxo2-dataload/mappings2entities.nf \
          ./oxo2-dataload/loadData.lib.sh \
          ./oxo2-dataload/loadData.nextflow \
          ./oxo2-dataload/sssom2json.sh \
@@ -98,6 +100,13 @@ COPY --from=builder \
 COPY --from=builder \
     /build/oxo2-dataload/oxo2-sssom2json/target/oxo2-sssom2json-1.0.0-SNAPSHOT.jar \
     /opt/oxo/oxo2-dataload/oxo2-sssom2json/target/
+
+COPY     ./oxo2-dataload/oxo2-mappings2entities/mappings2entitiesNextflow.sh \
+         /opt/oxo/oxo2-dataload/oxo2-mappings2entities/
+
+COPY --from=builder \
+    /build/oxo2-dataload/oxo2-mappings2entities/target/oxo2-mappings2entities-1.0.0-SNAPSHOT.jar \
+    /opt/oxo/oxo2-dataload/oxo2-mappings2entities/target/
 
 RUN chown -R oxo:oxo /opt/* && chmod -R 777 /opt/*
 

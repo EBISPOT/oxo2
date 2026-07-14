@@ -29,7 +29,8 @@ START_STAGE="${START_STAGE:-download}"
 # stage is a no-op and its owned path simply never exists. Keeping it in the one canonical list lets
 # cleanup and should_run reason over a single sequence for both orchestrators.
 OXO2_STAGES=(download sssom2json nquads infer shard explain \
-             index-asserted explanations2json index-inferred archive)
+             index-asserted explanations2json index-inferred \
+             mappings2entities index-entities archive)
 
 # Each stage "owns" the artifact path(s) it (re)generates. On a run starting at START_STAGE we wipe
 # the owned paths of START_STAGE and every later stage, and PRESERVE everything earlier stages
@@ -44,6 +45,8 @@ declare -A OXO2_STAGE_OWNS=(
     [index-asserted]=""
     [explanations2json]="$OXO2_INFERENCES/solr"
     [index-inferred]=""
+    [mappings2entities]="$OXO2_DATA/entities"
+    [index-entities]=""
     [archive]="$OXO2_INFERENCES/solr-data.tar.gz"
 )
 
@@ -91,12 +94,15 @@ should_wipe_solr() {
     [ "$OXO2_START_INDEX" -le "$(oxo2_stage_index index-asserted)" ]
 }
 
-# solr_needed: true when the run reaches an indexing stage (index-asserted / explanations2json /
-# index-inferred). START_STAGE=archive re-archives an existing $SOLR_HOME without starting Solr.
-# The shard/explain stages are pure reasoning and need no Solr, but they precede index-asserted, so
-# a run entering at or before them still reaches the indexing stages.
+# solr_needed: true when the run reaches a stage that talks to Solr (index-asserted /
+# explanations2json / index-inferred / mappings2entities / index-entities). START_STAGE=archive
+# re-archives an existing $SOLR_HOME without starting Solr. The shard/explain stages are pure
+# reasoning and need no Solr, but they precede index-asserted, so a run entering at or before them
+# still reaches the Solr stages. mappings2entities READS the mappings index (ADR-0034), so it needs
+# Solr up just as much as the indexing stages do — hence index-entities, not index-inferred, is the
+# last stage in this window.
 solr_needed() {
-    [ "$OXO2_START_INDEX" -le "$(oxo2_stage_index index-inferred)" ]
+    [ "$OXO2_START_INDEX" -le "$(oxo2_stage_index index-entities)" ]
 }
 
 # oxo2_clean_owned_artifacts: remove the artifacts owned by START_STAGE and every later stage,

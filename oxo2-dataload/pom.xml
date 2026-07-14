@@ -21,6 +21,7 @@
         <module>oxo2-sssom2json</module>
         <module>oxo2-json2inferences</module>
         <module>oxo2-solr-dataload-client</module>
+        <module>oxo2-mappings2entities</module>
     </modules>
 
 </project>

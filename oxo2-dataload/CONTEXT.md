@@ -156,6 +156,28 @@ Each bundle's inferred `MappingSet` carries only its own shards' contributing so
 `MERGE_INFERRED_MAPPING_SETS` unions them into the one cross-set set. The Solr client caches `EntityDetails` to avoid
 redundant queries during load.
 
+**6. Entity derivation** — `mappings2entities.nf` (JAR in `oxo2-mappings2entities`) folds the
+denormalised mappings index into `oxo2-entities`: **one document per DISTINCT entity**, carrying its
+CURIE, label, IRI, prefix, subject/object membership and mapping count
+([ADR-0034](../docs/adr/0034-entity-collection-for-typeahead.md)). It reads the **Solr index**, not the
+JSON on disk — the index is the only place asserted *and* inferred mappings both live — so it runs
+**after `index-inferred`**, not before: an inferred mapping's subject may appear only as an *object* in
+the asserted data, and deriving earlier would drop it from the subject-side suggest.
+
+`LIST_PREFIXES` facets `subject_prefix`/`object_prefix` (791 prefixes on the current corpus) and
+`ENTITIES_FOR_PREFIX` then runs one JVM per prefix. The prefix shard is what bounds memory: every
+mapping touching an entity of prefix `P` is matched by `subject_prefix:P OR object_prefix:P`, and only
+the sides whose own prefix is `P` are folded — so a shard's counts are exact and its heap holds ONE
+ontology's entity map, not the corpus's. A `__none__` sentinel shard catches entities whose CURIE never
+resolved to a prefix (a bare IRI, ADR-0024); without it they would belong to no shard and vanish from
+the typeahead silently. Measured on the current corpus: MONDO's 438k mappings fold to 33.6k distinct
+entities in 43 s at 478 MB RSS.
+
+**7. Entity load** — `json2solr.sh` posts `$OXO2_DATA/entities/<PREFIX>.json` into `oxo2-entities`.
+
+Because the entity collection is a pure **read model** of the mappings index, it can be rebuilt on its
+own with `START_STAGE=mappings2entities` — no re-inference, no re-explanation, no mappings reindex.
+
 ### Resumable dataload (local, HPC, Jenkins)
 
 Decision and rationale: [ADR-0019](../docs/adr/0019-resumable-hpc-dataload.md) (HPC) and
@@ -280,8 +302,24 @@ is a separate Jenkins job.
 
 ### Solr config
 
-`solr-config/oxo2-mappings/` and `solr-config/oxo2-mappingsets/` hold the Solr collection configs. `copySolrConfig.sh` deploys 
-them to `$SOLR_HOME` for local runs.
+`solr-config/oxo2-mappings/`, `solr-config/oxo2-mappingsets/` and `solr-config/oxo2-entities/` hold the
+Solr collection configs. `copySolrConfig.sh` deploys them to `$SOLR_HOME` for local runs.
+
+`copySolrConfig.sh` takes a mode. The default (`all`) wipes and re-lays every core — it is destructive,
+and callers gate it on `should_wipe_solr`. `entities-only` lays down **just** the `oxo2-entities` core
+and only if it is absent, wiping nothing. That mode exists for a specific trap: `oxo2-entities` is a read
+model whose headline resume path is `START_STAGE=mappings2entities` against an already-indexed
+`oxo2-mappings` — a path that does *not* wipe, so `all` never runs, and without `entities-only` the core
+directory would never be created and `wait_for_solr_core` would hang. Core dirs must be laid down while
+Solr is **down**, so both orchestrators call it before `solr start`.
+
+`oxo2-entities` sets `update.autoCreateFields=false` in its `core.properties`, unlike the other two
+cores. Solr's stock add-unknown-fields chain is on by default; the entity collection exists in order to
+have a *deliberate* schema (edge-n-gram fields with specific analyzers), so a typo'd field name in its
+JSON must fail rather than silently become a new field the typeahead then never matches on. Its schema
+therefore also has to declare the `strings`/`booleans`/`plongs`/`pdoubles`/`pdates` types and a `*_str`
+dynamic field that nothing uses — `AddSchemaFieldsUpdateProcessorFactory` resolves its type mappings
+when the **core loads**, so a missing type is a core-load failure, not a dormant one.
 
 The Solr query/index URL is `$SOLR_URL` (default `http://localhost:8983/solr`), threaded into every
 indexing step **and** into `explanations2json.nf` via `--solr_url` (the inferred-entity CURIE/label
@@ -318,6 +356,21 @@ between fixtures with a `delete *:*` (see `oxo2-integration-tests/CONTEXT.md` §
 > every serialised mapping document carries (asserted and inferred), so a normal `loadData.nextflow`
 > run populates them; an existing index must be rebuilt. A bare IRI that never resolved to a CURIE has
 > no prefix and is left empty.
+
+> **Re-post required (ADR-0034):** `oxo2-mappings` gained seven whole-value `_str` twins
+> (`subject_category`, `object_category`, `mapping_tool`, `mapping_set_title`, `author_label`,
+> `creator_label`, `reviewer_label`) plus their copyFields. They back the Advanced tab's vocabulary
+> typeahead: faceting a `text_general` field returns its *analyzed tokens*, so without a whole-value
+> twin the autocomplete would offer "the" and "disease" as completions of a mapping set title.
+> Deliberately **not** `_ci` twins (ADR-0026) — a case-folding field hands back a lower-cased value,
+> which is wrong to display or to filter back on.
+>
+> This is a **re-post, not a re-inference**: copyFields populate at index time, so it needs
+> `START_STAGE=index-asserted`, which re-runs the `json2solr` posting stages against the JSON already
+> on disk and preserves `download` / `sssom2json` / `nquads` / `infer` / `shard` / `explain` — the
+> 6 CPU-hours of ADR-0028's explain stage are not re-run. Until it happens the seven fields are empty,
+> so those Advanced boxes degrade to plain text inputs rather than breaking. The new `oxo2-entities`
+> collection needs no mappings reindex at all — see `START_STAGE=mappings2entities` above.
 
 ### Input validation
 
