@@ -248,4 +248,13 @@ class SssomQueryBuilderTest {
                 + ":\"" + ClientUtils.escapeQueryChars("0b3d1f2a-6c4e-3a2b-9f10-2c8e7d6a5b4c") + "\"");
         assertThat(query.getBool(SolrConstants.EXPAND, false)).isFalse();
     }
+
+    @Test
+    void byMappingIdQueryReturnsTheFullDocument() {
+        // No field list: the mapping-details page renders provenance, mapping-set metadata,
+        // explanation and asserted_mappings, none of which are in MINIMAL_LIST_OF_FIELDS.
+        SolrQuery query = SssomQueryBuilder.buildByMappingIdQuery("0b3d1f2a-6c4e-3a2b-9f10-2c8e7d6a5b4c");
+
+        assertThat(query.getFields()).isNull();
+    }
 }

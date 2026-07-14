@@ -180,14 +180,16 @@ public final class SssomQueryBuilder {
 
     /**
      * {@code GET /api/sssom/mappings/{id}}: a single mapping by its {@code mapping_id} (a stable
-     * name-based UUID). No collapse, no facets — a bare document lookup.
+     * name-based UUID). No collapse, no facets — a bare document lookup. Unlike the list queries,
+     * no field list is set: the single document comes back with every stored field (provenance,
+     * mapping-set metadata, {@code explanation}, {@code asserted_mappings}), because this is the
+     * lookup behind the frontend's mapping-details page.
      */
     public static SolrQuery buildByMappingIdQuery(String mappingId) {
         SolrQuery solrQuery = new SolrQuery();
         solrQuery.setQuery(MappingEnum.MAPPING_ID.getField()
                 + ":\"" + ClientUtils.escapeQueryChars(mappingId) + "\"");
         solrQuery.setRows(1);
-        solrQuery.setFields(MappingEnum.MINIMAL_LIST_OF_FIELDS);
         return solrQuery;
     }
 

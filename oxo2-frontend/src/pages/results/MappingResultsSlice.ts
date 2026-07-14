@@ -11,7 +11,7 @@ import {
 import { InferenceType, asInferenceType } from '../../model/InferenceType';
 import { LabelMatchMode } from '../../model/LabelMatchMode';
 import { MappingSetCategory } from '../../model/MappingSetCategory';
-import { post, downloadPost } from '../../app/api';
+import { get, post, downloadPost, HttpError } from '../../app/api';
 
 export interface MappingSearchResponse {
     mappings: {
@@ -312,6 +312,25 @@ export function buildSearchRequest(queries: string[], page: number, pageSize: nu
         ...(labelMatch ? { labelMatch } : {}),
         ...(mappingSetCategory && mappingSetCategory.length > 0 ? { mappingSetCategory } : {}),
     };
+}
+
+/**
+ * Fetch one mapping by its mapping_id from the SSSOM API (GET /api/sssom/mappings/{id}), which
+ * returns the full document — every stored field, unlike the trimmed fieldList of the search. This
+ * is what makes /mapping/:id directly navigable (shared links, bookmarks). Returns null when no
+ * mapping has that id.
+ */
+export async function fetchMappingById(mappingId: string): Promise<Mapping | null> {
+    try {
+        const response = await get<MappingResponse>(
+            `/api/sssom/mappings/${encodeURIComponent(mappingId)}`);
+        return fromMappingResponse(response);
+    } catch (error) {
+        if (error instanceof HttpError && error.status === 404) {
+            return null;
+        }
+        throw error;
+    }
 }
 
 export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10, columnFilters: unknown[],

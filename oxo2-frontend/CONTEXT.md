@@ -36,8 +36,13 @@ Routes (`App.tsx`):
 carried in the query string (see § State management), so a result view is shareable and restores on Back from a detail page.
 - **`/map`** → cross-ontology results for `?from=…&to=…` (source→target prefixes), bookmarkable; the
 pasted-term-list (batch) variant is POST-only and not bookmarkable ([ADR-0024](../docs/adr/0024-cross-ontology-mapping.md)).
-- **`/mapping/:id`** → `MappingDetails` (via `MappingDetailsWrapper` to pass state through router) — detail view for a 
-single mapping including inferred-mapping graph.
+- **`/mapping/:id`** → `MappingDetailsPage` → `MappingDetails` — detail view for a single mapping, including the
+inferred-mapping graph. `:id` is the `mapping_id`, and the mapping is always fetched from it via
+`GET /api/sssom/mappings/{id}`, so the route is directly navigable: a pasted link, a bookmark or a shared URL resolves
+without any prior search. A results table still passes the clicked mapping through router state, but only as
+placeholder data — it paints immediately, then the fetched document replaces it. That document is the full mapping,
+where the search response carries only the fields in its `fieldList`; the provenance, mapping-set and subject/object
+detail sections depend on the fetch.
 - **`/inferences`** and **`/inferences/*`** → `InferencesPage` — resolution surface for inferred mapping sets: the
 cross-set `https://www.ebi.ac.uk/oxo2/inferences` set, and per-source OWL sets via the `*` splat. Fetches the set
 via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/adr/0012-resolvable-inference-set-iris.md)).

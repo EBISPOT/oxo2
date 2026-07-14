@@ -70,6 +70,9 @@ function Section({
 
 function MappingDetails({ mapping }: { mapping: Mapping }) {
     const navigate = useNavigate();
+    // React Router keeps its history index in window.history.state.idx; 0 means this page was
+    // reached directly (shared link, bookmark), so there are no results to go back to.
+    const hasInAppHistory = (window.history.state?.idx ?? 0) > 0;
 
     if (!mapping) {
         return (
@@ -88,9 +91,9 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                 <h1 className="text-2xl font-bold">Mapping Details</h1>
                 <button
                     className="button-primary text-base font-bold px-4 py-1"
-                    onClick={() => navigate(-1)}
+                    onClick={() => hasInAppHistory ? navigate(-1) : navigate("/")}
                 >
-                    Back to results
+                    {hasInAppHistory ? "Back to results" : "New search"}
                 </button>
             </div>
 

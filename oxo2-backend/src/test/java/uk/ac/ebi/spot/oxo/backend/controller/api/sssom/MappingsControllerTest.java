@@ -196,4 +196,34 @@ class MappingsControllerTest {
                 .andExpect(jsonPath("$.subject_id").value("MONDO:0005148"))
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
+
+    @Test
+    void byIdSerializesFullDocumentSlots() throws Exception {
+        // The by-id lookup returns the full document (no field list), so slots outside
+        // MINIMAL_LIST_OF_FIELDS — provenance, set metadata, the OxO2 extension slots — must
+        // survive serialization; the frontend mapping-details page renders them.
+        Mapping mapping = Mapping.builder()
+                .mappingId("0b3d1f2a-6c4e-3a2b-9f10-2c8e7d6a5b4c")
+                .mappingSetId("https://example.org/set")
+                .mappingSetDescription("A test set")
+                .subjectId("MONDO:0005148")
+                .predicateId("skos:exactMatch")
+                .objectId("DOID:9351")
+                .authorId("https://orcid.org/0000-0000-0000-0000")
+                .confidence(0.9)
+                .assertedMappingsAsString("[{\"subject_id\":\"MONDO:0005148\"}]")
+                .explanationAsString("{\"subject_id\":\"MONDO:0005148\"}")
+                .build();
+        Page<Mapping> found = new PageImpl<>(List.of(mapping));
+        when(solrClient.querySssomMappings(any(), any(Pageable.class)))
+                .thenReturn(new OxOSolrClient.SssomMappingResult(found, new QueryResponse()));
+
+        mockMvc.perform(get("/api/sssom/mappings/0b3d1f2a-6c4e-3a2b-9f10-2c8e7d6a5b4c"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mapping_set_description").value("A test set"))
+                .andExpect(jsonPath("$.author_id[0]").value("https://orcid.org/0000-0000-0000-0000"))
+                .andExpect(jsonPath("$.confidence").value(0.9))
+                .andExpect(jsonPath("$.asserted_mappings").isNotEmpty())
+                .andExpect(jsonPath("$.explanation").isNotEmpty());
+    }
 }
