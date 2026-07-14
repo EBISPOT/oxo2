@@ -42,11 +42,12 @@ export function CopyButton({ value, title = "Copy" }: { value?: string; title?: 
 
 /**
  * Renders one SSSOM entity reference (subject, object, or predicate) as a stacked
- * id › label › IRI cell. The id is primary (with copy and, for subject/object, an
- * OLS link); the label is secondary; the IRI is a muted line with its own copy
- * button. A predicate carries no OLS link (skos:/owl:/RO: predicates rarely resolve
- * in OLS) but surfaces predicate_modifier as a NOT badge when present, since the
- * modifier negates the mapping's meaning.
+ * label › id › IRI cell. The label is primary; the id is secondary (with copy and,
+ * for subject/object, an OLS link) and is promoted to the primary style when the
+ * entity has no label; the IRI is a muted line with its own copy button. A predicate
+ * carries no OLS link (skos:/owl:/RO: predicates rarely resolve in OLS) but surfaces
+ * predicate_modifier as a NOT badge on the top line, since the modifier negates the
+ * mapping's meaning.
  */
 export function EntityRefCell({
     id,
@@ -61,26 +62,37 @@ export function EntityRefCell({
     showOlsLink?: boolean;
     modifier?: string;
 }): JSX.Element {
-    const primary = id || iri || "—";
+    const identifier = id || iri || "—";
     const olsUrl = showOlsLink ? buildOlsTermUrl(id, iri) : undefined;
+    const modifierBadge = modifier && (
+        <span
+            title={`predicate_modifier = ${modifier}`}
+            className="mr-1 px-1.5 py-0.5 text-xs font-bold rounded bg-red-600 text-white uppercase"
+        >
+            {modifier}
+        </span>
+    );
 
     return (
         <div className="flex flex-col gap-0.5 py-1 min-w-0">
-            <div className="flex items-center flex-wrap font-bold break-all">
-                {modifier && (
-                    <span
-                        title={`predicate_modifier = ${modifier}`}
-                        className="mr-1 px-1.5 py-0.5 text-xs font-bold rounded bg-red-600 text-white uppercase"
-                    >
-                        {modifier}
-                    </span>
-                )}
-                <span className="break-all">{primary}</span>
+            {label && (
+                <div className="flex items-center flex-wrap font-bold break-words">
+                    {modifierBadge}
+                    <span className="break-words">{label}</span>
+                </div>
+            )}
+            <div
+                className={`flex items-center flex-wrap break-all ${
+                    label ? "text-sm text-neutral-black" : "font-bold"
+                }`}
+            >
+                {!label && modifierBadge}
+                <span className="break-all">{identifier}</span>
                 {id && <CopyButton value={id} title="Copy identifier" />}
                 {olsUrl && (
                     <a
                         href={olsUrl}
-                        title={`View ${primary} in OLS`}
+                        title={`View ${identifier} in OLS`}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(event) => event.stopPropagation()}
@@ -90,7 +102,6 @@ export function EntityRefCell({
                     </a>
                 )}
             </div>
-            {label && <div className="text-sm text-neutral-black break-words">{label}</div>}
             {iri && (
                 <div className="flex items-start text-xs text-gray-500">
                     <span className="break-all">{iri}</span>
