@@ -536,18 +536,23 @@ public class ExplainInferredMappings {
                         danglingChains++;
                         continue;
                     }
-                    // Defence-in-depth for ADR-0029: nmo's DAG is acyclic over raw IRIs, but two IRIs
-                    // that alias one entity fold to a single CURIE and can make a premise restate an
-                    // ancestor conclusion — a non-well-founded (circular) explanation. IRI overrides
-                    // prevent this at the source; this flags any aliased prefix not yet covered so it
-                    // can be added to iri-prefix-overrides.json. Observability only — the doc is still
-                    // emitted (the conclusion is valid; only its proof is redundant).
+                    // Defence-in-depth. Two independent things can make a premise restate an ancestor
+                    // conclusion — a non-well-founded (circular) explanation:
+                    //   1. A derived nil-UUID copy of an already-asserted triple (an involution such
+                    //      as SYM-* twice, or RI4 then RI5, re-deriving an asserted fact). Prevented
+                    //      at the source by the ~assertedTriple head guards in sssom.rls (ADR-0033).
+                    //   2. Two raw IRIs that alias one entity, folding to a single CURIE (e.g.
+                    //      divergent MESH stems). Prevented by iri-prefix-overrides.json (ADR-0029).
+                    // Both are upstream fixes; this is the detector that says one of them regressed.
+                    // Observability only — the doc is still emitted (the conclusion is valid; only its
+                    // proof is redundant).
                     if (hasFoldedCycle(inferredMapping)) {
                         foldedCycleChains++;
                         if (foldedCycleChains <= 20) {
-                            logger.warn("Non-well-founded explanation (a conclusion restates an ancestor "
-                                    + "after CURIE-folding) for {}. An aliased prefix is not yet in "
-                                    + "iri-prefix-overrides.json (ADR-0029); add it and re-run.",
+                            logger.warn("Non-well-founded explanation (a conclusion restates an ancestor) "
+                                    + "for {}. Either a rule in sssom.rls lost its ~assertedTriple head "
+                                    + "guard (ADR-0033), or an aliased prefix is not yet in "
+                                    + "iri-prefix-overrides.json (ADR-0029).",
                                     foldedSpoKey(inferredMapping));
                         }
                     }
@@ -628,9 +633,11 @@ public class ExplainInferredMappings {
         logger.info("Finished streaming inferred mappings: {} processed, {} written", processed, written);
 
         if (foldedCycleChains > 0) {
-            logger.warn("{} inferred mapping(s) had a non-well-founded (folded-cycle) explanation caused "
-                    + "by an aliased entity IRI. Run PrefixDivergenceDetector, add the offending "
-                    + "prefix(es) to iri-prefix-overrides.json, and re-run the dataload (ADR-0029).",
+            logger.warn("{} inferred mapping(s) had a non-well-founded (folded-cycle) explanation. Check "
+                    + "that every derivation rule in sssom.rls still carries its ~assertedTriple head "
+                    + "guard (ADR-0033); if they do, the cause is an aliased entity IRI — run "
+                    + "PrefixDivergenceDetector, add the offending prefix(es) to "
+                    + "iri-prefix-overrides.json, and re-run the dataload (ADR-0029).",
                     foldedCycleChains);
         }
 
@@ -770,10 +777,19 @@ public class ExplainInferredMappings {
      */
     /**
      * True if any descendant of {@code explanation} restates an ancestor's folded (CURIE-level) S-P-O,
-     * i.e. the conclusion appears inside its own proof. nmo's trace DAG is acyclic over raw IRIs, so a
-     * folded cycle means two IRIs alias one entity (e.g. divergent {@code MESH} stems) — the ADR-0029
-     * failure mode. Path-scoped: a fact reused across sibling branches is fine; only ancestor reuse
-     * counts. This is a detector, not the fix — {@code iri-prefix-overrides.json} prevents it upstream.
+     * i.e. the conclusion appears inside its own proof.
+     *
+     * <p>nmo's trace DAG is acyclic over its own 4-ary {@code mapping(id, s, p, o)} atoms, but this
+     * walker sees the S-P-O triple <em>after</em> the mapping_id has been projected away, and two
+     * atoms can fold onto one triple in two ways:
+     * <ul>
+     *   <li>a derived nil-UUID copy of a triple that is also asserted under a real UUID — prevented
+     *       by the {@code ~assertedTriple} head guards in {@code sssom.rls} (ADR-0033);</li>
+     *   <li>two raw IRIs aliasing one entity, folding to one CURIE — prevented by
+     *       {@code iri-prefix-overrides.json} (ADR-0029).</li>
+     * </ul>
+     * Both are prevented upstream, so this is a regression detector, not the fix. Path-scoped: a fact
+     * reused across sibling branches is a legitimate diamond; only ancestor reuse counts.
      */
     static boolean hasFoldedCycle(InferredMapping explanation) {
         return hasFoldedCycle(explanation, new HashSet<>());

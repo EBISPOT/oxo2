@@ -84,8 +84,84 @@ public class ChainRulesIntegrationTest {
         for (ArtifactPaths.LayerArtifact artifact : ArtifactPaths.artifactsFor(fixture)) {
             tests.add(DynamicTest.dynamicTest(artifact.label(), () -> compareLayer(artifact)));
         }
+        tests.add(DynamicTest.dynamicTest("explanation well-founded",
+                () -> assertExplanationsWellFounded(fixture)));
         tests.add(DynamicTest.dynamicTest("Solr numFound", () -> compareNumFound(fixture)));
         return tests;
+    }
+
+    /**
+     * Every explanation must be well-founded: no premise may restate an ancestor conclusion's
+     * subject/predicate/object (ADR-0033). Asserted structurally rather than left to the golden-file
+     * diff, because a cyclic proof is wrong <em>however</em> it is baselined — the RCE2_2 golden
+     * carried one, since a text diff cannot tell a correct proof from a circular one.
+     */
+    private void assertExplanationsWellFounded(RuleFixtures.Fixture fixture) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        for (ArtifactPaths.LayerArtifact artifact : ArtifactPaths.artifactsFor(fixture)) {
+            if (artifact.layer() != ArtifactPaths.Layer.EXPLAINED) {
+                continue;
+            }
+            for (Path bundle : artifact.actual()) {
+                if (!Files.isRegularFile(bundle)) {
+                    continue;
+                }
+                for (JsonNode doc : mapper.readTree(bundle.toFile())) {
+                    JsonNode explanation = doc.get("explanation");
+                    if (explanation == null || explanation.isNull()) {
+                        continue;
+                    }
+                    List<String> cyclicPath = findCyclicPath(explanation, new ArrayList<>());
+                    if (cyclicPath != null) {
+                        throw new AssertionError("Cyclic explanation for " + spo(doc) + " in "
+                                + bundle.getFileName() + " — a proof step restates an ancestor "
+                                + "conclusion (ADR-0033):\n  " + String.join("\n  ", cyclicPath));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * The root-to-offender path if any node below {@code node} restates an ancestor's S-P-O, else
+     * null. Path-scoped: a fact reused across sibling branches is a legitimate diamond; only ancestor
+     * reuse is a cycle.
+     */
+    private static List<String> findCyclicPath(JsonNode node, List<String> ancestors) {
+        String spo = spo(node);
+        if (ancestors.contains(spo)) {
+            List<String> cyclicPath = new ArrayList<>(ancestors);
+            cyclicPath.add(spo + "   <-- restates an ancestor");
+            return cyclicPath;
+        }
+        JsonNode applications = node.get("chain_rule_applications");
+        JsonNode premises = applications == null ? null : applications.get("premises");
+        if (premises == null || premises.isNull()) {
+            return null;
+        }
+        ancestors.add(spo);
+        try {
+            for (JsonNode premise : premises) {
+                List<String> cyclicPath = findCyclicPath(premise, ancestors);
+                if (cyclicPath != null) {
+                    return cyclicPath;
+                }
+            }
+        } finally {
+            ancestors.remove(ancestors.size() - 1);
+        }
+        return null;
+    }
+
+    /** A node's subject/predicate/object identity, as displayed to a user. */
+    private static String spo(JsonNode node) {
+        return text(node, "subject_iri") + " " + text(node, "predicate_iri") + " "
+                + text(node, "object_iri");
+    }
+
+    private static String text(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        return value == null || value.isNull() ? "?" : value.asText();
     }
 
     private void compareLayer(ArtifactPaths.LayerArtifact artifact) throws IOException {

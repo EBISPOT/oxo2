@@ -121,7 +121,11 @@ converts each set's JSON to N-Quads carrying `mapping_id`
 ([ADR-0010](../docs/adr/0010-carry-mapping-provenance-via-nquads.md)); every set's N-Quads is concatenated
 into one corpus (`assertedCorpus.nq`); `nmo` runs `sssom.rls` (strong-predicate transitivity + role chains)
 over the whole corpus to derive mappings that may chain across sets, exported as `inferences.ttl` (the single
-`https://www.ebi.ac.uk/oxo2/inferences` set). A set whose mappings yield no
+`https://www.ebi.ac.uk/oxo2/inferences` set). Every derivation rule guards its own head with
+`~assertedTriple(s, p, o)` so the chase never derives a nil-UUID copy of an already-asserted triple — the
+invariant that keeps explanations well-founded once the `mapping_id` is projected away
+([ADR-0033](../docs/adr/0033-well-founded-explanations.md)); `AssertedTripleGuardTest` fails the build if a
+rule loses its guard. A set whose mappings yield no
 quads — all using non-inference predicates (e.g. the `ebi-text-mappings` sets are `skos:closeMatch`) or
 lacking a subject/object IRI — produces no `.nq` and is logged (it is still indexed as asserted; it just does
 not enter the inference corpus).
