@@ -100,6 +100,9 @@ default. `?format=sssom-tsv` / `tsv` / `csv` streams an SSSOM file (an OxO2 exte
 - **`GET /api/sssom/mappings?filter=field|operator|value`** — repeatable, AND-joined filters.
   Operators `eq` / `ge` / `gt` / `le` / `lt` / `contains`; `field` is any SSSOM or OxO2 extension slot.
 - **`GET /api/sssom/mappings/{id}`** — one mapping by `mapping_id` (bare mapping, not the envelope; 404).
+  Returns the **full document** — every stored field, not the `MINIMAL_LIST_OF_FIELDS` the list endpoints
+  project — because this single-document lookup backs the frontend's mapping-details page, which renders
+  provenance, mapping-set metadata, `explanation` and `asserted_mappings`.
 - **`GET /api/sssom/mappings/{field}/{*value}`** — the equality shorthand of the filter grammar.
 - **`POST /api/sssom/entities`** — body `{curies, mapping_justification?, predicate_id?}`; mappings
   where a curie is the subject **or** object.

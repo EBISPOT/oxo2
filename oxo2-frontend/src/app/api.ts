@@ -13,6 +13,18 @@ function resolveUrl(path: string): string {
     return path;
 }
 
+// Error thrown for a non-2xx response, carrying the status code so callers can
+// distinguish e.g. a 404 (not found) from a transport or server failure.
+export class HttpError extends Error {
+    readonly status: number;
+
+    constructor(message: string, status: number) {
+        super(message);
+        this.name = 'HttpError';
+        this.status = status;
+    }
+}
+
 export async function doHTTPRequest<T>(
     path: string,
     request?: RequestInit | undefined
@@ -27,7 +39,7 @@ export async function doHTTPRequest<T>(
     if (!response.ok) {
         const message = `Failure loading ${response.url} with status ${response.status} (${response.statusText})`;
         console.dir(message);
-        throw new Error(message);
+        throw new HttpError(message, response.status);
     }
 
     return await response.json();
