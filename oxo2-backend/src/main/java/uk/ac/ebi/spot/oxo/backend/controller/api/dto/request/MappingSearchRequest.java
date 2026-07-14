@@ -1,7 +1,10 @@
 package uk.ac.ebi.spot.oxo.backend.controller.api.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
+import uk.ac.ebi.spot.oxo.model.sssom.FilterMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingSetCategory;
@@ -86,6 +89,35 @@ public class MappingSearchRequest {
             defaultValue = "EXACT_CASE_INSENSITIVE")
     private LabelMatchType labelMatch = LabelMatchType.DEFAULT;
 
+
+    /**
+     * A shallow copy. Used by the contextual value suggest (ADR-0034), which needs to build the live
+     * search's query with one column filter removed — and must not mutate the caller's request to do
+     * it, or it would change the very results the user is looking at.
+     *
+     * <p>Shallow is enough because the caller replaces whole list references rather than mutating
+     * their contents.
+     */
+    public MappingSearchRequest copy() {
+        MappingSearchRequest copy = new MappingSearchRequest();
+        copy.queries = this.queries;
+        copy.queryFields = this.queryFields;
+        copy.fieldList = this.fieldList;
+        copy.sortedFields = this.sortedFields;
+        copy.distance = this.distance;
+        copy.page = this.page;
+        copy.size = this.size;
+        copy.columnFilters = this.columnFilters;
+        copy.mappingSetIds = this.mappingSetIds;
+        copy.advancedFieldQueries = this.advancedFieldQueries;
+        copy.inferenceType = this.inferenceType;
+        copy.mappingSetCategory = this.mappingSetCategory;
+        copy.subjectPrefixes = this.subjectPrefixes;
+        copy.objectPrefixes = this.objectPrefixes;
+        copy.groupBySpo = this.groupBySpo;
+        copy.labelMatch = this.labelMatch;
+        return copy;
+    }
 
     public List<String> getQueries() {
         return queries;
@@ -239,16 +271,46 @@ public class MappingSearchRequest {
                 '}';
     }
 
-    @Schema(description = "A \"contains\" filter on a single column.")
+    @Schema(description = "A filter on a single column. Substring (\"contains\") by default; EXACT "
+            + "when the value was picked from a suggestion rather than typed (ADR-0034).")
     public static class ColumnFilter {
         @Schema(description = "Solr field id to filter on.", example = "predicate_id")
         private String id;
-        @Schema(description = "Value the column must contain.", example = "skos:exactMatch")
+        @Schema(description = "Value the column must contain (or equal, when match is EXACT).",
+                example = "skos:exactMatch")
         private String value;
 
-        public ColumnFilter(String id, String value) {
+        /**
+         * Defaults to CONTAINS, so every existing caller keeps the behaviour it had before
+         * autocomplete existed. Only a client that knows the value came out of a suggestion list
+         * sets EXACT.
+         */
+        @Schema(description = "How the value matches. CONTAINS (default) is a substring match, for a "
+                + "value the user typed. EXACT is a whole-value match, for one they PICKED from a "
+                + "suggestion — that value came out of the index, so matching it as a substring would "
+                + "silently also return values they did not pick.",
+                defaultValue = "CONTAINS")
+        private FilterMatchType match = FilterMatchType.DEFAULT;
+
+        /**
+         * The creator is annotated EXPLICITLY, not left implicit. With a single constructor Jackson
+         * infers a properties-based creator from the {@code -parameters} names; adding a second
+         * constructor makes that inference ambiguous and deserialization of EVERY column filter fails
+         * with a type-definition error — including ones that never mention {@code match}. Naming the
+         * creator and its properties removes the ambiguity.
+         */
+        @JsonCreator
+        public ColumnFilter(@JsonProperty("id") String id,
+                            @JsonProperty("value") String value,
+                            @JsonProperty("match") FilterMatchType match) {
             this.id = id;
             this.value = value;
+            this.match = match == null ? FilterMatchType.DEFAULT : match;
+        }
+
+        /** Convenience for callers (and tests) that mean the default CONTAINS behaviour. */
+        public ColumnFilter(String id, String value) {
+            this(id, value, FilterMatchType.DEFAULT);
         }
 
         public String getId() {
@@ -267,11 +329,20 @@ public class MappingSearchRequest {
             this.value = value;
         }
 
+        public FilterMatchType getMatch() {
+            return match == null ? FilterMatchType.DEFAULT : match;
+        }
+
+        public void setMatch(FilterMatchType match) {
+            this.match = match == null ? FilterMatchType.DEFAULT : match;
+        }
+
         @Override
         public String toString() {
             return "ColumnFilter{" +
                     "id='" + id + '\'' +
                     ", value='" + value + '\'' +
+                    ", match=" + match +
                     '}';
         }
     }

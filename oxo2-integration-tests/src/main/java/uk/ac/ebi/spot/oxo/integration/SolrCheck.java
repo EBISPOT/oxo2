@@ -22,6 +22,8 @@ public final class SolrCheck {
 
     public static final String MAPPINGS_COLLECTION = "oxo2-mappings";
     public static final String MAPPINGSETS_COLLECTION = "oxo2-mappingsets";
+    /** The per-entity typeahead read model (ADR-0034). */
+    public static final String ENTITIES_COLLECTION = "oxo2-entities";
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final HttpClient HTTP = HttpClient.newBuilder()
@@ -32,6 +34,14 @@ public final class SolrCheck {
 
     /** Document count in a collection carrying the given inference_type code (ASSERTED /
      *  SSSOM_INFERENCE). Codes are safe enum names, so no escaping is needed. */
+    /**
+     * Total documents in a collection. For oxo2-entities this is the DISTINCT entity count — the
+     * property that makes the collection worth having, so it is the thing worth pinning in a golden.
+     */
+    public static int numFound(String collection) throws IOException, InterruptedException {
+        return numFoundForQuery(collection, "*:*");
+    }
+
     public static int numFoundByInferenceType(String collection, String inferenceTypeCode)
             throws IOException, InterruptedException {
         return numFoundForQuery(collection, "inference_type:" + inferenceTypeCode);

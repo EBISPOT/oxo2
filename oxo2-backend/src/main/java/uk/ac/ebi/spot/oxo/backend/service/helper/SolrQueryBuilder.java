@@ -2,13 +2,17 @@ package uk.ac.ebi.spot.oxo.backend.service.helper;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.util.ClientUtils;
+import org.apache.solr.common.params.FacetParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.FieldQuery;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
+import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest.ColumnFilter;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
 import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
+import uk.ac.ebi.spot.oxo.model.sssom.FilterMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
@@ -290,6 +294,139 @@ public class SolrQueryBuilder {
         }
 
         return solrQuery;
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Value suggestions (ADR-0034)
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Global distinct values of one controlled-vocabulary field, most common first. Backs the
+     * Advanced tab's vocabulary typeahead: the whole list is fetched once, cached, and filtered
+     * client-side — the same shape the ontology-prefix selector uses (ADR-0024).
+     *
+     * <p>Only {@link SuggestFields#VOCAB_FIELDS} may be passed. A high-cardinality field would
+     * enumerate millions of terms, and a {@code text_general} field would return analyzed tokens
+     * rather than values; the caller rejects both before reaching here.
+     */
+    public static SolrQuery buildDistinctValuesQuery(MappingEnum field, int limit) {
+        SolrQuery solrQuery = new SolrQuery("*:*");
+        solrQuery.setRows(0);
+        solrQuery.setFacet(true);
+        solrQuery.setFacetMinCount(1);
+        solrQuery.setFacetLimit(limit);
+        solrQuery.setFacetSort(FacetParams.FACET_SORT_COUNT);
+        solrQuery.addFacetField(SuggestFields.facetFieldFor(field));
+        return solrQuery;
+    }
+
+    /**
+     * Suggestions for one field's values WITHIN the live search's result set — so a suggested filter
+     * value can never yield zero rows, and it arrives with the count of rows it would leave.
+     *
+     * <p><b>It reuses {@link #buildSolrQuery}, and that is the point.</b> The suggestions must be
+     * scoped by exactly the same restrictions the search itself applies — the other column filters,
+     * the weak-predicate exclusion, the corpus / inference-type / ontology-prefix / mapping-set
+     * filters. Rebuilding that list here would be a second implementation of it, free to drift; so
+     * the real search query is built and then turned into a facet request.
+     *
+     * <p>Two things are deliberately undone from that query:
+     * <ul>
+     *   <li><b>the same-SPO collapse</b> — a facet counts documents, and the collapse post-filter
+     *       exists only to pick one representative row per triple for display; leaving it on would
+     *       make the counts disagree with the filter the user is about to apply, and the expand pass
+     *       would be pure waste at {@code rows=0}.</li>
+     *   <li><b>the in-progress filter on the field being suggested</b> — otherwise the facet is
+     *       scoped by the half-typed value it is trying to complete, so both the values and their
+     *       counts would be wrong (the frontend strips it too; this is the half with a test).</li>
+     * </ul>
+     */
+    public static SolrQuery buildValueSuggestQuery(MappingSearchRequest request, MappingEnum field,
+                                                   String typedPrefix, int limit) {
+        MappingSearchRequest scopedRequest = withoutColumnFilterOn(request, field);
+        // A facet needs no page of documents, and no collapse/expand pass to pick representatives.
+        scopedRequest.setGroupBySpo(false);
+
+        SolrQuery solrQuery = buildSolrQuery(scopedRequest, PageRequest.of(0, 1));
+        solrQuery.setRows(0);
+        solrQuery.setFacet(true);
+        solrQuery.setFacetMinCount(1);
+        solrQuery.setFacetLimit(limit);
+        solrQuery.setFacetSort(FacetParams.FACET_SORT_COUNT);
+        addPrefixFacets(solrQuery, field, typedPrefix);
+        return solrQuery;
+    }
+
+    /**
+     * Facet {@code field} under each realistic casing of what the user typed, merging the buckets in
+     * the caller.
+     *
+     * <p>{@code facet.prefix} is a RAW BYTE PREFIX over the term dictionary: it is neither analyzed,
+     * nor query-parsed, nor case-folded. Two consequences, and both are easy to get wrong:
+     *
+     * <ul>
+     *   <li>It must <b>never</b> be {@code escapeQueryChars}-escaped. Escaping is a query-syntax
+     *       concern; here it would put literal backslashes into the term being matched.</li>
+     *   <li>It is case-sensitive, and the field it reads preserves the original casing (it must — a
+     *       case-folded field would hand back {@code mondo:0005148} as the value to display and
+     *       filter on). So a user typing "mel" would miss "Melanoma". Issuing the prefix under a few
+     *       casings covers real-world label and CURIE casing. It does not cover a mid-token camelCase
+     *       boundary — "oboinowl" will not find "oboInOwl:hasDbXref" — which is the accepted, recorded
+     *       gap in ADR-0034; such a value is still reachable by typing it as-cased.</li>
+     * </ul>
+     *
+     * <p>Each casing gets its own {@code {!key=...}} local param so Solr returns it as a separate
+     * bucket list rather than silently keeping only the last {@code facet.prefix} for the field.
+     */
+    private static void addPrefixFacets(SolrQuery solrQuery, MappingEnum field, String typedPrefix) {
+        String facetField = SuggestFields.facetFieldFor(field);
+        if (typedPrefix == null || typedPrefix.isBlank()) {
+            solrQuery.addFacetField(facetField);
+            return;
+        }
+
+        String typed = typedPrefix.strip();
+        // LinkedHashSet: dedupe (an all-lowercase input collides with its own lowercase variant) while
+        // keeping as-typed first, so the caller's merge prefers the user's own casing on a tie.
+        Set<String> casings = new LinkedHashSet<>();
+        casings.add(typed);
+        casings.add(typed.toLowerCase(Locale.ROOT));
+        casings.add(typed.toUpperCase(Locale.ROOT));
+        casings.add(capitalise(typed));
+
+        int keyIndex = 0;
+        for (String casing : casings) {
+            String key = FACET_CASING_KEY_PREFIX + keyIndex++;
+            solrQuery.add(FacetParams.FACET_FIELD,
+                    "{!key=" + key + " facet.prefix=" + casing + "}" + facetField);
+        }
+    }
+
+    /** Prefix of the {@code {!key=...}} names the casing-variant facets come back under. */
+    static final String FACET_CASING_KEY_PREFIX = "suggest_";
+
+    private static String capitalise(String value) {
+        if (value.isEmpty()) {
+            return value;
+        }
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1).toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * A copy of the request with any column filter on {@code field} removed. A copy, not a mutation:
+     * the caller's request is the live search, and quietly stripping a filter from it would change
+     * the results the user is looking at.
+     */
+    private static MappingSearchRequest withoutColumnFilterOn(MappingSearchRequest request,
+                                                              MappingEnum field) {
+        MappingSearchRequest copy = request.copy();
+        List<ColumnFilter> columnFilters = copy.getColumnFilters();
+        if (columnFilters != null && !columnFilters.isEmpty()) {
+            copy.setColumnFilters(columnFilters.stream()
+                    .filter(columnFilter -> !field.getField().equals(columnFilter.getId()))
+                    .collect(Collectors.toList()));
+        }
+        return copy;
     }
 
     /**
@@ -783,6 +920,17 @@ public class SolrQueryBuilder {
         String value = filter.getValue() == null ? "" : filter.getValue().strip();
         if (value.isEmpty()) {
             return "";
+        }
+
+        // The value was PICKED from a suggestion (ADR-0034), so it came verbatim out of the index and
+        // is unambiguous: match the WHOLE value. Falling through to the substring path here would be
+        // the surprising behaviour — a user who explicitly picked "melanoma" would also get "familial
+        // melanoma" and "melanoma of skin", values they were shown and did not choose. Targets the
+        // whole-value field the suggestion was faceted out of, so it returns exactly the rows the
+        // suggestion's count promised.
+        if (filter.getMatch() == FilterMatchType.EXACT) {
+            return SuggestFields.exactMatchFieldFor(field)
+                    + ":\"" + ClientUtils.escapeQueryChars(value) + "\"";
         }
 
         if (textGeneralToNGram.containsKey(field)) {

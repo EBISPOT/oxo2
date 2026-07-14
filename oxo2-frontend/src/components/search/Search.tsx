@@ -10,6 +10,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { useQuery } from "@tanstack/react-query";
 import { AdvancedSearch } from "./AdvancedSearch";
 import { CorpusSelector } from "./CorpusSelector";
+import { EntitySuggest } from "./EntitySuggest";
 import { MappingSetSelector } from "./MappingSetSelector";
 import { OntologySelector } from "./OntologySelector";
 import { TermFileDrop } from "./TermFileDrop";
@@ -174,14 +175,25 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
         });
     }, []);
 
-    const handleSearch = () => {
-        const hasTerms = !!searchState.userSearchInput && searchState.userSearchInput.trim() !== "";
+    /**
+     * @param overrideTerm search this instead of whatever is in searchState. Picking an autocomplete
+     * suggestion needs it: setTermText is a setState, so it has not landed yet when the pick handler
+     * calls through, and reading searchState here would search the half-typed fragment the user was
+     * replacing rather than the entity they chose.
+     */
+    const handleSearch = (overrideTerm?: string) => {
+        const userSearchInput = overrideTerm ?? searchState.userSearchInput;
+        const sanitizedSearchInput = overrideTerm
+            ? parseTerms(overrideTerm)
+            : searchState.sanitizedSearchInput;
+
+        const hasTerms = !!userSearchInput && userSearchInput.trim() !== "";
         const hasPrefixes = subjectPrefixes.length > 0 || objectPrefixes.length > 0;
         if (!hasTerms && !hasPrefixes) {
             return;
         }
         // Terms present → /search/<curies>; whole-ontology (prefixes only) → the _map sentinel.
-        const curies = hasTerms ? searchState.sanitizedSearchInput.join(",") : "_map";
+        const curies = hasTerms ? sanitizedSearchInput.join(",") : "_map";
         const params = new URLSearchParams();
         for (const id of searchState.mappingSetIds ?? []) {
             params.append("mapping_set_id", id);
@@ -326,14 +338,23 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
                             </button>
                         </div>
                         {searchMode === 'single' ? (
-                            <input
-                                id="home-search"
-                                type="text"
-                                className="input-default text-lg"
-                                placeholder="A label, CURIE or IRI — e.g. cataract, MP:0001289"
+                            // Typeahead over entities (ADR-0034). Subject-side, because the default
+                            // search matches the subject side only (ADR-0030) — an object-only entity
+                            // would complete to zero rows. Restricted to the chosen source ontologies,
+                            // so the "From" selector narrows the suggestions for free.
+                            <EntitySuggest
+                                inputId="home-search"
                                 value={searchState.userSearchInput}
-                                onChange={handleInputChange}
-                                onKeyDown={(event) => { if (event.key === 'Enter') handleSearch(); }}
+                                onTyped={setTermText}
+                                onPick={(entity) => {
+                                    setTermText(entity.id);
+                                    // Pass the CURIE explicitly: setTermText has not landed yet.
+                                    handleSearch(entity.id);
+                                }}
+                                onSubmit={() => handleSearch()}
+                                side="subject"
+                                prefixes={subjectPrefixes}
+                                placeholder="A label, CURIE or IRI — e.g. cataract, MP:0001289"
                             />
                         ) : (
                             <>
@@ -359,7 +380,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
                     <div className="flex flex-col gap-2 md:mt-10">
                         <button
                             className="button-primary text-base font-bold px-4 py-1"
-                            onClick={handleSearch}
+                            onClick={() => handleSearch()}
                         >
                             Search
                         </button>

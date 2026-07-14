@@ -94,6 +94,7 @@ if solr_needed; then SOLR_NEEDED=true; fi
 mkdir -p $NXF_WORK $NXF_HOME $NXF_TEMP $NXF_CACHE_DIR $NXF_LOGS
 mkdir -p "$OXO2_DATA/sssom" "$OXO2_DATA/sssom-as-json" "$OXO2_DATA/assertedMappings"
 mkdir -p "$OXO2_INFERENCES/solr/mapping" "$OXO2_INFERENCES/solr/mappingSet"
+mkdir -p "$OXO2_DATA/entities"
 mkdir -p "$OXO2_INFERENCES/crossSet"
 mkdir -p "$OXO2_DATA/tmp"
 
@@ -216,6 +217,16 @@ if [ "$SOLR_NEEDED" = true ]; then
             sleep 2
         else
             echo "Preserving Solr cores (resuming after asserted data was indexed); skipping copySolrConfig."
+            # ...except the oxo2-entities core, which may not exist yet. oxo2-entities is a read model
+            # (ADR-0034) whose headline resume path is START_STAGE=mappings2entities against an
+            # already-indexed oxo2-mappings — a path that does NOT wipe, so the full copySolrConfig
+            # above never runs and the core dir would never be created. entities-only lays it down
+            # without touching the existing cores, and no-ops if it is already there. Core dirs must
+            # be created while Solr is DOWN, so this has to happen before the start below.
+            if ! "$SCRIPT_DIR/copySolrConfig.sh" entities-only; then
+                echo "Failed to lay down the oxo2-entities core config in $SOLR_HOME" >&2
+                exit 1
+            fi
         fi
 
         echo Start solr ...
@@ -232,6 +243,9 @@ if [ "$SOLR_NEEDED" = true ]; then
         exit 1
     fi
     if ! wait_for_solr_core "oxo2-mappingsets"; then
+        exit 1
+    fi
+    if ! wait_for_solr_core "oxo2-entities"; then
         exit 1
     fi
 fi
@@ -286,6 +300,33 @@ if should_run index-inferred; then
     run_json2solr "$OXO2_INFERENCES/solr/mappingSet" "$SOLR_URL/oxo2-mappingsets"
     sleep 20
     record_stage index-inferred
+fi
+
+# --- Stage: derive the entity collection from the indexed mappings (ADR-0034) ---
+# One document per DISTINCT entity, folded out of the denormalised mappings index and sharded by
+# CURIE prefix. Runs AFTER index-inferred, not before: an inferred mapping's subject may appear only
+# as an OBJECT in the asserted data, so deriving earlier would drop it from the subject-side suggest.
+if should_run mappings2entities; then
+    start_time=$(date +%s)
+    echo  "###################"  mappings2entities ...
+    (cd $NXF_LOGS && nextflow -log $NXF_LOGS/mappings2entities.nextflow.log \
+        -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
+        run $SCRIPT_DIR/mappings2entities.nf \
+        -profile $NF_PROFILE \
+        --solr_url "$SOLR_URL" \
+        --output_dir "$OXO2_DATA/entities" \
+        -with-trace  $NXF_LOGS/mappings2entities-trace.txt)
+    end_time=$(date +%s)
+    echo "Nextflow Processing: mappings2entities took: $((end_time - start_time)) seconds"
+    record_stage mappings2entities
+fi
+
+# --- Stage: index entities to Solr ---
+if should_run index-entities; then
+    echo  "###################"  json2solr entities ...
+    run_json2solr "$OXO2_DATA/entities" "$SOLR_URL/oxo2-entities"
+    sleep 20
+    record_stage index-entities
 fi
 
 # --- Stop Solr (only if we started it; the test harness stops its own externally-managed Solr) ---

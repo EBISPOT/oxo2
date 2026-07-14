@@ -317,4 +317,60 @@ class MappingControllerTest {
 
         verify(solrClient).query(any(SolrParams.class), any(Pageable.class));
     }
+
+    // ---------- column-filter deserialization (ADR-0034) ----------
+
+    /**
+     * Column filters must survive the JSON round-trip. This is not hypothetical: adding a second
+     * ColumnFilter constructor for the EXACT match type made Jackson's implicit creator ambiguous, and
+     * EVERY column filter — including ones that never mention `match` — started failing with a
+     * type-definition error. The builder unit tests could not see it, because they construct
+     * ColumnFilter in Java and never go through Jackson. This one goes through the wire.
+     */
+    @Test
+    void columnFilterWithoutAMatchTypeDeserialisesAndContains() throws Exception {
+        when(solrClient.query(any(SolrParams.class), any(Pageable.class))).thenReturn(emptyResponse());
+        String body = """
+                {
+                  "queries": ["cataract"],
+                  "columnFilters": [{"id": "object_label", "value": "eye"}],
+                  "page": 0,
+                  "size": 10
+                }
+                """;
+
+        mockMvc.perform(post("/api/v2/mappings/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+
+        assertThat(String.join(" ", captureQuery().getFilterQueries()))
+                .contains(MappingEnum.OBJECT_LABEL.getField() + "_ngram:*"
+                        + ClientUtils.escapeQueryChars("eye") + "*");
+    }
+
+    /** And an EXACT filter — a value the user PICKED from a suggestion — matches the whole value. */
+    @Test
+    void exactColumnFilterDeserialisesAndMatchesTheWholeValue() throws Exception {
+        when(solrClient.query(any(SolrParams.class), any(Pageable.class))).thenReturn(emptyResponse());
+        String body = """
+                {
+                  "queries": ["cataract"],
+                  "columnFilters": [{"id": "object_label", "value": "Cataract", "match": "EXACT"}],
+                  "page": 0,
+                  "size": 10
+                }
+                """;
+
+        mockMvc.perform(post("/api/v2/mappings/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+
+        String filterQueries = String.join(" ", captureQuery().getFilterQueries());
+        assertThat(filterQueries)
+                .contains(MappingEnum.OBJECT_LABEL.getField() + "_str:\""
+                        + ClientUtils.escapeQueryChars("Cataract") + "\"")
+                .doesNotContain(MappingEnum.OBJECT_LABEL.getField() + "_ngram:*");
+    }
 }

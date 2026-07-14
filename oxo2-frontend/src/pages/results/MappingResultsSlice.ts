@@ -282,7 +282,12 @@ export function fromJson(json: MappingSearchResponse|undefined): MappingPage {
     }
 }
 
-function buildSearchRequest(queries: string[], page: number, pageSize: number, columnFilters: unknown[],
+/**
+ * Exported so the contextual value suggest (ADR-0034) can send the backend the SAME search context
+ * fetchMappings sends. The suggestions have to be scoped by exactly what the visible result set is
+ * scoped by; reassembling the request there would be a second implementation of it, free to drift.
+ */
+export function buildSearchRequest(queries: string[], page: number, pageSize: number, columnFilters: unknown[],
                            sorting: unknown[], mappingSetIds?: string[],
                            advancedFieldQueries?: AdvancedFieldQueryRequest[],
                            inferenceType?: InferenceType[], groupBySpo: boolean = false,

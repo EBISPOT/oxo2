@@ -108,14 +108,42 @@ Server state is handled by TanStack Query (caching, invalidation, retry). Local 
 Files named `*Slice.ts` (e.g. `MappingResultsSlice.ts`, `MappingSetsSlice.ts`, `InfoCardSlice.ts`, `ErrorSlice.ts`) 
 are **not** Redux slices — the naming is residual; there is no Redux store in this codebase.
 
-Results-table **view state** (page, page size, sort, inference-type filter, field filters) lives in the URL query string,
+Results-table **view state** (page, page size, sort, inference-type filter, field filters, and which of
+those filters was *picked* rather than typed) lives in the URL query string,
 not component state, via the hooks in `src/util/tableUrlState.ts` (`useUrlPagination`, `useUrlSorting`,
-`useUrlInferenceTypes`, `useUrlFieldFilters`, `useUrlColumnFilters`). Both `NormalResultsTable` and `AdvancedResultsTable`
+`useUrlInferenceTypes`, `useUrlFieldFilters`, `useUrlExactFilters`, `useUrlColumnFilters`). Both `NormalResultsTable` and `AdvancedResultsTable`
 use them. Because the results table unmounts when a mapping's detail page opens, holding this in the URL is what restores
 it on Back; it also makes a result view shareable and refresh-stable. Defaults are omitted so an untouched search stays a
 clean URL. Each hook does a single atomic `setSearchParams` write (folding any page reset into it, since react-router reads
 the current params from the render closure) and returns a referentially-stable setter (so table headers don't remount on
 every URL change).
+
+### Typeahead (ADR-0034)
+
+Three surfaces, three mechanisms — chosen by field **cardinality**, because a suggester over millions of
+entity labels and a suggester over the five values of `predicate_modifier` are not the same problem, and
+a typeahead over a free-prose comment field is noise.
+
+- **The main search box** (`EntitySuggest`) — server-side entity suggest over `oxo2-entities`,
+  subject-side only (ADR-0030). Picking one fills the CURIE and runs the normal search.
+- **The result-table column filters** (`ValueSuggest`, in `ColumnFilterPopover`) — **contextual**: the
+  values are faceted over the *live search*, so a suggestion can never yield zero rows, and each arrives
+  with the count of mappings behind it. It sends the very request `fetchMappings` sends, built by the
+  exported `buildSearchRequest` — reassembling it would be a second implementation, free to drift.
+- **The Advanced tab** (`SuggestField` → `EntitySuggest` / `VocabSuggest` / plain input) — tiered per
+  field. The tier is **data**, not a switch statement: `AdvancedFieldDef.suggest` is a required field, so
+  adding a field forces a decision rather than defaulting into the wrong behaviour. Vocabulary fields
+  fetch their whole value list once, cache it forever and filter client-side — the pattern
+  `OntologySelector` already used for ontology prefixes.
+
+**Picking is not typing**, and the controls model both. All three are MUI `Autocomplete` with `freeSolo`:
+`onInputChange` fires as the user types (a fragment — so it stays a *contains* search), `onChange` fires
+when they pick a row (a value that came out of the index — so it becomes an *exact* filter, carried in
+the URL as `fx=<field>`). Applying "contains" to a value someone explicitly picked would silently also
+return values they were shown and did not choose.
+
+Suggestion rows follow `EntityRefCell`'s **label › id › IRI** order — the label is what a human
+recognises, so it leads; the id is promoted to primary only when there is no label.
 
 ### Build and run
 

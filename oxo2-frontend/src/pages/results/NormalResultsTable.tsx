@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {emptyMappingPage, MappingPage, fetchMappings, exportMappings, fromJson} from "./MappingResultsSlice";
+import {emptyMappingPage, MappingPage, fetchMappings, exportMappings, fromJson, buildSearchRequest}
+    from "./MappingResultsSlice";
 import {useQuery} from "@tanstack/react-query";
 import {
     MaterialReactTable,
@@ -8,8 +9,8 @@ import {
     type MRT_SortingState,
     useMaterialReactTable,
 } from 'material-react-table';
-import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlFieldFilters, fieldFiltersEqual}
-    from "../../util/tableUrlState";
+import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlFieldFilters, useUrlExactFilters,
+    fieldFiltersEqual} from "../../util/tableUrlState";
 import {Mapping} from "../../model/Mapping.ts";
 import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
 import {LabelMatchMode, DEFAULT_LABEL_MATCH} from "../../model/LabelMatchMode";
@@ -25,20 +26,25 @@ import {SortingContext} from "../../components/mapping/sortingContext";
 
 // Per-column filter inputs. Each `field` is a canonical Solr field name resolved by
 // the backend MappingEnum; the values feed the columnFilters list (AND-combined).
+//
+// `suggest: "contextual"` gives a column a typeahead faceted over the LIVE search (ADR-0034), so it
+// only ever offers values present in the rows on screen, each with the count it would leave. The
+// SUBJECT column deliberately has none: a normal search is already subject-side (ADR-0030), so every
+// row's subject is something the user just searched for — there is nothing to narrow.
 const SUBJECT_FILTER_FIELDS: FilterFieldDef[] = [
     {field: "subject_id", label: "Subject ID"},
     {field: "subject_label", label: "Subject label"},
     {field: "subject_iri", label: "Subject IRI"},
 ];
 const PREDICATE_FILTER_FIELDS: FilterFieldDef[] = [
-    {field: "predicate_id", label: "Predicate ID"},
-    {field: "predicate_label", label: "Predicate label"},
-    {field: "predicate_iri", label: "Predicate IRI"},
+    {field: "predicate_id", label: "Predicate ID", suggest: "contextual"},
+    {field: "predicate_label", label: "Predicate label", suggest: "contextual"},
+    {field: "predicate_iri", label: "Predicate IRI", suggest: "contextual"},
 ];
 const OBJECT_FILTER_FIELDS: FilterFieldDef[] = [
-    {field: "object_id", label: "Object ID"},
-    {field: "object_label", label: "Object label"},
-    {field: "object_iri", label: "Object IRI"},
+    {field: "object_id", label: "Object ID", suggest: "contextual"},
+    {field: "object_label", label: "Object label", suggest: "contextual"},
+    {field: "object_iri", label: "Object IRI", suggest: "contextual"},
 ];
 
 // Per-column sort choices (id / label / iri). Same canonical Solr field names as the
@@ -58,6 +64,23 @@ const OBJECT_SORT_FIELDS: SortFieldDef[] = [
     {field: "object_label", label: "Label"},
     {field: "object_iri", label: "IRI"},
 ];
+
+// Set helpers for the exact-filter set (ADR-0034). New Sets, not mutations: the set is React state
+// held in the URL, and mutating it in place would not re-render.
+function withField(fields: Set<string>, field: string): Set<string> {
+    const next = new Set(fields);
+    next.add(field);
+    return next;
+}
+
+function withoutField(fields: Set<string>, field: string): Set<string> {
+    if (!fields.has(field)) {
+        return fields;
+    }
+    const next = new Set(fields);
+    next.delete(field);
+    return next;
+}
 
 // Default sort for the compact table: none, i.e. relevance — the provenance-led ranking (ADR-0027).
 // This is deliberately empty rather than a field: an explicit Solr sort *replaces* `score`, so the
@@ -128,9 +151,21 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const [fieldFilters, setFieldFilters] = useState<Record<string, string>>(() => urlFilters);
     const initialFieldFilters = useRef(urlFilters).current;
 
+    // Which fields were PICKED from a suggestion rather than typed (ADR-0034). A picked value came
+    // out of the index and is unambiguous, so it filters EXACTly; a typed fragment stays "contains".
+    const [exactFilters, setExactFilters] = useUrlExactFilters();
+
     const handleFilterChange = useCallback((field: string, value: string) => {
         setFieldFilters((previous) => ({ ...previous, [field]: value }));
-    }, []);
+        // Typing over a picked value makes it a fragment again, so it must go back to "contains" —
+        // otherwise the box would keep matching exactly while the user edits it, and match nothing.
+        setExactFilters(withoutField(exactFilters, field));
+    }, [exactFilters, setExactFilters]);
+
+    const handleFilterPick = useCallback((field: string, value: string) => {
+        setFieldFilters((previous) => ({ ...previous, [field]: value }));
+        setExactFilters(withField(exactFilters, field));
+    }, [exactFilters, setExactFilters]);
 
     useEffect(() => {
         if (fieldFiltersEqual(fieldFilters, urlFilters)) {
@@ -140,11 +175,16 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
         return () => clearTimeout(timer);
     }, [fieldFilters, urlFilters, setUrlFilters]);
 
+    const exactFiltersKey = [...exactFilters].sort().join(",");
     const columnFiltersForBackend = useMemo(
         () => Object.entries(urlFilters)
             .filter(([, value]) => value && value.trim() !== "")
-            .map(([id, value]) => ({ id, value: value.trim() })),
-        [urlFilters]
+            .map(([id, value]) => ({
+                id,
+                value: value.trim(),
+                match: exactFilters.has(id) ? "EXACT" : "CONTAINS",
+            })),
+        [urlFilters, exactFiltersKey]
     );
 
     const mappingSetIdsKey = mappingSetIds.join(",");
@@ -152,6 +192,21 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const objectPrefixesKey = objectPrefixes.join(",");
     // Which asserted corpora to search (ADR-0027); undefined for "both", which sends no filter.
     const mappingSetCategory = useMemo(() => corpusToRequest(corpus), [corpus]);
+
+    // The live search, for the column filters' contextual suggestions (ADR-0034). Built with the SAME
+    // buildSearchRequest that fetchMappings uses, so the values offered are faceted over exactly the
+    // rows on screen and can never yield zero. Memoised on the same primitive keys as the useQuery
+    // key below — without that, a fresh object every render would re-memoise the column definitions
+    // on every render, which is the thing ColumnFilterPopover's local input state exists to avoid.
+    const suggestContext = useMemo(
+        () => buildSearchRequest(
+            queries, pagination.pageIndex, pagination.pageSize, columnFiltersForBackend, sorting,
+            mappingSetIds, undefined, inferenceTypes, false,
+            subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory),
+        [queries, pagination.pageIndex, pagination.pageSize, columnFiltersForBackend, sorting,
+            mappingSetIdsKey, inferenceTypes.join(","), subjectPrefixesKey, objectPrefixesKey,
+            labelMatch, mappingSetCategory]
+    );
     const { data, isLoading, isError } = useQuery({
         queryKey: [
             "fetchMappings",
@@ -229,7 +284,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Predicate</span>
-                        <ColumnFilterPopover title="Predicate" fields={PREDICATE_FILTER_FIELDS} onChange={handleFilterChange} initialValues={initialFieldFilters} />
+                        <ColumnFilterPopover title="Predicate" fields={PREDICATE_FILTER_FIELDS} onChange={handleFilterChange} onPick={handleFilterPick} suggestContext={suggestContext} initialValues={initialFieldFilters} />
                         <ColumnSortPopover title="Predicate" fields={PREDICATE_SORT_FIELDS} onApply={setSorting} />
                     </span>
                 ),
@@ -250,7 +305,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Object</span>
-                        <ColumnFilterPopover title="Object" fields={OBJECT_FILTER_FIELDS} onChange={handleFilterChange} initialValues={initialFieldFilters} />
+                        <ColumnFilterPopover title="Object" fields={OBJECT_FILTER_FIELDS} onChange={handleFilterChange} onPick={handleFilterPick} suggestContext={suggestContext} initialValues={initialFieldFilters} />
                         <ColumnSortPopover title="Object" fields={OBJECT_SORT_FIELDS} onApply={setSorting} />
                     </span>
                 ),

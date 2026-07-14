@@ -28,7 +28,10 @@ import java.util.concurrent.TimeUnit;
  */
 public final class SolrLifecycle {
 
-    private static final String[] COLLECTIONS = { "oxo2-mappings", "oxo2-mappingsets" };
+    // oxo2-entities (ADR-0034) is derived from the mappings by the mappings2entities stage, so the
+    // harness must both lay its core down and CLEAR it between fixtures — otherwise one fixture's
+    // entities would leak into the next fixture's assertions.
+    private static final String[] COLLECTIONS = { "oxo2-mappings", "oxo2-mappingsets", "oxo2-entities" };
 
     private static final HttpClient HTTP = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3)).build();

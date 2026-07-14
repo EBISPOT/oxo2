@@ -1,12 +1,20 @@
 import { useState, type JSX, type MouseEvent } from "react";
 import { Badge, Box, Button, IconButton, Popover, TextField, Typography } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import { ValueSuggest } from "../search/ValueSuggest";
 
 export interface FilterFieldDef {
     /** Canonical Solr field name (snake_case); resolved by the backend MappingEnum. */
     field: string;
     /** User-facing input label. */
     label: string;
+    /**
+     * `contextual` gives this field a typeahead whose values are faceted over the LIVE search
+     * (ADR-0034) — so a suggested value can never yield zero rows, and it arrives with the count of
+     * rows it would leave. Fields without it stay plain text boxes. Data, not a switch statement:
+     * turning a column's suggest on is a one-flag change.
+     */
+    suggest?: "contextual" | "none";
 }
 
 /**
@@ -23,12 +31,18 @@ export function ColumnFilterPopover({
     title,
     fields,
     onChange,
+    onPick,
     initialValues,
+    suggestContext,
 }: {
     title: string;
     fields: FilterFieldDef[];
     onChange: (field: string, value: string) => void;
+    /** A value was PICKED from the suggestions — filter on it exactly, not as a substring. */
+    onPick?: (field: string, value: string) => void;
     initialValues?: Record<string, string>;
+    /** The live search the contextual suggestions must be scoped to. */
+    suggestContext?: unknown;
 }): JSX.Element {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [values, setValues] = useState<Record<string, string>>(() => initialValues ?? {});
@@ -43,6 +57,11 @@ export function ColumnFilterPopover({
     const handleChange = (field: string, value: string) => {
         setValues((previous) => ({ ...previous, [field]: value }));
         onChange(field, value);
+    };
+
+    const handlePick = (field: string, value: string) => {
+        setValues((previous) => ({ ...previous, [field]: value }));
+        (onPick ?? onChange)(field, value);
     };
 
     const handleClear = () => {
@@ -76,14 +95,26 @@ export function ColumnFilterPopover({
                         {`Filter by ${title}`}
                     </Typography>
                     {fields.map((fieldDef) => (
-                        <TextField
-                            key={fieldDef.field}
-                            label={fieldDef.label}
-                            size="small"
-                            variant="outlined"
-                            value={values[fieldDef.field] ?? ""}
-                            onChange={(event) => handleChange(fieldDef.field, event.target.value)}
-                        />
+                        fieldDef.suggest === "contextual" ? (
+                            <ValueSuggest
+                                key={fieldDef.field}
+                                field={fieldDef.field}
+                                label={fieldDef.label}
+                                value={values[fieldDef.field] ?? ""}
+                                search={suggestContext}
+                                onTyped={(next) => handleChange(fieldDef.field, next)}
+                                onPick={(picked) => handlePick(fieldDef.field, picked)}
+                            />
+                        ) : (
+                            <TextField
+                                key={fieldDef.field}
+                                label={fieldDef.label}
+                                size="small"
+                                variant="outlined"
+                                value={values[fieldDef.field] ?? ""}
+                                onChange={(event) => handleChange(fieldDef.field, event.target.value)}
+                            />
+                        )
                     ))}
                     <Button size="small" onClick={handleClear} disabled={activeCount === 0}>
                         Clear

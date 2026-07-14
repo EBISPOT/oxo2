@@ -71,10 +71,18 @@ NXF_SINGULARITY_CACHEDIR=${HPC_PATH:-$NEXTFLOW_DIR}/NXF_SINGULARITY_CACHEDIR
 NXF_LOGS=$NEXTFLOW_DIR/logs
 export NXF_WORK NXF_HOME NXF_TEMP NXF_CACHE_DIR NXF_SINGULARITY_CACHEDIR NXF_LOGS
 
+# verify_solr_indexed [core...]: assert each named core has documents. Defaults to the two mapping
+# cores. oxo2-entities is NOT in the default set on purpose: it is derived from the mappings AFTER
+# they are indexed (ADR-0034), so at every call site before index-entities it is legitimately empty
+# and asserting on it would fail a healthy run. The index-entities stage verifies it explicitly.
 verify_solr_indexed() {
-    echo "Verifying Solr indexing..."
+    local cores=("$@")
+    if [ ${#cores[@]} -eq 0 ]; then
+        cores=(oxo2-mappings oxo2-mappingsets)
+    fi
+    echo "Verifying Solr indexing (${cores[*]})..."
     local core count
-    for core in oxo2-mappings oxo2-mappingsets; do
+    for core in "${cores[@]}"; do
         count=$(curl -sf "$SOLR_URL/$core/select?q=*:*&rows=0" \
             | grep -o '"numFound":[0-9]*' | grep -o '[0-9]*')
         echo "  $core: ${count:-0} documents"
@@ -122,6 +130,7 @@ fi
 mkdir -p "$NXF_WORK" "$NXF_HOME" "$NXF_TEMP" "$NXF_CACHE_DIR" "$NXF_SINGULARITY_CACHEDIR" "$NXF_LOGS"
 mkdir -p "$OXO2_DATA/sssom" "$OXO2_DATA/sssom-as-json" "$OXO2_DATA/assertedMappings"
 mkdir -p "$OXO2_INFERENCES/solr/mapping" "$OXO2_INFERENCES/solr/mappingSet"
+mkdir -p "$OXO2_DATA/entities"
 mkdir -p "$OXO2_INFERENCES/crossSet"
 mkdir -p "$OXO2_DATA/tmp"
 mkdir -p "$SOLR_HOME"
@@ -178,6 +187,14 @@ if [ "$SOLR_NEEDED" = true ]; then
         sleep 2
     else
         echo "Preserving Solr cores (resuming after asserted data was indexed); skipping copySolrConfig."
+        # ...except the oxo2-entities core, which may not exist yet. oxo2-entities is a read model
+        # (ADR-0034) whose headline resume path is START_STAGE=mappings2entities against an
+        # already-indexed oxo2-mappings — a path that does NOT wipe, so the full copySolrConfig above
+        # never runs and the core dir would never be created (wait_for_solr_core would then hang).
+        # entities-only lays it down without touching the existing cores, and no-ops if it is already
+        # there. Core dirs must be created while Solr is DOWN, so this precedes the start below.
+        singularity exec --bind "$SOLR_HOME:/opt/solr/server/solr" "$SIF_IMAGE" \
+            /opt/oxo/oxo2-dataload/copySolrConfig.sh entities-only
     fi
 
     # --- Start Solr as a backgrounded foreground process ---
@@ -356,7 +373,9 @@ if [ "$SOLR_NEEDED" = true ]; then
     # curl -fsS in json2solr.sh exits non-zero, set -e aborts this script, and the EXIT trap SIGTERMs
     # Solr mid-load (surfacing as "CoreContainer has been closed"). Gate on each core being queryable
     # to close that race. select?q=*:*&rows=0 mirrors verify_solr_indexed and 503s until the core loads.
-    for core in oxo2-mappings oxo2-mappingsets; do
+    # oxo2-entities is probed too — it is empty at this point, which is fine: this asserts the core is
+    # LOADED (a 200 on an empty core), not that it has documents.
+    for core in oxo2-mappings oxo2-mappingsets oxo2-entities; do
         if ! wait_for_solr_url "$SOLR_URL/$core/select?q=*:*&rows=0" "Solr core '$core'"; then
             dump_failure_state
             echo "ERROR: Solr core '$core' did not finish loading. Aborting." >&2
@@ -534,6 +553,42 @@ if should_run index-inferred; then
     sleep 20
     verify_solr_indexed
     record_stage index-inferred
+fi
+
+# --- Stage: derive the entity collection from the indexed mappings (ADR-0034) ---
+# One document per DISTINCT entity, folded out of the denormalised mappings index and sharded by CURIE
+# prefix. Runs AFTER index-inferred, not before: an inferred mapping's subject may appear only as an
+# OBJECT in the asserted data, so deriving earlier would drop it from the subject-side suggest.
+#
+# Like explanations2json, each task is its own SLURM job on another node where Solr is not on
+# localhost, so $SOLR_URL (the cross-node FQDN the readiness probe confirmed) is passed explicitly —
+# mappings2entities.nf otherwise defaults params.solr_url to http://localhost:8983 and the task would
+# dial its own node.
+if should_run mappings2entities; then
+    start_time=$(date +%s)
+    echo "###################" mappings2entities...
+    (cd "$NXF_LOGS" && nextflow -log "$NXF_LOGS/mappings2entities.nextflow.log" \
+        -c "$SCRIPT_DIR/nextflow/nextflow.config" \
+        run "$SCRIPT_DIR/mappings2entities.nf" \
+        -profile "$NF_PROFILE" \
+        --solr_url "$SOLR_URL" \
+        --output_dir "$OXO2_DATA/entities" \
+        -with-trace    "$NXF_LOGS/mappings2entities-trace.txt" \
+        -with-report   "$NXF_LOGS/mappings2entities-report.html" \
+        -with-timeline "$NXF_LOGS/mappings2entities-timeline.html")
+    end_time=$(date +%s)
+    echo "Deriving entities from the mappings index took: $((end_time - start_time)) seconds"
+    record_stage mappings2entities
+fi
+
+# --- Stage: index entities to Solr ---
+if should_run index-entities; then
+    echo "###################" json2solr entities...
+    singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
+        /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/entities" "$SOLR_URL/oxo2-entities"
+    sleep 20
+    verify_solr_indexed oxo2-entities
+    record_stage index-entities
 fi
 
 # --- Stage: archive (always the final step) ---

@@ -5,6 +5,7 @@ import {
     GROUP_ORDER,
     groupFields,
 } from "../../model/AdvancedFields";
+import { SuggestField } from "./SuggestField";
 
 interface AdvancedSearchProps {
     values: Record<string, string>;
@@ -17,6 +18,14 @@ export function AdvancedSearch({ values, onChange, onSubmit, onClear }: Advanced
     const grouped = groupFields();
 
     const placeholderFor = (fd: AdvancedFieldDef) => {
+        // A field that completes tells you so, rather than describing its match semantics — the
+        // dropdown is the more useful thing to advertise.
+        if (fd.suggest === "entity") {
+            return "Start typing a label, CURIE or IRI…";
+        }
+        if (fd.suggest === "vocab") {
+            return "Start typing, or pick from the list…";
+        }
         if (fd.type === "text_general") {
             return fd.multiValued ? "Text search (matches any list item)" : "Text search";
         }
@@ -48,13 +57,11 @@ export function AdvancedSearch({ values, onChange, onSubmit, onClear }: Advanced
                                     >
                                         {fd.label}
                                     </label>
-                                    <input
-                                        id={`adv-${fd.field}`}
-                                        type="text"
-                                        className="input-default text-sm"
-                                        placeholder={placeholderFor(fd)}
+                                    <SuggestField
+                                        fieldDef={fd}
                                         value={values[fd.field] ?? ""}
-                                        onChange={(e) => onChange(fd.field, e.target.value)}
+                                        onChange={onChange}
+                                        placeholder={placeholderFor(fd)}
                                     />
                                 </div>
                             ))}

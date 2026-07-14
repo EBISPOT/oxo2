@@ -9,6 +9,7 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.FieldQuery;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.MappingSearchRequest.ColumnFilter;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.request.SortedField;
+import uk.ac.ebi.spot.oxo.model.sssom.FilterMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.apache.solr.common.params.FacetParams.FACET_FIELD;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SolrQueryBuilderTest {
@@ -1115,5 +1117,325 @@ class SolrQueryBuilderTest {
 
         assertThat(solrQuery.getQuery()).contains(MappingEnum.SUBJECT_IRI.getField() + ":\"");
         assertThat(solrQuery.getQuery()).contains(MappingEnum.OBJECT_IRI.getField() + ":\"");
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Value suggestions (ADR-0034)
+    // ---------------------------------------------------------------------------------------------
+
+    /** A live search with a bit of everything on it, to prove the suggest inherits all of it. */
+    private static MappingSearchRequest liveSearch() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("cataract"));
+        request.setInferenceType(List.of(InferenceType.ASSERTED));
+        request.setMappingSetCategory(List.of(MappingSetCategory.ONTOLOGY));
+        request.setSubjectPrefixes(List.of("MONDO"));
+        request.setObjectPrefixes(List.of("EFO"));
+        request.setMappingSetIds(List.of("https://example.org/set/1"));
+        request.setColumnFilters(List.of(
+                new ColumnFilter(MappingEnum.OBJECT_LABEL.getField(), "eye")));
+        return request;
+    }
+
+    /**
+     * THE regression test for ADR-0034's "reuse, don't reimplement". The contextual suggest must be
+     * scoped by exactly the restrictions the search itself applies; if someone ever rebuilds that
+     * filter list by hand instead of calling buildSolrQuery, the two will silently drift and the
+     * dropdown will start offering values that yield zero rows. Compare them directly.
+     */
+    @Test
+    void valueSuggestInheritsEverySearchFilter() {
+        MappingSearchRequest request = liveSearch();
+
+        String[] searchFilters = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN).getFilterQueries();
+        String[] suggestFilters = SolrQueryBuilder
+                .buildValueSuggestQuery(request, MappingEnum.PREDICATE_ID, "skos", 10)
+                .getFilterQueries();
+
+        // Every filter the search applies is also applied to the facet. The suggest additionally
+        // DROPS the filter on the field being suggested, so it is a subset relation, not equality —
+        // and here the only column filter is on a different field, so nothing is dropped.
+        assertThat(suggestFilters).containsAll(Arrays.asList(searchFilters));
+    }
+
+    /** The search's q is inherited too — suggestions come from the rows the query matched. */
+    @Test
+    void valueSuggestInheritsTheSearchQuery() {
+        MappingSearchRequest request = liveSearch();
+
+        assertThat(SolrQueryBuilder.buildValueSuggestQuery(request, MappingEnum.PREDICATE_ID, "skos", 10)
+                .getQuery())
+                .isEqualTo(SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN).getQuery());
+    }
+
+    /**
+     * Faceting on the field the user is mid-way through typing, while that half-typed value is still
+     * an active filter, scopes the facet by the very thing it is trying to complete — so both the
+     * values and the counts come back wrong.
+     */
+    @Test
+    void valueSuggestDropsTheInProgressFilterOnTheSuggestedField() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(
+                new ColumnFilter(MappingEnum.PREDICATE_ID.getField(), "sko"),
+                new ColumnFilter(MappingEnum.OBJECT_LABEL.getField(), "eye")));
+
+        String[] filterQueries = SolrQueryBuilder
+                .buildValueSuggestQuery(request, MappingEnum.PREDICATE_ID, "sko", 10)
+                .getFilterQueries();
+
+        String joined = String.join(" ", filterQueries);
+        // The half-typed predicate filter is gone...
+        assertThat(joined).doesNotContain(MappingEnum.PREDICATE_ID.getField() + "_ngram");
+        // ...but the OTHER column's filter still scopes the suggestions.
+        assertThat(joined).contains(labelNgram(MappingEnum.OBJECT_LABEL));
+    }
+
+    /** And it must not mutate the caller's request — that request IS the live search. */
+    @Test
+    void valueSuggestDoesNotMutateTheCallersRequest() {
+        MappingSearchRequest request = liveSearch();
+        request.setGroupBySpo(true);
+        int columnFilterCount = request.getColumnFilters().size();
+
+        SolrQueryBuilder.buildValueSuggestQuery(request, MappingEnum.OBJECT_LABEL, "eye", 10);
+
+        assertThat(request.getColumnFilters()).hasSize(columnFilterCount);
+        assertThat(request.isGroupBySpo()).isTrue();
+    }
+
+    /**
+     * The weak-predicate exclusion is part of what the search means, so the facet inherits it —
+     * otherwise the dropdown would offer values that only exist on the rows the search is hiding.
+     * The expected clause goes through the escape oracle (escapeQueryChars escapes the '-' in
+     * "rdf-schema" too, which is precisely why it is computed and not written out).
+     */
+    @Test
+    void valueSuggestKeepsTheWeakPredicateExclusion() {
+        MappingSearchRequest request = baseRequest();
+        request.setQueries(List.of("cataract"));
+        String subClassOf = ClientUtils.escapeQueryChars(
+                "http://www.w3.org/2000/01/rdf-schema#subClassOf");
+
+        assertThat(String.join(" ", SolrQueryBuilder
+                .buildValueSuggestQuery(request, MappingEnum.OBJECT_LABEL, "eye", 10)
+                .getFilterQueries()))
+                .contains(MappingEnum.PREDICATE_IRI.getField() + ":\"" + subClassOf + "\"");
+    }
+
+    /** A facet counts documents; the collapse post-filter and its expand pass are pure waste here. */
+    @Test
+    void valueSuggestDropsTheSameSpoCollapse() {
+        MappingSearchRequest request = liveSearch();
+        request.setGroupBySpo(true);
+
+        SolrQuery solrQuery = SolrQueryBuilder
+                .buildValueSuggestQuery(request, MappingEnum.PREDICATE_ID, "skos", 10);
+
+        assertThat(String.join(" ", solrQuery.getFilterQueries())).doesNotContain("{!collapse");
+        assertThat(solrQuery.get(SolrConstants.EXPAND)).isNull();
+    }
+
+    @Test
+    void valueSuggestAsksForNoDocumentsAndCountedFacets() {
+        SolrQuery solrQuery = SolrQueryBuilder
+                .buildValueSuggestQuery(baseRequest(), MappingEnum.PREDICATE_ID, "skos", 7);
+
+        assertThat(solrQuery.getRows()).isZero();
+        assertThat(solrQuery.getBool("facet")).isTrue();
+        assertThat(solrQuery.getInt("facet.mincount")).isEqualTo(1);
+        assertThat(solrQuery.getInt("facet.limit")).isEqualTo(7);
+        assertThat(solrQuery.get("facet.sort")).isEqualTo("count");
+    }
+
+    /**
+     * facet.prefix is a RAW TERM PREFIX — not analyzed, not query-parsed. Escaping it would put
+     * literal backslashes into the term being matched, so nothing would ever match. This is the
+     * opposite of the rule everywhere else in this class, which is exactly why it needs a test.
+     */
+    @Test
+    void facetPrefixIsNotEscaped() {
+        SolrQuery solrQuery = SolrQueryBuilder
+                .buildValueSuggestQuery(baseRequest(), MappingEnum.PREDICATE_ID, "skos:ex", 10);
+
+        String facetFields = String.join(" ", solrQuery.getParams(FACET_FIELD));
+        assertThat(facetFields).contains("facet.prefix=skos:ex");
+        assertThat(facetFields).doesNotContain(ClientUtils.escapeQueryChars("skos:ex"));
+    }
+
+    /**
+     * The facet field preserves the original casing (it must — a case-folded field would hand back
+     * "mondo:0005148" as the value to display), so a case-sensitive facet.prefix would miss
+     * "Melanoma" for a user typing "mel". Issue the prefix under each realistic casing.
+     */
+    @Test
+    void facetPrefixIsIssuedUnderEachCasing() {
+        SolrQuery solrQuery = SolrQueryBuilder
+                .buildValueSuggestQuery(baseRequest(), MappingEnum.OBJECT_LABEL, "mel", 10);
+
+        String facetFields = String.join(" ", solrQuery.getParams(FACET_FIELD));
+        assertThat(facetFields)
+                .contains("facet.prefix=mel")
+                .contains("facet.prefix=MEL")
+                .contains("facet.prefix=Mel");
+    }
+
+    /** Each casing needs its own key, or Solr keeps only the last facet.prefix for the field. */
+    @Test
+    void eachCasingFacetGetsItsOwnKey() {
+        SolrQuery solrQuery = SolrQueryBuilder
+                .buildValueSuggestQuery(baseRequest(), MappingEnum.OBJECT_LABEL, "mel", 10);
+
+        String[] facetFields = solrQuery.getParams(FACET_FIELD);
+        long distinctKeys = Arrays.stream(facetFields)
+                .map(facetField -> facetField.substring(facetField.indexOf("key=")))
+                .distinct().count();
+        assertThat(distinctKeys).isEqualTo(facetFields.length);
+    }
+
+    /**
+     * Faceting a text_general field returns its ANALYZED TOKENS, not its values — it would suggest
+     * "the" and "disease" as completions of a mapping set title. The _str twin carries the whole
+     * value with its original casing. NB deliberately not the _ci twin (ADR-0026): that folds case,
+     * so a facet on it hands back a lower-cased value, which is wrong to show or to filter on.
+     */
+    @Test
+    void textGeneralFieldsAreFacetedThroughTheirWholeValueTwin() {
+        assertThat(SuggestFields.facetFieldFor(MappingEnum.OBJECT_LABEL))
+                .isEqualTo(MappingEnum.OBJECT_LABEL.getField() + "_str");
+        assertThat(SuggestFields.facetFieldFor(MappingEnum.MAPPING_SET_TITLE))
+                .isEqualTo(MappingEnum.MAPPING_SET_TITLE.getField() + "_str");
+
+        // A string field is already whole-value, so it is faceted directly.
+        assertThat(SuggestFields.facetFieldFor(MappingEnum.PREDICATE_ID))
+                .isEqualTo(MappingEnum.PREDICATE_ID.getField());
+        assertThat(SuggestFields.facetFieldFor(MappingEnum.MAPPING_JUSTIFICATION))
+                .isEqualTo(MappingEnum.MAPPING_JUSTIFICATION.getField());
+    }
+
+    /**
+     * A picked value round-trips: the field an EXACT filter targets is the same whole-value field the
+     * suggestion was faceted out of, so applying it returns exactly the rows it was counted from.
+     */
+    @Test
+    void exactFilterTargetsTheFieldTheSuggestionCameFrom() {
+        for (MappingEnum field : SuggestFields.CONTEXTUAL_FIELDS) {
+            assertThat(SuggestFields.exactMatchFieldFor(field))
+                    .isEqualTo(SuggestFields.facetFieldFor(field));
+        }
+    }
+
+    /** The entity fields are served by the entity typeahead; a GLOBAL facet on them is millions of terms. */
+    @Test
+    void highCardinalityEntityFieldsAreNotVocabularyFields() {
+        assertThat(SuggestFields.VOCAB_FIELDS)
+                .doesNotContain(MappingEnum.OBJECT_ID)
+                .doesNotContain(MappingEnum.OBJECT_LABEL)
+                .doesNotContain(MappingEnum.SUBJECT_ID)
+                .doesNotContain(MappingEnum.SUBJECT_LABEL);
+
+        // But a column filter may suggest object values, because that facet is scoped AND prefixed.
+        assertThat(SuggestFields.CONTEXTUAL_FIELDS)
+                .contains(MappingEnum.OBJECT_ID)
+                .contains(MappingEnum.OBJECT_LABEL);
+    }
+
+    /** Free prose has no vocabulary, and these two are indexed="false" so they cannot be faceted at all. */
+    @Test
+    void proseAndUnindexedFieldsAreNotSuggestible() {
+        assertThat(SuggestFields.VOCAB_FIELDS)
+                .doesNotContain(MappingEnum.COMMENT)
+                .doesNotContain(MappingEnum.OTHER)
+                .doesNotContain(MappingEnum.SEE_ALSO)
+                .doesNotContain(MappingEnum.MAPPING_SET_DESCRIPTION)
+                .doesNotContain(MappingEnum.MATCH_STRING)
+                .doesNotContain(MappingEnum.ISSUE_TRACKER_ITEM)
+                .doesNotContain(MappingEnum.ASSERTED_MAPPINGS);
+    }
+
+    @Test
+    void distinctValuesQueryIsAMatchAllFacet() {
+        SolrQuery solrQuery = SolrQueryBuilder
+                .buildDistinctValuesQuery(MappingEnum.MAPPING_JUSTIFICATION, 500);
+
+        assertThat(solrQuery.getQuery()).isEqualTo("*:*");
+        assertThat(solrQuery.getRows()).isZero();
+        assertThat(solrQuery.getFacetFields())
+                .containsExactly(MappingEnum.MAPPING_JUSTIFICATION.getField());
+        assertThat(solrQuery.getInt("facet.limit")).isEqualTo(500);
+    }
+
+    // ---------- picking is not typing (ADR-0034) ----------
+
+    /**
+     * A picked value came verbatim out of the index, so it matches the WHOLE value. Matching it as a
+     * substring would be the surprising behaviour: someone who explicitly picked "melanoma" from the
+     * dropdown would also get back "familial melanoma" and "melanoma of skin" — values they were
+     * shown and did not choose.
+     */
+    @Test
+    void exactColumnFilterMatchesTheWholeValue() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(new ColumnFilter(
+                MappingEnum.OBJECT_LABEL.getField(), "melanoma", FilterMatchType.EXACT)));
+
+        assertThat(String.join(" ", SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN).getFilterQueries()))
+                .contains(SuggestFields.exactMatchFieldFor(MappingEnum.OBJECT_LABEL)
+                        + ":\"" + ClientUtils.escapeQueryChars("melanoma") + "\"")
+                // ...and NOT the substring wildcard the typed path would have produced.
+                .doesNotContain(labelNgram(MappingEnum.OBJECT_LABEL) + ":*");
+    }
+
+    /** For a string field an exact filter is just the field itself — it is already whole-value. */
+    @Test
+    void exactColumnFilterOnAStringFieldTargetsTheFieldItself() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(new ColumnFilter(
+                MappingEnum.PREDICATE_ID.getField(), "skos:exactMatch", FilterMatchType.EXACT)));
+
+        assertThat(String.join(" ", SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN).getFilterQueries()))
+                .contains(MappingEnum.PREDICATE_ID.getField()
+                        + ":\"" + ClientUtils.escapeQueryChars("skos:exactMatch") + "\"");
+    }
+
+    /** An exact value is still user input arriving over HTTP; it must not escape its clause. */
+    @Test
+    void exactColumnFilterIsEscaped() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(new ColumnFilter(
+                MappingEnum.PREDICATE_ID.getField(), INJECTION_PAYLOAD, FilterMatchType.EXACT)));
+
+        String filterQueries = String.join(" ",
+                SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN).getFilterQueries());
+        String escaped = ClientUtils.escapeQueryChars(INJECTION_PAYLOAD);
+
+        assertThat(filterQueries).contains(MappingEnum.PREDICATE_ID.getField() + ":\"" + escaped + "\"");
+        assertThat(filterQueries.replace(escaped, "")).doesNotContain("*:* OR");
+    }
+
+    /**
+     * The whole point of defaulting to CONTAINS: a caller that has never heard of autocomplete keeps
+     * exactly the behaviour it had. This is the regression guard on that.
+     */
+    @Test
+    void aFilterWithNoMatchTypeStillContains() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(
+                new ColumnFilter(MappingEnum.OBJECT_LABEL.getField(), "eye")));
+
+        assertThat(request.getColumnFilters().get(0).getMatch()).isEqualTo(FilterMatchType.CONTAINS);
+        assertThat(String.join(" ", SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN).getFilterQueries()))
+                .contains(ngramContainsAll(MappingEnum.OBJECT_LABEL, "eye"));
+    }
+
+    /** An explicit predicate filter still lifts the weak-predicate hiding when it is EXACT. */
+    @Test
+    void anExactPredicateFilterStillLiftsTheWeakPredicateHiding() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(new ColumnFilter(
+                MappingEnum.PREDICATE_ID.getField(), "oboInOwl:hasDbXref", FilterMatchType.EXACT)));
+
+        assertThat(String.join(" ", SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN).getFilterQueries()))
+                .doesNotContain("-(" + MappingEnum.PREDICATE_IRI.getField());
     }
 }

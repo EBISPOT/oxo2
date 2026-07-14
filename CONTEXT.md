@@ -213,6 +213,28 @@ over a new additive `entity_id` copy-field (subject ∪ object) that is empty un
 See [ADR-0032](docs/adr/0032-sssom-spec-api.md). Affects `oxo2-backend` (`controller/api/sssom/`,
 `SssomQueryBuilder` / `SssomResultMapper`, `server.forward-headers-strategy`) and `oxo2-dataload`
 (the `entity_id` field + copyFields on the mappings schema).
+- **Typeahead is served by a third Solr collection, `oxo2-entities`** — one document per distinct
+entity (CURIE, label, IRI, prefix, subject/object membership, mapping count), derived from the indexed
+mappings by a new `mappings2entities` dataload stage. `oxo2-mappings` is denormalised (one doc per
+mapping), so it has no per-entity view and its only n-gram fields are *infix* — both wrong for a
+typeahead. Prefix matching uses two new **edge**-n-gram field types (prefix-of-any-token for labels,
+whole-string for CURIEs); Solr's `SuggestComponent` is deliberately **not** used, because it takes no
+`fq` (so it could honour neither the subject-side default nor the ontology/corpus filters) and over a
+denormalised index would suggest once per *mapping*. Three surfaces, three mechanisms by field
+cardinality: the main box → global entity suggest (subject-side, ADR-0030); column filters →
+a `facet.prefix` scoped to the **live query**, reusing `SolrQueryBuilder.buildSolrQuery` so a
+suggestion can never yield zero rows; Advanced search → entity suggest, a cached distinct-values facet,
+or nothing, per field. Picking a suggestion applies an **exact** filter (`FilterMatchType`); typing
+free text keeps *contains*. `oxo2-entities` is a read model, rebuildable alone via
+`START_STAGE=mappings2entities`. Facets read only whole-value, **original-casing** fields — faceting a
+`text_general` field returns analyzed tokens ("the", "disease") and faceting a case-folding `_ci` field
+returns lower-cased values, both unusable as suggestions — so the mappings schema gains seven `_str`
+twins for the `text_general` vocabulary fields. See
+[ADR-0034](docs/adr/0034-entity-collection-for-typeahead.md). Affects `oxo2-dataload` (the new
+collection, the `mappings2entities` stage, and the seven `_str` twins — a bounded re-post, not a
+re-inference), `oxo2-shared` (`EntityConstants`, `FilterMatchType`, `EntitySide`), `oxo2-backend`
+(`SuggestController`, `EntitySuggestQueryBuilder`) and `oxo2-frontend` (the suggest components and the
+48-field tier map).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **The dataload is resumable from a chosen (sub)stage** — parameterised by `START_STAGE` (default

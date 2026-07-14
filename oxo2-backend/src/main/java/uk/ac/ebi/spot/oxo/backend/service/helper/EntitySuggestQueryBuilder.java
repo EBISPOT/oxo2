@@ -1,0 +1,140 @@
+package uk.ac.ebi.spot.oxo.backend.service.helper;
+
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.util.ClientUtils;
+import uk.ac.ebi.spot.oxo.model.entity.EntityConstants;
+import uk.ac.ebi.spot.oxo.model.entity.EntitySide;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Builds the entity-typeahead query against the {@code oxo2-entities} collection (ADR-0034).
+ *
+ * <p>A peer of {@link SolrQueryBuilder}, not an extension of it: a different collection, a different
+ * schema, and no {@link uk.ac.ebi.spot.oxo.model.sssom.MappingEnum} — an entity document is not a
+ * mapping document, and conflating the two would drag the mapping schema's filters (weak-predicate
+ * exclusion, same-SPO collapse, inference type) into a query where none of them mean anything.
+ *
+ * <p>Deliberately a plain edismax query rather than a Solr {@code SuggestComponent}: a suggester
+ * takes no filter query, so it could honour neither the subject-side restriction (ADR-0030) nor the
+ * ontology-prefix filter — and it would need a dictionary build step in the dataload. See ADR-0034.
+ */
+public class EntitySuggestQueryBuilder {
+
+    /**
+     * The label STARTS with what was typed (KeywordTokenizer edge-n-gram). The strongest signal:
+     * typing "mel" should put "melanoma" above "familial atypical melanoma".
+     */
+    static final int WHOLE_LABEL_PREFIX_BOOST = 8;
+
+    /** The CURIE starts with what was typed — "MONDO:00…". As decisive as a whole-label prefix. */
+    static final int CURIE_PREFIX_BOOST = 6;
+
+    /** The IRI matches exactly. Only fires when a full IRI is pasted; see the class note on IRIs. */
+    static final int IRI_EXACT_BOOST = 6;
+
+    /**
+     * SOME TOKEN of the label starts with what was typed (StandardTokenizer edge-n-gram) — this is
+     * what reaches "malignant melanoma" from "mel". Weakest of the four on purpose: it is the widest
+     * net, so it must not outrank a genuine leading-edge match.
+     */
+    static final int TOKEN_PREFIX_BOOST = 2;
+
+    /**
+     * Popularity. Multiplicative (never an additive {@code bq}) for the same reason the provenance
+     * ranking is (ADR-0027): an additive boost is scaled against the text score's idf, and a rare
+     * term would then swamp the popularity signal rather than being tempered by it. log-damped so a
+     * 100k-mapping entity beats a 10k-mapping one without burying it, and {@code sum(...,1)} keeps
+     * the argument positive for an entity with no mappings (which cannot happen today, but a zero
+     * would make the whole product zero rather than merely unboosted).
+     */
+    static final String POPULARITY_BOOST =
+            "sum(1,log(sum(" + EntityConstants.MAPPING_COUNT + ",1)))";
+
+    /** Hard cap on rows. A typeahead dropdown shows ten-ish; nobody scrolls a suggestion list. */
+    public static final int MAX_SUGGEST_ROWS = 25;
+
+    /**
+     * Below this, a prefix is not discriminating enough to be worth a query: one character of a
+     * label matches a large fraction of the collection, and the user is still typing.
+     */
+    public static final int MIN_QUERY_LENGTH = 2;
+
+    private EntitySuggestQueryBuilder() {
+    }
+
+    /** True when {@code query} is too short (or absent) to suggest on. */
+    public static boolean isTooShort(String query) {
+        return query == null || query.strip().length() < MIN_QUERY_LENGTH;
+    }
+
+    /**
+     * @param query    what the user has typed so far
+     * @param side     which side of a mapping the entity must appear on; the main search box passes
+     *                 {@link EntitySide#SUBJECT} (ADR-0030)
+     * @param prefixes restrict to these CURIE prefixes (the from/to ontology selectors); may be empty
+     * @param size     rows wanted, capped at {@link #MAX_SUGGEST_ROWS}
+     */
+    public static SolrQuery buildEntitySuggestQuery(String query, EntitySide side,
+                                                    List<String> prefixes, int size) {
+        String escaped = ClientUtils.escapeQueryChars(query.strip());
+
+        // Each clause is QUOTED, so each field's own analyzer sees the WHOLE typed string. That is
+        // what makes the two label fields behave differently: on label_prefix_ngram (KeywordTokenizer)
+        // "malignant mel" is one term and matches as a whole-string prefix, while on label_ngram
+        // (StandardTokenizer) it is a phrase whose last token is a prefix. Letting edismax split on
+        // whitespace (its default) would destroy the first of those. Fielded clauses parse through
+        // edismax unchanged — the same thing SolrQueryBuilder's classified/advanced paths rely on.
+        String disjunction = "(" + EntityConstants.LABEL_PREFIX_NGRAM + ":\"" + escaped + "\"^" + WHOLE_LABEL_PREFIX_BOOST
+                + " OR " + EntityConstants.ID_PREFIX_NGRAM + ":\"" + escaped + "\"^" + CURIE_PREFIX_BOOST
+                + " OR " + EntityConstants.IRI + ":\"" + escaped + "\"^" + IRI_EXACT_BOOST
+                + " OR " + EntityConstants.LABEL_NGRAM + ":\"" + escaped + "\"^" + TOKEN_PREFIX_BOOST
+                + ")";
+
+        SolrQuery solrQuery = new SolrQuery();
+        solrQuery.setQuery(disjunction);
+        solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
+        solrQuery.set(SolrConstants.BOOST, POPULARITY_BOOST);
+
+        String sideFilter = sideFilter(side);
+        if (sideFilter != null) {
+            solrQuery.addFilterQuery(sideFilter);
+        }
+        String prefixFilter = prefixFilter(prefixes);
+        if (prefixFilter != null) {
+            solrQuery.addFilterQuery(prefixFilter);
+        }
+
+        solrQuery.setFields(EntityConstants.ID, EntityConstants.LABEL, EntityConstants.IRI,
+                EntityConstants.PREFIX, EntityConstants.MAPPING_COUNT);
+        solrQuery.setRows(Math.min(Math.max(size, 1), MAX_SUGGEST_ROWS));
+        return solrQuery;
+    }
+
+    /**
+     * Restrict to entities that actually appear on the side being searched. Without this the main box
+     * would offer entities that only ever appear as an object — a completion that, under ADR-0030's
+     * subject-side search, returns no rows.
+     */
+    private static String sideFilter(EntitySide side) {
+        EntitySide effective = side == null ? EntitySide.DEFAULT : side;
+        return switch (effective) {
+            case SUBJECT -> EntityConstants.IS_SUBJECT + ":true";
+            case OBJECT -> EntityConstants.IS_OBJECT + ":true";
+            case ANY -> null;
+        };
+    }
+
+    /** Mirrors {@code SolrQueryBuilder.addPrefixFilter}: an OR of escaped prefix terms. */
+    private static String prefixFilter(List<String> prefixes) {
+        if (prefixes == null || prefixes.isEmpty()) {
+            return null;
+        }
+        String clause = prefixes.stream()
+                .filter(prefix -> prefix != null && !prefix.isBlank())
+                .map(prefix -> EntityConstants.PREFIX + ":" + ClientUtils.escapeQueryChars(prefix.strip()))
+                .collect(Collectors.joining(" OR "));
+        return clause.isBlank() ? null : clause;
+    }
+}
