@@ -168,6 +168,29 @@ mapping being dropped from the subject-side suggest. The `oxo2-entities` total i
 the **distinct-entity count** (the collection carries no `inference_type`), so a fold that stopped
 deduping shows up there as the mapping count.
 
+Since [ADR-0035](../docs/adr/0035-weak-predicates-as-a-user-visible-control.md) those documents also
+carry the per-side, per-predicate count buckets
+(`{subject,object}_count_{strong,subclassof,hasdbxref}`), and pinning them is load-bearing rather than
+incidental: those buckets are what the typeahead filters and ranks on, so a bucket credited to the
+wrong predicate or the wrong side silently changes which entities are suggestable — the class of bug
+that shipped once already.
+
+Two guards, because the goldens alone are not enough. The **`HIDDEN_PREDICATES` fixture** is the only
+one that asserts a `rdfs:subClassOf` or `oboInOwl:hasDbXref` mapping at all, so it is the only golden
+in which a weak bucket is ever non-zero — without it, a fold that credited every weak sighting to the
+*strong* bucket would leave all nineteen other goldens byte-identical and pass. Its `ex:C` is the whole
+bug in miniature: the subject of one `subClassOf` and one `hasDbXref` and nothing else, so it has
+`subject_count` 2 and `subject_count_strong` **0**, and must be present in the collection yet not
+suggestable by default. And the **"entity buckets sum to totals"** assertion holds for every entity of
+every fixture (`strong + subclassof + hasdbxref == subject_count`, and likewise object-side), catching
+a double-count or a dropped sighting even where the golden has nothing to say.
+
+> **"Weak" means two different things here.** `RCE_WEAK_NOCHAIN` means *inference*-weak — `skos:closeMatch`,
+> which the RCE role chains do not propagate. ADR-0035's weak predicates are *visibility*-weak — hidden
+> from search unless the user ticks them. `skos:closeMatch` is inference-weak but perfectly visible, so
+> it belongs in the **strong** entity bucket. Only `rdfs:subClassOf` and `oboInOwl:hasDbXref` are
+> visibility-weak; `WeakPredicate` in `oxo2-shared` is the definitive list.
+
 ### Known gaps
 
 - **Per-fixture isolation is still a pipeline pass each**: each fixture is a full `loadData.nextflow`

@@ -4,6 +4,7 @@ import {AdvancedFieldQuery, SearchInput} from "../../model/Search";
 import {asLabelMatchMode} from "../../model/LabelMatchMode";
 import {asCorpusMode} from "../../model/MappingSetCategory";
 import {asSortMode} from "../../model/SortMode";
+import {asWeakPredicate, WeakPredicate} from "../../model/WeakPredicate";
 import {ADVANCED_FIELD_NAMES} from "../../model/AdvancedFields";
 import {ThemeProvider, createTheme} from '@mui/material/styles';
 import {NormalResultsTable} from "./NormalResultsTable";
@@ -47,6 +48,13 @@ function MappingResults() {
     // The Sort-by control reads the same `sort` param the table's column popovers write, so the two
     // can never disagree. A per-column sort the control can't represent reads back as "Best match".
     const sortBy = asSortMode(searchParams.getAll("sort"));
+    // The predicate checkboxes (ADR-0035). The results table reads the same `wp` param through
+    // useUrlWeakPredicates, so the search box above the table and the rows below it stay in step —
+    // and re-submitting the search does not silently drop the ticks.
+    const includeWeakPredicates = searchParams
+        .getAll("wp")
+        .map(asWeakPredicate)
+        .filter((predicate): predicate is WeakPredicate => predicate !== null);
     const isAdvanced = curies === "_advanced";
     const isMap = curies === "_map";
 
@@ -79,6 +87,7 @@ function MappingResults() {
         labelMatch,
         corpus,
         sortBy,
+        includeWeakPredicates,
         // A batch of terms is what the multi-term entry produced; keep that mode on Back.
         searchMode: queriesForBackend.length > 1 ? "multiple" : "single",
     };

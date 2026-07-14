@@ -4,7 +4,9 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import uk.ac.ebi.spot.oxo.model.entity.EntityConstants;
 import uk.ac.ebi.spot.oxo.model.entity.EntitySide;
+import uk.ac.ebi.spot.oxo.model.sssom.WeakPredicate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -13,12 +15,20 @@ import java.util.stream.Collectors;
  *
  * <p>A peer of {@link SolrQueryBuilder}, not an extension of it: a different collection, a different
  * schema, and no {@link uk.ac.ebi.spot.oxo.model.sssom.MappingEnum} — an entity document is not a
- * mapping document, and conflating the two would drag the mapping schema's filters (weak-predicate
- * exclusion, same-SPO collapse, inference type) into a query where none of them mean anything.
+ * mapping document, and the same-SPO collapse and inference-type filters mean nothing here.
+ *
+ * <p><b>The one mapping-side filter that does carry over is the weak-predicate exclusion</b>
+ * (ADR-0035). It has to. A suggestion is a promise that searching for that entity returns something,
+ * and the search hides {@code rdfs:subClassOf} and {@code oboInOwl:hasDbXref} unless the user has
+ * ticked them. Ignoring that here is precisely what made the typeahead offer 46,783 entities on a
+ * corpus whose default search could reach only 3,714 of them. So the filter and the popularity boost
+ * both run over the count buckets the user's checkboxes currently make visible — never over the
+ * totals, which count mappings the search will not show.
  *
  * <p>Deliberately a plain edismax query rather than a Solr {@code SuggestComponent}: a suggester
  * takes no filter query, so it could honour neither the subject-side restriction (ADR-0030) nor the
- * ontology-prefix filter — and it would need a dictionary build step in the dataload. See ADR-0034.
+ * ontology-prefix filter nor these predicate buckets — and it would need a dictionary build step in
+ * the dataload. See ADR-0034.
  */
 public class EntitySuggestQueryBuilder {
 
@@ -42,15 +52,29 @@ public class EntitySuggestQueryBuilder {
     static final int TOKEN_PREFIX_BOOST = 2;
 
     /**
-     * Popularity. Multiplicative (never an additive {@code bq}) for the same reason the provenance
-     * ranking is (ADR-0027): an additive boost is scaled against the text score's idf, and a rare
-     * term would then swamp the popularity signal rather than being tempered by it. log-damped so a
-     * 100k-mapping entity beats a 10k-mapping one without burying it, and {@code sum(...,1)} keeps
-     * the argument positive for an entity with no mappings (which cannot happen today, but a zero
-     * would make the whole product zero rather than merely unboosted).
+     * Popularity, over the mappings the current checkbox state actually shows (ADR-0035) — the same
+     * count the suggestion row displays, not the entity's grand total. Ranking on the total would
+     * float an entity to the top of a subject-side typeahead on the strength of thousands of
+     * {@code subClassOf} mappings in which it is the OBJECT and which the search hides anyway.
+     *
+     * <p>Multiplicative (never an additive {@code bq}) for the same reason the provenance ranking is
+     * (ADR-0027): an additive boost is scaled against the text score's idf, so a rare term would swamp
+     * the popularity signal rather than being tempered by it. log-damped so a 100k-mapping entity
+     * beats a 10k-mapping one without burying it, and {@code sum(...,1)} keeps the argument positive
+     * for an entity with no visible mappings — which the filter excludes anyway, but a zero here
+     * would make the whole product zero rather than merely unboosted.
      */
-    static final String POPULARITY_BOOST =
-            "sum(1,log(sum(" + EntityConstants.MAPPING_COUNT + ",1)))";
+    static String popularityBoost(List<String> visibleCountFields) {
+        return "sum(1,log(sum(" + String.join(",", visibleCountFields) + ",1)))";
+    }
+
+    /**
+     * Pseudo-field (an {@code fl} alias over a function query), not a schema field: how many mappings
+     * this suggestion will actually return under the current checkbox state. The stored
+     * {@code mapping_count} is the total over every predicate and every side, so showing it on the row
+     * would promise rows the search then hides.
+     */
+    public static final String VISIBLE_MAPPING_COUNT = "visible_mapping_count";
 
     /** Hard cap on rows. A typeahead dropdown shows ten-ish; nobody scrolls a suggestion list. */
     public static final int MAX_SUGGEST_ROWS = 25;
@@ -70,14 +94,20 @@ public class EntitySuggestQueryBuilder {
     }
 
     /**
-     * @param query    what the user has typed so far
-     * @param side     which side of a mapping the entity must appear on; the main search box passes
-     *                 {@link EntitySide#SUBJECT} (ADR-0030)
-     * @param prefixes restrict to these CURIE prefixes (the from/to ontology selectors); may be empty
-     * @param size     rows wanted, capped at {@link #MAX_SUGGEST_ROWS}
+     * @param query                 what the user has typed so far
+     * @param side                  which side of a mapping the entity must appear on; the main search
+     *                              box passes {@link EntitySide#SUBJECT} (ADR-0030)
+     * @param prefixes              restrict to these CURIE prefixes (the from/to ontology selectors);
+     *                              may be empty
+     * @param includeWeakPredicates the weak predicates the user has ticked; empty — the default —
+     *                              means suggest only entities with at least one mapping a default
+     *                              search would show (ADR-0035)
+     * @param size                  rows wanted, capped at {@link #MAX_SUGGEST_ROWS}
      */
     public static SolrQuery buildEntitySuggestQuery(String query, EntitySide side,
-                                                    List<String> prefixes, int size) {
+                                                    List<String> prefixes,
+                                                    List<WeakPredicate> includeWeakPredicates,
+                                                    int size) {
         String escaped = ClientUtils.escapeQueryChars(query.strip());
 
         // Each clause is QUOTED, so each field's own analyzer sees the WHOLE typed string. That is
@@ -92,38 +122,61 @@ public class EntitySuggestQueryBuilder {
                 + " OR " + EntityConstants.LABEL_NGRAM + ":\"" + escaped + "\"^" + TOKEN_PREFIX_BOOST
                 + ")";
 
+        // The one list that drives all three of the filter, the boost and the displayed count, so they
+        // cannot drift apart: an entity is suggestable exactly when one of these is non-zero, is
+        // ranked by their sum, and shows that sum as its mapping count.
+        List<String> visibleCountFields = visibleCountFields(side, includeWeakPredicates);
+
         SolrQuery solrQuery = new SolrQuery();
         solrQuery.setQuery(disjunction);
         solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
-        solrQuery.set(SolrConstants.BOOST, POPULARITY_BOOST);
+        solrQuery.set(SolrConstants.BOOST, popularityBoost(visibleCountFields));
 
-        String sideFilter = sideFilter(side);
-        if (sideFilter != null) {
-            solrQuery.addFilterQuery(sideFilter);
-        }
+        solrQuery.addFilterQuery(visibleFilter(visibleCountFields));
         String prefixFilter = prefixFilter(prefixes);
         if (prefixFilter != null) {
             solrQuery.addFilterQuery(prefixFilter);
         }
 
         solrQuery.setFields(EntityConstants.ID, EntityConstants.LABEL, EntityConstants.IRI,
-                EntityConstants.PREFIX, EntityConstants.MAPPING_COUNT);
+                EntityConstants.PREFIX,
+                VISIBLE_MAPPING_COUNT + ":sum(" + String.join(",", visibleCountFields) + ")");
         solrQuery.setRows(Math.min(Math.max(size, 1), MAX_SUGGEST_ROWS));
         return solrQuery;
     }
 
     /**
-     * Restrict to entities that actually appear on the side being searched. Without this the main box
-     * would offer entities that only ever appear as an object — a completion that, under ADR-0030's
-     * subject-side search, returns no rows.
+     * The count fields a search would currently draw rows from: the strong bucket on the side being
+     * searched, plus a bucket for each weak predicate the user has ticked.
+     *
+     * <p>Both halves of this matter. Restricting to the SIDE is what stops the main box offering an
+     * entity that only ever appears as an object — under ADR-0030's subject-side search that
+     * completes to no rows. Restricting to the visible PREDICATES is what stops it offering an entity
+     * whose every mapping is one the search hides (ADR-0035). Same failure, same fix.
      */
-    private static String sideFilter(EntitySide side) {
+    private static List<String> visibleCountFields(EntitySide side,
+                                                   List<WeakPredicate> includeWeakPredicates) {
         EntitySide effective = side == null ? EntitySide.DEFAULT : side;
-        return switch (effective) {
-            case SUBJECT -> EntityConstants.IS_SUBJECT + ":true";
-            case OBJECT -> EntityConstants.IS_OBJECT + ":true";
-            case ANY -> null;
-        };
+        List<WeakPredicate> included =
+                includeWeakPredicates == null ? List.of() : includeWeakPredicates;
+
+        List<String> fields = new ArrayList<>();
+        if (effective != EntitySide.OBJECT) {
+            fields.add(EntityConstants.SUBJECT_COUNT_STRONG);
+            included.forEach(predicate -> fields.add(EntityConstants.subjectCountField(predicate)));
+        }
+        if (effective != EntitySide.SUBJECT) {
+            fields.add(EntityConstants.OBJECT_COUNT_STRONG);
+            included.forEach(predicate -> fields.add(EntityConstants.objectCountField(predicate)));
+        }
+        return fields;
+    }
+
+    /** Suggestable iff at least one visible bucket is non-empty — i.e. iff the search returns a row. */
+    private static String visibleFilter(List<String> visibleCountFields) {
+        return visibleCountFields.stream()
+                .map(field -> field + ":[1 TO *]")
+                .collect(Collectors.joining(" OR "));
     }
 
     /** Mirrors {@code SolrQueryBuilder.addPrefixFilter}: an OR of escaped prefix terms. */

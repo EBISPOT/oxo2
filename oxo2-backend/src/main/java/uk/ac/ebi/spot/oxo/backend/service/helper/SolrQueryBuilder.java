@@ -17,6 +17,7 @@ import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 import uk.ac.ebi.spot.oxo.model.sssom.LabelMatchType;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingEnum;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingSetCategory;
+import uk.ac.ebi.spot.oxo.model.sssom.WeakPredicate;
 import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
 import java.math.BigDecimal;
@@ -235,18 +236,23 @@ public class SolrQueryBuilder {
     }
 
     /**
-     * Weak predicates excluded from mapping-search results by default. The inference corpus has no
-     * rule that chains them and their objects are frequently bare database codes (see
+     * The weak predicates, hidden from mapping-search results unless asked for. The inference corpus
+     * has no rule that chains them and their objects are frequently bare database codes (see
      * {@code ApplicablePredicatesEnum} in oxo2-json2inferences), so they add noise to ordinary
      * searches. Matched on {@code predicate_iri} (the canonical, prefix-independent IRI) rather than
-     * {@code predicate_id}, whose stored CURIE prefix and casing vary by source set. The exclusion is
-     * bypassed whenever the caller explicitly filters on a predicate field (see
+     * {@code predicate_id}, whose stored CURIE prefix and casing vary by source set.
+     *
+     * <p>The exclusion is lifted two ways. Explicitly, per predicate, by
+     * {@code MappingSearchRequest.includeWeakPredicates} — the two search-page checkboxes (ADR-0035).
+     * And implicitly, whenever the caller filters on a predicate field at all (see
      * {@link #hasExplicitPredicateFilter}), so it can never hide a row the caller deliberately asked
      * for.
+     *
+     * <p>The list itself lives in {@link WeakPredicate} rather than here, because the entity fold that
+     * builds the typeahead must bucket its counts by exactly these predicates: if the two ever
+     * disagreed, the typeahead would offer entities whose mappings this filter then hides.
      */
-    private static final List<String> DEFAULT_EXCLUDED_PREDICATE_IRIS = List.of(
-            "http://www.w3.org/2000/01/rdf-schema#subClassOf",
-            "http://www.geneontology.org/formats/oboInOwl#hasDbXref");
+    private static final List<WeakPredicate> ALL_WEAK_PREDICATES = List.of(WeakPredicate.values());
 
     /** Predicate fields whose explicit filtering bypasses the default weak-predicate exclusion. */
     private static final Set<MappingEnum> PREDICATE_FILTER_FIELDS = Set.of(
@@ -275,10 +281,6 @@ public class SolrQueryBuilder {
         applyProvenanceRanking(solrQuery);
 
         solrQuery.setFields(constructFieldList(mappingSearchRequest.getFieldList()));
-        // Hide the weak predicates (rdfs:subClassOf, oboInOwl:hasDbXref) by default, unless the caller
-        // explicitly filters on a predicate field — they then clearly want whatever predicates match,
-        // so the default exclusion would be wrong.
-        boolean excludeWeakPredicates = !hasExplicitPredicateFilter(mappingSearchRequest);
         solrQuery.setFilterQueries(constructFilterQueries(
                 mappingSearchRequest.getColumnFilters(),
                 mappingSearchRequest.getMappingSetIds(),
@@ -286,7 +288,7 @@ public class SolrQueryBuilder {
                 mappingSearchRequest.getMappingSetCategory(),
                 mappingSearchRequest.getSubjectPrefixes(),
                 mappingSearchRequest.getObjectPrefixes(),
-                excludeWeakPredicates));
+                hiddenWeakPredicates(mappingSearchRequest)));
         solrQuery = constructSortedFields(solrQuery, mappingSearchRequest);
 
         if (mappingSearchRequest.isGroupBySpo()) {
@@ -583,7 +585,7 @@ public class SolrQueryBuilder {
             filterQueriesList.add(inferenceClause);
         }
         addPrefixFilter(filterQueriesList, MappingEnum.OBJECT_PREFIX, objectPrefixes);
-        filterQueriesList.add(weakPredicateExclusionClause());
+        filterQueriesList.add(weakPredicateExclusionClause(ALL_WEAK_PREDICATES));
         return filterQueriesList.toArray(new String[0]);
     }
 
@@ -596,7 +598,6 @@ public class SolrQueryBuilder {
         SolrQuery solrQuery = new SolrQuery();
         applyQuery(solrQuery, request);
         solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
-        boolean excludeWeakPredicates = !hasExplicitPredicateFilter(request);
         solrQuery.setFilterQueries(constructFilterQueries(
                 request.getColumnFilters(),
                 request.getMappingSetIds(),
@@ -604,7 +605,7 @@ public class SolrQueryBuilder {
                 request.getMappingSetCategory(),
                 request.getSubjectPrefixes(),
                 request.getObjectPrefixes(),
-                excludeWeakPredicates));
+                hiddenWeakPredicates(request)));
         solrQuery.setSort(UNIQUE_KEY, SolrQuery.ORDER.asc);
         return solrQuery;
     }
@@ -662,7 +663,7 @@ public class SolrQueryBuilder {
         filterQueriesList.add(
                 MappingEnum.INFERENCE_TYPE.getField() + ":" + InferenceType.ASSERTED.getCode());
         if (hideWeakPredicates) {
-            filterQueriesList.add(weakPredicateExclusionClause());
+            filterQueriesList.add(weakPredicateExclusionClause(ALL_WEAK_PREDICATES));
         }
         solrQuery.setFilterQueries(filterQueriesList.toArray(new String[0]));
 
@@ -727,7 +728,7 @@ public class SolrQueryBuilder {
                                                    List<MappingSetCategory> mappingSetCategories,
                                                    List<String> subjectPrefixes,
                                                    List<String> objectPrefixes,
-                                                   boolean excludeWeakPredicates) {
+                                                   List<WeakPredicate> hiddenWeakPredicates) {
         List<String> filterQueriesList = new ArrayList<>();
 
         if (queryFilters != null) {
@@ -767,8 +768,9 @@ public class SolrQueryBuilder {
             }
         }
 
-        if (excludeWeakPredicates) {
-            filterQueriesList.add(weakPredicateExclusionClause());
+        String weakPredicateExclusion = weakPredicateExclusionClause(hiddenWeakPredicates);
+        if (weakPredicateExclusion != null) {
+            filterQueriesList.add(weakPredicateExclusion);
         }
 
         return filterQueriesList.toArray(new String[filterQueriesList.size()]);
@@ -847,18 +849,41 @@ public class SolrQueryBuilder {
     }
 
     /**
-     * Pure-negative filter excluding the {@link #DEFAULT_EXCLUDED_PREDICATE_IRIS}. The leading
-     * {@code *:*} is required because Solr matches nothing for a filter query that is only negative;
-     * it supplies the all-docs base from which the predicates are subtracted. Each IRI is escaped and
-     * quoted (an exact term match on the {@code string}-typed {@code predicate_iri} field), mirroring
-     * the mapping_set_id clause above.
+     * Pure-negative filter excluding the given weak predicates. The leading {@code *:*} is required
+     * because Solr matches nothing for a filter query that is only negative; it supplies the all-docs
+     * base from which the predicates are subtracted. Each IRI is escaped and quoted (an exact term
+     * match on the {@code string}-typed {@code predicate_iri} field), mirroring the mapping_set_id
+     * clause above.
+     *
+     * @param hidden the predicates to subtract; null when nothing is hidden — the caller has ticked
+     *               both checkboxes, or filtered on a predicate explicitly. Returning null rather
+     *               than an all-docs clause keeps an unfiltered query free of a no-op {@code fq},
+     *               which is what the contextual value suggest compares against.
      */
-    private static String weakPredicateExclusionClause() {
+    private static String weakPredicateExclusionClause(List<WeakPredicate> hidden) {
+        if (hidden.isEmpty()) {
+            return null;
+        }
         String field = MappingEnum.PREDICATE_IRI.getField();
-        String excluded = DEFAULT_EXCLUDED_PREDICATE_IRIS.stream()
-                .map(iri -> field + ":\"" + ClientUtils.escapeQueryChars(iri) + "\"")
+        String excluded = hidden.stream()
+                .map(predicate -> field + ":\"" + ClientUtils.escapeQueryChars(predicate.iri()) + "\"")
                 .collect(Collectors.joining(" OR "));
         return "*:* -(" + excluded + ")";
+    }
+
+    /**
+     * Which weak predicates this request hides: all of them, minus the ones the caller ticked — and
+     * none at all when the caller filters on a predicate field, since they are then asking about
+     * predicates directly and hiding any would contradict them.
+     */
+    private static List<WeakPredicate> hiddenWeakPredicates(MappingSearchRequest request) {
+        if (hasExplicitPredicateFilter(request)) {
+            return List.of();
+        }
+        List<WeakPredicate> included = request.getIncludeWeakPredicates();
+        return ALL_WEAK_PREDICATES.stream()
+                .filter(predicate -> !included.contains(predicate))
+                .toList();
     }
 
     /**

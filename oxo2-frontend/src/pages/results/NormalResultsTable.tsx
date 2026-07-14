@@ -10,13 +10,14 @@ import {
     useMaterialReactTable,
 } from 'material-react-table';
 import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlFieldFilters, useUrlExactFilters,
-    fieldFiltersEqual} from "../../util/tableUrlState";
+    useUrlWeakPredicates, fieldFiltersEqual} from "../../util/tableUrlState";
 import {Mapping} from "../../model/Mapping.ts";
 import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
 import {LabelMatchMode, DEFAULT_LABEL_MATCH} from "../../model/LabelMatchMode";
 import {CorpusMode, DEFAULT_CORPUS, corpusToRequest} from "../../model/MappingSetCategory";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {InferenceTypeFilterPopover} from "../../components/mapping/InferenceTypeFilterPopover";
+import {WeakPredicateFilterPopover} from "../../components/mapping/WeakPredicateFilterPopover";
 import {IconButton, Tooltip} from "@mui/material";
 import {EyeIcon, ArrowDownTrayIcon} from "@heroicons/react/24/solid";
 import {EntityRefCell, CopyButton} from "../../components/mapping/EntityRefCell";
@@ -142,6 +143,9 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const [sorting, setSorting] = useUrlSorting(DEFAULT_SORTING, true);
     const [inferenceTypes, setInferenceTypes] = useUrlInferenceTypes(initialInferenceTypes, true);
     const [urlFilters, setUrlFilters] = useUrlFieldFilters();
+    // The two "also show" predicate checkboxes (ADR-0035). Hidden by default; ticking one changes
+    // which rows exist at all, so it resets to page 1 like any other filter.
+    const [weakPredicates, setWeakPredicates] = useUrlWeakPredicates(true);
 
     // The filter inputs keep their own local state for responsive typing (seeded once from
     // the URL so a restored filter shows in the inputs); a short debounce copies them to
@@ -198,14 +202,15 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     // rows on screen and can never yield zero. Memoised on the same primitive keys as the useQuery
     // key below — without that, a fresh object every render would re-memoise the column definitions
     // on every render, which is the thing ColumnFilterPopover's local input state exists to avoid.
+    const weakPredicatesKey = weakPredicates.join(",");
     const suggestContext = useMemo(
         () => buildSearchRequest(
             queries, pagination.pageIndex, pagination.pageSize, columnFiltersForBackend, sorting,
             mappingSetIds, undefined, inferenceTypes, false,
-            subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory),
+            subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates),
         [queries, pagination.pageIndex, pagination.pageSize, columnFiltersForBackend, sorting,
             mappingSetIdsKey, inferenceTypes.join(","), subjectPrefixesKey, objectPrefixesKey,
-            labelMatch, mappingSetCategory]
+            labelMatch, mappingSetCategory, weakPredicatesKey]
     );
     const { data, isLoading, isError } = useQuery({
         queryKey: [
@@ -221,6 +226,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             objectPrefixesKey,
             labelMatch,
             corpus,
+            weakPredicatesKey,
         ],
         queryFn: () =>
             fetchMappings(
@@ -236,7 +242,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 subjectPrefixes,
                 objectPrefixes,
                 labelMatch, // label match mode (ADR-0026)
-                mappingSetCategory // asserted corpora (ADR-0027)
+                mappingSetCategory, // asserted corpora (ADR-0027)
+                weakPredicates // show the normally-hidden predicates the user ticked (ADR-0035)
             ),
         staleTime: Infinity,
     });
@@ -245,11 +252,11 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const handleExport = useCallback(() => {
         setIsExporting(true);
         exportMappings(queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
-            subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory)
+            subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates)
             .catch((error) => console.error("Export failed", error))
             .finally(() => setIsExporting(false));
     }, [queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
-        subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory]);
+        subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates]);
 
     const mappingResults: MappingPage = data ? fromJson(data) : emptyMappingPage;
 
@@ -284,6 +291,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Predicate</span>
+                        <WeakPredicateFilterPopover value={weakPredicates} onChange={setWeakPredicates} />
                         <ColumnFilterPopover title="Predicate" fields={PREDICATE_FILTER_FIELDS} onChange={handleFilterChange} onPick={handleFilterPick} suggestContext={suggestContext} initialValues={initialFieldFilters} />
                         <ColumnSortPopover title="Predicate" fields={PREDICATE_SORT_FIELDS} onApply={setSorting} />
                     </span>
@@ -419,7 +427,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 },
             },
         ],
-        [handleFilterChange, setSorting, inferenceTypes, setInferenceTypes, initialFieldFilters]
+        [handleFilterChange, setSorting, inferenceTypes, setInferenceTypes, initialFieldFilters,
+            weakPredicates, setWeakPredicates]
     );
 
     const table = useMaterialReactTable({

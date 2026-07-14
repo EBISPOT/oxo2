@@ -24,7 +24,11 @@ public record EntitySuggestion(
         @Schema(description = "The entity's CURIE prefix (its ontology).", example = "MONDO")
         @JsonProperty("prefix") String prefix,
 
-        @Schema(description = "How many mappings this entity participates in, on either side. Drives "
-                + "the popularity ranking, and is shown alongside the suggestion.")
+        @Schema(description = "How many mappings picking this suggestion will actually return: the "
+                + "entity's mappings on the side being searched, counting only the predicates the "
+                + "caller's `includeWeakPredicates` makes visible (ADR-0035). Always non-zero — an "
+                + "entity with nothing to show is not suggested. Deliberately NOT the entity's total "
+                + "mapping count, which would promise rows the search then hides. Drives the "
+                + "popularity ranking, and is shown alongside the suggestion.")
         @JsonProperty("mapping_count") long mappingCount
 ) {}

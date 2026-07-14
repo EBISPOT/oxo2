@@ -86,8 +86,50 @@ public class ChainRulesIntegrationTest {
         }
         tests.add(DynamicTest.dynamicTest("explanation well-founded",
                 () -> assertExplanationsWellFounded(fixture)));
+        tests.add(DynamicTest.dynamicTest("entity buckets sum to totals",
+                () -> assertEntityBucketsSumToTotals(fixture)));
         tests.add(DynamicTest.dynamicTest("Solr numFound", () -> compareNumFound(fixture)));
         return tests;
+    }
+
+    /**
+     * Every entity's per-predicate buckets must sum to its side total: strong + subClassOf + hasDbXref
+     * == subject_count, and likewise for the object side (ADR-0035).
+     *
+     * <p>Asserted structurally rather than left to the golden diff, because the buckets are what the
+     * typeahead filters and ranks on, and a fold that credits a sighting to the wrong bucket — or
+     * counts it twice, or drops it — silently changes which entities are suggestable at all. The
+     * golden would move, but only for a fixture that happens to carry that predicate; this holds for
+     * every entity of every fixture, including the ones whose weak buckets are all zero.
+     */
+    private void assertEntityBucketsSumToTotals(RuleFixtures.Fixture fixture) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        for (ArtifactPaths.LayerArtifact artifact : ArtifactPaths.artifactsFor(fixture)) {
+            if (artifact.layer() != ArtifactPaths.Layer.ENTITIES) {
+                continue;
+            }
+            for (Path shard : artifact.actual()) {
+                if (!Files.isRegularFile(shard)) {
+                    continue;
+                }
+                for (JsonNode entity : mapper.readTree(shard.toFile())) {
+                    assertSideBucketsSum(entity, "subject", fixture.name);
+                    assertSideBucketsSum(entity, "object", fixture.name);
+                }
+            }
+        }
+    }
+
+    private static void assertSideBucketsSum(JsonNode entity, String side, String fixtureName) {
+        long total = entity.path(side + "_count").asLong();
+        long bucketed = entity.path(side + "_count_strong").asLong()
+                + entity.path(side + "_count_subclassof").asLong()
+                + entity.path(side + "_count_hasdbxref").asLong();
+        assertEquals(total, bucketed,
+                "Entity " + entity.path("id").asText() + " in fixture " + fixtureName + ": its "
+                + side + "-side predicate buckets sum to " + bucketed + " but its " + side
+                + "_count is " + total + ". The mappings2entities fold has mis-bucketed a sighting "
+                + "(ADR-0035), which silently changes which entities the typeahead can suggest.");
     }
 
     /**

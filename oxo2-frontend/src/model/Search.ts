@@ -1,6 +1,7 @@
 import { LabelMatchMode, DEFAULT_LABEL_MATCH } from "./LabelMatchMode";
 import { CorpusMode, DEFAULT_CORPUS } from "./MappingSetCategory";
 import { SortMode, DEFAULT_SORT_MODE } from "./SortMode";
+import { WeakPredicate, DEFAULT_WEAK_PREDICATES } from "./WeakPredicate";
 
 export interface AdvancedFieldQuery {
     field: string;
@@ -26,6 +27,9 @@ export interface SearchInput {
     corpus?: CorpusMode;
     // How results are ordered; "Best match" means the provenance-led ranking.
     sortBy?: SortMode;
+    // Normally-hidden predicates the user has asked to see (ADR-0035). Omitted = both hidden. Also
+    // filters the typeahead, so that it can only offer entities the resulting search can show.
+    includeWeakPredicates?: WeakPredicate[];
 }
 
 export const initialSearchState: SearchInput = {
@@ -40,4 +44,5 @@ export const initialSearchState: SearchInput = {
     labelMatch: DEFAULT_LABEL_MATCH,
     corpus: DEFAULT_CORPUS,
     sortBy: DEFAULT_SORT_MODE,
+    includeWeakPredicates: DEFAULT_WEAK_PREDICATES,
 }

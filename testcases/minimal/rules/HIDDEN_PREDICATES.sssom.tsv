@@ -1,0 +1,13 @@
+# mapping_set_id: https://w3id.org/oxo2/test/minimal/rules/HIDDEN_PREDICATES
+# mapping_set_title: Entity count buckets for the predicates hidden from search by default (ADR-0035)
+# license: https://creativecommons.org/publicdomain/zero/1.0/
+# curie_map:
+#   ex: https://w3id.org/oxo2/test/ex/
+#   oboInOwl: http://www.geneontology.org/formats/oboInOwl#
+#   rdfs: http://www.w3.org/2000/01/rdf-schema#
+#   skos: http://www.w3.org/2004/02/skos/core#
+subject_id	subject_label	predicate_id	object_id	object_label
+ex:A	Entity A	skos:exactMatch	ex:B	Entity B
+ex:A	Entity A	oboInOwl:hasDbXref	ex:X	Entity X
+ex:C	Entity C	rdfs:subClassOf	ex:Y	Entity Y
+ex:C	Entity C	oboInOwl:hasDbXref	ex:Z	Entity Z

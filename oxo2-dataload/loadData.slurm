@@ -187,12 +187,13 @@ if [ "$SOLR_NEEDED" = true ]; then
         sleep 2
     else
         echo "Preserving Solr cores (resuming after asserted data was indexed); skipping copySolrConfig."
-        # ...except the oxo2-entities core, which may not exist yet. oxo2-entities is a read model
-        # (ADR-0034) whose headline resume path is START_STAGE=mappings2entities against an
-        # already-indexed oxo2-mappings — a path that does NOT wipe, so the full copySolrConfig above
-        # never runs and the core dir would never be created (wait_for_solr_core would then hang).
-        # entities-only lays it down without touching the existing cores, and no-ops if it is already
-        # there. Core dirs must be created while Solr is DOWN, so this precedes the start below.
+        # ...except the oxo2-entities core. oxo2-entities is a read model (ADR-0034) whose headline
+        # resume path is START_STAGE=mappings2entities against an already-indexed oxo2-mappings — a
+        # path that does NOT wipe, so the full copySolrConfig above never runs and the core dir would
+        # never be created (wait_for_solr_core would then hang). entities-only rebuilds JUST that core
+        # (config and all), leaving oxo2-mappings and oxo2-mappingsets untouched: the run about to
+        # happen re-derives every entity from the mappings, so its config must be current and its old
+        # documents must go. Core dirs must be laid down while Solr is DOWN, so this precedes the start.
         singularity exec --bind "$SOLR_HOME:/opt/solr/server/solr" "$SIF_IMAGE" \
             /opt/oxo/oxo2-dataload/copySolrConfig.sh entities-only
     fi

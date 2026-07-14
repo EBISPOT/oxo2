@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import uk.ac.ebi.spot.oxo.backend.service.helper.EntitySuggestQueryBuilder;
 import uk.ac.ebi.spot.oxo.model.entity.EntityConstants;
+import uk.ac.ebi.spot.oxo.model.sssom.WeakPredicate;
 
 import java.util.List;
 
@@ -48,13 +49,19 @@ class SuggestControllerTest {
         return queryResponse;
     }
 
-    private static SolrDocument entity(String id, String label, String iri, String prefix, long mappingCount) {
+    /**
+     * The count comes back on the {@code visible_mapping_count} pseudo-field — Solr computes it as a
+     * function over the buckets the caller's checkboxes make visible (ADR-0035), so it is what the
+     * search will actually return, not the entity's stored total.
+     */
+    private static SolrDocument entity(String id, String label, String iri, String prefix,
+                                       long visibleMappingCount) {
         SolrDocument document = new SolrDocument();
         document.addField(EntityConstants.ID, id);
         document.addField(EntityConstants.LABEL, label);
         document.addField(EntityConstants.IRI, iri);
         document.addField(EntityConstants.PREFIX, prefix);
-        document.addField(EntityConstants.MAPPING_COUNT, mappingCount);
+        document.addField(EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT, visibleMappingCount);
         return document;
     }
 
@@ -81,19 +88,49 @@ class SuggestControllerTest {
     }
 
     /**
-     * The main search box's contract: it must not offer an entity that only ever appears as an
-     * object, because the default search matches the subject side only (ADR-0030) and such a
-     * suggestion would complete to zero rows.
+     * The main search box's contract: it must not offer an entity that the default search would then
+     * fail to find. That means the subject side only (ADR-0030) AND strong predicates only
+     * (ADR-0035) — an entity whose subject-side mappings are all xrefs completes to zero rows just as
+     * surely as one that only ever appears as an object.
      */
     @Test
-    void restrictsToTheSubjectSideByDefault() throws Exception {
+    void restrictsToWhatADefaultSearchCanShow() throws Exception {
         when(solrClient.queryEntities(any())).thenReturn(entityResponse());
 
         mockMvc.perform(get("/api/v2/suggest/entities").param("q", "mel"))
                 .andExpect(status().isOk());
 
         assertThat(captureEntityQuery().getFilterQueries())
-                .contains(EntityConstants.IS_SUBJECT + ":true");
+                .contains(EntityConstants.SUBJECT_COUNT_STRONG + ":[1 TO *]");
+    }
+
+    /** The checkbox state reaches the suggest, so the dropdown matches the table it completes into. */
+    @Test
+    void includeWeakPredicatesWidensTheSuggest() throws Exception {
+        when(solrClient.queryEntities(any())).thenReturn(entityResponse());
+
+        mockMvc.perform(get("/api/v2/suggest/entities")
+                        .param("q", "mel")
+                        .param("includeWeakPredicates", "hasDbXref"))
+                .andExpect(status().isOk());
+
+        assertThat(String.join(" ", captureEntityQuery().getFilterQueries()))
+                .contains(EntityConstants.subjectCountField(WeakPredicate.HAS_DB_XREF) + ":[1 TO *]");
+    }
+
+    /**
+     * An unrecognised predicate is a 400, never a silent drop: silently ignoring it would return
+     * suggestions filtered differently from the search the caller believes it is completing — the
+     * very mismatch ADR-0035 exists to remove.
+     */
+    @Test
+    void unknownWeakPredicateIsRejected() throws Exception {
+        mockMvc.perform(get("/api/v2/suggest/entities")
+                        .param("q", "mel")
+                        .param("includeWeakPredicates", "skos:exactMatch"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(solrClient);
     }
 
     @Test
@@ -119,7 +156,7 @@ class SuggestControllerTest {
                 .andExpect(status().isOk());
 
         assertThat(captureEntityQuery().getFilterQueries())
-                .contains(EntityConstants.IS_OBJECT + ":true");
+                .contains(EntityConstants.OBJECT_COUNT_STRONG + ":[1 TO *]");
     }
 
     /** A one-character prefix matches a large fraction of the collection; it must never reach Solr. */
@@ -158,7 +195,7 @@ class SuggestControllerTest {
     void handlesAnEntityWithNoLabel() throws Exception {
         SolrDocument noLabel = new SolrDocument();
         noLabel.addField(EntityConstants.ID, "MONDO:0005148");
-        noLabel.addField(EntityConstants.MAPPING_COUNT, 3L);
+        noLabel.addField(EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT, 3L);
         when(solrClient.queryEntities(any())).thenReturn(entityResponse(noLabel));
 
         mockMvc.perform(get("/api/v2/suggest/entities").param("q", "MONDO"))

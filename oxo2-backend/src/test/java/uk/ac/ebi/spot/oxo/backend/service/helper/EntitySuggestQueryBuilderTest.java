@@ -5,6 +5,7 @@ import org.apache.solr.client.solrj.util.ClientUtils;
 import org.junit.jupiter.api.Test;
 import uk.ac.ebi.spot.oxo.model.entity.EntityConstants;
 import uk.ac.ebi.spot.oxo.model.entity.EntitySide;
+import uk.ac.ebi.spot.oxo.model.sssom.WeakPredicate;
 
 import java.util.List;
 
@@ -21,8 +22,23 @@ class EntitySuggestQueryBuilderTest {
 
     private static final String INJECTION_PAYLOAD = "a\" OR *:* OR x";
 
+    private static final String SUBJECT_STRONG = EntityConstants.SUBJECT_COUNT_STRONG;
+    private static final String OBJECT_STRONG = EntityConstants.OBJECT_COUNT_STRONG;
+    private static final String SUBJECT_XREF =
+            EntityConstants.subjectCountField(WeakPredicate.HAS_DB_XREF);
+    private static final String SUBJECT_SUBCLASS =
+            EntityConstants.subjectCountField(WeakPredicate.SUB_CLASS_OF);
+    private static final String OBJECT_XREF =
+            EntityConstants.objectCountField(WeakPredicate.HAS_DB_XREF);
+
     private static SolrQuery suggest(String query) {
-        return EntitySuggestQueryBuilder.buildEntitySuggestQuery(query, EntitySide.SUBJECT, List.of(), 10);
+        return EntitySuggestQueryBuilder.buildEntitySuggestQuery(
+                query, EntitySide.SUBJECT, List.of(), List.of(), 10);
+    }
+
+    private static SolrQuery suggest(EntitySide side, List<WeakPredicate> includeWeakPredicates) {
+        return EntitySuggestQueryBuilder.buildEntitySuggestQuery(
+                "mel", side, List.of(), includeWeakPredicates, 10);
     }
 
     @Test
@@ -59,8 +75,7 @@ class EntitySuggestQueryBuilderTest {
 
         assertThat(solrQuery.get(SolrConstants.DEF_TYPE)).isEqualTo(SolrConstants.EDISMAX);
         assertThat(solrQuery.get(SolrConstants.BOOST))
-                .isEqualTo(EntitySuggestQueryBuilder.POPULARITY_BOOST)
-                .contains(EntityConstants.MAPPING_COUNT);
+                .isEqualTo(EntitySuggestQueryBuilder.popularityBoost(List.of(SUBJECT_STRONG)));
     }
 
     /**
@@ -90,46 +105,115 @@ class EntitySuggestQueryBuilderTest {
                 .contains(EntityConstants.ID_PREFIX_NGRAM + ":\"" + escaped + "\"");
     }
 
-    @Test
-    void subjectSideRestrictsToEntitiesThatAppearAsASubject() {
-        SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of(), 10);
+    // ---------------------------------------------------------------------------------------------
+    // Suggest only what the search can show (ADR-0035)
+    // ---------------------------------------------------------------------------------------------
 
-        assertThat(solrQuery.getFilterQueries()).contains(EntityConstants.IS_SUBJECT + ":true");
+    /**
+     * The regression test for the bug ADR-0035 fixes. With no weak predicate ticked — the default —
+     * an entity is suggestable only if it has a STRONG mapping on the side being searched. Filtering
+     * on is_subject instead (i.e. "is the subject of any mapping at all") is what let the typeahead
+     * offer 46,783 entities on a corpus whose default search could reach 3,714 of them: pick one of
+     * the other 43,069 and the result table came back empty.
+     */
+    @Test
+    void byDefaultSuggestsOnlyEntitiesWithAMappingTheSearchWouldShow() {
+        SolrQuery solrQuery = suggest(EntitySide.SUBJECT, List.of());
+
+        assertThat(solrQuery.getFilterQueries()).contains(SUBJECT_STRONG + ":[1 TO *]");
+        assertThat(String.join(" ", solrQuery.getFilterQueries()))
+                .doesNotContain(SUBJECT_XREF)
+                .doesNotContain(SUBJECT_SUBCLASS)
+                .doesNotContain(EntityConstants.IS_SUBJECT);
+    }
+
+    /** Ticking a predicate makes its entities suggestable — and only that one's. */
+    @Test
+    void tickingHasDbXrefAlsoSuggestsEntitiesWhoseOnlyMappingsAreXrefs() {
+        SolrQuery solrQuery = suggest(EntitySide.SUBJECT, List.of(WeakPredicate.HAS_DB_XREF));
+
+        assertThat(solrQuery.getFilterQueries())
+                .contains(SUBJECT_STRONG + ":[1 TO *] OR " + SUBJECT_XREF + ":[1 TO *]");
+        assertThat(String.join(" ", solrQuery.getFilterQueries())).doesNotContain(SUBJECT_SUBCLASS);
+    }
+
+    /** The two checkboxes are independent: subClassOf on, hasDbXref off must not smuggle in xrefs. */
+    @Test
+    void theTwoPredicatesAreIndependentlySwitchable() {
+        SolrQuery solrQuery = suggest(EntitySide.SUBJECT, List.of(WeakPredicate.SUB_CLASS_OF));
+
+        assertThat(solrQuery.getFilterQueries())
+                .contains(SUBJECT_STRONG + ":[1 TO *] OR " + SUBJECT_SUBCLASS + ":[1 TO *]");
+        assertThat(String.join(" ", solrQuery.getFilterQueries())).doesNotContain(SUBJECT_XREF);
+    }
+
+    /**
+     * The other half of the ADR-0035 bug: MONDO:0003847 holds 7 subject-side xrefs and 1,579
+     * object-side subClassOf mappings, and the old boost ranked it on all 1,586. A subject-side
+     * typeahead must be ranked by subject-side counts alone, or an entity floats to the top of the
+     * dropdown on the strength of mappings the user will never be shown.
+     */
+    @Test
+    void subjectSideRankingNeverCountsObjectSideMappings() {
+        String boost = suggest(EntitySide.SUBJECT, List.of(WeakPredicate.HAS_DB_XREF))
+                .get(SolrConstants.BOOST);
+
+        assertThat(boost).contains(SUBJECT_STRONG).contains(SUBJECT_XREF);
+        assertThat(boost)
+                .doesNotContain(OBJECT_STRONG)
+                .doesNotContain(OBJECT_XREF)
+                .doesNotContain(EntityConstants.MAPPING_COUNT);
     }
 
     @Test
-    void objectSideRestrictsToEntitiesThatAppearAsAnObject() {
-        SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.OBJECT, List.of(), 10);
+    void objectSideRestrictsAndRanksOnObjectCounts() {
+        SolrQuery solrQuery = suggest(EntitySide.OBJECT, List.of());
 
-        assertThat(solrQuery.getFilterQueries()).contains(EntityConstants.IS_OBJECT + ":true");
+        assertThat(solrQuery.getFilterQueries()).contains(OBJECT_STRONG + ":[1 TO *]");
+        assertThat(solrQuery.get(SolrConstants.BOOST))
+                .contains(OBJECT_STRONG)
+                .doesNotContain(SUBJECT_STRONG);
     }
 
+    /** ANY side is still restricted — to entities visible on EITHER side, not to every entity. */
     @Test
-    void anySideAddsNoSideFilter() {
-        SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.ANY, List.of(), 10);
+    void anySideStillExcludesEntitiesWithNothingVisible() {
+        SolrQuery solrQuery = suggest(EntitySide.ANY, List.of());
 
-        String[] filterQueries = solrQuery.getFilterQueries();
-        assertThat(filterQueries == null ? new String[0] : filterQueries)
-                .noneMatch(fq -> fq.startsWith(EntityConstants.IS_SUBJECT)
-                        || fq.startsWith(EntityConstants.IS_OBJECT));
+        assertThat(solrQuery.getFilterQueries())
+                .contains(SUBJECT_STRONG + ":[1 TO *] OR " + OBJECT_STRONG + ":[1 TO *]");
     }
 
     /** A null side must not mean "no restriction" — the default is the subject side (ADR-0030). */
     @Test
     void nullSideDefaultsToSubject() {
-        SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", null, List.of(), 10);
+        SolrQuery solrQuery = suggest(null, List.of());
 
-        assertThat(solrQuery.getFilterQueries()).contains(EntityConstants.IS_SUBJECT + ":true");
+        assertThat(solrQuery.getFilterQueries()).contains(SUBJECT_STRONG + ":[1 TO *]");
+    }
+
+    /**
+     * The filter, the boost and the count on the row are three views of one list. If they could
+     * disagree, a suggestion could be offered, ranked, or labelled by a different set of mappings from
+     * the one the search returns — which is the whole failure mode ADR-0035 closes.
+     */
+    @Test
+    void filterBoostAndDisplayedCountAllUseTheSameBuckets() {
+        SolrQuery solrQuery = suggest(EntitySide.SUBJECT, List.of(WeakPredicate.HAS_DB_XREF));
+
+        assertThat(solrQuery.getFilterQueries())
+                .contains(SUBJECT_STRONG + ":[1 TO *] OR " + SUBJECT_XREF + ":[1 TO *]");
+        assertThat(solrQuery.get(SolrConstants.BOOST)).isEqualTo(
+                EntitySuggestQueryBuilder.popularityBoost(List.of(SUBJECT_STRONG, SUBJECT_XREF)));
+        assertThat(solrQuery.getFields()).contains(
+                EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT
+                        + ":sum(" + SUBJECT_STRONG + "," + SUBJECT_XREF + ")");
     }
 
     @Test
     void prefixFilterIsAnOrOfEscapedPrefixes() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of("MONDO", "EFO"), 10);
+                "mel", EntitySide.SUBJECT, List.of("MONDO", "EFO"), List.of(), 10);
 
         assertThat(solrQuery.getFilterQueries())
                 .contains(EntityConstants.PREFIX + ":" + ClientUtils.escapeQueryChars("MONDO")
@@ -137,12 +221,12 @@ class EntitySuggestQueryBuilderTest {
     }
 
     @Test
-    void blankPrefixesAddNoFilter() {
+    void blankPrefixesAddNoPrefixFilter() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.ANY, List.of("  ", ""), 10);
+                "mel", EntitySide.ANY, List.of("  ", ""), List.of(), 10);
 
-        String[] filterQueries = solrQuery.getFilterQueries();
-        assertThat(filterQueries == null ? new String[0] : filterQueries).isEmpty();
+        assertThat(String.join(" ", solrQuery.getFilterQueries()))
+                .doesNotContain(EntityConstants.PREFIX + ":");
     }
 
     /**
@@ -163,7 +247,7 @@ class EntitySuggestQueryBuilderTest {
     @Test
     void rowsAreCappedAtTheMaximum() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of(), 10_000);
+                "mel", EntitySide.SUBJECT, List.of(), List.of(), 10_000);
 
         assertThat(solrQuery.getRows()).isEqualTo(EntitySuggestQueryBuilder.MAX_SUGGEST_ROWS);
     }
@@ -171,19 +255,26 @@ class EntitySuggestQueryBuilderTest {
     @Test
     void rowsAreAtLeastOne() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of(), 0);
+                "mel", EntitySide.SUBJECT, List.of(), List.of(), 0);
 
         assertThat(solrQuery.getRows()).isEqualTo(1);
     }
 
-    /** The suggestion row renders label, id and IRI, and shows the count — all four must come back. */
+    /**
+     * The suggestion row renders label, id and IRI, and shows the count. The count must be the
+     * computed visible one, never the stored mapping_count — that total counts predicates the search
+     * hides, so showing it would promise rows the user will not get.
+     */
     @Test
     void fieldListCarriesEverythingTheSuggestionRowRenders() {
-        assertThat(suggest("mel").getFields())
+        String fieldList = suggest("mel").getFields();
+
+        assertThat(fieldList)
                 .contains(EntityConstants.ID)
                 .contains(EntityConstants.LABEL)
                 .contains(EntityConstants.IRI)
-                .contains(EntityConstants.MAPPING_COUNT);
+                .contains(EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT + ":sum(");
+        assertThat(fieldList).doesNotContain("," + EntityConstants.MAPPING_COUNT);
     }
 
     @Test

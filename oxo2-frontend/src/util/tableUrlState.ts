@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { MRT_ColumnFiltersState, MRT_PaginationState, MRT_SortingState } from "material-react-table";
 import { INFERENCE_TYPE_LABELS, InferenceType } from "../model/InferenceType";
+import { WEAK_PREDICATE_ORDER, WeakPredicate } from "../model/WeakPredicate";
 
 /**
  * Results-table view state (page, size, sort, inference-type filter, field filters) held
@@ -43,6 +44,8 @@ const TYPE_PARAM = "type";
 const FILTER_PARAM = "filter";
 /** Fields whose filter value was picked from a suggestion, so matches EXACTly (ADR-0034). */
 const EXACT_PARAM = "fx";
+/** Normally-hidden predicates the user has asked to see (ADR-0035). Absent = both hidden. */
+const WEAK_PREDICATE_PARAM = "wp";
 
 type Updater<T> = T | ((old: T) => T);
 const applyUpdater = <T,>(updater: Updater<T>, current: T): T =>
@@ -208,6 +211,50 @@ export function useUrlInferenceTypes(
     );
 
     return [inferenceTypes, setInferenceTypes];
+}
+
+// ---------- weak predicates (ADR-0035) ----------
+
+function readWeakPredicates(raw: string[]): WeakPredicate[] {
+    // Case-insensitively, because the URL is hand-editable and the codes are camelCase.
+    const byLowerCase = new Map(WEAK_PREDICATE_ORDER.map((code) => [code.toLowerCase(), code]));
+    const parsed = raw
+        .map((value) => byLowerCase.get(value.trim().toLowerCase()))
+        .filter((code): code is WeakPredicate => code != null);
+    // Preserve the canonical order and drop duplicates, so the URL (and the query key built from it)
+    // is stable however the params were written.
+    return WEAK_PREDICATE_ORDER.filter((code) => parsed.includes(code));
+}
+
+function writeWeakPredicates(params: URLSearchParams, next: WeakPredicate[]): void {
+    params.delete(WEAK_PREDICATE_PARAM);
+    // Both-hidden is the default and stays out of the URL entirely.
+    WEAK_PREDICATE_ORDER.filter((code) => next.includes(code)).forEach((code) =>
+        params.append(WEAK_PREDICATE_PARAM, code)
+    );
+}
+
+/**
+ * The two "also show" predicate checkboxes. Shared by the result table and the typeahead: the suggest
+ * must be filtered by the same set the search is, or it would offer entities the table then cannot
+ * show (ADR-0035).
+ */
+export function useUrlWeakPredicates(
+    resetPageOnChange: boolean
+): [WeakPredicate[], (next: WeakPredicate[]) => void] {
+    const { searchParams, update } = useUrlState();
+    const rawWeakPredicates = searchParams.getAll(WEAK_PREDICATE_PARAM);
+    const weakPredicateKey = rawWeakPredicates.join(NUL);
+    // Keyed on the joined param, not the array: getAll() returns a fresh array every render.
+    const weakPredicates = useMemo(() => readWeakPredicates(rawWeakPredicates), [weakPredicateKey]);
+
+    const setWeakPredicates = useCallback(
+        (next: WeakPredicate[]) =>
+            update((params) => writeWeakPredicates(params, next), resetPageOnChange),
+        [update, resetPageOnChange]
+    );
+
+    return [weakPredicates, setWeakPredicates];
 }
 
 // ---------- field filters ----------

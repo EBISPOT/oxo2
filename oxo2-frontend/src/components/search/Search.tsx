@@ -3,6 +3,7 @@ import { AdvancedFieldQuery, SearchInput, SearchMode, initialSearchState } from 
 import { LabelMatchMode, LABEL_MATCH_LABELS, LABEL_MATCH_ORDER, DEFAULT_LABEL_MATCH } from "../../model/LabelMatchMode";
 import { CorpusMode, DEFAULT_CORPUS, corpusToUrlParam } from "../../model/MappingSetCategory";
 import { SortMode, SORT_MODE_LABELS, SORT_MODE_ORDER, DEFAULT_SORT_MODE, sortModeToUrlParams } from "../../model/SortMode";
+import { WeakPredicate, WEAK_PREDICATE_ORDER, WEAK_PREDICATE_LABELS, WEAK_PREDICATE_HINTS, DEFAULT_WEAK_PREDICATES } from "../../model/WeakPredicate";
 import { ADVANCED_FIELD_NAMES } from "../../model/AdvancedFields";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import React from "react";
@@ -81,6 +82,11 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
     // Result order. "Best match" writes no `sort` param, which is what lets the backend rank by
     // relevance — i.e. by the provenance-led boost.
     const [sortBy, setSortBy] = useState<SortMode>(searchInput.sortBy ?? DEFAULT_SORT_MODE);
+    // The normally-hidden predicates the user wants shown (ADR-0035). Local state here, carried into
+    // the results URL on submit as `wp`, where the table's useUrlWeakPredicates picks it up — so the
+    // suggestions offered here and the rows shown there are filtered by the same selection.
+    const [weakPredicates, setWeakPredicates] =
+        useState<WeakPredicate[]>(searchInput.includeWeakPredicates ?? DEFAULT_WEAK_PREDICATES);
 
     const { data: ontologies } = useQuery({
         queryKey: ["ontologies"], queryFn: fetchOntologies, staleTime: Infinity,
@@ -149,6 +155,12 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
     useEffect(() => {
         setSortBy(searchInput.sortBy ?? DEFAULT_SORT_MODE);
     }, [searchInput.sortBy]);
+    // Keyed on the joined codes, not the array: it is rebuilt from the URL on every render, so
+    // depending on its identity would loop.
+    const incomingWeakPredicateKey = (searchInput.includeWeakPredicates ?? []).join(",");
+    useEffect(() => {
+        setWeakPredicates(searchInput.includeWeakPredicates ?? DEFAULT_WEAK_PREDICATES);
+    }, [incomingWeakPredicateKey]);
     useEffect(() => {
         if (searchInput.searchMode) setSearchMode(searchInput.searchMode);
     }, [searchInput.searchMode]);
@@ -214,6 +226,11 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
         }
         for (const sortToken of sortModeToUrlParams(sortBy)) {
             params.append("sort", sortToken);
+        }
+        // Carry the ticked predicates through to the result table (ADR-0035). Both-unticked is the
+        // default and stays out of the URL.
+        for (const predicate of weakPredicates) {
+            params.append("wp", predicate);
         }
         const query = params.toString();
         navigate(`/search/${encodeURIComponent(curies)}${query ? `?${query}` : ""}`);
@@ -354,6 +371,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
                                 onSubmit={() => handleSearch()}
                                 side="subject"
                                 prefixes={subjectPrefixes}
+                                includeWeakPredicates={weakPredicates}
                                 placeholder="A label, CURIE or IRI — e.g. cataract, MP:0001289"
                             />
                         ) : (
@@ -446,6 +464,37 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
                         <div className="text-tertiary text-sm mt-1">
                             Best match ranks by who asserts the mapping, then how strong it is.
                         </div>
+                    </div>
+                    {/* The normally-hidden predicates (ADR-0035). Here rather than only on the result
+                        table because they also decide what the search box above will SUGGEST: with
+                        both unticked, an entity whose every mapping is an xref is not offered, since
+                        picking it would land on an empty table. */}
+                    <div>
+                        <span className="text-tertiary mb-2 block">Also show</span>
+                        {WEAK_PREDICATE_ORDER.map((predicate) => (
+                            <label key={predicate} className="flex items-start gap-2 mb-1">
+                                <input
+                                    type="checkbox"
+                                    className="mt-1"
+                                    checked={weakPredicates.includes(predicate)}
+                                    onChange={(event) =>
+                                        setWeakPredicates(
+                                            WEAK_PREDICATE_ORDER.filter((code) =>
+                                                code === predicate
+                                                    ? event.target.checked
+                                                    : weakPredicates.includes(code)
+                                            )
+                                        )
+                                    }
+                                />
+                                <span>
+                                    <span className="text-base">{WEAK_PREDICATE_LABELS[predicate]}</span>
+                                    <span className="text-tertiary text-sm block">
+                                        {WEAK_PREDICATE_HINTS[predicate]}
+                                    </span>
+                                </span>
+                            </label>
+                        ))}
                     </div>
                 </div>
                 </>

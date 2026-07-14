@@ -283,9 +283,20 @@ Solr's `filterCache` makes a repeated filter ~1 ms, but each distinct value a us
 cold query. This is the cost of preserving partial-word (substring) matching; a phrase query
 on the plain `text_general` field would be ~50× faster but match whole words only.
 
-### Suggest queries (ADR-0034)
+### Suggest queries (ADR-0034, ADR-0035)
 
-Two invariants worth stating, because both are easy to break and neither fails loudly.
+Three invariants worth stating, because all three are easy to break and none fails loudly.
+
+**A suggestion must be a promise that the search returns something.** The entity typeahead is filtered
+by the SAME predicate checkboxes the search is
+([ADR-0035](../docs/adr/0035-weak-predicates-as-a-user-visible-control.md)) — not as a nicety, but
+because `oxo2-mappings` hides `rdfs:subClassOf` and `oboInOwl:hasDbXref` by default, and an entity whose
+every mapping is one of those completes to an empty table. `EntitySuggestQueryBuilder` therefore filters,
+ranks and labels on the per-side, per-predicate count buckets the caller's `includeWeakPredicates`
+currently makes visible — never on the entity's stored `mapping_count`, which counts predicates the
+search will not show, and never on `is_subject`, which means "subject of *some* mapping" rather than
+"subject of some mapping the user can see". Getting this wrong is not hypothetical: it shipped, and made
+92% of suggestions return no rows.
 
 **The contextual value suggest must REUSE `buildSolrQuery`, never rebuild the filters.** Its
 suggestions have to be scoped by exactly what the visible result set is scoped by — the other column
