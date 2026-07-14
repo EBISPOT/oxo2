@@ -1,0 +1,21 @@
+[ {
+  "id" : "EX:A",
+  "iri" : "https://w3id.org/oxo2/test/ex/A",
+  "is_object" : true,
+  "is_subject" : true,
+  "label" : "Entity A",
+  "mapping_count" : 2,
+  "object_count" : 1,
+  "prefix" : "EX",
+  "subject_count" : 1
+}, {
+  "id" : "EX:B",
+  "iri" : "https://w3id.org/oxo2/test/ex/B",
+  "is_object" : true,
+  "is_subject" : true,
+  "label" : "Entity B",
+  "mapping_count" : 2,
+  "object_count" : 1,
+  "prefix" : "EX",
+  "subject_count" : 1
+} ]

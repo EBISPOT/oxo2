@@ -193,6 +193,7 @@ public class ChainRulesIntegrationTest {
             case TTL -> Canonicalisers.readTtl(single(actual, layer));
             case JSON -> Canonicalisers.readJson(single(actual, layer));
             case EXPLAINED -> Canonicalisers.readExplainedJson(actual);
+            case ENTITIES -> Canonicalisers.readMergedJson(actual);
         };
     }
 
@@ -228,5 +229,22 @@ public class ChainRulesIntegrationTest {
                         "Solr " + collection + " " + code + " count differs for fixture " + fixture.name);
             }
         }
+
+        // The entity collection carries no inference_type, so its total IS its distinct-entity count
+        // (ADR-0034). A fold that stopped deduping would show up here as the mapping count.
+        JsonNode expectedEntities = root.path(SolrCheck.ENTITIES_COLLECTION);
+        assertTrue(expectedEntities.isNumber(),
+                "numFound.json for " + fixture.name + " carries no " + SolrCheck.ENTITIES_COLLECTION
+                + " count.\nRun `mvn -pl oxo2-integration-tests exec:java@captureExpected` to baseline.");
+        // A zero is never legitimate: every fixture has mappings, so every fixture has entities. Pin
+        // that separately from the equality below, because a golden baselined while mappings2entities
+        // was broken would say 0, match an actual 0, and pass.
+        assertTrue(expectedEntities.asInt() > 0,
+                "numFound.json for " + fixture.name + " pins ZERO entities. Every fixture has "
+                + "mappings, so it must have entities — this golden was baselined over a broken "
+                + "mappings2entities stage (ADR-0034).");
+        assertEquals(expectedEntities.asInt(), SolrCheck.numFound(SolrCheck.ENTITIES_COLLECTION),
+                "Distinct-entity count differs for fixture " + fixture.name
+                + " — the mappings2entities fold derived a different number of entities.");
     }
 }

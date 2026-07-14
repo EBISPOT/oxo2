@@ -1,0 +1,31 @@
+[ {
+  "id" : "EX:A",
+  "iri" : "https://w3id.org/oxo2/test/ex/A",
+  "is_object" : true,
+  "is_subject" : true,
+  "label" : "Entity A",
+  "mapping_count" : 4,
+  "object_count" : 2,
+  "prefix" : "EX",
+  "subject_count" : 2
+}, {
+  "id" : "EY:B",
+  "iri" : "https://w3id.org/oxo2/test/ey/B",
+  "is_object" : true,
+  "is_subject" : true,
+  "label" : "Entity B",
+  "mapping_count" : 4,
+  "object_count" : 2,
+  "prefix" : "EY",
+  "subject_count" : 2
+}, {
+  "id" : "EZ:C",
+  "iri" : "https://w3id.org/oxo2/test/ez/C",
+  "is_object" : true,
+  "is_subject" : true,
+  "label" : "Entity C",
+  "mapping_count" : 4,
+  "object_count" : 2,
+  "prefix" : "EZ",
+  "subject_count" : 2
+} ]

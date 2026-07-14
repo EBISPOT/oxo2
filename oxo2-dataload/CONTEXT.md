@@ -175,6 +175,13 @@ entities in 43 s at 478 MB RSS.
 
 **7. Entity load** — `json2solr.sh` posts `$OXO2_DATA/entities/<PREFIX>.json` into `oxo2-entities`.
 
+Unlike the older stages, **both orchestrators check `mappings2entities`'s exit status and abort on
+failure.** The stage's failure mode is silent: the older stages leave a missing file that a later stage
+trips over, but a failed entity fold just leaves `oxo2-entities` empty, and an empty typeahead reads to
+a user as "nothing matched" rather than as a broken load. `errorStrategy = 'terminate'` on
+`LIST_PREFIXES` / `ENTITIES_FOR_PREFIX` makes Nextflow exit non-zero; the shell check is what stops the
+run from recording the stage and carrying on regardless.
+
 Because the entity collection is a pure **read model** of the mappings index, it can be rebuilt on its
 own with `START_STAGE=mappings2entities` — no re-inference, no re-explanation, no mappings reindex.
 

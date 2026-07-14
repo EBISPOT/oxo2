@@ -45,6 +45,23 @@ public final class CaptureExpected {
                     }
                     numFoundRoot.set(collection, counts);
                 }
+                // The entity collection has no inference_type — an entity is folded from mappings of
+                // every type — so it is a single total, and that total IS the distinct-entity count
+                // (ADR-0034). Pinning it is what proves the fold deduped rather than emitting one
+                // document per mapping, and that index-entities actually posted them.
+                int entityCount = SolrCheck.numFound(SolrCheck.ENTITIES_COLLECTION);
+                // Refuse to baseline a zero. Every fixture has mappings, so every fixture has
+                // entities; a zero means mappings2entities failed and produced nothing. Capture mode
+                // writes whatever it finds, so without this guard a broken stage gets baselined as
+                // "0 entities, no entity golden" and the suite then goes green over the bug — which is
+                // exactly how the missing-helper-script failure nearly slipped through.
+                if (entityCount == 0) {
+                    throw new IllegalStateException("Fixture " + fixture.name + " derived ZERO entities. "
+                            + "Every fixture has mappings, so it must have entities — the "
+                            + "mappings2entities stage (ADR-0034) produced nothing. Refusing to "
+                            + "baseline that.");
+                }
+                numFoundRoot.put(SolrCheck.ENTITIES_COLLECTION, entityCount);
                 Path numFoundPath = ArtifactPaths.expectedNumFound(fixture.name);
                 Files.createDirectories(numFoundPath.getParent());
                 Files.writeString(numFoundPath, mapper.writeValueAsString(numFoundRoot) + "\n", StandardCharsets.UTF_8);
@@ -86,6 +103,7 @@ public final class CaptureExpected {
             case TTL -> Canonicalisers.canonicaliseTtl(readSingle(sources, layer));
             case JSON -> Canonicalisers.canonicaliseGenericJson(readSingle(sources, layer));
             case EXPLAINED -> Canonicalisers.readExplainedJson(sources);
+            case ENTITIES -> Canonicalisers.readMergedJson(sources);
         };
     }
 

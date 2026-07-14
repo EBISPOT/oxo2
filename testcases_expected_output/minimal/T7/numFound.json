@@ -6,5 +6,6 @@
   "oxo2-mappingsets" : {
     "ASSERTED" : 1,
     "SSSOM_INFERENCE" : 1
-  }
+  },
+  "oxo2-entities" : 3
 }
