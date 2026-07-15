@@ -188,13 +188,22 @@ mapping touching an entity of prefix `P` is matched by `subject_prefix:P OR obje
 the sides whose own prefix is `P` are folded — so a shard's counts are exact and its heap holds ONE
 ontology's entity map, not the corpus's. A `__none__` sentinel shard catches entities whose CURIE never
 resolved to a prefix (a bare IRI, ADR-0024); without it they would belong to no shard and vanish from
-the typeahead silently. Measured on the current corpus: MONDO's 438k mappings fold to 33.6k distinct
+the typeahead silently.
+
+A prefix is a Solr query key, not a filename — a malformed-IRI-as-CURIE like `SRAO_/SRAO` or
+`CPONT_/VOCAB/CPONT` (a `:` with no `//`, which `isCurie` accepts) is a valid `subject_prefix`
+value yet an unsafe filename. `LIST_PREFIXES` therefore emits `<shardName>\t<prefix>` per line, where
+`ShardName` maps the prefix to a safe, injective file stem (safe prefixes verbatim; anything else
+`enc-<hex>`); the shard's JSON is named after `shardName` while the JAR still queries on the true
+`prefix`. Injective on purpose: two prefixes sharing a filename would let `publishDir` clobber one
+shard with the other, dropping an ontology from the typeahead. Measured on the current corpus: MONDO's 438k mappings fold to 33.6k distinct
 entities in 43 s at 478 MB RSS. The **largest** shard is NCBITAXON — 5.73M subject-side mappings folding
 to roughly 2.8M entities (~2.74M distinct subjects + 286k distinct objects), 83x MONDO — and it is that
 entity count, not the corpus, that `ENTITIES_FOR_PREFIX`'s 4 GB is sized against (~2x its ~2 GB
 extrapolated peak).
 
-**7. Entity load** — `json2solr.sh` posts `$OXO2_DATA/entities/<PREFIX>.json` into `oxo2-entities`.
+**7. Entity load** — `json2solr.sh` globs `$OXO2_DATA/entities/*.json` (one per shard, named by
+`ShardName`) into `oxo2-entities`.
 
 Unlike the older stages, **both orchestrators check `mappings2entities`'s exit status and abort on
 failure.** The stage's failure mode is silent: the older stages leave a missing file that a later stage

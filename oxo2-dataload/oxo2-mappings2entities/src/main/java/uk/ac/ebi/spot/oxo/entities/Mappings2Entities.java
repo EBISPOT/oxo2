@@ -140,9 +140,15 @@ public class Mappings2Entities {
     }
 
     /**
-     * Write the distinct CURIE prefixes present on either side of any mapping, one per line, plus
-     * the {@link #NO_PREFIX_SHARD} sentinel. This is the same facet {@code OntologyController}
-     * issues to list ontologies.
+     * Write the distinct CURIE prefixes present on either side of any mapping, plus the
+     * {@link #NO_PREFIX_SHARD} sentinel. This is the same facet {@code OntologyController} issues to
+     * list ontologies.
+     *
+     * <p>Each line is {@code <shardName>\t<prefix>}: the {@link ShardName#of safe filename stem} for
+     * the shard, then the true prefix that keys its Solr query. The two are decoupled because a
+     * prefix may be a valid Solr facet value yet an unsafe filename — a slash-bearing
+     * malformed-IRI-as-CURIE like {@code SRAO_/SRAO} (ADR-0031). A CURIE carries no whitespace, so a
+     * tab can never occur inside a prefix and the split is unambiguous.
      */
     void writePrefixes(File output) throws Exception {
         SolrQuery query = new SolrQuery("*:*");
@@ -166,7 +172,11 @@ public class Mappings2Entities {
         }
         prefixes.add(NO_PREFIX_SHARD);
 
-        Files.write(output.toPath(), String.join("\n", prefixes).concat("\n").getBytes());
+        StringBuilder lines = new StringBuilder();
+        for (String prefix : prefixes) {
+            lines.append(ShardName.of(prefix)).append('\t').append(prefix).append('\n');
+        }
+        Files.write(output.toPath(), lines.toString().getBytes());
         logger.info("Wrote {} prefix shard(s) to {}", prefixes.size(), output);
     }
 
