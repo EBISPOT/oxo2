@@ -25,11 +25,18 @@ params.solr_url = 'http://localhost:8983/solr'
 workflow {
     prefixes_file = LIST_PREFIXES()
 
+    // Each line is `<shardName>\t<prefix>`: the safe filename stem, then the true prefix that keys
+    // the Solr query. They are decoupled because a prefix can be a valid facet value yet an unsafe
+    // filename — a slash-bearing malformed-IRI-as-CURIE like SRAO_/SRAO (ADR-0031). FilenameGuard
+    // now asserts the DERIVED name, which ShardName has already made safe.
     prefixes = prefixes_file
         .splitText()
         .map { line -> line.trim() }
         .filter { line -> line }
-        .map { prefix -> FilenameGuard.assertSafe(prefix) }
+        .map { line ->
+            def (shard_name, prefix) = line.split('\t', 2)
+            tuple(FilenameGuard.assertSafe(shard_name), prefix)
+        }
 
     ENTITIES_FOR_PREFIX(prefixes)
 }
@@ -63,13 +70,13 @@ process ENTITIES_FOR_PREFIX {
     publishDir "${params.output_dir}", mode: 'copy', overwrite: true, pattern: "*.json"
 
     input:
-    val prefix
+    tuple val(shard_name), val(prefix)
 
     output:
-    path "${prefix}.json", optional: true
+    path "${shard_name}.json", optional: true
 
     script:
-    def output_file = "${prefix}.json"
+    def output_file = "${shard_name}.json"
     def solr_host = params.solr_url.replaceAll('https?://', '').replaceAll('/.*', '').replaceAll(':.*', '')
     // Size the JVM heap from the task allocation. Without -Xmx, OpenJDK falls back to ~25% of host
     // RAM, far below the configured task.memory on large SLURM nodes.

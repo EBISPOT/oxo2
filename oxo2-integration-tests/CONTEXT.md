@@ -185,6 +185,15 @@ suggestable by default. And the **"entity buckets sum to totals"** assertion hol
 every fixture (`strong + subclassof + hasdbxref == subject_count`, and likewise object-side), catching
 a double-count or a dropped sighting even where the golden has nothing to say.
 
+The **`UNSAFE_PREFIX_SHARD` fixture** guards the shard-naming layer, which no unit test can reach: its
+`ex/x:1` subject has the CURIE prefix `EX/X`, a valid Solr facet value but an unsafe *filename*. A
+malformed-IRI-as-CURIE like this (`SRAO_/SRAO`, `CPONT_/VOCAB/CPONT`) is real — the OLS corpus carries
+several — and `mappings2entities` names each prefix shard's JSON file. `ShardName` decouples the two,
+encoding an unsafe prefix as `enc-<hex>`; before it existed, `FilenameGuard` refused the slash and the
+whole `mappings2entities` stage aborted mid-load. The fixture drives that path end to end, which a
+`ShardNameTest` (correct as it is) cannot: the bug was the Nextflow wiring using the raw prefix as the
+filename, not the encoding itself.
+
 > **"Weak" means two different things here.** `RCE_WEAK_NOCHAIN` means *inference*-weak — `skos:closeMatch`,
 > which the RCE role chains do not propagate. ADR-0035's weak predicates are *visibility*-weak — hidden
 > from search unless the user ticks them. `skos:closeMatch` is inference-weak but perfectly visible, so
