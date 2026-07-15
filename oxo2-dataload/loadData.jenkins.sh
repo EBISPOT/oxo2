@@ -10,8 +10,8 @@
 # § Resumable dataload for the Freestyle job configuration.
 #
 # Resume: set START_STAGE (download|sssom2json|nquads|infer|shard|explain|index-asserted|explanations2json|
-# index-inferred|archive). Default download = full run. The nquads/infer substages map to `-entry`
-# points in inferSssomCrossSet.nf (explanations are deferred to on-demand, ADR-0020). See
+# index-inferred|mappings2entities|index-entities|archive). Default download = full run. The nquads/infer
+# substages map to `-entry` points in inferSssomCrossSet.nf. See
 # oxo2-dataload/CONTEXT.md § Resumable dataload.
 #
 # Reattach: if a previous invocation's job for this checkout is still active (its id recorded in
