@@ -52,7 +52,10 @@ process LIST_PREFIXES {
 
     script:
     def solr_host = params.solr_url.replaceAll('https?://', '').replaceAll('/.*', '').replaceAll(':.*', '')
-    def heap_mb = (task.memory.toMega() * 0.8) as long
+    // 0.7 for the same reason as ENTITIES_FOR_PREFIX below — --mem caps total RSS, not heap. This
+    // stage only issues one rows=0 facet so it was never close to its cap, but the ratio is the
+    // tighter of the two (0.8 of 2 GB left just 400 MB for the JVM's non-heap footprint).
+    def heap_mb = (task.memory.toMega() * 0.7) as long
     """
     export SOLR_URL="${params.solr_url}"
     export no_proxy="localhost,127.0.0.1,\$(hostname),${solr_host}"
@@ -80,7 +83,16 @@ process ENTITIES_FOR_PREFIX {
     def solr_host = params.solr_url.replaceAll('https?://', '').replaceAll('/.*', '').replaceAll(':.*', '')
     // Size the JVM heap from the task allocation. Without -Xmx, OpenJDK falls back to ~25% of host
     // RAM, far below the configured task.memory on large SLURM nodes.
-    def heap_mb = (task.memory.toMega() * 0.8) as long
+    //
+    // 0.7, not 0.8: on SLURM --mem is a hard cgroup cap on TOTAL RSS, and a JVM's RSS is its heap PLUS
+    // metaspace, code cache, G1's own native structures (~8% of -Xmx), thread stacks and the Solr
+    // client's direct buffers. 0.8 of a 4 GB cap left ~800 MB for all of that, and the kernel won the
+    // race: NCBITAXON died SIGKILL/OUT_OF_MEMORY at MaxRSS 3.9995 GiB (job 4695837, 2026-07-16) having
+    // never reported a thing. Leaving 30% keeps the JVM the first to notice — it hits -Xmx, and
+    // ExitOnOutOfMemoryError (exported by loadData.slurm) prints a readable OutOfMemoryError instead of
+    // an opaque 137. Diagnosability, not headroom, is the point: the memory itself comes from
+    // nextflow.config's attempt scaling.
+    def heap_mb = (task.memory.toMega() * 0.7) as long
     """
     export SOLR_URL="${params.solr_url}"
     export no_proxy="localhost,127.0.0.1,\$(hostname),${solr_host}"
