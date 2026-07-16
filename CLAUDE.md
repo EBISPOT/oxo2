@@ -35,7 +35,7 @@ mvn -pl oxo2-backend test
 # Frontend
 cd oxo2-frontend
 npm install
-npm run dev          # Dev server on port 5173
+npm run dev          # Dev server on port 8080 (override with OXO_FRONTEND_PORT)
 npm run build        # Production build
 npm run lint         # ESLint
 ```
@@ -58,6 +58,12 @@ $SOLR_SCRIPT/solr start --user-managed
 cd oxo2-dataload && ./loadData.nextflow && cd ..
 ./startBackend.sh
 ```
+
+All ports are overridable per checkout, so several stacks (e.g. git worktrees) can run side by
+side: the Vite dev server reads `OXO_FRONTEND_PORT` (default 8080), `startBackend.sh` forwards
+`OXO2_BACKEND_PORT` to `server.port` (default 8081), and `loadData.nextflow` starts/stops its
+managed Solr on the port in `SOLR_URL` (default 8983). Point `OXO2_SOLR_HOST`/`SOLR_URL` and
+`OXO_BACKEND_URL` at the same ports.
 
 Or use Docker Compose:
 ```bash

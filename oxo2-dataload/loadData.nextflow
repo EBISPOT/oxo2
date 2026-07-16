@@ -37,6 +37,13 @@ SOLR_URL=${SOLR_URL:-http://localhost:8983/solr}
 SOLR_SECURITY_MANAGER_ENABLED=${SOLR_SECURITY_MANAGER_ENABLED:-false}
 export SOLR_URL SOLR_SECURITY_MANAGER_ENABLED
 
+# The locally managed Solr must live at SOLR_URL, so both start and stop pass the port parsed
+# from it (mirrors oxo2-integration-tests Env.solrPort()). Per-worktree stacks rely on this to
+# run Solr on non-default ports side by side.
+SOLR_PORT=$(printf '%s\n' "$SOLR_URL" | sed -nE 's|^[a-zA-Z][a-zA-Z0-9+.-]*://[^:/]+:([0-9]+).*|\1|p')
+SOLR_PORT=${SOLR_PORT:-8983}
+export SOLR_PORT
+
 # When OXO2_SOLR_UNMANAGED=true the caller owns the Solr process and the collection wipe (the
 # integration-test harness runs one Solr for the whole suite and clears collections between fixtures
 # with a delete-query). This run then must NOT copy Solr config, start, or stop Solr — doing so would
@@ -232,7 +239,7 @@ if [ "$SOLR_NEEDED" = true ]; then
 
         echo Start solr ...
         ulimit -n 65000 2>/dev/null || true
-        $SOLR_SCRIPT/solr start --user-managed -Djava.io.tmpdir=$OXO2_DATA/tmp
+        $SOLR_SCRIPT/solr start --user-managed -p "$SOLR_PORT" -Djava.io.tmpdir=$OXO2_DATA/tmp
     fi
 
     # Readiness probes run in both modes: even when Solr is externally managed they cheaply confirm
@@ -340,7 +347,7 @@ fi
 # --- Stop Solr (only if we started it; the test harness stops its own externally-managed Solr) ---
 if [ "$SOLR_NEEDED" = true ] && [ "$OXO2_SOLR_UNMANAGED" != true ]; then
     echo  "################### Stopping solr ..."
-    $SOLR_SCRIPT/solr stop -p 8983
+    $SOLR_SCRIPT/solr stop -p "$SOLR_PORT"
 fi
 
 cd ..

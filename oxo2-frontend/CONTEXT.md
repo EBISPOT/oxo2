@@ -159,7 +159,8 @@ recognises, so it leads; the id is promoted to primary only when there is no lab
 
 ### Build and run
 
-- `npm run dev` — Vite dev server on port 5173.
+- `npm run dev` — Vite dev server on port 8080 (`OXO_FRONTEND_PORT` overrides; `strictPort` is
+  set, so a taken port fails instead of auto-incrementing).
 - `npm run build` — production bundle.
 - `npm run lint` — ESLint.
 - In Docker/Kubernetes deployments the built bundle is served on port 8080.

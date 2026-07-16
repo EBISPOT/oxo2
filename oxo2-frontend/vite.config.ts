@@ -11,9 +11,9 @@ export default defineConfig({
     ],
     envPrefix: ['REACT_APP_', 'OXO_'],
     server: {
-        port: 8080,
+        port: Number(process.env.OXO_FRONTEND_PORT) || 8080,
         strictPort: true
-    },    
+    },
     // To fix the issue of the bundle being too large, we need to split the bundle into smaller chunks.
     build: {
         rollupOptions: {

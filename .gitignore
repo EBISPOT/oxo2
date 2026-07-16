@@ -44,3 +44,7 @@ metals*
 .nextflow*
 
 skills-lock.json
+
+# Per-checkout dev-environment files (machine-local worktree index + direnv shim)
+.worktree-index
+.envrc
