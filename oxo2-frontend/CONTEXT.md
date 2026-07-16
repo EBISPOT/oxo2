@@ -81,29 +81,43 @@ prefixes. Results reuse `NormalResultsTable` plus a summary header and an SSSOM-
 batch (pasted-list) variant also shows an unmapped-inputs panel and mirrors its input to
 `sessionStorage` so a refresh re-runs.
 
-### Entry point, corpus and result order (ADR-0027)
+### Entry point, corpus and result order (ADR-0027, ADR-0036)
 
 The **Search** tab asks one question — *which term, or terms, do you want to map?* — and offers a
 `Single term` / `Multiple terms` toggle over one input. Batch mode adds a local file drop
 (`search/TermFileDrop.tsx`, `.txt/.csv/.tsv`): the file is read in the browser and its terms are
 *appended to the textarea*, never held as a hidden second source of truth, so what runs is always
-what the user can read back. Label-match mode and the restrict-to-mapping-sets table live behind a
-**More options** `<details>`; before, both greeted the user ahead of any typing.
-
-Two controls stay on the surface because they change what the answer *means*:
+what the user can read back. Only the terms box, the from/to ontology selectors and the buttons
+stay on the surface. Everything else lives behind a **More options** `<details>`, as three
+intent-sized groups (ADR-0036):
 
 - **"Where should mappings come from?"** (`search/CorpusSelector.tsx`) — a three-way segmented
   control over `src/model/MappingSetCategory.ts`, carried in the URL as `?corpus=ontology|curated`
   and sent as the request's `mappingSetCategory`. `Both` is the default and sends no filter, which
   is also what keeps results flowing before the reindex that populates `mapping_set_category`. It
-  does **not** hide inferred mappings — that is the results table's inference-type filter.
-- **"Order results by"** — `src/model/SortMode.ts`. It writes the *same* `?sort` param the table's
-  per-column sort popovers write, so the URL stays the single source of truth and the two can never
-  disagree. A per-column sort the control cannot represent reads back as `Best match`.
+  does **not** hide inferred mappings — that is the results table's inference-type filter. The
+  restrict-to-specific-mapping-sets table folds in beneath it behind its own nested
+  "Choose specific mapping sets…" disclosure — the same question at a finer granularity, and the
+  table is hundreds of rows, so it must not drown the other groups when More options opens.
+- **"Also show"** — the weak-predicate checkboxes (ADR-0035).
+- **"Label matching"** — how free-text terms match labels (ADR-0026); CURIE/IRI terms always match
+  exactly.
+
+Because some of those choices change what the answer *means*, the collapsed summary line names
+every non-default choice hiding in there (e.g. "curated sets only; also showing cross-references"),
+so a search arriving via URL never applies an invisible filter.
+
+The search form has **no result-order control** (ADR-0036): ordering is a decision made while
+looking at results, so the Best match / Highest confidence / Most recent choice
+(`src/model/SortMode.ts`) sits in the results table's toolbar. It writes the *same* `?sort` param
+the per-column sort popovers write, so the URL stays the single source of truth and the two can
+never disagree; picking a mode replaces the whole sorting state, which also makes `Best match` the
+one-click way back to relevance from any column sort. A column sort the control cannot represent
+shows as a disabled "Column sort" entry.
 
 `Best match` deliberately writes **no** `?sort` at all: an explicit Solr sort replaces `score`, so
 the compact table's old `subject_label asc` default silently discarded the provenance-led ranking
-and ordered alphabetically. `NormalResultsTable`'s `DEFAULT_SORTING` is now `[]` and the backend
+and ordered alphabetically. `NormalResultsTable`'s `DEFAULT_SORTING` is `[]` and the backend
 names `score desc` itself. `AdvancedResultsTable` keeps its explicit `subject_id asc` — the Advanced
 surface stays flat and deterministic.
 
@@ -134,9 +148,9 @@ a typeahead over a free-prose comment field is noise.
   filtered by the two **weak-predicate checkboxes**
   ([ADR-0035](../docs/adr/0035-weak-predicates-as-a-user-visible-control.md)): with both unticked — the
   default — an entity whose every mapping is a `subClassOf` or a `hasDbXref` is not offered at all,
-  because picking it would land on an empty table. The checkboxes live on the search page *and* in the
-  Predicate column header, and travel in the URL as `wp` so the box and the table below it are always
-  filtered by the same selection. `includeWeakPredicates` is therefore not a display preference on the
+  because picking it would land on an empty table. The checkboxes live on the search page (behind
+  More options) *and* in the Predicate column header, and travel in the URL as `wp` so the box and
+  the table below it are always filtered by the same selection. `includeWeakPredicates` is therefore not a display preference on the
   suggest call — pass the wrong set and the dropdown offers entities the search then hides.
 - **The result-table column filters** (`ValueSuggest`, in `ColumnFilterPopover`) — **contextual**: the
   values are faceted over the *live search*, so a suggestion can never yield zero rows, and each arrives

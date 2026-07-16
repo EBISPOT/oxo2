@@ -23,6 +23,8 @@ import {EyeIcon, ArrowDownTrayIcon} from "@heroicons/react/24/solid";
 import {EntityRefCell, CopyButton} from "../../components/mapping/EntityRefCell";
 import {ColumnFilterPopover, type FilterFieldDef} from "../../components/mapping/ColumnFilterPopover";
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
+import {SortMode, SORT_MODE_LABELS, SORT_MODE_ORDER, sortModeToSorting, sortModeFromSorting}
+    from "../../model/SortMode";
 import {SortingContext} from "../../components/mapping/sortingContext";
 
 // Per-column filter inputs. Each `field` is a canonical Solr field name resolved by
@@ -576,6 +578,25 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
         enableTopToolbar: true,
         renderTopToolbarCustomActions: () => (
             <div className="flex items-center gap-3">
+                {/* The ranking choice (ADR-0036): Best match / confidence / recency. It replaces
+                    the whole sorting state — a ranking is exclusive, unlike the per-column sort
+                    popovers it shares the `?sort` param with — which also makes "Best match" the
+                    one-click way back to relevance from any column sort. */}
+                <label className="flex items-center gap-2 text-sm text-tertiary">
+                    Order by
+                    <select
+                        className="input-default text-sm py-1 w-auto"
+                        value={sortModeFromSorting(sorting) ?? 'CUSTOM'}
+                        onChange={(event) => setSorting(sortModeToSorting(event.target.value as SortMode))}
+                    >
+                        {SORT_MODE_ORDER.map((mode) => (
+                            <option key={mode} value={mode}>{SORT_MODE_LABELS[mode]}</option>
+                        ))}
+                        {sortModeFromSorting(sorting) === null && (
+                            <option value="CUSTOM" disabled>Column sort</option>
+                        )}
+                    </select>
+                </label>
                 {(subjectPrefixes.length > 0 || objectPrefixes.length > 0) && (
                     <span className="text-sm text-tertiary">
                         {(mappingResults?.totalElements ?? 0).toLocaleString()} mappings

@@ -251,6 +251,14 @@ filter and the entity fold must agree on the pair by construction. See
 schema gains six count fields; `copySolrConfig entities-only` now wipes rather than skips),
 `oxo2-backend` (`SolrQueryBuilder`, `EntitySuggestQueryBuilder`, `SuggestController`) and
 `oxo2-frontend` (the two checkboxes, the `wp` URL param).
+- **Search-form options are grouped by intent behind one disclosure; result order lives on the
+results table** — the search surface keeps only the term input, from/to ontology selectors and
+buttons; everything else sits behind "More options" as three groups (corpus with nested
+mapping-set picker, weak predicates, label matching), whose collapsed summary must name every
+non-default choice. The Best match / confidence / recency trio is a toolbar control on the results
+table writing the same `?sort` the column popovers write. A new search option must join one of the
+three groups and add its summary hint. See
+[ADR-0036](docs/adr/0036-search-form-options-grouped-by-intent.md). Affects `oxo2-frontend` only.
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **The dataload is resumable from a chosen (sub)stage** — parameterised by `START_STAGE` (default

@@ -1,15 +1,15 @@
 import type { MRT_SortingState } from "material-react-table";
 
-// The user-facing "Sort by" choice. It writes the existing `?sort` param (the same one the results
-// table's per-column sort popovers write), so the URL stays the single source of truth and the two
-// controls can never disagree.
+// The result-order choice on the results table's toolbar. It writes the same `?sort` param the
+// table's per-column sort popovers write (via useUrlSorting), so the URL stays the single source
+// of truth and the two controls can never disagree.
 //
-// "Best match" sends no sort at all, which is what lets the backend rank by relevance — i.e. by the
-// provenance-led boost (ADR-0027). Any explicit Solr sort replaces `score` and would discard it.
+// "Best match" sends no sort at all, which is what lets the backend rank by relevance — i.e. by
+// the provenance-led boost (ADR-0027). Any explicit Solr sort replaces `score` and would discard
+// it. The search form deliberately has no order control (ADR-0036): ordering is a decision made
+// while looking at results.
 
 export type SortMode = 'RELEVANCE' | 'CONFIDENCE' | 'NEWEST';
-
-export const DEFAULT_SORT_MODE: SortMode = 'RELEVANCE';
 
 export const SORT_MODE_LABELS: Record<SortMode, string> = {
     RELEVANCE: 'Best match',
@@ -19,7 +19,7 @@ export const SORT_MODE_LABELS: Record<SortMode, string> = {
 
 export const SORT_MODE_ORDER: SortMode[] = ['RELEVANCE', 'CONFIDENCE', 'NEWEST'];
 
-/** The `?sort` tokens each mode writes. Best match writes none — relevance is the absence of a sort. */
+/** The sorting state each mode stands for. Best match is the absence of a sort. */
 const SORT_MODE_FIELDS: Record<SortMode, MRT_SortingState> = {
     RELEVANCE: [],
     CONFIDENCE: [{ id: 'confidence', desc: true }],
@@ -31,24 +31,16 @@ export function sortModeToSorting(mode: SortMode): MRT_SortingState {
 }
 
 /**
- * Recover the mode from the URL `sort` tokens. A sort we don't offer — a per-column sort the user set
- * on the results table — reads back as "Best match", because the control has no way to show it. It
- * only takes effect if the user submits a new search, which resets the table view anyway.
+ * The mode a sorting state reads back as, or null for a per-column sort the control cannot
+ * represent — the select then shows a disabled "Column sort" entry rather than lying about
+ * the order.
  */
-export function asSortMode(sortTokens: string[]): SortMode {
-    if (sortTokens.length !== 1) {
-        return DEFAULT_SORT_MODE;
-    }
+export function sortModeFromSorting(sorting: MRT_SortingState): SortMode | null {
     const match = SORT_MODE_ORDER.find((mode) => {
         const fields = SORT_MODE_FIELDS[mode];
-        if (fields.length !== 1) return false;
-        const [field] = fields;
-        return sortTokens[0] === (field.desc ? `-${field.id}` : field.id);
+        return fields.length === sorting.length
+            && fields.every((field, index) =>
+                sorting[index].id === field.id && sorting[index].desc === field.desc);
     });
-    return match ?? DEFAULT_SORT_MODE;
-}
-
-/** The `?sort` params a mode contributes, in URL order. Empty for the default. */
-export function sortModeToUrlParams(mode: SortMode): string[] {
-    return sortModeToSorting(mode).map((field) => (field.desc ? `-${field.id}` : field.id));
+    return match ?? null;
 }
