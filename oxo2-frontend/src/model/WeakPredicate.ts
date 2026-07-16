@@ -21,6 +21,12 @@ export const WEAK_PREDICATE_LABELS: Record<WeakPredicate, string> = {
     hasDbXref: 'Cross-reference (oboInOwl:hasDbXref)',
 };
 
+/** Compact names for summary lines, e.g. "also showing subclass, cross-references". */
+export const WEAK_PREDICATE_SHORT_LABELS: Record<WeakPredicate, string> = {
+    subClassOf: 'subclass',
+    hasDbXref: 'cross-references',
+};
+
 export const WEAK_PREDICATE_HINTS: Record<WeakPredicate, string> = {
     subClassOf: 'Ontology hierarchy, not equivalence.',
     hasDbXref: 'A loose link between two identifiers, with no stated meaning.',

@@ -77,7 +77,7 @@ export function AdvancedSearch({ values, onChange, onSubmit, onClear }: Advanced
                     Search
                 </button>
                 <button
-                    className="button-primary text-base font-bold px-4 py-1"
+                    className="button-secondary text-base px-4 py-1"
                     onClick={onClear}
                 >
                     Clear
