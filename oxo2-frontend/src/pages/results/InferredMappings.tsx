@@ -166,6 +166,16 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                         : <span className="text-gray-400">—</span>;
                 },
             },
+            // The premise's mapping justification, carried directly in the precomputed blob (no lookup).
+            {
+                id: "mappingJustification",
+                accessorFn: (row) => row.mappingJustification,
+                header: "Mapping justification",
+                size: 200,
+                Cell: ({ row }) => (
+                    <span className="break-all">{row.original.mappingJustification}</span>
+                ),
+            },
             // The premise's source set, linking to that set's detail page. An asserted premise only
             // carries its mapping_set_id (no title in the precomputed blob), so the id itself is the
             // link text — same id-only rendering the results table falls back to when a set has no title.
