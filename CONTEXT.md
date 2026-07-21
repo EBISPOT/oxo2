@@ -92,6 +92,15 @@ mapping/equivalence predicates) run **across all mapping sets** for findability,
 only. OxO2 derives no subsumption — the former per-set OWL phase was dropped (no value on either corpus). See
 [ADR-0016](docs/adr/0016-single-pass-sssom-reasoning.md) (supersedes ADR-0009 and ADR-0001). Affects
 `oxo2-dataload` (one Nemo pass: `sssom.rls` over the whole corpus).
+- **A confidence gate can keep low-confidence edges out of inference** — with the global
+`min_inference_confidence` key in the OxO config (default absent = disabled) set above 0, the `nquads`
+stage omits any mapping whose SSSOM `confidence` is present and strictly below the threshold, so it never
+seeds the closure; a mapping with no confidence always passes, and dropped edges stay indexed as asserted
+and are listed per set in a `.dropped-low-confidence.tsv` sidecar. Addresses only the *low-confidence*
+failure mode, not a wrong high/absent-confidence mapping (that is the still-proposed ADR-0017
+blast-radius guard). See [ADR-0037](docs/adr/0037-confidence-gate-on-inference-corpus.md). Affects
+`oxo2-dataload` (`OxoConfiguration`, `lib/InferenceConfidenceThreshold.groovy`, `JSON2NQuads`,
+`json2nquadsNextflow.sh`, `inferSssomCrossSet.nf`).
 - **Explanations are precomputed by component-sharded chase+trace** — a conclusion's whole proof lives
 inside one connected component of the corpus's strong-predicate edges, because every `sssom.rls` rule
 chains its head's subject to its object through body atoms. So the dataload partitions

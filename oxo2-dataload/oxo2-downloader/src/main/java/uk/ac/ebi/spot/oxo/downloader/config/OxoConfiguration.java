@@ -12,13 +12,31 @@ public class OxoConfiguration {
     @JsonProperty("mapping_registries")
     private final List<MappingRegistry> mappingRegistries;
 
+    /**
+     * Confidence-gate threshold (ADR-0037): a mapping whose SSSOM {@code confidence} is present and
+     * strictly below this value is kept out of the cross-set inference corpus (it is still indexed and
+     * served as an asserted mapping). A <em>global</em> knob — one value for the whole load, not a
+     * per-registry field — read by the {@code nquads} dataload stage. Absent → the gate is disabled.
+     * Registered here so the strict config deserializer accepts the key; the dataload reads it from the
+     * config JSON directly ({@code lib/InferenceConfidenceThreshold.groovy}).
+     */
+    @JsonProperty("min_inference_confidence")
+    private final Optional<Double> minInferenceConfidence;
+
     public List<MappingRegistry> getMappingRegistries() {
         return mappingRegistries;
     }
 
+    public Optional<Double> getMinInferenceConfidence() {
+        return minInferenceConfidence;
+    }
+
     @JsonCreator(mode=JsonCreator.Mode.PROPERTIES)
-    public OxoConfiguration(@JsonProperty("mapping_registries") List<MappingRegistry> mappingRegistries) {
+    public OxoConfiguration(
+            @JsonProperty("mapping_registries") List<MappingRegistry> mappingRegistries,
+            @JsonProperty("min_inference_confidence") Double minInferenceConfidence) {
         this.mappingRegistries = mappingRegistries;
+        this.minInferenceConfidence = Optional.ofNullable(minInferenceConfidence);
     }
 
     @JsonDeserialize(builder = MappingRegistry.Builder.class)

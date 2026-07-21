@@ -65,6 +65,13 @@ side: the Vite dev server reads `OXO_FRONTEND_PORT` (default 8080), `startBacken
 managed Solr on the port in `SOLR_URL` (default 8983). Point `OXO2_SOLR_HOST`/`SOLR_URL` and
 `OXO_BACKEND_URL` at the same ports.
 
+Optional: set the top-level `min_inference_confidence` key in `oxo-config.json` (default absent = off) to
+keep low-confidence mappings out of the cross-set inference closure. When set above 0, the dataload drops
+any mapping whose SSSOM `confidence` is present and below the threshold from the inference corpus (it
+stays indexed as an asserted mapping) and records each drop in a `<set>.dropped-low-confidence.tsv`
+sidecar. Mappings with no confidence value are unaffected. See
+[ADR-0037](docs/adr/0037-confidence-gate-on-inference-corpus.md).
+
 Or use Docker Compose:
 ```bash
 export OXO2_CONFIG=./oxo-config.json

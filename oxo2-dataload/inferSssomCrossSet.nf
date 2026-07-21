@@ -17,6 +17,14 @@ params.script_dir = params.script_dir ?: "${projectDir}"
 // Reason with the SSSOM ruleset (strong-predicate transitivity + role chains, across all sets).
 params.rules_definition = file("${params.script_dir}/oxo2-json2inferences/sssom.rls")
 
+// Confidence gate (ADR-0037). A mapping whose SSSOM `confidence` is present and strictly below this
+// threshold is kept out of the N-Quad inference corpus (it is still indexed/served as asserted).
+// Mappings without a confidence value are unaffected. The threshold is the global
+// `min_inference_confidence` key in the OxO config ($OXO2_CONFIG); absent -> 0, which disables the gate
+// and makes the corpus byte-identical to a run without it.
+params.config_file = "${System.getenv('OXO2_CONFIG') ?: ''}"
+params.min_inference_confidence = InferenceConfidenceThreshold.fromConfigPath(params.config_file)
+
 // The single logical inferred set; drives the inferred-set output name (inferences.ttl). This is
 // the reasoning OUTPUT, not the corpus it is derived from.
 params.inferred_set_basename = "inferences"
@@ -35,7 +43,13 @@ workflow {
     json_files = channel.fromPath("${params.json_input_dir}/*.json")
         .map { f -> FilenameGuard.assertSafe(f.name); f }
 
-    nquads_files = JSON2NQUADS(json_files)
+    if (params.min_inference_confidence.toDouble() > 0) {
+        log.info "Confidence gate active (ADR-0037): dropping inference edges with confidence < " +
+                 "${params.min_inference_confidence} (min_inference_confidence from ${params.config_file})."
+    }
+
+    json2nquads_out = JSON2NQUADS(json_files)
+    nquads_files = json2nquads_out.nquads
         .filter { nquads -> nquads.size() > 0 }
         .collect()
 
@@ -66,12 +80,14 @@ process JSON2NQUADS {
     path json_file
 
     output:
-    path "${json_file.baseName}.nq", optional: true
+    path "${json_file.baseName}.nq", optional: true, emit: nquads
+    // Confidence-gate drop report (ADR-0037), only emitted when the gate drops at least one edge.
+    path "${json_file.baseName}.dropped-low-confidence.tsv", optional: true, emit: dropped
 
     script:
     def output_file = "${json_file.baseName}.nq"
     """
-    "${params.script_dir}/oxo2-json2inferences/json2nquadsNextflow.sh" "${json_file}" "${output_file}"
+    "${params.script_dir}/oxo2-json2inferences/json2nquadsNextflow.sh" "${json_file}" "${output_file}" "${params.min_inference_confidence}"
     # Remove if empty
     if [ ! -s "${output_file}" ]; then
         rm -f "${output_file}"

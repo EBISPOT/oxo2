@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,10 +40,23 @@ import uk.ac.ebi.spot.oxo.utils.StringUtils;
  *
  * <p>Replaces the prior triple ({@code .ttl}) emitter: triples carried no provenance, so the
  * source mapping set of an asserted premise could not be recovered after chaining across sets.
+ *
+ * <p><b>Confidence gate (ADR-0037).</b> When {@code --minConfidence} is set above 0, a mapping whose
+ * SSSOM {@code confidence} is <em>present and strictly below</em> the threshold is not emitted as a
+ * quad, so it never seeds cross-set inference. The gate is deliberately narrow: a mapping with no
+ * confidence value (absent, blank, or unparseable) always passes — only an explicit low confidence
+ * drops an edge. Dropped edges are still indexed and served as asserted mappings (the Solr index is
+ * built independently of the N-Quad corpus); this only removes them from the inference corpus. Every
+ * drop is recorded in a sidecar {@code <output>.dropped-low-confidence.tsv} — never silent. A
+ * threshold of 0 (the default) disables the gate entirely and reproduces the prior output byte for
+ * byte.
  */
 public class JSON2NQuads {
 
     private static final Logger logger = LoggerFactory.getLogger(JSON2NQuads.class);
+
+    /** Suffix of the per-set sidecar listing edges the confidence gate kept out of the corpus. */
+    private static final String DROPPED_REPORT_SUFFIX = ".dropped-low-confidence.tsv";
 
     public static void main(String[] args) {
         Options options = getOptions();
@@ -63,6 +77,7 @@ public class JSON2NQuads {
         String outputDir = cmd.getOptionValue("outputDir");
         String inputFile = cmd.getOptionValue("inputFile");
         String outputFile = cmd.getOptionValue("outputFile");
+        double minConfidence = parseMinConfidence(cmd.getOptionValue("minConfidence"));
 
         // Validate that either directory mode or file mode is used, but not both or neither
         boolean hasDirMode = (inputDirectory != null && outputDir != null);
@@ -84,14 +99,18 @@ public class JSON2NQuads {
 
         long startTime = System.currentTimeMillis();
         try {
+            if (minConfidence > 0) {
+                logger.info("Confidence gate active: dropping inference edges with confidence < {} "
+                        + "(mappings without a confidence value are unaffected).", minConfidence);
+            }
             if (hasDirMode) {
                 logger.info("Input Directory: {}", inputDirectory);
                 logger.info("Output Directory: {}", outputDir);
-                processMappings(inputDirectory, outputDir);
+                processMappings(inputDirectory, outputDir, minConfidence);
             } else {
                 logger.info("Input File: {}", inputFile);
                 logger.info("Output File: {}", outputFile);
-                generateNQuadsFromJSON(Paths.get(inputFile), Paths.get(outputFile));
+                generateNQuadsFromJSON(Paths.get(inputFile), Paths.get(outputFile), minConfidence);
             }
         } catch (Exception e) {
             logger.error("Error processing mappings", e);
@@ -105,12 +124,20 @@ public class JSON2NQuads {
      * Converts a single JSON file to an N-Quads file. Reads mappings from the JSON file and
      * writes one quad {@code <s> <p> <o> <urn:uuid:mapping_id> .} per applicable mapping.
      *
-     * @param jsonFile   Path to the input JSON file
-     * @param outputFile Path to the output N-Quads file
+     * @param jsonFile      Path to the input JSON file
+     * @param outputFile    Path to the output N-Quads file
+     * @param minConfidence Confidence gate (ADR-0037): edges whose {@code confidence} is present and
+     *                      strictly below this are dropped from the corpus and recorded in a sidecar.
+     *                      {@code 0} disables the gate; a mapping with no confidence always passes.
      * @throws IOException if an I/O error occurs
      */
-    private static void generateNQuadsFromJSON(Path jsonFile, Path outputFile) throws IOException {
+    // Package-private for JSON2NQuadsConfidenceGateTest.
+    static void generateNQuadsFromJSON(Path jsonFile, Path outputFile, double minConfidence)
+            throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
+        boolean gateActive = minConfidence > 0;
+        // Each row: {subjectIRI, predicateIRI, objectIRI, confidence, mappingId} for the sidecar.
+        List<String[]> droppedByConfidence = new ArrayList<>();
 
         logger.info("Processing file: {}", jsonFile);
         try (BufferedWriter writer = Files.newBufferedWriter(outputFile);
@@ -137,10 +164,30 @@ public class JSON2NQuads {
                 }
 
                 if (!isSkipOnPredicateModifier(mappingNode) && areURIsValid(subjectIRI, predicateIRI, objectIRI)) {
+                    // Confidence gate (ADR-0037). Applied only to inference-eligible edges (applicable
+                    // predicate, no predicate modifier, valid IRIs) so the sidecar reflects edges that
+                    // would otherwise have entered the corpus. A mapping without a parseable confidence
+                    // is never dropped — the gate acts only on an explicit low value.
+                    if (gateActive) {
+                        double confidence = parseConfidence(mappingNode);
+                        if (!java.lang.Double.isNaN(confidence) && confidence < minConfidence) {
+                            droppedByConfidence.add(new String[] {
+                                    subjectIRI, predicateIRI, objectIRI,
+                                    java.lang.Double.toString(confidence), mappingId });
+                            continue;
+                        }
+                    }
                     writer.write(String.format("<%s> <%s> <%s> <%s%s> .\n",
                             subjectIRI, predicateIRI, objectIRI, OXOInferenceConstants.URN_UUID_PREFIX, mappingId));
                     quadsWritten++;
                 }
+            }
+            if (!droppedByConfidence.isEmpty()) {
+                Path reportFile = droppedReportPath(outputFile);
+                writeDroppedReport(reportFile, minConfidence, droppedByConfidence);
+                logger.warn("Confidence gate (min={}) kept {} inference-eligible mapping(s) out of the "
+                        + "corpus for {}; they remain asserted. Dropped edges listed in {}.",
+                        minConfidence, droppedByConfidence.size(), jsonFile, reportFile);
             }
             if (quadsWritten == 0) {
                 // Legitimate for sets whose mappings all use non-inference predicates (e.g. the
@@ -171,7 +218,8 @@ public class JSON2NQuads {
         return predicateModifier != null;
     }
 
-    private static void processMappings(String inputDirectory, String outputDirectory) throws IOException {
+    private static void processMappings(String inputDirectory, String outputDirectory, double minConfidence)
+            throws IOException {
         try (Stream<Path> paths = Files.walk(Paths.get(inputDirectory))) {
             List<Path> jsonFiles = paths.filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".json"))
@@ -181,7 +229,7 @@ public class JSON2NQuads {
                 String outputFile = outputDirectory + File.separator
                         + jsonFile.getFileName().toString().replace(".json", ".nq");
                 try {
-                    generateNQuadsFromJSON(jsonFile, Paths.get(outputFile));
+                    generateNQuadsFromJSON(jsonFile, Paths.get(outputFile), minConfidence);
                 } catch (Exception e) {
                     logger.error("Error processing file: {}", jsonFile, e);
                 }
@@ -189,6 +237,80 @@ public class JSON2NQuads {
         } catch (Throwable t) {
             logger.error("Error processing directory: {}", inputDirectory, t);
         }
+    }
+
+    /**
+     * Reads a mapping's SSSOM {@code confidence} as a double, or {@link java.lang.Double#NaN} when it
+     * is absent, blank, or not a number. NaN is the "no confidence" signal the gate treats as passing.
+     */
+    private static double parseConfidence(JsonNode mappingNode) {
+        JsonNode confidenceNode = mappingNode.get(MappingEnum.CONFIDENCE.getField());
+        if (confidenceNode == null || confidenceNode.isNull()) {
+            return java.lang.Double.NaN;
+        }
+        String confidenceText = confidenceNode.asText();
+        if (confidenceText == null || confidenceText.isBlank()) {
+            return java.lang.Double.NaN;
+        }
+        try {
+            return java.lang.Double.parseDouble(confidenceText);
+        } catch (NumberFormatException e) {
+            return java.lang.Double.NaN;
+        }
+    }
+
+    /** Sidecar path for an output {@code <name>.nq}: {@code <name>.dropped-low-confidence.tsv}. */
+    private static Path droppedReportPath(Path outputFile) {
+        String outputName = outputFile.getFileName().toString();
+        String baseName = outputName.endsWith(".nq")
+                ? outputName.substring(0, outputName.length() - ".nq".length())
+                : outputName;
+        String reportName = baseName + DROPPED_REPORT_SUFFIX;
+        Path parent = outputFile.getParent();
+        return parent == null ? Paths.get(reportName) : parent.resolve(reportName);
+    }
+
+    /** Writes the confidence-gate drop report (ADR-0037) — one dropped edge per row, TSV. */
+    private static void writeDroppedReport(Path reportFile, double minConfidence, List<String[]> droppedRows)
+            throws IOException {
+        try (BufferedWriter reportWriter = Files.newBufferedWriter(reportFile)) {
+            reportWriter.write("# Mappings kept out of the inference corpus by the confidence gate "
+                    + "(min_inference_confidence=" + minConfidence + ", ADR-0037). They are still "
+                    + "indexed and served as asserted mappings.\n");
+            reportWriter.write("subject_iri\tpredicate_iri\tobject_iri\tconfidence\tmapping_id\n");
+            for (String[] row : droppedRows) {
+                reportWriter.write(String.join("\t", row));
+                reportWriter.write("\n");
+            }
+        }
+    }
+
+    /**
+     * Parses the {@code --minConfidence} option. Absent → 0 (gate disabled). A negative value is
+     * clamped to 0 with a warning. A non-numeric value is a hard configuration error (exit 1) rather
+     * than a silent disable, so a mistyped threshold never quietly lets low-confidence edges through.
+     */
+    private static double parseMinConfidence(String optionValue) {
+        if (optionValue == null || optionValue.isBlank()) {
+            return 0.0;
+        }
+        double threshold;
+        try {
+            threshold = java.lang.Double.parseDouble(optionValue.trim());
+        } catch (NumberFormatException e) {
+            logger.error("Invalid --minConfidence value '{}': must be a number (e.g. 0.5).", optionValue);
+            System.exit(1);
+            return 0.0;
+        }
+        if (threshold < 0) {
+            logger.warn("Negative --minConfidence '{}' clamped to 0 (gate disabled).", optionValue);
+            return 0.0;
+        }
+        if (threshold > 1) {
+            logger.warn("--minConfidence '{}' exceeds 1.0; every mapping that reports a confidence "
+                    + "will be dropped from inference.", optionValue);
+        }
+        return threshold;
     }
 
     private static boolean areURIsValid(String subjectIRI, String predicateIRI, String objectIRI) {
@@ -223,6 +345,13 @@ public class JSON2NQuads {
         Option outputFile = new Option("p", "outputFile", true, "Output N-Quads file");
         outputFile.setRequired(false);
         options.addOption(outputFile);
+
+        Option minConfidence = new Option("c", "minConfidence", true,
+                "Confidence gate (ADR-0037): drop edges whose confidence is present and below this "
+                        + "value from the inference corpus. 0 (default) disables the gate; mappings "
+                        + "without a confidence value always pass.");
+        minConfidence.setRequired(false);
+        options.addOption(minConfidence);
 
         return options;
     }

@@ -128,7 +128,14 @@ invariant that keeps explanations well-founded once the `mapping_id` is projecte
 rule loses its guard. A set whose mappings yield no
 quads — all using non-inference predicates (e.g. the `ebi-text-mappings` sets are `skos:closeMatch`) or
 lacking a subject/object IRI — produces no `.nq` and is logged (it is still indexed as asserted; it just does
-not enter the inference corpus).
+not enter the inference corpus). The **confidence gate**
+([ADR-0037](../docs/adr/0037-confidence-gate-on-inference-corpus.md)) also runs here: with the global
+`min_inference_confidence` key in the OxO config (`$OXO2_CONFIG`, default absent = disabled) set above 0,
+`json2nquads` omits any mapping whose `confidence` is present and strictly below the threshold, so it
+never seeds inference; a mapping with no confidence always passes. The dataload reads the value via
+`lib/InferenceConfidenceThreshold.groovy` (as `sssom2json.nf` reads per-registry `category`). Dropped
+edges stay indexed as asserted and are listed per set in `<set>.dropped-low-confidence.tsv` — never
+silently removed.
 
 **4. Explanation** — `determineExplanations.nextflow` runs `explainSssomCrossSet.nf`
 ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)). `SHARD_CONCLUSIONS` union-finds
