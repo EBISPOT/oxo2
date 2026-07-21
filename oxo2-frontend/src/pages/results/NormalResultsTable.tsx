@@ -365,21 +365,27 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         : <span className="break-all">{shared}</span>;
                 },
             },
-            // Mapping confidence, set-detail only: it replaces the Type/Mapping-set columns that carry
-            // no signal on a single set's page. Ungrouped there, so each row is one mapping.
-            ...(isSetDetail ? [{
+            // Mapping confidence, shown in every view. A same-SPO group (search view) can span sets
+            // with different confidences, so it shares the Justification/Provider "Multiple" handling;
+            // the set-detail view is ungrouped, so it collapses to the single mapping's value. No
+            // value (many mappings carry no confidence) renders as an em dash, not a fabricated number.
+            {
                 id: "confidence",
-                accessorFn: (row: Mapping) => row.confidence,
+                accessorFn: (row) => row.confidence,
                 header: "Mapping confidence",
                 enableSorting: false,
                 size: 150,
-                Cell: ({ row }: { row: { original: Mapping } }) => {
-                    const value = row.original.confidence;
-                    return typeof value === "number"
-                        ? <span>{value}</span>
-                        : <span className="text-gray-400">—</span>;
+                Cell: ({ row }) => {
+                    const shared = sharedValue(row.original, (member) =>
+                        typeof member.confidence === "number" ? String(member.confidence) : "");
+                    if (shared === null) {
+                        return <span className="italic text-gray-500">Multiple</span>;
+                    }
+                    return shared === ""
+                        ? <span className="text-gray-400">—</span>
+                        : <span>{shared}</span>;
                 },
-            } as MRT_ColumnDef<Mapping>] : []),
+            },
             // Type: dropped on a set-detail page (a single set has a single inference type).
             ...(isSetDetail ? [] : [{
                 id: "inference_type",
