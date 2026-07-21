@@ -19,9 +19,8 @@ import { InferenceTypeBadge } from "../../components/mapping/InferenceTypeBadge"
 export function MappingSetDetails({ mappingSetId }: { mappingSetId: string }) {
     const navigate = useNavigate();
     // window.history.state.idx is React Router's position in the history stack; 0 means this page was
-    // reached directly (shared link, bookmark, a /inferences URL) with nothing to go back to. The set
-    // page can be reached from search results or from a mapping's detail page, so "Back" (navigate -1)
-    // returns to whichever it was rather than assuming "results".
+    // reached directly (shared link, bookmark, a /inferences URL) with nothing to go back to, in which
+    // case the button offers a new search instead. navigate(-1) returns to whichever page linked here.
     const hasInAppHistory = (window.history.state?.idx ?? 0) > 0;
 
     const { data: mappingSet, isLoading, isError } = useQuery({
@@ -37,7 +36,7 @@ export function MappingSetDetails({ mappingSetId }: { mappingSetId: string }) {
                     className="button-primary text-base font-bold px-4 py-1"
                     onClick={() => hasInAppHistory ? navigate(-1) : navigate("/")}
                 >
-                    {hasInAppHistory ? "Back" : "New search"}
+                    {hasInAppHistory ? "Back to results" : "New search"}
                 </button>
             </div>
             {isLoading && (
