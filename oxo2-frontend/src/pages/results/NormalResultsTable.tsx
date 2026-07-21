@@ -140,9 +140,9 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
       groupBySpo?: boolean;
       // Which column set to render. "search" is the default full set. "set-detail" is the
       // single-set page: Type and Mapping set are dropped (every row shares the set — and, since the
-      // set-detail view is ungrouped, a single inference type — so both columns are constant noise),
-      // Mapping confidence is shown in their place, and Mapping provider is hidden by default (often
-      // empty or identical to the set's own provider) but stays revealable via the columns menu.
+      // set-detail view is ungrouped, a single inference type — so both columns are constant noise)
+      // and Mapping confidence is shown in their place. (Mapping provider is hidden by default in
+      // both views — see initialState — but stays revealable via the columns menu.)
       variant?: "search" | "set-detail" }) {
     const navigate = useNavigate();
     const isSetDetail = variant === "set-detail";
@@ -481,10 +481,10 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const table = useMaterialReactTable({
         columns,
         data: mappingResults.mappings,
-        // On a set-detail page Mapping provider is hidden by default (often empty or the same for every
-        // row); enableHiding keeps it revealable via the columns button. Uncontrolled, so the user's
-        // toggle sticks.
-        initialState: isSetDetail ? { columnVisibility: { mapping_provider: false } } : undefined,
+        // Mapping provider is hidden by default in every view (often empty, or the same for every row);
+        // enableHiding keeps it revealable via the columns button. Uncontrolled, so the user's toggle
+        // sticks.
+        initialState: { columnVisibility: { mapping_provider: false } },
         enableColumnOrdering: true,
         enableColumnFilters: false, // field filtering is driven by the per-column popovers
         enableSorting: false, // sorting is driven by the per-column sort popovers
