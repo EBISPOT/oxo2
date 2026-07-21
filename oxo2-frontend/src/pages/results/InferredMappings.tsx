@@ -5,6 +5,8 @@ import {
     type MRT_SortingState,
     useMaterialReactTable,
 } from "material-react-table";
+import {Link} from "react-router-dom";
+import {mappingSetHref} from "../../util/mappingSetUrl";
 import {InferredMapping, Mapping} from "../../model/Mapping.ts";
 import {EntityRefCell} from "../../components/mapping/EntityRefCell";
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
@@ -130,6 +132,30 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                         showOlsLink
                     />
                 ),
+            },
+            // The premise's source set, linking to that set's detail page. An asserted premise only
+            // carries its mapping_set_id (no title in the precomputed blob), so the id itself is the
+            // link text — same id-only rendering the results table falls back to when a set has no title.
+            {
+                id: "mappingSet",
+                accessorFn: (row) => row.mappingSetId,
+                header: "Mapping set",
+                size: 260,
+                Cell: ({ row }) => {
+                    const setId = row.original.mappingSetId;
+                    if (!setId) {
+                        return <span className="text-gray-400">—</span>;
+                    }
+                    return (
+                        <Link
+                            to={mappingSetHref(setId)}
+                            className="break-all text-link-default hover:underline"
+                            title="View mapping set details"
+                        >
+                            {setId}
+                        </Link>
+                    );
+                },
             },
         ],
         [handleSortChange]
