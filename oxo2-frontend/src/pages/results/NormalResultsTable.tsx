@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
+import {mappingSetHref} from "../../util/mappingSetUrl";
 import {emptyMappingPage, MappingPage, fetchMappings, exportMappings, fromJson, buildSearchRequest}
     from "./MappingResultsSlice";
 import {useQuery} from "@tanstack/react-query";
@@ -130,10 +131,21 @@ function advancedHrefForTriple(mapping: Mapping): string {
  */
 export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [], objectPrefixes = [],
     initialInferenceTypes = DEFAULT_INFERENCE_TYPES, labelMatch = DEFAULT_LABEL_MATCH,
-    corpus = DEFAULT_CORPUS }:
+    corpus = DEFAULT_CORPUS, groupBySpo = true, variant = "search" }:
     { queries: string[]; mappingSetIds: string[]; subjectPrefixes?: string[]; objectPrefixes?: string[];
-      initialInferenceTypes?: InferenceType[]; labelMatch?: LabelMatchMode; corpus?: CorpusMode }) {
+      initialInferenceTypes?: InferenceType[]; labelMatch?: LabelMatchMode; corpus?: CorpusMode;
+      // Collapse same-SPO mappings into one expandable row (ADR-0013/0023). Default on for a normal
+      // search; a set-detail view passes false — scoped to one set the collapse merges almost
+      // nothing yet runs an unbounded CollapsingQParser allocation that OOMs Solr on large sets.
+      groupBySpo?: boolean;
+      // Which column set to render. "search" is the default full set. "set-detail" is the
+      // single-set page: Type and Mapping set are dropped (every row shares the set — and, since the
+      // set-detail view is ungrouped, a single inference type — so both columns are constant noise)
+      // and Mapping confidence is shown in their place. (Mapping provider is hidden by default in
+      // both views — see initialState — but stays revealable via the columns menu.)
+      variant?: "search" | "set-detail" }) {
     const navigate = useNavigate();
+    const isSetDetail = variant === "set-detail";
     const [isExporting, setIsExporting] = useState(false);
 
     // View state (page, size, sort, inference-type filter, field filters) is held in the
@@ -229,6 +241,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             labelMatch,
             corpus,
             weakPredicatesKey,
+            groupBySpo,
         ],
         queryFn: () =>
             fetchMappings(
@@ -240,7 +253,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 mappingSetIds,
                 undefined,
                 inferenceTypes,
-                true, // group same-SPO mappings into one row (ADR-0013)
+                groupBySpo, // group same-SPO mappings into one row (ADR-0013); off for set-detail views
                 subjectPrefixes,
                 objectPrefixes,
                 labelMatch, // label match mode (ADR-0026)
@@ -352,9 +365,31 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         : <span className="break-all">{shared}</span>;
                 },
             },
+            // Mapping confidence, shown in every view. A same-SPO group (search view) can span sets
+            // with different confidences, so it shares the Justification/Provider "Multiple" handling;
+            // the set-detail view is ungrouped, so it collapses to the single mapping's value. No
+            // value (many mappings carry no confidence) renders as an em dash, not a fabricated number.
             {
+                id: "confidence",
+                accessorFn: (row) => row.confidence,
+                header: "Mapping confidence",
+                enableSorting: false,
+                size: 150,
+                Cell: ({ row }) => {
+                    const shared = sharedValue(row.original, (member) =>
+                        typeof member.confidence === "number" ? String(member.confidence) : "");
+                    if (shared === null) {
+                        return <span className="italic text-gray-500">Multiple</span>;
+                    }
+                    return shared === ""
+                        ? <span className="text-gray-400">—</span>
+                        : <span>{shared}</span>;
+                },
+            },
+            // Type: dropped on a set-detail page (a single set has a single inference type).
+            ...(isSetDetail ? [] : [{
                 id: "inference_type",
-                accessorFn: (row) => row.inferenceType,
+                accessorFn: (row: Mapping) => row.inferenceType,
                 header: "Type",
                 enableSorting: false,
                 size: 130,
@@ -364,7 +399,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         <InferenceTypeFilterPopover value={inferenceTypes} onChange={setInferenceTypes} />
                     </span>
                 ),
-                Cell: ({ row }) => {
+                Cell: ({ row }: { row: { original: Mapping } }) => {
                     const groupSize = row.original.groupSize ?? 1;
                     return (
                         <div className="flex flex-col gap-0.5">
@@ -379,7 +414,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         </div>
                     );
                 },
-            },
+            } as MRT_ColumnDef<Mapping>]),
             {
                 id: "mapping_provider",
                 accessorFn: (row) => row.mappingProvider,
@@ -404,38 +439,58 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         : <span className="break-all">{shared}</span>;
                 },
             },
-            {
+            // Mapping set: dropped on a set-detail page (every row belongs to the same set).
+            ...(isSetDetail ? [] : [{
                 id: "mapping_set",
-                accessorFn: (row) => row.mappingSetTitle || row.mappingSetId,
+                accessorFn: (row: Mapping) => row.mappingSetTitle || row.mappingSetId,
                 header: "Mapping set",
                 enableSorting: false,
                 size: 220,
-                Cell: ({ row }) => {
+                Cell: ({ row }: { row: { original: Mapping } }) => {
                     // One row can span several sets; show "Multiple sets" rather than a misleading single set.
                     if (sharedValue(row.original, (member) => member.mappingSetId) === null) {
                         return <span className="italic text-gray-500">Multiple sets</span>;
                     }
+                    const setId = row.original.mappingSetId;
+                    const title = row.original.mappingSetTitle;
+                    if (!setId) {
+                        return <span className="font-semibold break-words">{title || "—"}</span>;
+                    }
+                    // The set links to its detail page (/mapping-set). When there is a title, it is
+                    // the link and the id sits below as muted text; with no title the id itself is the
+                    // link. The copy button is always available and never navigates (it is a sibling
+                    // of the link, not nested in it).
                     return (
                         <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className="font-semibold break-words">{row.original.mappingSetTitle || "—"}</span>
-                            {row.original.mappingSetId && (
-                                <div className="flex items-start text-xs text-gray-500">
-                                    <span className="break-all">{row.original.mappingSetId}</span>
-                                    <CopyButton value={row.original.mappingSetId} title="Copy mapping set id" />
-                                </div>
+                            {title && (
+                                <Link to={mappingSetHref(setId)} className="font-semibold break-words text-link-default hover:underline"
+                                      title="View mapping set details">
+                                    {title}
+                                </Link>
                             )}
+                            <div className="flex items-start text-xs text-gray-500">
+                                {title
+                                    ? <span className="break-all">{setId}</span>
+                                    : <Link to={mappingSetHref(setId)} className="break-all text-link-default hover:underline"
+                                            title="View mapping set details">{setId}</Link>}
+                                <CopyButton value={setId} title="Copy mapping set id" />
+                            </div>
                         </div>
                     );
                 },
-            },
+            } as MRT_ColumnDef<Mapping>]),
         ],
         [handleFilterChange, setSorting, inferenceTypes, setInferenceTypes, initialFieldFilters,
-            weakPredicates, setWeakPredicates]
+            weakPredicates, setWeakPredicates, isSetDetail]
     );
 
     const table = useMaterialReactTable({
         columns,
         data: mappingResults.mappings,
+        // Mapping provider is hidden by default in every view (often empty, or the same for every row);
+        // enableHiding keeps it revealable via the columns button. Uncontrolled, so the user's toggle
+        // sticks.
+        initialState: { columnVisibility: { mapping_provider: false } },
         enableColumnOrdering: true,
         enableColumnFilters: false, // field filtering is driven by the per-column popovers
         enableSorting: false, // sorting is driven by the per-column sort popovers
@@ -460,7 +515,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                             <tr className="text-left text-gray-500">
                                 <th className="py-1 pr-4 font-medium">Type</th>
                                 <th className="py-1 pr-4 font-medium">Mapping justification</th>
-                                <th className="py-1 pr-4 font-medium">Mapping provider</th>
+                                <th className="py-1 pr-4 font-medium">Mapping confidence</th>
                                 <th className="py-1 pr-4 font-medium">Mapping set</th>
                                 <th className="py-1" />
                             </tr>
@@ -470,11 +525,25 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                                 <tr key={member.mappingId || index} className="border-t border-gray-200 align-top">
                                     <td className="py-1 pr-4"><InferenceTypeBadge value={member.inferenceType} /></td>
                                     <td className="py-1 pr-4 break-all">{member.mappingJustification}</td>
-                                    <td className="py-1 pr-4 break-all">{member.mappingProvider}</td>
                                     <td className="py-1 pr-4">
-                                        <div className="font-semibold break-words">{member.mappingSetTitle || "—"}</div>
-                                        {member.mappingSetId && (
-                                            <div className="text-xs text-gray-500 break-all">{member.mappingSetId}</div>
+                                        {typeof member.confidence === "number"
+                                            ? member.confidence
+                                            : <span className="text-gray-400">—</span>}
+                                    </td>
+                                    <td className="py-1 pr-4">
+                                        {member.mappingSetId ? (
+                                            <>
+                                                <Link to={mappingSetHref(member.mappingSetId)}
+                                                      className="font-semibold break-words text-link-default hover:underline"
+                                                      title="View mapping set details">
+                                                    {member.mappingSetTitle || member.mappingSetId}
+                                                </Link>
+                                                {member.mappingSetTitle && (
+                                                    <div className="text-xs text-gray-500 break-all">{member.mappingSetId}</div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="font-semibold break-words">{member.mappingSetTitle || "—"}</div>
                                         )}
                                     </td>
                                     <td className="py-1">

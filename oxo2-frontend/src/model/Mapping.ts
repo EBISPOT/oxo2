@@ -60,6 +60,7 @@ export interface InferredMappingResponse {
     mapping_justification?: string;
     mapping_tool?: string;
     mapping_set_id?: string;
+    mapping_id?: string;
     object_iri?: string;
     object_id?: string;
     object_label?: string;
@@ -98,6 +99,10 @@ export interface InferredMapping {
     mappingJustification?: string;
     mappingTool?: string;
     mappingSetId?: string;
+    // The premise's own mapping_id (present in the precomputed asserted_mappings blob). The blob
+    // carries no confidence, but this id resolves the asserted mapping's own Solr doc, which does —
+    // see fetchConfidenceByMappingIds.
+    mappingId?: string;
     objectIri?: string;
     objectId?: string;
     objectLabel?: string;

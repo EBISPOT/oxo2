@@ -5,6 +5,10 @@ import {
     type MRT_SortingState,
     useMaterialReactTable,
 } from "material-react-table";
+import {useQuery} from "@tanstack/react-query";
+import {Link} from "react-router-dom";
+import {mappingSetHref} from "../../util/mappingSetUrl";
+import {fetchConfidenceByMappingIds} from "./MappingResultsSlice";
 import {InferredMapping, Mapping} from "../../model/Mapping.ts";
 import {EntityRefCell} from "../../components/mapping/EntityRefCell";
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
@@ -47,6 +51,22 @@ const compareValues = (left: unknown, right: unknown, descending?: boolean): num
  */
 function InferredMappings({ mapping }: { mapping: Mapping }) {
     const [sorting, setSorting] = useState<MRT_SortingState>([]);
+
+    // Confidence is not in the precomputed premise blob (ADR-0028), but each premise carries its
+    // mapping_id, and the asserted mapping's own doc carries confidence. Resolve them all in ONE
+    // batched search (fetchConfidenceByMappingIds) and index by mapping_id for the column below.
+    const premiseIds = useMemo(
+        () => (mapping.assertedMappings ?? [])
+            .map((premise) => premise.mappingId)
+            .filter((id): id is string => !!id),
+        [mapping.assertedMappings]
+    );
+    const { data: confidenceById } = useQuery({
+        queryKey: ["assertedConfidence", premiseIds],
+        queryFn: () => fetchConfidenceByMappingIds(premiseIds),
+        enabled: premiseIds.length > 0,
+        staleTime: 5 * 60 * 1000,
+    });
 
     // The sort popovers compute the full next sort list themselves (single key per column
     // group, multi-column across groups); we just store it and re-sort below.
@@ -131,8 +151,57 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                     />
                 ),
             },
+            // Confidence, resolved by the premise's mapping_id via the batched lookup. No value (many
+            // asserted sets carry none) renders as an em dash, never a fabricated number.
+            {
+                id: "confidence",
+                accessorFn: (row) => row.mappingId,
+                header: "Mapping confidence",
+                size: 150,
+                Cell: ({ row }) => {
+                    const mappingId = row.original.mappingId;
+                    const confidence = mappingId ? confidenceById?.get(mappingId) : undefined;
+                    return typeof confidence === "number"
+                        ? <span>{confidence}</span>
+                        : <span className="text-gray-400">—</span>;
+                },
+            },
+            // The premise's mapping justification, carried directly in the precomputed blob (no lookup).
+            {
+                id: "mappingJustification",
+                accessorFn: (row) => row.mappingJustification,
+                header: "Mapping justification",
+                size: 200,
+                Cell: ({ row }) => (
+                    <span className="break-all">{row.original.mappingJustification}</span>
+                ),
+            },
+            // The premise's source set, linking to that set's detail page. An asserted premise only
+            // carries its mapping_set_id (no title in the precomputed blob), so the id itself is the
+            // link text — same id-only rendering the results table falls back to when a set has no title.
+            {
+                id: "mappingSet",
+                accessorFn: (row) => row.mappingSetId,
+                header: "Mapping set",
+                size: 260,
+                Cell: ({ row }) => {
+                    const setId = row.original.mappingSetId;
+                    if (!setId) {
+                        return <span className="text-gray-400">—</span>;
+                    }
+                    return (
+                        <Link
+                            to={mappingSetHref(setId)}
+                            className="break-all text-link-default hover:underline"
+                            title="View mapping set details"
+                        >
+                            {setId}
+                        </Link>
+                    );
+                },
+            },
         ],
-        [handleSortChange]
+        [handleSortChange, confidenceById]
     );
 
     const assertedMappingsTable = useMaterialReactTable({

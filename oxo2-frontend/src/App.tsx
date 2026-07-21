@@ -7,6 +7,7 @@ import Header from "./components/common/Header";
 import Home from "./pages/home/Home";
 import MappingResults from "./pages/results/MappingResults";
 import MappingDetailsPage from "./pages/results/MappingDetailsPage";
+import MappingSetPage from "./pages/results/MappingSetPage";
 import InferencesPage from "./pages/results/InferencesPage";
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -26,6 +27,9 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/search/:curies" element={<MappingResults /> } />
                 <Route path="/mapping/:id" element={<MappingDetailsPage /> } />
+                {/* General mapping-set detail surface: the set id is a full IRI carried in ?id=
+                    (a path variable would need encoded slashes Tomcat rejects). */}
+                <Route path="/mapping-set" element={<MappingSetPage /> } />
                 {/* Resolvable inferred-set surface (ADR-0012): /inferences = cross-set SSSOM set;
                     /inferences/<encoded source id> = a per-source inferred set. */}
                 <Route path="/inferences" element={<InferencesPage /> } />

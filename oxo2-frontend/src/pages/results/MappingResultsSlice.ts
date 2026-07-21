@@ -103,6 +103,7 @@ export function fromAssertedMappingString(assertedMappingsAsString?: string| und
         mappingJustification: item.mapping_justification,
         mappingTool: item.mapping_tool,
         mappingSetId: item.mapping_set_id,
+        mappingId: item.mapping_id,
         objectIri: item.object_iri,
         objectId: item.object_id || '',
         objectLabel: item.object_label,
@@ -217,7 +218,11 @@ export function fromMappingResponse(item: MappingResponse): Mapping {
                 authorId: item.author_id || '',
                 authorLabel: item.author_label || '',
                 comment: item.comment || '',
-                confidence: item.confidence || 1,
+                // No default: a mapping without a stored confidence has none, so leave it undefined.
+                // Defaulting to 1 fabricated full confidence for every unscored mapping (and `|| 1`
+                // would even rewrite a genuine 0), which surfaced as a bogus "1" in the confidence
+                // column and on the detail page.
+                confidence: item.confidence,
                 creatorId: item.creator_id || '',
                 creatorLabel: item.creator_label || '',
                 curationRule: item.curation_rule || '',
@@ -305,7 +310,7 @@ export function buildSearchRequest(queries: string[], page: number, pageSize: nu
         size: pageSize,
         queryFields: [],
         fieldList: ['mapping_set_id', 'mapping_set_title', 'subject_id', 'subject_label', 'predicate_id', 'predicate_label',
-            'predicate_modifier', 'object_id', 'object_label', 'mapping_justification', 'mapping_provider', 'inference_type', 'asserted_mappings', 'explanation'],
+            'predicate_modifier', 'object_id', 'object_label', 'mapping_justification', 'mapping_provider', 'confidence', 'inference_type', 'asserted_mappings', 'explanation'],
         columnFilters: columnFilters,
         sortedFields: sorting,
         ...(mappingSetIds && mappingSetIds.length > 0 ? { mappingSetIds } : {}),
@@ -338,6 +343,42 @@ export async function fetchMappingById(mappingId: string): Promise<Mapping | nul
         }
         throw error;
     }
+}
+
+/**
+ * Batched confidence lookup for asserted premises (the Asserted Mappings table). A premise in the
+ * precomputed asserted_mappings blob carries its mapping_id but not its confidence — the blob predates
+ * confidence (ADR-0028) — yet the asserted mapping's own Solr doc does carry it. Rather than one
+ * by-id fetch per premise, this resolves them ALL in a single search: queryFields=[MAPPING_ID] ORs the
+ * ids together (mapping_id is an untokenized UUIDField, so each matches its doc exactly), returning
+ * only mapping_id + confidence. The result maps mapping_id → confidence, holding only the premises
+ * that actually have a value (the rest render as an em dash, never a fabricated number).
+ */
+export async function fetchConfidenceByMappingIds(mappingIds: string[]): Promise<Map<string, number>> {
+    const ids = Array.from(new Set(mappingIds.filter((id): id is string => !!id)));
+    if (ids.length === 0) {
+        return new Map();
+    }
+    const request: SearchRequest = {
+        queries: ids,
+        // queryFields takes MappingEnum names (not the snake_case Solr names fieldList uses); MAPPING_ID
+        // pins the OR'd terms to the mapping_id field via edismax qf.
+        queryFields: ['MAPPING_ID'],
+        fieldList: ['mapping_id', 'confidence'],
+        page: 0,
+        size: ids.length,
+        columnFilters: [],
+        sortedFields: [],
+    };
+    const response = await post<SearchRequest, MappingSearchResponse>(
+        '/api/v2/mappings/search', request);
+    const confidenceById = new Map<string, number>();
+    for (const row of response.mappings?.content ?? []) {
+        if (row.mapping_id && typeof row.confidence === 'number') {
+            confidenceById.set(row.mapping_id, row.confidence);
+        }
+    }
+    return confidenceById;
 }
 
 export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10, columnFilters: unknown[],
