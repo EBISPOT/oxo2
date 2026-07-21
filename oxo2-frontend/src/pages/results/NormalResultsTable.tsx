@@ -386,6 +386,27 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         : <span>{shared}</span>;
                 },
             },
+            // Distance: hops behind the mapping — 1 for asserted, the chain length for an inference.
+            // A same-SPO group can mix an asserted row with inferences of other lengths, so it shares
+            // the confidence column's "Multiple" handling; sortable via the toolbar's "Shortest
+            // distance" order, not a per-column popover.
+            {
+                id: "distance",
+                accessorFn: (row) => row.distance,
+                header: "Distance",
+                enableSorting: false,
+                size: 110,
+                Cell: ({ row }) => {
+                    const shared = sharedValue(row.original, (member) =>
+                        typeof member.distance === "number" ? String(member.distance) : "");
+                    if (shared === null) {
+                        return <span className="italic text-gray-500">Multiple</span>;
+                    }
+                    return shared === ""
+                        ? <span className="text-gray-400">—</span>
+                        : <span>{shared}</span>;
+                },
+            },
             // Type: dropped on a set-detail page (a single set has a single inference type).
             ...(isSetDetail ? [] : [{
                 id: "inference_type",
@@ -516,6 +537,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                                 <th className="py-1 pr-4 font-medium">Type</th>
                                 <th className="py-1 pr-4 font-medium">Mapping justification</th>
                                 <th className="py-1 pr-4 font-medium">Mapping confidence</th>
+                                <th className="py-1 pr-4 font-medium">Distance</th>
                                 <th className="py-1 pr-4 font-medium">Mapping set</th>
                                 <th className="py-1" />
                             </tr>
@@ -528,6 +550,11 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                                     <td className="py-1 pr-4">
                                         {typeof member.confidence === "number"
                                             ? member.confidence
+                                            : <span className="text-gray-400">—</span>}
+                                    </td>
+                                    <td className="py-1 pr-4">
+                                        {typeof member.distance === "number"
+                                            ? member.distance
                                             : <span className="text-gray-400">—</span>}
                                     </td>
                                     <td className="py-1 pr-4">

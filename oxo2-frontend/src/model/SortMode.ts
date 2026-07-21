@@ -9,21 +9,24 @@ import type { MRT_SortingState } from "material-react-table";
 // it. The search form deliberately has no order control (ADR-0036): ordering is a decision made
 // while looking at results.
 
-export type SortMode = 'RELEVANCE' | 'CONFIDENCE' | 'NEWEST';
+export type SortMode = 'RELEVANCE' | 'CONFIDENCE' | 'NEWEST' | 'DISTANCE';
 
 export const SORT_MODE_LABELS: Record<SortMode, string> = {
     RELEVANCE: 'Best match',
     CONFIDENCE: 'Highest confidence',
     NEWEST: 'Most recent',
+    DISTANCE: 'Shortest distance',
 };
 
-export const SORT_MODE_ORDER: SortMode[] = ['RELEVANCE', 'CONFIDENCE', 'NEWEST'];
+export const SORT_MODE_ORDER: SortMode[] = ['RELEVANCE', 'CONFIDENCE', 'NEWEST', 'DISTANCE'];
 
 /** The sorting state each mode stands for. Best match is the absence of a sort. */
 const SORT_MODE_FIELDS: Record<SortMode, MRT_SortingState> = {
     RELEVANCE: [],
     CONFIDENCE: [{ id: 'confidence', desc: true }],
     NEWEST: [{ id: 'mapping_date', desc: true }],
+    // Ascending: an asserted mapping (distance 1) before ever-longer inference chains.
+    DISTANCE: [{ id: 'distance', desc: false }],
 };
 
 export function sortModeToSorting(mode: SortMode): MRT_SortingState {

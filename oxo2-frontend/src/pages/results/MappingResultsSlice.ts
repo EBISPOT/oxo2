@@ -274,6 +274,9 @@ export function fromMappingResponse(item: MappingResponse): Mapping {
                 assertedMappings: fromAssertedMappingString(item.asserted_mappings),
                 explanation: fromExplanationString(item.explanation),
                 inferenceType: asInferenceType(item.inference_type),
+                // No default: like confidence, an absent distance stays undefined rather than
+                // being fabricated (the ranking's "missing reads as one hop" is a backend concern).
+                distance: item.distance,
                 ...fromGroupMembersString(item.group_members),
     };
 }
@@ -310,7 +313,7 @@ export function buildSearchRequest(queries: string[], page: number, pageSize: nu
         size: pageSize,
         queryFields: [],
         fieldList: ['mapping_set_id', 'mapping_set_title', 'subject_id', 'subject_label', 'predicate_id', 'predicate_label',
-            'predicate_modifier', 'object_id', 'object_label', 'mapping_justification', 'mapping_provider', 'confidence', 'inference_type', 'asserted_mappings', 'explanation'],
+            'predicate_modifier', 'object_id', 'object_label', 'mapping_justification', 'mapping_provider', 'confidence', 'distance', 'inference_type', 'asserted_mappings', 'explanation'],
         columnFilters: columnFilters,
         sortedFields: sorting,
         ...(mappingSetIds && mappingSetIds.length > 0 ? { mappingSetIds } : {}),
