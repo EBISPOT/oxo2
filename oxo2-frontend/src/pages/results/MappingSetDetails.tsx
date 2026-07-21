@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { fetchMappingSetById } from "./MappingSetsSlice";
 import { NormalResultsTable } from "./NormalResultsTable";
 import { INFERENCE_TYPE_ORDER } from "../../model/InferenceType";
@@ -16,6 +17,13 @@ import { InferenceTypeBadge } from "../../components/mapping/InferenceTypeBadge"
  * 512 MB Solr this way). Ungrouped, the set-detail view is a plain paged scan.
  */
 export function MappingSetDetails({ mappingSetId }: { mappingSetId: string }) {
+    const navigate = useNavigate();
+    // window.history.state.idx is React Router's position in the history stack; 0 means this page was
+    // reached directly (shared link, bookmark, a /inferences URL) with nothing to go back to. The set
+    // page can be reached from search results or from a mapping's detail page, so "Back" (navigate -1)
+    // returns to whichever it was rather than assuming "results".
+    const hasInAppHistory = (window.history.state?.idx ?? 0) > 0;
+
     const { data: mappingSet, isLoading, isError } = useQuery({
         queryKey: ["mappingSetById", mappingSetId],
         queryFn: () => fetchMappingSetById(mappingSetId),
@@ -24,6 +32,14 @@ export function MappingSetDetails({ mappingSetId }: { mappingSetId: string }) {
 
     return (
         <div className="px-4 py-6 max-w-screen-2xl mx-auto">
+            <div className="flex justify-end mb-4">
+                <button
+                    className="button-primary text-base font-bold px-4 py-1"
+                    onClick={() => hasInAppHistory ? navigate(-1) : navigate("/")}
+                >
+                    {hasInAppHistory ? "Back" : "New search"}
+                </button>
+            </div>
             {isLoading && (
                 <div className="flex justify-center p-8">
                     <div className="spinner-default w-10 h-10 animate-spin" role="status">
