@@ -515,7 +515,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                             <tr className="text-left text-gray-500">
                                 <th className="py-1 pr-4 font-medium">Type</th>
                                 <th className="py-1 pr-4 font-medium">Mapping justification</th>
-                                <th className="py-1 pr-4 font-medium">Mapping provider</th>
+                                <th className="py-1 pr-4 font-medium">Mapping confidence</th>
                                 <th className="py-1 pr-4 font-medium">Mapping set</th>
                                 <th className="py-1" />
                             </tr>
@@ -525,7 +525,11 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                                 <tr key={member.mappingId || index} className="border-t border-gray-200 align-top">
                                     <td className="py-1 pr-4"><InferenceTypeBadge value={member.inferenceType} /></td>
                                     <td className="py-1 pr-4 break-all">{member.mappingJustification}</td>
-                                    <td className="py-1 pr-4 break-all">{member.mappingProvider}</td>
+                                    <td className="py-1 pr-4">
+                                        {typeof member.confidence === "number"
+                                            ? member.confidence
+                                            : <span className="text-gray-400">—</span>}
+                                    </td>
                                     <td className="py-1 pr-4">
                                         {member.mappingSetId ? (
                                             <>
