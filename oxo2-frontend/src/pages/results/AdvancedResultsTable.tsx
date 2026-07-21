@@ -251,6 +251,19 @@ export function AdvancedResultsTable({
         onColumnVisibilityChange: setColumnVisibility,
         enableHiding: true,
         enableTopToolbar: true, // Show toolbar so user can access column visibility menu
+        renderTopToolbarCustomActions: () => (
+            <div className="flex items-center">
+                {!isLoading && !isError && (
+                    <span className="text-sm text-tertiary">
+                        {/* Advanced search never groups (groupBySpo stays off), so totalElements
+                            is always a plain mapping count. */}
+                        {(mappingResults?.totalElements ?? 0).toLocaleString()}
+                        {' '}
+                        {mappingResults?.totalElements === 1 ? "mapping" : "mappings"}
+                    </span>
+                )}
+            </div>
+        ),
         muiTableBodyRowProps: ({ row }) => ({
             onClick: () => {
                 const mapping = row.original;

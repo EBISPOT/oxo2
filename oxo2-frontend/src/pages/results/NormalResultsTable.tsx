@@ -666,9 +666,16 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         )}
                     </select>
                 </label>
-                {(subjectPrefixes.length > 0 || objectPrefixes.length > 0) && (
+                {!isLoading && !isError && (
                     <span className="text-sm text-tertiary">
-                        {(mappingResults?.totalElements ?? 0).toLocaleString()} mappings
+                        {/* totalElements is the collapsed spo_key group count when grouping is on
+                            (ADR-0023) and the raw mapping count when it is off (set-detail), so the
+                            noun has to follow the mode. */}
+                        {(mappingResults?.totalElements ?? 0).toLocaleString()}
+                        {' '}
+                        {groupBySpo
+                            ? (mappingResults?.totalElements === 1 ? "mapping group" : "mapping groups")
+                            : (mappingResults?.totalElements === 1 ? "mapping" : "mappings")}
                         {subjectPrefixes.length > 0 ? ` · from ${subjectPrefixes.join(", ")}` : ""}
                         {objectPrefixes.length > 0 ? ` → ${objectPrefixes.join(", ")}` : ""}
                     </span>
