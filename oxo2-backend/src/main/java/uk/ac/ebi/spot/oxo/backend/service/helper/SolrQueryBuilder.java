@@ -40,7 +40,8 @@ public class SolrQueryBuilder {
     // than an ontology's own skos:closeMatch cross-reference.
     //
     //   1. Provenance    ontology-asserted > curator-asserted > inferred (fewer hops first)
-    //   2. Predicate     strict identity > exactMatch > closeMatch > broad/narrow > everything else
+    //   2. Predicate     strict identity > exactMatch > crossSpecies-exact > closeMatch >
+    //                    broad/narrow > everything else
     //   3. Curation      manually curated > everything else
     //   4. Confidence    the mapping's own confidence, when it declares one
     //
@@ -60,11 +61,15 @@ public class SolrQueryBuilder {
     private static final double PREDICATE_STRICT_IDENTITY = 2.0;
     /** Tier 2. skos:exactMatch — interchangeable in practice, but not logical identity (ADR-0016). */
     private static final double PREDICATE_WEAK_IDENTITY = 1.7;
+    /** Tier 2. semapv:crossSpeciesExactMatch — an exact match asserted across a species boundary, so
+     *  just below a same-context skos:exactMatch. Its broad/narrow siblings stay at the floor. */
+    private static final double PREDICATE_CROSS_SPECIES_EXACT = 1.6;
     /** Tier 2. skos:closeMatch. */
     private static final double PREDICATE_CLOSE = 1.4;
     /** Tier 2. skos:broadMatch / skos:narrowMatch — a hierarchy edge, not a mapping between equals. */
     private static final double PREDICATE_HIERARCHY = 1.2;
-    /** Tier 2 floor. skos:relatedMatch, oboInOwl:hasDbXref, the crossSpecies predicates, anything else. */
+    /** Tier 2 floor. skos:relatedMatch, oboInOwl:hasDbXref, the crossSpecies broad/narrow predicates,
+     *  anything else. */
     private static final double PREDICATE_OTHER = 1.0;
 
     /** Tier 3. semapv:ManualMappingCuration — a human decided this mapping. */
@@ -89,6 +94,8 @@ public class SolrQueryBuilder {
                 "http://www.w3.org/2002/07/owl#equivalentProperty",
                 "http://www.w3.org/2002/07/owl#sameAs"));
         byStrength.put(PREDICATE_WEAK_IDENTITY, List.of("http://www.w3.org/2004/02/skos/core#exactMatch"));
+        byStrength.put(PREDICATE_CROSS_SPECIES_EXACT,
+                List.of("https://w3id.org/semapv/vocab/crossSpeciesExactMatch"));
         byStrength.put(PREDICATE_CLOSE, List.of("http://www.w3.org/2004/02/skos/core#closeMatch"));
         byStrength.put(PREDICATE_HIERARCHY, List.of(
                 "http://www.w3.org/2004/02/skos/core#broadMatch",

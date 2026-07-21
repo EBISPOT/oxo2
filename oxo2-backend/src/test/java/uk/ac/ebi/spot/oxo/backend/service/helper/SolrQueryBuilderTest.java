@@ -652,11 +652,13 @@ class SolrQueryBuilderTest {
                 // Inferred: 100, divided by 5 per extra hop; a missing distance reads as one hop.
                 .contains("div(100,pow(5,sub(def(" + MappingEnum.DISTANCE.getField() + ",1),1)))");
 
-        // Tier 2: strict identity (2) > exactMatch (1.7) > closeMatch (1.4) > hierarchy (1.2) > 1.
+        // Tier 2: strict identity (2) > exactMatch (1.7) > crossSpecies exact (1.6) > closeMatch (1.4)
+        //         > hierarchy (1.2) > 1.
         String predicate = MappingEnum.PREDICATE_IRI.getField();
         assertThat(boost)
                 .contains("mul(2,sum(termfreq(" + predicate + ",'http://www.w3.org/2002/07/owl#equivalentClass')")
                 .contains("mul(1.7,termfreq(" + predicate + ",'http://www.w3.org/2004/02/skos/core#exactMatch'))")
+                .contains("mul(1.6,termfreq(" + predicate + ",'https://w3id.org/semapv/vocab/crossSpeciesExactMatch'))")
                 .contains("mul(1.4,termfreq(" + predicate + ",'http://www.w3.org/2004/02/skos/core#closeMatch'))")
                 .contains("mul(1.2,sum(termfreq(" + predicate + ",'http://www.w3.org/2004/02/skos/core#broadMatch')");
 
