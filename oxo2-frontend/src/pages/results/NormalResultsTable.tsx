@@ -463,7 +463,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                     return (
                         <div className="flex flex-col gap-0.5 min-w-0">
                             {title && (
-                                <Link to={mappingSetHref(setId)} className="font-semibold break-words link-default"
+                                <Link to={mappingSetHref(setId)} className="font-semibold break-words text-link-default hover:underline"
                                       title="View mapping set details">
                                     {title}
                                 </Link>
@@ -471,7 +471,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                             <div className="flex items-start text-xs text-gray-500">
                                 {title
                                     ? <span className="break-all">{setId}</span>
-                                    : <Link to={mappingSetHref(setId)} className="break-all link-default"
+                                    : <Link to={mappingSetHref(setId)} className="break-all text-link-default hover:underline"
                                             title="View mapping set details">{setId}</Link>}
                                 <CopyButton value={setId} title="Copy mapping set id" />
                             </div>
@@ -530,7 +530,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                                         {member.mappingSetId ? (
                                             <>
                                                 <Link to={mappingSetHref(member.mappingSetId)}
-                                                      className="font-semibold break-words link-default"
+                                                      className="font-semibold break-words text-link-default hover:underline"
                                                       title="View mapping set details">
                                                     {member.mappingSetTitle || member.mappingSetId}
                                                 </Link>

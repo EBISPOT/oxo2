@@ -174,7 +174,7 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                         <span className="font-semibold">Mapping Set ID:</span>{" "}
                         <Link
                             to={mappingSetHref(mapping.mappingSetId)}
-                            className="ml-2 link-default break-all"
+                            className="ml-2 text-link-default hover:underline break-all"
                             title="View mapping set details"
                         >
                             {mapping.mappingSetId}
