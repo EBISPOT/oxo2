@@ -65,6 +65,53 @@ class PrefixIriOverridesTest {
     }
 
     /**
+     * ENSEMBL sets disagree three ways — the EBI RDF platform stem, the Ensembl-site https stem, and
+     * its http variant — all keyed to one {@code ENSEMBL:} CURIE. The override pins the Ensembl-site
+     * https form so one gene never splits into two Nemo nodes.
+     */
+    @Test
+    void ensemblOverrideCanonicalisesEveryAliasStem() {
+        assertEquals("https://www.ensembl.org/id/", PrefixIriOverrides.canonicalStem("ENSEMBL"));
+        assertEquals("https://www.ensembl.org/id/ENSG00000186104",
+                PrefixIriOverrides.canonicalizeIri("http://rdf.ebi.ac.uk/resource/ensembl/ENSG00000186104"));
+        assertEquals("https://www.ensembl.org/id/ENSG00000186104",
+                PrefixIriOverrides.canonicalizeIri("http://www.ensembl.org/id/ENSG00000186104"));
+        // A set declaring the EBI RDF stem must not win over the override.
+        CurieMap ebiRdf = new CurieMap("ENSEMBL:http://rdf.ebi.ac.uk/resource/ensembl/");
+        assertEquals("https://www.ensembl.org/id/ENSG00000186104",
+                new EntityReference("ENSEMBL:ENSG00000186104").toUri(ebiRdf).orElseThrow().getDataAsString());
+    }
+
+    /**
+     * NCBIGENE splits between NCBI's own resolver and UniProt's PURL for the same gene id; the
+     * canonical is the NCBI form (dominant and registry-standard).
+     */
+    @Test
+    void ncbigeneOverrideFoldsTheUniprotGeneidAlias() {
+        assertEquals("https://www.ncbi.nlm.nih.gov/gene/", PrefixIriOverrides.canonicalStem("NCBIGENE"));
+        assertEquals("https://www.ncbi.nlm.nih.gov/gene/920",
+                PrefixIriOverrides.canonicalizeIri("http://purl.uniprot.org/geneid/920"));
+    }
+
+    /**
+     * CHEBI's dominant emitted form ({@code obo/chebi/}) is the non-canonical namespace spelling; the
+     * override pins the proper OBO term PURL ({@code obo/CHEBI_}) regardless, including for the
+     * EBI search-resolver alias whose stem ends in {@code CHEBI:}.
+     */
+    @Test
+    void chebiOverridePinsTheOboTermPurlOverTheDominantNamespaceForm() {
+        assertEquals("http://purl.obolibrary.org/obo/CHEBI_", PrefixIriOverrides.canonicalStem("CHEBI"));
+        assertEquals("http://purl.obolibrary.org/obo/CHEBI_15377",
+                PrefixIriOverrides.canonicalizeIri("http://purl.obolibrary.org/obo/chebi/15377"));
+        assertEquals("http://purl.obolibrary.org/obo/CHEBI_15377",
+                PrefixIriOverrides.canonicalizeIri("http://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:15377"));
+        // A set declaring the namespace form must lose to the override for CURIE inputs too.
+        CurieMap namespaceForm = new CurieMap("CHEBI:http://purl.obolibrary.org/obo/chebi/");
+        assertEquals("http://purl.obolibrary.org/obo/CHEBI_15377",
+                new EntityReference("CHEBI:15377").toUri(namespaceForm).orElseThrow().getDataAsString());
+    }
+
+    /**
      * OMIM 'MIM:' and OMIMPS 'MIM:PS' overlap as string prefixes; longest-alias-wins must keep them
      * disjoint so a phenotypic-series IRI is never mis-canonicalised as a plain OMIM entry.
      */

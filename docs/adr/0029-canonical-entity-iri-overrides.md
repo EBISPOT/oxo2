@@ -42,7 +42,25 @@ prefixes: `MESH`, `UMLS`, `SCTID`, `ICD10CM`, `MEDGEN`, `MEDDRA`, `OMIM`, `OMIMP
 `MA`, `EMAPA`, `SO`. The canonical stem for each is its identity IRI (the OBO PURL for OBO-native
 prefixes; the standard registry IRI otherwise — e.g. `MESH → http://id.nlm.nih.gov/mesh/`,
 `SCTID → http://snomed.info/id/`), chosen to match the form the loaded corpus already uses where that
-is known. As defence-in-depth, the explanation stage (`ExplainInferredMappings`) detects any
+is known.
+
+`ENSEMBL`, `NCBIGENE` and `CHEBI` were added later (2026-07-21) once they bit — found by scanning the
+materialised `curie_map`s and then confirming, against emitted usage in the asserted N-Quads, that
+both stems actually reach the data (a check that pared 58 declared-divergent prefixes down to the ~9
+that genuinely split; the rest declare inconsistently but only ever emit one form). The three:
+
+- `ENSEMBL` splits three ways — the EBI RDF platform stem `http://rdf.ebi.ac.uk/resource/ensembl/`
+  (dominant by row count), the Ensembl-site `https://www.ensembl.org/id/`, and its `http://` variant.
+  Canonical is `https://www.ensembl.org/id/`: the standard registry (Bioregistry) IRI and OxO2's own
+  bare-set fallback, chosen over the corpus-dominant EBI RDF stem so bare and future sets converge on
+  it rather than on an EBI-internal resolver namespace.
+- `NCBIGENE` splits between NCBI's own `https://www.ncbi.nlm.nih.gov/gene/` and UniProt's PURL for the
+  same gene id `http://purl.uniprot.org/geneid/`. Canonical is the NCBI form — both dominant and
+  registry-standard, so no tension.
+- `CHEBI` is the case where the *dominant* emitted form is the wrong one: `http://purl.obolibrary.org/obo/chebi/`
+  (the ontology-namespace spelling, ~5x the correct form) versus the proper OBO term PURL
+  `http://purl.obolibrary.org/obo/CHEBI_`. Canonical is the OBO PURL regardless of count — the
+  OBO-native identity rule — with the EBI search-resolver stem folded in as a third alias. As defence-in-depth, the explanation stage (`ExplainInferredMappings`) detects any
 explanation whose folded S-P-O restates an ancestor and logs it with the prefix to add, retiring the
 prior assumption that "nmo never emits a cycle".
 

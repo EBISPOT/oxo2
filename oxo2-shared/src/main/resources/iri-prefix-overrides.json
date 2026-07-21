@@ -51,5 +51,17 @@
   "SO": {
     "canonical": "http://purl.obolibrary.org/obo/SO_",
     "aliases": ["http://www.sequenceontology.org/browser/current_svn/term/SO:"]
+  },
+  "ENSEMBL": {
+    "canonical": "https://www.ensembl.org/id/",
+    "aliases": ["http://rdf.ebi.ac.uk/resource/ensembl/", "http://www.ensembl.org/id/"]
+  },
+  "NCBIGENE": {
+    "canonical": "https://www.ncbi.nlm.nih.gov/gene/",
+    "aliases": ["http://purl.uniprot.org/geneid/"]
+  },
+  "CHEBI": {
+    "canonical": "http://purl.obolibrary.org/obo/CHEBI_",
+    "aliases": ["http://purl.obolibrary.org/obo/chebi/", "http://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:"]
   }
 }
