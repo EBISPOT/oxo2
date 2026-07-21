@@ -1,6 +1,7 @@
 import React, {ReactNode, useState} from "react";
 import {InferredMapping, Mapping, MappingFields} from "../../model/Mapping";
-import {useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
+import {mappingSetHref} from "../../util/mappingSetUrl";
 import {MappingItem} from "../../components/mapping/MappingItem";
 import {ChevronDownIcon, ChevronUpIcon} from "@heroicons/react/24/solid";
 import InferredMappings from "./InferredMappings.tsx";
@@ -168,7 +169,18 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                     MappingFields.mappingSetVersion
                 ])}
             >
-                <LabeledValue label="Mapping Set ID" value={mapping.mappingSetId} />
+                {mapping.mappingSetId && (
+                    <div className="mb-2">
+                        <span className="font-semibold">Mapping Set ID:</span>{" "}
+                        <Link
+                            to={mappingSetHref(mapping.mappingSetId)}
+                            className="ml-2 link-default break-all"
+                            title="View mapping set details"
+                        >
+                            {mapping.mappingSetId}
+                        </Link>
+                    </div>
+                )}
                 <LabeledValue label="Mapping Set Title" value={mapping.mappingSetTitle} />
                 <LabeledValue label="Mapping Set Description" value={mapping.mappingSetDescription} />
                 <LabeledValue label="Mapping Set Source" value={mapping.mappingSetSource} />

@@ -217,7 +217,11 @@ export function fromMappingResponse(item: MappingResponse): Mapping {
                 authorId: item.author_id || '',
                 authorLabel: item.author_label || '',
                 comment: item.comment || '',
-                confidence: item.confidence || 1,
+                // No default: a mapping without a stored confidence has none, so leave it undefined.
+                // Defaulting to 1 fabricated full confidence for every unscored mapping (and `|| 1`
+                // would even rewrite a genuine 0), which surfaced as a bogus "1" in the confidence
+                // column and on the detail page.
+                confidence: item.confidence,
                 creatorId: item.creator_id || '',
                 creatorLabel: item.creator_label || '',
                 curationRule: item.curation_rule || '',
@@ -305,7 +309,7 @@ export function buildSearchRequest(queries: string[], page: number, pageSize: nu
         size: pageSize,
         queryFields: [],
         fieldList: ['mapping_set_id', 'mapping_set_title', 'subject_id', 'subject_label', 'predicate_id', 'predicate_label',
-            'predicate_modifier', 'object_id', 'object_label', 'mapping_justification', 'mapping_provider', 'inference_type', 'asserted_mappings', 'explanation'],
+            'predicate_modifier', 'object_id', 'object_label', 'mapping_justification', 'mapping_provider', 'confidence', 'inference_type', 'asserted_mappings', 'explanation'],
         columnFilters: columnFilters,
         sortedFields: sorting,
         ...(mappingSetIds && mappingSetIds.length > 0 ? { mappingSetIds } : {}),
