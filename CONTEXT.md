@@ -268,6 +268,16 @@ non-default choice. The Best match / confidence / recency trio is a toolbar cont
 table writing the same `?sort` the column popovers write. A new search option must join one of the
 three groups and add its summary hint. See
 [ADR-0036](docs/adr/0036-search-form-options-grouped-by-intent.md). Affects `oxo2-frontend` only.
+- **Ontology sets carry a promoted prefix and name; the picker splits by category** — OLS extracts put
+the ontology's CURIE prefix and display name in the SSSOM `other` bag, and the dataload promotes them to
+discrete `prefix` / `ontology` fields on `oxo2-mappingsets` (serialize-only accessors on `MappingSet`,
+derived from `other`, which is kept). With `mapping_set_category` ([ADR-0027](docs/adr/0027-config-driven-mapping-set-category.md))
+now also on `MappingSetSummary`, the search set-picker renders two tables — curated sets (plus the
+uncategorised inferences set) and a lean Ontologies table (Ontology + Prefix). Populating the two fields
+needs a reindex; the category split works against the current index. See
+[ADR-0038](docs/adr/0038-promote-ontology-prefix-from-other-block.md). Affects `oxo2-shared`
+(`MappingSet`, `MappingConstants`/`MappingSetConstants`), `oxo2-dataload` (`oxo2-mappingsets` schema),
+`oxo2-backend` (`MappingSetSummary`, `MappingSetController`), and `oxo2-frontend` (`MappingSetSelector`).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **The dataload is resumable from a chosen (sub)stage** — parameterised by `START_STAGE` (default

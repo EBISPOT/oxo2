@@ -41,7 +41,8 @@ public class MappingSetController {
     private static final String TITLE_SORT_FIELD = MAPPING_SET_TITLE + "_str";
     private static final String[] SUMMARY_FIELDS = {
             MAPPING_SET_ID, MAPPING_SET_TITLE, MAPPING_SET_DESCRIPTION,
-            CREATOR_LABEL, MAPPING_PROVIDER, INFERENCE_TYPE, MAPPING_SET_SOURCE
+            CREATOR_LABEL, MAPPING_PROVIDER, INFERENCE_TYPE, MAPPING_SET_SOURCE,
+            MAPPING_SET_CATEGORY, PREFIX, ONTOLOGY
     };
 
     @Autowired
@@ -129,7 +130,10 @@ public class MappingSetController {
                 asStringList(doc.getFieldValues(CREATOR_LABEL)),
                 asString(doc.getFieldValue(MAPPING_PROVIDER)),
                 asString(doc.getFieldValue(INFERENCE_TYPE)),
-                asStringList(doc.getFieldValues(MAPPING_SET_SOURCE))
+                asStringList(doc.getFieldValues(MAPPING_SET_SOURCE)),
+                asString(doc.getFieldValue(MAPPING_SET_CATEGORY)),
+                asString(doc.getFieldValue(PREFIX)),
+                asString(doc.getFieldValue(ONTOLOGY))
         );
     }
 

@@ -105,6 +105,35 @@ public record MappingSet (
         return new MappingSet.Builder();
     }
 
+    /**
+     * The CURIE prefix of the ontology this set belongs to (e.g. {@code ADDICTO}), promoted out of the
+     * OLS {@code other} extension block. Serialize-only and derived from {@link #other()}: it is not a
+     * record component and has no builder setter, so a doc that carries it round-trips through
+     * {@code other} (unknown keys are ignored on read). Absent for sets with no {@code other} block
+     * (curated sets, the synthetic inferences set), so the field is simply omitted from those docs.
+     */
+    @JsonProperty(PREFIX)
+    public Optional<String> prefix() {
+        return otherValue(PREFIX);
+    }
+
+    /**
+     * The human-readable name of the ontology this set belongs to (e.g. {@code Addiction Ontology
+     * (ADDICTO)}), promoted out of the OLS {@code other} block. See {@link #prefix()} for the
+     * serialize-only, derived-from-{@code other} contract.
+     */
+    @JsonProperty(ONTOLOGY)
+    public Optional<String> ontology() {
+        return otherValue(ONTOLOGY);
+    }
+
+    /** Look up a single key in the {@code other} extension bag; empty when there is no block or key. */
+    private Optional<String> otherValue(String key) {
+        return other
+                .flatMap(KeyValuePairsAsString::getDataRepresentation)
+                .map(keyValues -> keyValues.get(key));
+    }
+
     @JsonPOJOBuilder(withPrefix = "")
     public static class Builder {
         private CurieMap curieMap = new CurieMap("");
