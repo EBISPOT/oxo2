@@ -40,9 +40,14 @@ const MULTIPLE_EXAMPLE = "UBERON:0002107\nCataract\nhttp://purl.obolibrary.org/o
  * results table whose per-column sort popovers write `?sort`. No `?sort` means the backend ranks
  * by relevance (the provenance-led boost, ADR-0027).
  */
-export function Search({ searchInput = initialSearchState, showWelcome = false }: {
+export function Search({ searchInput = initialSearchState, showWelcome = false, onClear }: {
     searchInput: SearchInput,
-    showWelcome?: boolean
+    showWelcome?: boolean,
+    // Called after the form's own state is reset, on the results page only. The results-table filters,
+    // sort and search options all live in the URL query string, and the table keeps a local copy of
+    // its filter inputs; clearing both (query string + a table remount) is the results page's job, not
+    // the form's — see MappingResults. Absent on the home page, where the form reset is the whole job.
+    onClear?: () => void,
 }) {
     const navigate = useNavigate();
     const [searchState, setSearchState] = useState<SearchInput>(searchInput);
@@ -242,6 +247,12 @@ export function Search({ searchInput = initialSearchState, showWelcome = false }
         setLabelMatch(DEFAULT_LABEL_MATCH);
         setCorpus(DEFAULT_CORPUS);
         setWeakPredicates(DEFAULT_WEAK_PREDICATES);
+        // On the results page, hand off to MappingResults to drop the query string (every
+        // results-table filter, sort and search option lives there) and remount the table so its local
+        // filter inputs re-seed empty instead of debouncing themselves back in — all while keeping the
+        // user on the page they're on. On the home page there is no query string and no table, so the
+        // form reset above is the whole job and onClear is absent.
+        onClear?.();
     };
 
     const handleAdvancedChange = (field: string, value: string) => {

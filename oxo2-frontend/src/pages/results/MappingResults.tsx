@@ -1,3 +1,4 @@
+import {useCallback, useEffect, useState} from "react";
 import {useParams, useSearchParams} from "react-router-dom";
 import {Search} from "../../components/search/Search";
 import {AdvancedFieldQuery, SearchInput} from "../../model/Search";
@@ -35,7 +36,7 @@ const tableTheme = createTheme({
  */
 function MappingResults() {
     const { curies } = useParams<{ curies: string }>();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const mappingSetIds = searchParams.getAll("mapping_set_id");
     // Cross-ontology mapping (ADR-0024): from/to ontology prefixes; "_map" = whole-ontology (no terms).
     const subjectPrefixes = searchParams.getAll("from");
@@ -87,9 +88,37 @@ function MappingResults() {
         searchMode: queriesForBackend.length > 1 ? "multiple" : "single",
     };
 
+    // The form's Clear button resets its own fields, then delegates the results side to us. Every
+    // results-table filter, sort and search option lives in the query string, so dropping it (keeping
+    // the path) resets them to their defaults while leaving the user on the results they're viewing.
+    //
+    // The table also keeps a *local* copy of its filter inputs (NormalResultsTable's fieldFilters and
+    // each ColumnFilterPopover's own state, both seeded once at mount), which a debounce otherwise
+    // writes straight back into the URL — so clearing the query alone is undone ~400 ms later. We
+    // remount the table (bumping clearNonce → a new React key) so those local copies re-seed empty.
+    // The remount must observe the *already-stripped* URL, or it re-seeds the filter and writes it
+    // back; react-router commits the query change as an external-store update that does not batch with
+    // a plain setState, so stripping and bumping in one handler races (the remount can run first, on
+    // the still-filtered URL). Instead we record the request and bump the nonce from an effect, once
+    // the query string is observably empty — so the fresh table always mounts against a clean URL.
+    const [clearNonce, setClearNonce] = useState(0);
+    const [clearRequested, setClearRequested] = useState(false);
+    const handleClear = useCallback(() => {
+        setSearchParams(new URLSearchParams(), { replace: true });
+        setClearRequested(true);
+    }, [setSearchParams]);
+
+    const queryString = searchParams.toString();
+    useEffect(() => {
+        if (clearRequested && queryString === "") {
+            setClearNonce((nonce) => nonce + 1);
+            setClearRequested(false);
+        }
+    }, [clearRequested, queryString]);
+
     return (
         <div>
-            <Search searchInput={searchInput} />
+            <Search searchInput={searchInput} onClear={handleClear} />
 
             <ThemeProvider theme={tableTheme}>
                 {isAdvanced ? (
@@ -99,6 +128,7 @@ function MappingResults() {
                     />
                 ) : (
                     <NormalResultsTable
+                        key={clearNonce}
                         queries={queriesForBackend}
                         mappingSetIds={mappingSetIds}
                         subjectPrefixes={subjectPrefixes}
