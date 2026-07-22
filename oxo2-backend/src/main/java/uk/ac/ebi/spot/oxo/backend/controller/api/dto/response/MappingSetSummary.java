@@ -15,5 +15,8 @@ public record MappingSetSummary(
         @Schema(description = "Creator labels.") @JsonProperty(CREATOR_LABEL) List<String> creatorLabel,
         @Schema(description = "Mapping provider URL.") @JsonProperty(MAPPING_PROVIDER) String mappingProvider,
         @Schema(description = "Inference type of the set (`ASSERTED` or `SSSOM_INFERENCE`).") @JsonProperty(INFERENCE_TYPE) String inferenceType,
-        @Schema(description = "Source sets this set was derived from (full IRIs).") @JsonProperty(MAPPING_SET_SOURCE) List<String> mappingSetSource
+        @Schema(description = "Source sets this set was derived from (full IRIs).") @JsonProperty(MAPPING_SET_SOURCE) List<String> mappingSetSource,
+        @Schema(description = "OxO curation category: `ONTOLOGY` (OLS-derived) or `CURATED`; absent on the synthetic inferences set.") @JsonProperty(MAPPING_SET_CATEGORY) String mappingSetCategory,
+        @Schema(description = "CURIE prefix of the ontology (ONTOLOGY sets only), e.g. `ADDICTO`.") @JsonProperty(PREFIX) String prefix,
+        @Schema(description = "Human-readable ontology name (ONTOLOGY sets only), e.g. `Addiction Ontology (ADDICTO)`.") @JsonProperty(ONTOLOGY) String ontology
 ) {}

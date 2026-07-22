@@ -74,6 +74,12 @@ public class MappingConstants {
     // OxO curation category (ADR-0027): "ontology" (OLS-derived) vs "curated" (EVORA / Mapping Commons /
     // curated GitHub repos), carried on each OxO config mapping_registries entry, not an SSSOM property.
     public static final String MAPPING_SET_CATEGORY = "mapping_set_category";
+    // Ontology mapping-set fields (oxo2-mappingsets core only): the CURIE prefix and human-readable name
+    // of the ontology an OLS-derived set belongs to. OLS SSSOM extracts carry these inside the `other`
+    // extension block; the dataload promotes them to discrete fields (derived from `other` at
+    // serialization time, not deserialised) so the frontend can list ontologies with their own columns.
+    public static final String PREFIX = "prefix";
+    public static final String ONTOLOGY = "ontology";
     public static final String MAPPING_ID = "mapping_id";
     public static final String OBJECT_IRI = "object_iri";
     public static final String PREDICATE_IRI = "predicate_iri";

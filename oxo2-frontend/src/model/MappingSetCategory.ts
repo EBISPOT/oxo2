@@ -33,6 +33,12 @@ export function corpusToUrlParam(mode: CorpusMode): string | undefined {
     return mode === DEFAULT_CORPUS ? undefined : mode.toLowerCase();
 }
 
+/** Coerce the backend `mapping_set_category` code to a category, or undefined when absent/unknown.
+ *  The synthetic inferences set carries no category, so undefined is the expected "neither" case. */
+export function asMappingSetCategory(value?: string | null): MappingSetCategory | undefined {
+    return value === 'ONTOLOGY' || value === 'CURATED' ? value : undefined;
+}
+
 /** Coerce the URL `corpus` param to a mode, defaulting when absent or unrecognised. */
 export function asCorpusMode(value?: string | null): CorpusMode {
     const upper = value?.toUpperCase();

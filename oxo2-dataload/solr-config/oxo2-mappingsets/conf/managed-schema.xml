@@ -473,7 +473,13 @@
   <field name="object_source" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_source_version" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_type" type="string" multiValued="false" indexed="true" stored="true"/>
+  <!-- Ontology display name, promoted from the OLS `other` block (ADR-0038). Text so it is searchable;
+       ontology_str backs sorting/faceting. Absent on curated and inferred sets. -->
+  <field name="ontology" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <field name="other" type="text_general" multiValued="false" indexed="true" stored="true"/>
+  <!-- Ontology CURIE prefix (e.g. ADDICTO), promoted from the OLS `other` block (ADR-0038). String so it
+       matches and sorts exactly. Absent on curated and inferred sets. -->
+  <field name="prefix" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="publication_date" type="pdates" multiValued="false" indexed="true" stored="true"/>
   <field name="see_also" type="text_general" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
@@ -569,6 +575,7 @@
   <copyField source="object_source" dest="object_source_str" maxChars="256"/>
   <copyField source="object_source_version" dest="object_source_version_str" maxChars="256"/>
   <copyField source="object_type" dest="object_type_str" maxChars="256"/>
+  <copyField source="ontology" dest="ontology_str" maxChars="256"/>
   <copyField source="other" dest="other_str" maxChars="256"/>
   <copyField source="publication_date" dest="publication_date_str" maxChars="256"/>
   <copyField source="see_also" dest="see_also_str" maxChars="256"/>

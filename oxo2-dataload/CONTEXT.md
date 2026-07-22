@@ -115,6 +115,13 @@ category fails the run. Inferred mappings get no category: an inference chains p
 sets. The JAR's whole-tree `-i` mode applies one category to everything it finds, so it is only
 correct for a single-registry tree.
 
+`TSV2JSON` also **promotes `prefix` and `ontology`** onto each mapping-set doc
+([ADR-0038](../docs/adr/0038-promote-ontology-prefix-from-other-block.md)). OLS extracts carry the
+ontology's CURIE prefix and display name inside the SSSOM `other` extension block; `MappingSet`'s
+serialize-only `prefix()`/`ontology()` accessors read those keys out of `other` so they land as
+discrete `oxo2-mappingsets` fields (the raw `other` blob is kept — it still carries `local_id`).
+Curated and inferred sets have no `other` block, so the fields are simply absent there.
+
 **3. Inference** — `determineInferences.nextflow` runs the single SSSOM cross-set pass
 ([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)) via `inferSssomCrossSet.nf`: `json2nquads`
 converts each set's JSON to N-Quads carrying `mapping_id`

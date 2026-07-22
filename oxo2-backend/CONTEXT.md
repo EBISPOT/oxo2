@@ -64,8 +64,11 @@ value can never yield zero rows and arrives with the count of mappings behind it
 full result (paging ignored) via a Solr cursor — SSSOM-compliant TSV with a metadata header +
 `curie_map`. There is no standalone export endpoint, mirroring v1's `/api/search?format=`.
 - **`GET /api/v2/mapping-sets`** — list all mapping sets (up to 10 000), returning `MappingSetSummary` (id, title, 
-description, creator labels, provider, `inference_type`, source-set union). Sorted by title; optional multi-select
-`?inferenceType` filter.
+description, creator labels, provider, `inference_type`, source-set union, plus `mapping_set_category` and — for
+ontology sets — the `prefix` / `ontology` promoted from the OLS `other` block,
+[ADR-0038](../docs/adr/0038-promote-ontology-prefix-from-other-block.md)). Sorted by title; optional multi-select
+`?inferenceType` filter. The category and ontology columns let the frontend split the set picker into a curated
+table and an ontologies table.
 - **`GET /api/v2/mapping-sets/by-id?mappingSetId=<IRI>`** — fetch a single mapping set by id, backing the frontend
 inferred-set resolution surface ([ADR-0012](../docs/adr/0012-resolvable-inference-set-iris.md)). A query parameter,
 not a path variable, because a mapping-set id is a full IRI and Tomcat rejects the encoded slashes a path variable

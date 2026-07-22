@@ -1,4 +1,5 @@
 import { InferenceType, asInferenceType } from "./InferenceType";
+import { MappingSetCategory, asMappingSetCategory } from "./MappingSetCategory";
 
 export interface MappingSetResponse {
     mapping_set_id: string;
@@ -8,6 +9,9 @@ export interface MappingSetResponse {
     mapping_provider?: string;
     inference_type?: string;
     mapping_set_source?: string[];
+    mapping_set_category?: string;
+    prefix?: string;
+    ontology?: string;
 }
 
 export interface MappingSet {
@@ -18,6 +22,11 @@ export interface MappingSet {
     mappingProvider: string;
     inferenceType: InferenceType;
     mappingSetSource: string[];
+    // OxO curation category (ADR-0027); undefined on the synthetic inferences set.
+    mappingSetCategory?: MappingSetCategory;
+    // Ontology CURIE prefix and display name (ADR-0038), populated only on ONTOLOGY sets; '' otherwise.
+    prefix: string;
+    ontology: string;
 }
 
 export function fromMappingSetResponse(r: MappingSetResponse): MappingSet {
@@ -29,5 +38,8 @@ export function fromMappingSetResponse(r: MappingSetResponse): MappingSet {
         mappingProvider: r.mapping_provider ?? '',
         inferenceType: asInferenceType(r.inference_type),
         mappingSetSource: r.mapping_set_source ?? [],
+        mappingSetCategory: asMappingSetCategory(r.mapping_set_category),
+        prefix: r.prefix ?? '',
+        ontology: r.ontology ?? '',
     };
 }

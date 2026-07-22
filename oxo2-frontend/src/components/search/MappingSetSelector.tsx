@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
     MaterialReactTable,
@@ -8,24 +8,127 @@ import {
 } from "material-react-table";
 import { fetchMappingSets } from "../../pages/results/MappingSetsSlice";
 import { MappingSet } from "../../model/MappingSet";
-import { INFERENCE_TYPE_LABELS, INFERENCE_TYPE_ORDER, inferenceTypeLabel } from "../../model/InferenceType";
-import { InferenceTypeBadge } from "../mapping/InferenceTypeBadge";
+import { CORPUS_LABELS } from "../../model/MappingSetCategory";
 
 /**
- * Mapping-set picker for the search forms. There are hundreds of mapping sets, so this
- * table is deliberately split out from the Search component and wrapped in React.memo:
- * typing in the search box (or an advanced field) re-renders Search on every keystroke,
- * and without this isolation each keystroke would re-render every row here. Selection is
- * fully controlled by the parent (`selectedIds`), so as long as the parent keeps that
- * array and `onSelectionChange` referentially stable, memo skips this subtree entirely
- * while the user types. Rows are virtualised so even a genuine render mounts only the
- * visible handful rather than all hundreds.
+ * Mapping-set picker for the search forms, split into two tables driven by the set's curation
+ * category (ADR-0027, ADR-0038): a "Curated sets" table and an "Ontologies" table that leads with
+ * the ontology's name and CURIE prefix. Selection is unified across both tables — each table controls
+ * only its own rows and merges the result back into the single `selectedIds` list the parent owns.
+ *
+ * There are hundreds of mapping sets, so this is split out from the Search component and wrapped in
+ * React.memo: typing in the search box re-renders Search on every keystroke, and without this
+ * isolation each keystroke would re-render every row here. As long as the parent keeps `selectedIds`
+ * and `onSelectionChange` referentially stable, memo skips this subtree entirely while the user
+ * types. Rows are virtualised so even a genuine render mounts only the visible handful.
  */
 function idsToSelectionState(ids: string[]): MRT_RowSelectionState {
     return ids.reduce<MRT_RowSelectionState>((accumulator, id) => {
         accumulator[id] = true;
         return accumulator;
     }, {});
+}
+
+// Curated-sets columns. The inference Type column is intentionally dropped: there is only ever one
+// inferred set (folded in here, as it carries no category), so the column would be a near-constant.
+const CURATED_COLUMNS: MRT_ColumnDef<MappingSet>[] = [
+    {
+        accessorKey: "mappingSetTitle",
+        header: "Title",
+        size: 220,
+        filterFn: "contains",
+        Cell: ({ cell }) => (
+            <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+                {cell.getValue<string>()}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "mappingSetId",
+        header: "Mapping Set Id",
+        size: 260,
+        filterFn: "contains",
+        Cell: ({ cell }) => (
+            <div style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
+                {cell.getValue<string>()}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "mappingSetDescription",
+        header: "Description",
+        size: 340,
+        filterFn: "contains",
+        Cell: ({ cell }) => (
+            <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+                {cell.getValue<string>()}
+            </div>
+        ),
+    },
+    { accessorKey: "mappingProvider", header: "Provider", size: 150, filterFn: "contains" },
+];
+
+// Ontologies columns: lead with the two ontology-specific fields promoted from the OLS `other`
+// block (ADR-0038). Deliberately lean — title/creator/provider are redundant or empty for OLS sets.
+const ONTOLOGY_COLUMNS: MRT_ColumnDef<MappingSet>[] = [
+    { accessorKey: "ontology", header: "Ontology", size: 340, filterFn: "contains" },
+    { accessorKey: "prefix", header: "Prefix", size: 160, filterFn: "contains" },
+];
+
+/**
+ * Build one selectable MRT over a category's sets. `rowSelection` is derived from the parent's
+ * unified `selectedIds` narrowed to this table's rows; a change reports back only this table's
+ * selected ids, which the parent merges with the other table's.
+ */
+function useMappingSetTable(
+    data: MappingSet[],
+    columns: MRT_ColumnDef<MappingSet>[],
+    selectedIds: string[],
+    isLoading: boolean,
+    initialSortId: string,
+    onScopedSelectionChange: (idsSelectedInThisTable: string[]) => void,
+) {
+    const rowIds = useMemo(() => new Set(data.map((set) => set.mappingSetId)), [data]);
+    const rowSelection = useMemo<MRT_RowSelectionState>(
+        () => idsToSelectionState(selectedIds.filter((id) => rowIds.has(id))),
+        [selectedIds, rowIds]
+    );
+
+    return useMaterialReactTable<MappingSet>({
+        columns,
+        data,
+        enableRowSelection: true,
+        enableMultiRowSelection: true,
+        enableSelectAll: true,
+        enableRowVirtualization: true,
+        getRowId: (row) => row.mappingSetId,
+        state: { rowSelection, isLoading, density: "compact" },
+        onRowSelectionChange: (updater) => {
+            const next = typeof updater === "function" ? updater(rowSelection) : updater;
+            onScopedSelectionChange(Object.keys(next).filter((id) => next[id]));
+        },
+        muiTableBodyRowProps: ({ row }) => ({
+            onClick: () => row.toggleSelected(),
+            sx: { cursor: "pointer" },
+        }),
+        muiTableContainerProps: { sx: { maxHeight: "18rem" } },
+        enableTopToolbar: false,
+        enableBottomToolbar: false,
+        enableColumnActions: false,
+        // Client-side per-column filtering over the already-fetched sets; the filter row shows by
+        // default (no top toolbar to toggle it). Filter state stays internal to MRT, so typing here
+        // never re-renders the parent Search (see the React.memo note above).
+        enableColumnFilters: true,
+        enableSorting: true,
+        enablePagination: false,
+        enableStickyHeader: true,
+        muiTableHeadCellProps: { sx: { fontWeight: "bold", fontSize: "14px" } },
+        initialState: {
+            density: "compact",
+            showColumnFilters: true,
+            sorting: [{ id: initialSortId, desc: false }],
+        },
+    });
 }
 
 function MappingSetSelectorInner({
@@ -43,104 +146,64 @@ function MappingSetSelectorInner({
         staleTime: Infinity,
     });
 
-    const rowSelection = useMemo<MRT_RowSelectionState>(
-        () => idsToSelectionState(selectedIds),
-        [selectedIds]
+    // Ontology sets go to their own table; everything else (curated sets plus the uncategorised
+    // synthetic inferences set) goes to the curated table.
+    const { ontologySets, curatedSets } = useMemo(() => {
+        const ontology: MappingSet[] = [];
+        const curated: MappingSet[] = [];
+        for (const set of mappingSets) {
+            (set.mappingSetCategory === "ONTOLOGY" ? ontology : curated).push(set);
+        }
+        return { ontologySets: ontology, curatedSets: curated };
+    }, [mappingSets]);
+
+    const ontologyIds = useMemo(
+        () => new Set(ontologySets.map((set) => set.mappingSetId)),
+        [ontologySets]
+    );
+    const curatedIds = useMemo(
+        () => new Set(curatedSets.map((set) => set.mappingSetId)),
+        [curatedSets]
     );
 
-    const columns = useMemo<MRT_ColumnDef<MappingSet>[]>(
-        () => [
-            { accessorKey: "mappingSetTitle", header: "Title", size: 200, filterFn: "contains" },
-            {
-                // Inference type (ADR-0011). Client-side select filter over the already-fetched sets;
-                // the accessor returns the display label so the select options match. Default (no
-                // selection) = all.
-                id: "inferenceType",
-                accessorFn: (row) => inferenceTypeLabel(row.inferenceType),
-                header: "Type",
-                size: 150,
-                filterVariant: "select",
-                filterSelectOptions: INFERENCE_TYPE_ORDER.map((type) => INFERENCE_TYPE_LABELS[type]),
-                Cell: ({ row }) => <InferenceTypeBadge value={row.original.inferenceType} />,
-            },
-            {
-                accessorKey: "mappingSetId",
-                header: "Mapping Set Id",
-                size: 250,
-                filterFn: "contains",
-                Cell: ({ cell }) => (
-                    <div style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
-                        {cell.getValue<string>()}
-                    </div>
-                ),
-            },
-            {
-                accessorKey: "mappingSetDescription",
-                header: "Description",
-                size: 350,
-                filterFn: "contains",
-                Cell: ({ cell }) => (
-                    <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
-                        {cell.getValue<string>()}
-                    </div>
-                ),
-            },
-            {
-                accessorKey: "creatorLabel",
-                header: "Creator",
-                size: 150,
-                // creatorLabel is a string[]; filter against the same comma-joined text the
-                // cell renders so a substring matches any one creator regardless of order.
-                filterFn: (row, _columnId, filterValue) =>
-                    (row.original.creatorLabel ?? [])
-                        .join(", ")
-                        .toLowerCase()
-                        .includes(String(filterValue).toLowerCase()),
-                Cell: ({ cell }) => <span>{(cell.getValue<string[]>() ?? []).join(", ")}</span>,
-            },
-            { accessorKey: "mappingProvider", header: "Provider", size: 150, filterFn: "contains" },
-        ],
-        []
+    // Merge a table's scoped selection back with the ids owned by the other table, so the parent
+    // keeps one unified list across both tables.
+    const onCuratedSelection = useCallback(
+        (idsInTable: string[]) =>
+            onSelectionChange([
+                ...selectedIds.filter((id) => !curatedIds.has(id)),
+                ...idsInTable,
+            ]),
+        [onSelectionChange, selectedIds, curatedIds]
+    );
+    const onOntologySelection = useCallback(
+        (idsInTable: string[]) =>
+            onSelectionChange([
+                ...selectedIds.filter((id) => !ontologyIds.has(id)),
+                ...idsInTable,
+            ]),
+        [onSelectionChange, selectedIds, ontologyIds]
     );
 
-    const table = useMaterialReactTable<MappingSet>({
-        columns,
-        data: mappingSets,
-        enableRowSelection: true,
-        enableMultiRowSelection: true,
-        enableSelectAll: true,
-        enableRowVirtualization: true,
-        getRowId: (row) => row.mappingSetId,
-        state: { rowSelection, isLoading: mappingSetsLoading, density: "compact" },
-        onRowSelectionChange: (updater) => {
-            const next = typeof updater === "function" ? updater(rowSelection) : updater;
-            const selected = Object.keys(next).filter((id) => next[id]);
-            onSelectionChange(selected);
-        },
-        muiTableBodyRowProps: ({ row }) => ({
-            onClick: () => row.toggleSelected(),
-            sx: { cursor: "pointer" },
-        }),
-        muiTableContainerProps: { sx: { maxHeight: "20rem" } },
-        enableTopToolbar: false,
-        enableBottomToolbar: false,
-        enableColumnActions: false,
-        // Client-side per-column filtering over the already-fetched mapping sets. The
-        // top toolbar is hidden, so there is no filter-toggle button; show the filter
-        // input row by default (initialState.showColumnFilters) so every field is
-        // filterable straight away. Filter state stays internal to MRT, so typing here
-        // never re-renders the parent Search component (see the React.memo note above).
-        enableColumnFilters: true,
-        enableSorting: true,
-        enablePagination: false,
-        enableStickyHeader: true,
-        muiTableHeadCellProps: {
-            sx: { fontWeight: "bold", fontSize: "14px" },
-        },
-        initialState: { density: "compact", showColumnFilters: true },
-    });
+    const curatedTable = useMappingSetTable(
+        curatedSets, CURATED_COLUMNS, selectedIds, mappingSetsLoading, "mappingSetTitle", onCuratedSelection
+    );
+    const ontologyTable = useMappingSetTable(
+        ontologySets, ONTOLOGY_COLUMNS, selectedIds, mappingSetsLoading, "ontology", onOntologySelection
+    );
 
-    return <MaterialReactTable table={table} />;
+    return (
+        <div className="space-y-4">
+            <section>
+                <h4 className="text-sm font-semibold text-secondary mb-1">{CORPUS_LABELS.CURATED}</h4>
+                <MaterialReactTable table={curatedTable} />
+            </section>
+            <section>
+                <h4 className="text-sm font-semibold text-secondary mb-1">{CORPUS_LABELS.ONTOLOGY}</h4>
+                <MaterialReactTable table={ontologyTable} />
+            </section>
+        </div>
+    );
 }
 
 export const MappingSetSelector = React.memo(MappingSetSelectorInner);
