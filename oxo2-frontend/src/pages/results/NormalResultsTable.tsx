@@ -674,6 +674,16 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
         enableTopToolbar: true,
         renderTopToolbarCustomActions: () => (
             <div className="flex items-center gap-3">
+                {!isLoading && !isError && (
+                    <span className="text-sm text-tertiary">
+                        {/* totalElements is the collapsed spo_key group count when grouping is on
+                            (ADR-0023) and the raw mapping count when it is off (set-detail); the
+                            "Mappings found" wording keeps the label jargon-free across both modes. */}
+                        Mappings found: {(mappingResults?.totalElements ?? 0).toLocaleString()}
+                        {subjectPrefixes.length > 0 ? ` · from ${subjectPrefixes.join(", ")}` : ""}
+                        {objectPrefixes.length > 0 ? ` → ${objectPrefixes.join(", ")}` : ""}
+                    </span>
+                )}
                 {/* The ranking choice (ADR-0036): Best match / confidence / recency. It replaces
                     the whole sorting state — a ranking is exclusive, unlike the per-column sort
                     popovers it shares the `?sort` param with — which also makes "Best match" the
@@ -693,20 +703,6 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         )}
                     </select>
                 </label>
-                {!isLoading && !isError && (
-                    <span className="text-sm text-tertiary">
-                        {/* totalElements is the collapsed spo_key group count when grouping is on
-                            (ADR-0023) and the raw mapping count when it is off (set-detail), so the
-                            noun has to follow the mode. */}
-                        {(mappingResults?.totalElements ?? 0).toLocaleString()}
-                        {' '}
-                        {groupBySpo
-                            ? (mappingResults?.totalElements === 1 ? "mapping group" : "mapping groups")
-                            : (mappingResults?.totalElements === 1 ? "mapping" : "mappings")}
-                        {subjectPrefixes.length > 0 ? ` · from ${subjectPrefixes.join(", ")}` : ""}
-                        {objectPrefixes.length > 0 ? ` → ${objectPrefixes.join(", ")}` : ""}
-                    </span>
-                )}
                 <Tooltip title="Download all results as SSSOM-compliant TSV">
                     <span>
                         <IconButton onClick={handleExport} disabled={isExporting} size="small">
