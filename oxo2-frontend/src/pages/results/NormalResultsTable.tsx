@@ -18,7 +18,6 @@ import {LabelMatchMode, DEFAULT_LABEL_MATCH} from "../../model/LabelMatchMode";
 import {CorpusMode, DEFAULT_CORPUS, corpusToRequest} from "../../model/MappingSetCategory";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {InferenceTypeFilterPopover} from "../../components/mapping/InferenceTypeFilterPopover";
-import {WeakPredicateFilterPopover} from "../../components/mapping/WeakPredicateFilterPopover";
 import {IconButton, Tooltip} from "@mui/material";
 import {EyeIcon, ArrowDownTrayIcon} from "@heroicons/react/24/solid";
 import {EntityRefCell, CopyButton} from "../../components/mapping/EntityRefCell";
@@ -157,9 +156,10 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const [sorting, setSorting] = useUrlSorting(DEFAULT_SORTING, true);
     const [inferenceTypes, setInferenceTypes] = useUrlInferenceTypes(initialInferenceTypes, true);
     const [urlFilters, setUrlFilters] = useUrlFieldFilters();
-    // The two "also show" predicate checkboxes (ADR-0035). Hidden by default; ticking one changes
-    // which rows exist at all, so it resets to page 1 like any other filter.
-    const [weakPredicates, setWeakPredicates] = useUrlWeakPredicates(true);
+    // The normally-hidden predicates to also show (ADR-0035), read from the `wp` URL param that the
+    // search form writes on submit. The table honours it when scoping the query but no longer carries
+    // its own control — the "Also show" checkboxes live solely on the search form now.
+    const [weakPredicates] = useUrlWeakPredicates(true);
 
     // The filter inputs keep their own local state for responsive typing (seeded once from
     // the URL so a restored filter shows in the inputs); a short debounce copies them to
@@ -306,7 +306,6 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Predicate</span>
-                        <WeakPredicateFilterPopover value={weakPredicates} onChange={setWeakPredicates} />
                         <ColumnFilterPopover title="Predicate" fields={PREDICATE_FILTER_FIELDS} onChange={handleFilterChange} onPick={handleFilterPick} suggestContext={suggestContext} initialValues={initialFieldFilters} />
                         <ColumnSortPopover title="Predicate" fields={PREDICATE_SORT_FIELDS} onApply={setSorting} />
                     </span>
@@ -502,7 +501,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             } as MRT_ColumnDef<Mapping>]),
         ],
         [handleFilterChange, setSorting, inferenceTypes, setInferenceTypes, initialFieldFilters,
-            weakPredicates, setWeakPredicates, isSetDetail]
+            isSetDetail]
     );
 
     const table = useMaterialReactTable({
@@ -674,6 +673,16 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
         enableTopToolbar: true,
         renderTopToolbarCustomActions: () => (
             <div className="flex items-center gap-3">
+                {!isLoading && !isError && (
+                    <span className="text-sm text-tertiary">
+                        {/* totalElements is the collapsed spo_key group count when grouping is on
+                            (ADR-0023) and the raw mapping count when it is off (set-detail); the
+                            "Mappings found" wording keeps the label jargon-free across both modes. */}
+                        Mappings found: {(mappingResults?.totalElements ?? 0).toLocaleString()}
+                        {subjectPrefixes.length > 0 ? ` · from ${subjectPrefixes.join(", ")}` : ""}
+                        {objectPrefixes.length > 0 ? ` → ${objectPrefixes.join(", ")}` : ""}
+                    </span>
+                )}
                 {/* The ranking choice (ADR-0036): Best match / confidence / recency. It replaces
                     the whole sorting state — a ranking is exclusive, unlike the per-column sort
                     popovers it shares the `?sort` param with — which also makes "Best match" the
@@ -693,20 +702,6 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         )}
                     </select>
                 </label>
-                {!isLoading && !isError && (
-                    <span className="text-sm text-tertiary">
-                        {/* totalElements is the collapsed spo_key group count when grouping is on
-                            (ADR-0023) and the raw mapping count when it is off (set-detail), so the
-                            noun has to follow the mode. */}
-                        {(mappingResults?.totalElements ?? 0).toLocaleString()}
-                        {' '}
-                        {groupBySpo
-                            ? (mappingResults?.totalElements === 1 ? "mapping group" : "mapping groups")
-                            : (mappingResults?.totalElements === 1 ? "mapping" : "mappings")}
-                        {subjectPrefixes.length > 0 ? ` · from ${subjectPrefixes.join(", ")}` : ""}
-                        {objectPrefixes.length > 0 ? ` → ${objectPrefixes.join(", ")}` : ""}
-                    </span>
-                )}
                 <Tooltip title="Download all results as SSSOM-compliant TSV">
                     <span>
                         <IconButton onClick={handleExport} disabled={isExporting} size="small">

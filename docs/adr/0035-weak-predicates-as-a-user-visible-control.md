@@ -36,10 +36,14 @@ right.
 
 **1. The exclusion becomes an explicit, per-predicate parameter.** `MappingSearchRequest` carries
 `includeWeakPredicates`; empty (the default) hides both, exactly as before. The frontend surfaces it as
-**two independent checkboxes**, on the search page and in the result table's Predicate column header,
-both unticked by default. Two, not one: ontology hierarchy and loose cross-references are different
+**two independent checkboxes** on the search page, both unticked by default. Two, not one: ontology hierarchy and loose cross-references are different
 questions, and wanting one is no reason to be shown the other. The implicit bypass stays — filtering
 explicitly on a predicate field still shows whatever matches, so a filter can never return nothing.
+
+> Update (2026-07-22): the popover that also carried these checkboxes in the result table's Predicate
+> column header was removed, so there is one control for one setting. The search form is the single
+> home; it still writes the `wp` URL param the results table reads, so a selection made before
+> searching is honoured unchanged.
 
 **2. `oxo2-entities` counts are bucketed by predicate and by side.** Six new fields:
 `{subject,object}_count_{strong,subclassof,hasdbxref}`, where *strong* is every predicate that is not
