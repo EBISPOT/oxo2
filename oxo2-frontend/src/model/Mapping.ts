@@ -172,6 +172,8 @@ export interface MappingResponse {
     asserted_mappings?: string;
     explanation?: string;
     inference_type?: string;
+    // Hop count (SSSOM extension): 1 on an asserted mapping, the chain length on an inference.
+    distance?: number;
     // Result-view grouping (ADR-0013): on a grouped query the representative carries its group's
     // members + true size as a JSON string {"total":N,"members":[...]}.
     group_members?: string;
@@ -200,6 +202,8 @@ export interface Mapping {
     mappingSetVersion?: string;
     mappingSource?: string;
     inferenceType?: InferenceType;
+    // Hop count (SSSOM extension): 1 on an asserted mapping, the chain length on an inference.
+    distance?: number;
     mappingTool?: string;
     mappingToolVersion?: string;
     matchString?: string;
