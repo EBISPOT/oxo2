@@ -18,7 +18,6 @@ import {LabelMatchMode, DEFAULT_LABEL_MATCH} from "../../model/LabelMatchMode";
 import {CorpusMode, DEFAULT_CORPUS, corpusToRequest} from "../../model/MappingSetCategory";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {InferenceTypeFilterPopover} from "../../components/mapping/InferenceTypeFilterPopover";
-import {WeakPredicateFilterPopover} from "../../components/mapping/WeakPredicateFilterPopover";
 import {IconButton, Tooltip} from "@mui/material";
 import {EyeIcon, ArrowDownTrayIcon} from "@heroicons/react/24/solid";
 import {EntityRefCell, CopyButton} from "../../components/mapping/EntityRefCell";
@@ -157,9 +156,10 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const [sorting, setSorting] = useUrlSorting(DEFAULT_SORTING, true);
     const [inferenceTypes, setInferenceTypes] = useUrlInferenceTypes(initialInferenceTypes, true);
     const [urlFilters, setUrlFilters] = useUrlFieldFilters();
-    // The two "also show" predicate checkboxes (ADR-0035). Hidden by default; ticking one changes
-    // which rows exist at all, so it resets to page 1 like any other filter.
-    const [weakPredicates, setWeakPredicates] = useUrlWeakPredicates(true);
+    // The normally-hidden predicates to also show (ADR-0035), read from the `wp` URL param that the
+    // search form writes on submit. The table honours it when scoping the query but no longer carries
+    // its own control — the "Also show" checkboxes live solely on the search form now.
+    const [weakPredicates] = useUrlWeakPredicates(true);
 
     // The filter inputs keep their own local state for responsive typing (seeded once from
     // the URL so a restored filter shows in the inputs); a short debounce copies them to
@@ -306,7 +306,6 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Predicate</span>
-                        <WeakPredicateFilterPopover value={weakPredicates} onChange={setWeakPredicates} />
                         <ColumnFilterPopover title="Predicate" fields={PREDICATE_FILTER_FIELDS} onChange={handleFilterChange} onPick={handleFilterPick} suggestContext={suggestContext} initialValues={initialFieldFilters} />
                         <ColumnSortPopover title="Predicate" fields={PREDICATE_SORT_FIELDS} onApply={setSorting} />
                     </span>
@@ -502,7 +501,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             } as MRT_ColumnDef<Mapping>]),
         ],
         [handleFilterChange, setSorting, inferenceTypes, setInferenceTypes, initialFieldFilters,
-            weakPredicates, setWeakPredicates, isSetDetail]
+            isSetDetail]
     );
 
     const table = useMaterialReactTable({
