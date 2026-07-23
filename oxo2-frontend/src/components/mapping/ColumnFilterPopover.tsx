@@ -15,6 +15,11 @@ export interface FilterFieldDef {
      * turning a column's suggest on is a one-flag change.
      */
     suggest?: "contextual" | "none";
+    /**
+     * Render as a number input (min 1, integer steps) instead of a free-text box. Distance is the
+     * only numeric filter today; the backend reads its value as an inclusive maximum ("at most N").
+     */
+    inputType?: "number";
 }
 
 /**
@@ -111,6 +116,9 @@ export function ColumnFilterPopover({
                                 label={fieldDef.label}
                                 size="small"
                                 variant="outlined"
+                                type={fieldDef.inputType ?? "text"}
+                                slotProps={fieldDef.inputType === "number"
+                                    ? { htmlInput: { min: 1, step: 1 } } : undefined}
                                 value={values[fieldDef.field] ?? ""}
                                 onChange={(event) => handleChange(fieldDef.field, event.target.value)}
                             />

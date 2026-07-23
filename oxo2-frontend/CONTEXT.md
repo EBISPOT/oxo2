@@ -108,16 +108,16 @@ every non-default choice hiding in there (e.g. "curated sets only; also showing 
 so a search arriving via URL never applies an invisible filter.
 
 The search form has **no result-order control** (ADR-0036): ordering is a decision made while
-looking at results, so the Best match / Highest confidence / Most recent choice
-(`src/model/SortMode.ts`) sits in the results table's toolbar. It writes the *same* `?sort` param
-the per-column sort popovers write, so the URL stays the single source of truth and the two can
-never disagree; picking a mode replaces the whole sorting state, which also makes `Best match` the
-one-click way back to relevance from any column sort. A column sort the control cannot represent
-shows as a disabled "Column sort" entry.
+looking at results. There is no preset order dropdown either (removed 2026-07-23; it had let a user
+pick Strongest evidence / Highest confidence / Most recent). Reordering now lives solely on the
+per-column "Sort by" popovers on the Subject/Predicate/Object headers, which write the `?sort` param
+via `useUrlSorting`, keeping the URL the single source of truth. Clearing every column sort returns
+to the default Strongest-evidence order.
 
-`Best match` deliberately writes **no** `?sort` at all: an explicit Solr sort replaces `score`, so
-the compact table's old `subject_label asc` default silently discarded the provenance-led ranking
-and ordered alphabetically. `NormalResultsTable`'s `DEFAULT_SORTING` is `[]` and the backend
+The default order is **Strongest evidence** — the backend's provenance-led ranking (ADR-0027).
+`NormalResultsTable`'s `DEFAULT_SORTING` is `[]`, which deliberately sends **no** `?sort`: an
+explicit Solr sort replaces `score`, so the compact table's old `subject_label asc` default
+silently discarded the provenance-led ranking and ordered alphabetically. With no sort the backend
 names `score desc` itself. `AdvancedResultsTable` keeps its explicit `subject_id asc` — the Advanced
 surface stays flat and deterministic.
 
@@ -156,6 +156,10 @@ a typeahead over a free-prose comment field is noise.
   values are faceted over the *live search*, so a suggestion can never yield zero rows, and each arrives
   with the count of mappings behind it. It sends the very request `fetchMappings` sends, built by the
   exported `buildSearchRequest` — reassembling it would be a second implementation, free to drift.
+  The **Distance** column filters differently: a numeric `inputType: "number"` box read as an inclusive
+  *maximum* ("at most N hops"). The backend turns it into a `distance:[* TO N]` range (a substring
+  wildcard is invalid on the `pint` field) applied before grouping, so a same-SPO group keeps only its
+  members within N hops. See `NUMERIC_MAX_FILTER_FIELDS` in `SolrQueryBuilder`.
 - **The Advanced tab** (`SuggestField` → `EntitySuggest` / `VocabSuggest` / plain input) — tiered per
   field. The tier is **data**, not a switch statement: `AdvancedFieldDef.suggest` is a required field, so
   adding a field forces a decision rather than defaulting into the wrong behaviour. Vocabulary fields

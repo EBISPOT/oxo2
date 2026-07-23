@@ -157,6 +157,36 @@ class SolrQueryBuilderTest {
                 .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
     }
 
+    // ---------- distance (numeric upper-bound) column filter ----------
+
+    @Test
+    void distanceColumnFilterBecomesInclusiveUpperBoundRange() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(
+                new ColumnFilter(MappingEnum.DISTANCE.getField(), "2")));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        // "at most 2 hops" — a range, not a substring wildcard (invalid on a point field) or equality.
+        String expected = MappingEnum.DISTANCE.getField() + ":[* TO 2]";
+        assertThat(solrQuery.getFilterQueries())
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+    }
+
+    @Test
+    void distanceColumnFilterDropsNonIntegerValue() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(
+                new ColumnFilter(MappingEnum.DISTANCE.getField(), "abc")));
+
+        SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
+
+        // A non-integer never reaches Solr as a parse error: the filter is dropped, leaving only the
+        // default weak-predicate exclusion.
+        assertThat(solrQuery.getFilterQueries())
+                .containsExactly(weakPredicateExclusion());
+    }
+
     @Test
     void labelFieldColumnFilterPreservesWrappingWildcards() {
         MappingSearchRequest request = baseRequest();

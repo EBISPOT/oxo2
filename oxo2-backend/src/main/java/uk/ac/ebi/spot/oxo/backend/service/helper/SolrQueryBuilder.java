@@ -209,6 +209,15 @@ public class SolrQueryBuilder {
         MappingEnum.SUBJECT_LABEL, textGeneralFieldAsNGram(MappingEnum.SUBJECT_LABEL)
     );
 
+    /**
+     * Numeric fields a column filter constrains as an inclusive <em>upper bound</em> ("at most N"),
+     * emitted as a Solr range {@code field:[* TO N]}. These are {@code pint}/point fields: the
+     * substring-wildcard clause the text columns use is invalid on them, and a maximum reads more
+     * naturally than equality for an ordinal like distance (1 = asserted, higher = more inference
+     * hops). Distance is the only one today; the set keeps the special-case data-driven.
+     */
+    private static final Set<MappingEnum> NUMERIC_MAX_FILTER_FIELDS = Set.of(MappingEnum.DISTANCE);
+
     private static String textGeneralFieldAsString(MappingEnum mappingEnum) {
         return mappingEnum.getField() + "_str";
     }
@@ -945,6 +954,19 @@ public class SolrQueryBuilder {
         String value = filter.getValue() == null ? "" : filter.getValue().strip();
         if (value.isEmpty()) {
             return "";
+        }
+
+        // Numeric upper-bound fields (distance): "at most N", as an inclusive Solr range. The match
+        // type is irrelevant — a maximum is never a substring or an exact term. A non-integer value
+        // (only reachable by a hand-crafted request; the UI uses a number input) is dropped rather
+        // than passed to Solr as a parse error.
+        if (NUMERIC_MAX_FILTER_FIELDS.contains(field)) {
+            try {
+                long maximum = Long.parseLong(value);
+                return field.getField() + ":[* TO " + maximum + "]";
+            } catch (NumberFormatException notAnInteger) {
+                return "";
+            }
         }
 
         // The value was PICKED from a suggestion (ADR-0034), so it came verbatim out of the index and

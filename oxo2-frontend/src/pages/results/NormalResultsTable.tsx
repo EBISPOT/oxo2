@@ -23,8 +23,6 @@ import {EyeIcon, ArrowDownTrayIcon} from "@heroicons/react/24/solid";
 import {EntityRefCell, CopyButton} from "../../components/mapping/EntityRefCell";
 import {ColumnFilterPopover, type FilterFieldDef} from "../../components/mapping/ColumnFilterPopover";
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
-import {SortMode, SORT_MODE_LABELS, SORT_MODE_ORDER, sortModeToSorting, sortModeFromSorting}
-    from "../../model/SortMode";
 import {SortingContext} from "../../components/mapping/sortingContext";
 
 // Per-column filter inputs. Each `field` is a canonical Solr field name resolved by
@@ -387,14 +385,26 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             },
             // Distance: hops behind the mapping — 1 for asserted, the chain length for an inference.
             // A same-SPO group can mix an asserted row with inferences of other lengths, so it shares
-            // the confidence column's "Multiple" handling; sortable via the toolbar's "Shortest
-            // distance" order, not a per-column popover.
+            // the confidence column's "Multiple" handling. The filter is a numeric MAXIMUM ("at most
+            // N hops"): the backend turns it into a distance:[* TO N] range, applied before grouping,
+            // so a group keeps only its members within N hops.
             {
                 id: "distance",
                 accessorFn: (row) => row.distance,
                 header: "Distance",
                 enableSorting: false,
                 size: 110,
+                Header: () => (
+                    <span className="flex items-center gap-1">
+                        <span>Distance</span>
+                        <ColumnFilterPopover
+                            title="Distance"
+                            fields={[{ field: "distance", label: "Max distance", inputType: "number" }]}
+                            onChange={handleFilterChange}
+                            initialValues={initialFieldFilters}
+                        />
+                    </span>
+                ),
                 Cell: ({ row }) => {
                     const shared = sharedValue(row.original, (member) =>
                         typeof member.distance === "number" ? String(member.distance) : "");
@@ -683,25 +693,10 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         {objectPrefixes.length > 0 ? ` → ${objectPrefixes.join(", ")}` : ""}
                     </span>
                 )}
-                {/* The ranking choice (ADR-0036): Best match / confidence / recency. It replaces
-                    the whole sorting state — a ranking is exclusive, unlike the per-column sort
-                    popovers it shares the `?sort` param with — which also makes "Best match" the
-                    one-click way back to relevance from any column sort. */}
-                <label className="flex items-center gap-2 text-sm text-tertiary">
-                    Order by
-                    <select
-                        className="input-default text-sm py-1 w-auto"
-                        value={sortModeFromSorting(sorting) ?? 'CUSTOM'}
-                        onChange={(event) => setSorting(sortModeToSorting(event.target.value as SortMode))}
-                    >
-                        {SORT_MODE_ORDER.map((mode) => (
-                            <option key={mode} value={mode}>{SORT_MODE_LABELS[mode]}</option>
-                        ))}
-                        {sortModeFromSorting(sorting) === null && (
-                            <option value="CUSTOM" disabled>Column sort</option>
-                        )}
-                    </select>
-                </label>
+                {/* No preset order control: results default to the backend's Strongest-evidence
+                    ranking (empty sort → score desc, ADR-0027). Per-column "Sort by" popovers on the
+                    Subject/Predicate/Object headers remain the way to reorder; clearing them returns
+                    to Strongest evidence. */}
                 <Tooltip title="Download all results as SSSOM-compliant TSV">
                     <span>
                         <IconButton onClick={handleExport} disabled={isExporting} size="small">

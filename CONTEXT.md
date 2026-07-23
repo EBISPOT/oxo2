@@ -264,10 +264,11 @@ schema gains six count fields; `copySolrConfig entities-only` now wipes rather t
 results table** — the search surface keeps only the term input, from/to ontology selectors and
 buttons; everything else sits behind "More options" as three groups (corpus with nested
 mapping-set picker, weak predicates, label matching), whose collapsed summary must name every
-non-default choice. The Best match / confidence / recency trio is a toolbar control on the results
-table writing the same `?sort` the column popovers write. A new search option must join one of the
-three groups and add its summary hint. See
-[ADR-0036](docs/adr/0036-search-form-options-grouped-by-intent.md). Affects `oxo2-frontend` only.
+non-default choice. Results default to the backend's Strongest-evidence ranking (ADR-0027);
+reordering lives only on the results table's per-column "Sort by" popovers (the preset order-by
+dropdown was removed 2026-07-23). A new search option must join one of the three groups and add its
+summary hint. See [ADR-0036](docs/adr/0036-search-form-options-grouped-by-intent.md). Affects
+`oxo2-frontend` only.
 - **Ontology sets carry a promoted prefix and name; the picker splits by category** — OLS extracts put
 the ontology's CURIE prefix and display name in the SSSOM `other` bag, and the dataload promotes them to
 discrete `prefix` / `ontology` fields on `oxo2-mappingsets` (serialize-only accessors on `MappingSet`,
