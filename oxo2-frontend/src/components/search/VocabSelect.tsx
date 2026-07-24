@@ -55,7 +55,7 @@ export function VocabSelect({
     // Blank query → the backend facets the whole result set (every value present, most common first).
     // 25 is the backend's contextual cap and comfortably covers any controlled vocabulary. staleTime
     // is short, not Infinity: these are scoped to a result set the user is actively changing.
-    const { data: values } = useQuery({
+    const { data: values, isLoading } = useQuery({
         queryKey: ["contextualVocab", field, JSON.stringify(search)],
         queryFn: () => fetchContextualValues(field, "", search, 25),
         staleTime: 30_000,
@@ -74,6 +74,14 @@ export function VocabSelect({
             size="small"
             options={options}
             value={selected}
+            // Distinguish "still fetching" from "genuinely none". Without this, MUI shows its
+            // noOptionsText ("No options") the instant the popover opens, so a slow suggest fetch —
+            // e.g. under load, when the backend is contending for CPU — reads as if the field had no
+            // values in the current results. `loading` swaps that for loadingText until the query
+            // resolves; only a resolved-empty facet then shows noOptionsText.
+            loading={isLoading}
+            loadingText="Loading…"
+            noOptionsText="No values in these results"
             getOptionLabel={(option) => format(option.value)}
             isOptionEqualToValue={(option, chosen) => option.value === chosen.value}
             onChange={(_event, picked) => onPick(picked ? picked.value : "")}
