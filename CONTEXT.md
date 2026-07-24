@@ -281,6 +281,11 @@ needs a reindex; the category split works against the current index. See
 `oxo2-backend` (`MappingSetSummary`, `MappingSetController`), and `oxo2-frontend` (`MappingSetSelector`).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
+- **A config `url` may be a repo-relative path or a single `.tsv.gz`** — a relative local `url` resolves
+against the directory of `OXO2_CONFIG`, so the committed `oxo-config-test.json` references in-repo
+fixtures (`testcases/worktree/*.sssom.tsv`) that travel to every worktree/CI, and a plain-`url` `.tsv.gz`
+is gunzipped to `.tsv`. See [ADR-0039](docs/adr/0039-repo-relative-fixtures-and-single-gzip-in-downloader.md).
+Affects `oxo2-dataload` (`oxo2-downloader`, `downloadMappings.nf`).
 - **The dataload is resumable from a chosen (sub)stage** — parameterised by `START_STAGE` (default
 `download` = full run); substage resume reads *published* artifacts under `$OXO2_DATA` (never Nextflow's
 work dir, which is wiped every run), and stage-ownership cleanup preserves earlier stages' outputs. Both

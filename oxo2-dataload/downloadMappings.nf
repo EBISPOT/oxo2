@@ -4,6 +4,11 @@
 params.config_file = "${System.getenv('OXO2_CONFIG')}"
 params.download_dir = "${System.getenv('OXO2_DATA')}/sssom"
 params.script_dir = params.script_dir ?: "${projectDir}"
+// Base directory that a relative local `url` in the config is resolved against: the directory
+// holding the config file itself, so a committed test config can reference in-repo fixtures by a
+// checkout-independent relative path (e.g. "testcases/worktree/efo.sssom.tsv"). Remote (http/ftp)
+// and absolute file:// urls are unaffected. See ADR-0039.
+params.base_dir = params.base_dir ?: file(params.config_file).parent.toString()
 
 workflow {
     // Parse config and create a channel with one entry per registry
@@ -36,6 +41,7 @@ process DOWNLOAD_REGISTRY {
     java ${System.getenv('JAVA_OPTS') ?: ''} \
         -jar "${params.script_dir}/oxo2-downloader/target/oxo2-downloader-1.0.0-SNAPSHOT.jar" \
         --config registry_config.json \
-        --download-dir "${params.download_dir}"
+        --download-dir "${params.download_dir}" \
+        --base-dir "${params.base_dir}"
     """
 }

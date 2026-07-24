@@ -34,7 +34,8 @@ public class DownloadMappings {
             logger.debug("Downloading registry {} from {}", mappingRegistry.getId(), mappingRegistry.getPurl());
             try {
                 futures.add(downloadMappings(executorService, mappingRegistry,
-                        inputParameters.downloadDirectory + File.separator + mappingRegistry.getId()));
+                        inputParameters.downloadDirectory + File.separator + mappingRegistry.getId(),
+                        inputParameters.baseDirectory));
             } catch (IllegalArgumentException e) {
                 logger.error("Failed to download registry {}: {}", mappingRegistry.getId(), e.getMessage());
             }
@@ -79,7 +80,8 @@ public class DownloadMappings {
 
     private static Future downloadMappings(ExecutorService executorService,
                                            OxoConfiguration.MappingRegistry mappingRegistry,
-                                           String downloadDirectory) {
+                                           String downloadDirectory,
+                                           String baseDirectory) {
 
         Future<?> future = null;
 
@@ -99,7 +101,8 @@ public class DownloadMappings {
         } else if (mappingRegistry.getUrl().isPresent()) {
             future = executorService.submit(new HTTPDowloader.HTTPDownloadTask(
                     mappingRegistry.getUrl().get(),
-                    downloadDirectory));
+                    downloadDirectory,
+                    baseDirectory));
         } else if (mappingRegistry.getFtpServer().isPresent()) {
             future = executorService.submit(new FTPDownloader.FTPDownloadTask(
                     executorService,
@@ -149,13 +152,20 @@ public class DownloadMappings {
         numberOfThreads.setRequired(false);
         options.addOption(numberOfThreads);
 
+        Option baseDirectory = new Option (null, Arguments.BASE_DIRECTORY.argument, true,
+                "Directory a relative local `url` is resolved against (typically the config file's "
+                        + "directory). Remote and absolute file:// urls ignore it.");
+        baseDirectory.setRequired(false);
+        options.addOption(baseDirectory);
+
         return options;
     }
 
     private enum Arguments {
         CONFIGURATION("config"),
         DOWNLOAD_DIRECTORY("download-dir"),
-        NUMBER_OF_THREADS("threads");
+        NUMBER_OF_THREADS("threads"),
+        BASE_DIRECTORY("base-dir");
 
         private final String argument;
 
@@ -169,6 +179,9 @@ public class DownloadMappings {
         private final  String downloadDirectory;
 
         private final int numberOfThreads;
+
+        /** Base directory for resolving relative local urls; null when the option is absent. */
+        private final String baseDirectory;
 
         public InputParameters(String [] args) {
             Options options = getOptions();
@@ -197,6 +210,8 @@ public class DownloadMappings {
             }
             numberOfThreads = tmpNumberOfThreads;
             logger.debug("Number of threads: {}", numberOfThreads);
+            baseDirectory = commandLine.getOptionValue(Arguments.BASE_DIRECTORY.argument);
+            logger.debug("Base directory: {}", baseDirectory);
 
         }
 

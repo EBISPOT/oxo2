@@ -81,6 +81,10 @@ HPC path — see § Resumable dataload.
 **1. Download** — `downloadMappings.nf` (calling logic in `oxo2-downloader`). Reads the SSSOM source list from `OXO2_CONFIG` 
 (an `oxo-config*.json` file) and downloads each mapping set's TSV to the dataload working directory. A registry may be a direct
 `url`, an `ftp_server`, a `github_repository`, or a `mapping_commons_registry`:
+- a direct `url` is a single SSSOM TSV, a `.tgz`/`.tar.gz` bundle (extracted), or a single-member `.tsv.gz`
+  (gunzipped to `.tsv`). A `url` may also be a **relative local path**, resolved against the directory of
+  `OXO2_CONFIG` (`--base-dir`), so a committed test config can reference in-repo fixtures without a
+  machine-specific `file://` path — see [ADR-0039](../docs/adr/0039-repo-relative-fixtures-and-single-gzip-in-downloader.md).
 - `github_repository` registries are fetched as the default-branch archive tarball and only the configured `directory` is
   extracted — no GitHub API, see [ADR-0007](../docs/adr/0007-github-registries-via-archive-tarball.md).
 - `mapping_commons_registry` registries point at a Mapping Commons aggregated catalogue

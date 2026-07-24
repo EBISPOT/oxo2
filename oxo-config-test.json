@@ -1,25 +1,24 @@
 {
   "mapping_registries" : [
     {
-      "id": "test_mondo",
-      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/mondo.ols.sssom.tsv"
+      "id": "efo",
+      "url": "testcases/worktree/efo.sssom.tsv",
+      "category": "ontology"
     },
     {
-      "id": "test_efo",
-      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/efo.ols.sssom.tsv"
+      "id": "mondo",
+      "url": "testcases/worktree/mondo.sssom.tsv",
+      "category": "ontology"
     },
     {
-      "id": "test_uberon",
-      "url": "file:////home/henriette007/ebi-dev/oxo2/sssom/uberon.ols.sssom.tsv"
+      "id": "uberon",
+      "url": "testcases/worktree/uberon.sssom.tsv",
+      "category": "ontology"
     },
     {
-      "id": "mapping_commons",
-      "mapping_commons_registry": "https://mapping-commons.github.io/data/mapping-specifications.json",
-      "exclude": [
-        "processed.sssom.tsv.gz",
-        "raw.sssom.tsv.gz",
-        "mappings.sssom.tsv.gz"
-      ]
+      "id": "uniprot",
+      "url": "https://raw.githubusercontent.com/mapping-commons/ebi-text-mappings/main/mappings/uniprot.sssom.tsv",
+      "category": "curated"
     }
   ]
 }
