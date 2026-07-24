@@ -120,6 +120,9 @@ export function ColumnFilterPopover({
                                 // Scoped to the live search, exactly like the contextual branch below:
                                 // the dropdown only offers values present in the current results.
                                 search={suggestContext}
+                                // This popover exists solely to pick a value, so drop the list open the
+                                // moment it appears rather than making the user find the caret first.
+                                autoOpen
                                 // A closed vocabulary: only a pick sets the filter (an exact value),
                                 // and clearing removes it. There is no "contains" typing path.
                                 onPick={(picked) => handlePick(fieldDef.field, picked)}

@@ -1,5 +1,6 @@
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchContextualValues, type ValueSuggestion } from "../../pages/results/SuggestSlice";
 
@@ -34,6 +35,7 @@ export function VocabSelect({
     placeholder,
     formatOption,
     inputId,
+    autoOpen = false,
 }: {
     /** The Solr field whose values to offer, e.g. `mapping_justification`. */
     field: string;
@@ -51,6 +53,14 @@ export function VocabSelect({
     /** Map a raw value to its display label; identity when omitted. */
     formatOption?: (value: string) => string;
     inputId?: string;
+    /**
+     * Open the value list (and focus the field) as soon as the component mounts. Set this when the
+     * combobox lives in a popover the user just opened to pick a value — the whole reason the popover
+     * is on screen — so the values drop straight down instead of the user having to hunt for the caret.
+     * Leave it off where the combobox sits inline among other controls (e.g. an MRT column-filter row),
+     * where a list springing open unbidden would be intrusive.
+     */
+    autoOpen?: boolean;
 }) {
     // Blank query → the backend facets the whole result set (every value present, most common first).
     // 25 is the backend's contextual cap and comfortably covers any controlled vocabulary. staleTime
@@ -69,11 +79,21 @@ export function VocabSelect({
     // picked value are still counted.
     const selected = options.find((option) => option.value === value) ?? null;
 
+    // Control the popup explicitly instead of leaning on openOnFocus. MUI deliberately suppresses
+    // openOnFocus for the initial autoFocus, so a focus-based reveal leaves an autofocused-but-closed
+    // box — which looks exactly like the "dropdown with no options" this field was reported to show.
+    // Seeding the state from autoOpen opens the list on mount; onOpen/onClose then hand control back to
+    // MUI (pick, Escape, click-away, refocus) as normal.
+    const [open, setOpen] = useState(autoOpen);
+
     return (
         <Autocomplete<ValueSuggestion, false, false, false>
             size="small"
             options={options}
             value={selected}
+            open={open}
+            onOpen={() => setOpen(true)}
+            onClose={() => setOpen(false)}
             // Distinguish "still fetching" from "genuinely none". Without this, MUI shows its
             // noOptionsText ("No options") the instant the popover opens, so a slow suggest fetch —
             // e.g. under load, when the backend is contending for CPU — reads as if the field had no
@@ -102,6 +122,9 @@ export function VocabSelect({
                     label={label}
                     placeholder={placeholder}
                     variant="outlined"
+                    // Land the cursor in the field when we auto-open, so ↑/↓ and type-to-narrow work
+                    // straight away. Off otherwise, to avoid stealing focus from an inline filter row.
+                    autoFocus={autoOpen}
                     slotProps={{
                         ...params.slotProps,
                         htmlInput: {
