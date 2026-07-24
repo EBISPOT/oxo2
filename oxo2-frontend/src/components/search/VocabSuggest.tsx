@@ -23,6 +23,7 @@ export function VocabSuggest({
     label,
     placeholder,
     inputId,
+    formatOption,
 }: {
     /** The Solr field whose vocabulary to offer, e.g. `mapping_justification`. */
     field: string;
@@ -32,6 +33,13 @@ export function VocabSuggest({
     label?: string;
     placeholder?: string;
     inputId?: string;
+    /**
+     * Map a raw value to a friendly display label; identity when omitted. Applied to both what the
+     * dropdown shows and what MUI's client filter matches typed text against, so a user can type the
+     * label ("man…") even though the underlying value is an opaque CURIE. A picked value still emits
+     * the raw CURIE; only the display is translated.
+     */
+    formatOption?: (value: string) => string;
 }) {
     // Static between dataloads, so it never needs refetching within a session.
     const { data: values } = useQuery({
@@ -40,16 +48,21 @@ export function VocabSuggest({
         staleTime: Infinity,
     });
 
+    const format = formatOption ?? ((raw: string) => raw);
+
     return (
         <Autocomplete<ValueSuggestion, false, false, true>
             freeSolo
             size="small"
             options={values ?? []}
-            // MUI's default client-side filter is what we want here — the whole list is local.
-            getOptionLabel={(option) => (typeof option === "string" ? option : option.value)}
+            // MUI's default client-side filter is what we want here — the whole list is local. It
+            // matches typed text against getOptionLabel, so formatting the label lets users type it.
+            getOptionLabel={(option) => (typeof option === "string" ? option : format(option.value))}
             isOptionEqualToValue={(option, selected) =>
                 option.value === (typeof selected === "string" ? selected : selected.value)}
-            inputValue={value}
+            // A picked value is stored raw (a CURIE); show its label. A half-typed fragment is not a
+            // known value, so format() returns it unchanged and the user sees exactly what they type.
+            inputValue={format(value)}
             onInputChange={(_event, next, reason) => {
                 if (reason === "input" || reason === "clear") {
                     onTyped(next);
@@ -64,7 +77,7 @@ export function VocabSuggest({
                 const { key, ...liProps } = props as typeof props & { key?: string };
                 return (
                     <li {...liProps} key={key ?? option.value}>
-                        <span className="break-all">{option.value}</span>
+                        <span className="break-all">{format(option.value)}</span>
                         <span className="ml-2 shrink-0 text-tertiary text-sm">
                             · {option.count.toLocaleString()}
                         </span>

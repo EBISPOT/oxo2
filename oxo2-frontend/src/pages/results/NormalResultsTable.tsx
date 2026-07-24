@@ -48,6 +48,14 @@ const OBJECT_FILTER_FIELDS: FilterFieldDef[] = [
     {field: "object_label", label: "Object label", suggest: "contextual"},
     {field: "object_iri", label: "Object IRI", suggest: "contextual"},
 ];
+// Mapping justification is a closed SEMAPV vocabulary shown by rdfs:label, so it uses a pick-only
+// combobox (`vocab`) rather than a contains box: a typed label fragment could never match the raw
+// CURIE the backend filters on. Like the contextual columns it is scoped to the live search, so the
+// dropdown only offers justifications present in the current results. Picking applies the exact CURIE.
+const JUSTIFICATION_FILTER_FIELDS: FilterFieldDef[] = [
+    {field: "mapping_justification", label: "Mapping justification", suggest: "vocab",
+        formatOption: formatMappingJustification},
+];
 
 // Per-column sort choices (id / label / iri). Same canonical Solr field names as the
 // filters; label fields are routed to their `_str` docValue twin by the backend.
@@ -350,8 +358,10 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         <span>Mapping justification</span>
                         <ColumnFilterPopover
                             title="Mapping justification"
-                            fields={[{ field: "mapping_justification", label: "Mapping justification" }]}
+                            fields={JUSTIFICATION_FILTER_FIELDS}
                             onChange={handleFilterChange}
+                            onPick={handleFilterPick}
+                            suggestContext={suggestContext}
                             initialValues={initialFieldFilters}
                         />
                     </span>
