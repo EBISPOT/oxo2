@@ -13,7 +13,7 @@ import {
     useMaterialReactTable,
 } from 'material-react-table';
 import {Mapping} from "../../model/Mapping.ts";
-import {formatMappingJustification} from "../../model/MappingJustification";
+import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
 import {VocabSelect} from "../../components/search/VocabSelect";
 import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlColumnFilters} from "../../util/tableUrlState";
 
@@ -146,8 +146,8 @@ export function AdvancedResultsTable({
                 accessorKey: "mappingJustification",
                 header: "Mapping Justification",
                 Cell: ({ row }) => (
-                    <span title={row.original.mappingJustification}>
-                        {formatMappingJustification(row.original.mappingJustification)}
+                    <span title={mappingJustificationLabel(row.original.mappingJustification)}>
+                        {mappingJustificationShortName(row.original.mappingJustification)}
                     </span>
                 ),
                 // Closed SEMAPV vocabulary shown by label: a pick-only combobox over the values present
@@ -160,7 +160,8 @@ export function AdvancedResultsTable({
                             field="mapping_justification"
                             value={(column.getFilterValue() as string) ?? ""}
                             onPick={(picked) => column.setFilterValue(picked || undefined)}
-                            formatOption={formatMappingJustification}
+                            formatOption={mappingJustificationShortName}
+                            formatOptionTitle={mappingJustificationLabel}
                             search={advancedSuggestContext}
                             placeholder="Filter"
                         />

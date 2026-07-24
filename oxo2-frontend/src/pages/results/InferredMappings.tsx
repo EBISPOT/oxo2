@@ -10,7 +10,7 @@ import {Link} from "react-router-dom";
 import {mappingSetHref} from "../../util/mappingSetUrl";
 import {fetchConfidenceByMappingIds} from "./MappingResultsSlice";
 import {InferredMapping, Mapping} from "../../model/Mapping.ts";
-import {formatMappingJustification} from "../../model/MappingJustification";
+import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
 import {EntityRefCell} from "../../components/mapping/EntityRefCell";
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
 import {SortingContext} from "../../components/mapping/sortingContext";
@@ -174,8 +174,8 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 header: "Mapping justification",
                 size: 200,
                 Cell: ({ row }) => (
-                    <span className="break-all" title={row.original.mappingJustification}>
-                        {formatMappingJustification(row.original.mappingJustification)}
+                    <span className="break-all" title={mappingJustificationLabel(row.original.mappingJustification)}>
+                        {mappingJustificationShortName(row.original.mappingJustification)}
                     </span>
                 ),
             },

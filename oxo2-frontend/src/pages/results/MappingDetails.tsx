@@ -1,6 +1,6 @@
 import React, {ReactNode, useState} from "react";
 import {InferredMapping, Mapping, MappingFields} from "../../model/Mapping";
-import {formatMappingJustification} from "../../model/MappingJustification";
+import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
 import {Link, useNavigate} from "react-router-dom";
 import {mappingSetHref} from "../../util/mappingSetUrl";
 import {MappingItem} from "../../components/mapping/MappingItem";
@@ -133,8 +133,8 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
             >
                 <LabeledValue
                     label="Mapping Justification"
-                    value={formatMappingJustification(mapping.mappingJustification)}
-                    title={mapping.mappingJustification}
+                    value={mappingJustificationShortName(mapping.mappingJustification)}
+                    title={mappingJustificationLabel(mapping.mappingJustification)}
                 />
                 <LabeledValue label="Confidence" value={mapping.confidence} />
             </Section>

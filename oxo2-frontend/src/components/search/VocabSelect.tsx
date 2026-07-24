@@ -34,6 +34,7 @@ export function VocabSelect({
     label,
     placeholder,
     formatOption,
+    formatOptionTitle,
     inputId,
     autoOpen = false,
 }: {
@@ -52,6 +53,12 @@ export function VocabSelect({
     placeholder?: string;
     /** Map a raw value to its display label; identity when omitted. */
     formatOption?: (value: string) => string;
+    /**
+     * Map a raw value to a fuller description shown as the option's hover tooltip. Use it when
+     * `formatOption` deliberately shortens the label (e.g. a SEMAPV CURIE to its CamelCase local name)
+     * so the full form stays one hover away. Omitted → no tooltip.
+     */
+    formatOptionTitle?: (value: string) => string;
     inputId?: string;
     /**
      * Open the value list (and focus the field) as soon as the component mounts. Set this when the
@@ -108,7 +115,7 @@ export function VocabSelect({
             renderOption={(props, option) => {
                 const { key, ...liProps } = props as typeof props & { key?: string };
                 return (
-                    <li {...liProps} key={key ?? option.value}>
+                    <li {...liProps} key={key ?? option.value} title={formatOptionTitle?.(option.value)}>
                         <span className="break-all">{format(option.value)}</span>
                         <span className="ml-2 shrink-0 text-tertiary text-sm">
                             · {option.count.toLocaleString()}

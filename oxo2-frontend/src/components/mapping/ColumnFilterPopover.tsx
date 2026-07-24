@@ -21,10 +21,16 @@ export interface FilterFieldDef {
      */
     suggest?: "contextual" | "vocab" | "none";
     /**
-     * For `vocab` fields: map a stored value to its display label (e.g. a SEMAPV CURIE to its
-     * rdfs:label). The filter still applies the raw value; only the dropdown text is translated.
+     * For `vocab` fields: map a stored value to its display label (e.g. a SEMAPV CURIE to its short
+     * CamelCase name). The filter still applies the raw value; only the dropdown text is translated.
      */
     formatOption?: (value: string) => string;
+    /**
+     * For `vocab` fields: map a stored value to a fuller description shown as the option's hover
+     * tooltip, for when `formatOption` shortens the label (e.g. the SEMAPV rdfs:label behind the
+     * CamelCase name).
+     */
+    formatOptionTitle?: (value: string) => string;
     /**
      * Render as a number input (min 1, integer steps) instead of a free-text box. Distance is the
      * only numeric filter today; the backend reads its value as an inclusive maximum ("at most N").
@@ -117,6 +123,7 @@ export function ColumnFilterPopover({
                                 label={fieldDef.label}
                                 value={values[fieldDef.field] ?? ""}
                                 formatOption={fieldDef.formatOption}
+                                formatOptionTitle={fieldDef.formatOptionTitle}
                                 // Scoped to the live search, exactly like the contextual branch below:
                                 // the dropdown only offers values present in the current results.
                                 search={suggestContext}

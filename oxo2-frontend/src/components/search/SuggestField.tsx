@@ -1,6 +1,6 @@
 import type { AdvancedFieldDef } from "../../model/AdvancedFields";
 import type { EntitySuggestion } from "../../pages/results/SuggestSlice";
-import { formatMappingJustification } from "../../model/MappingJustification";
+import { mappingJustificationShortName, mappingJustificationLabel } from "../../model/MappingJustification";
 import { EntitySuggest } from "./EntitySuggest";
 import { VocabSuggest } from "./VocabSuggest";
 
@@ -59,10 +59,13 @@ export function SuggestField({
                 onTyped={(next) => onChange(fieldDef.field, next)}
                 onPick={(picked) => onChange(fieldDef.field, picked)}
                 placeholder={placeholder}
-                // The justification vocabulary is SEMAPV CURIEs; show their labels (the query still
-                // carries the raw CURIE). Other vocab fields have no such mapping and stay verbatim.
+                // The justification vocabulary is SEMAPV CURIEs; show their short CamelCase names with
+                // the full rdfs:label on hover (the query still carries the raw CURIE). Other vocab
+                // fields have no such mapping and stay verbatim.
                 formatOption={fieldDef.field === "mapping_justification"
-                    ? formatMappingJustification : undefined}
+                    ? mappingJustificationShortName : undefined}
+                formatOptionTitle={fieldDef.field === "mapping_justification"
+                    ? mappingJustificationLabel : undefined}
             />
         );
     }

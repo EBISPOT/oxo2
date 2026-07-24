@@ -24,6 +24,7 @@ export function VocabSuggest({
     placeholder,
     inputId,
     formatOption,
+    formatOptionTitle,
 }: {
     /** The Solr field whose vocabulary to offer, e.g. `mapping_justification`. */
     field: string;
@@ -40,6 +41,11 @@ export function VocabSuggest({
      * the raw CURIE; only the display is translated.
      */
     formatOption?: (value: string) => string;
+    /**
+     * Map a raw value to a fuller description shown as the option's hover tooltip, for when
+     * `formatOption` deliberately shortens the label. Omitted → no tooltip.
+     */
+    formatOptionTitle?: (value: string) => string;
 }) {
     // Static between dataloads, so it never needs refetching within a session.
     const { data: values } = useQuery({
@@ -76,7 +82,7 @@ export function VocabSuggest({
             renderOption={(props, option) => {
                 const { key, ...liProps } = props as typeof props & { key?: string };
                 return (
-                    <li {...liProps} key={key ?? option.value}>
+                    <li {...liProps} key={key ?? option.value} title={formatOptionTitle?.(option.value)}>
                         <span className="break-all">{format(option.value)}</span>
                         <span className="ml-2 shrink-0 text-tertiary text-sm">
                             · {option.count.toLocaleString()}
