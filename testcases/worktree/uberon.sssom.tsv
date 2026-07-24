@@ -1,0 +1,698 @@
+# mapping_set_id: https://w3id.org/commons/ols/mappings/uberon.ols.sssom.tsv
+# mapping_set_group: ols_sssom_extracts
+# mapping_set_confidence: '0.7'
+# mapping_provider: https://www.ebi.ac.uk/ols4/ontologies/uberon
+# mapping_tool: https://www.ebi.ac.uk/ols4
+# mapping_set_title: OLS extracted UBERON mappings
+# mapping_set_description: These mappings were extracted during the OLS dataload from UBERON
+# mapping_date: '2026-05-22'
+# other:
+#   local_id: uberon.ols
+# local_name: uberon.ols.sssom.tsv
+# curie_map:
+#   semapv: https://w3id.org/semapv/vocab/
+#   owl: http://www.w3.org/2002/07/owl#
+#   rdfs: http://www.w3.org/2000/01/rdf-schema#
+#   skos: http://www.w3.org/2004/02/skos/core#
+#   oboInOwl: http://www.geneontology.org/formats/oboInOwl#
+#   chebi: http://purl.obolibrary.org/obo/chebi/
+#   inchi: 'https://bioregistry.io/inchi:'
+#   inchikey: 'https://bioregistry.io/inchikey:'
+#   smiles: 'https://bioregistry.io/smiles:'
+#   UBERON: http://purl.obolibrary.org/obo/UBERON_
+#   BFO: http://purl.obolibrary.org/obo/BFO_
+#   CARO: http://purl.obolibrary.org/obo/CARO_
+#   BTO: http://purl.obolibrary.org/obo/BTO_
+#   CALOHA: https://www.nextprot.org/term/
+#   EFO: http://www.ebi.ac.uk/efo/EFO_
+#   EMAPA: http://purl.obolibrary.org/obo/EMAPA_
+#   EV: http://purl.obolibrary.org/obo/EV_
+#   FMA: http://purl.obolibrary.org/obo/FMA_
+#   MA: http://purl.obolibrary.org/obo/MA_
+#   MAT: http://purl.obolibrary.org/obo/MAT_
+#   MESH: http://id.nlm.nih.gov/mesh/
+#   NCIT: http://purl.obolibrary.org/obo/NCIT_
+#   SCTID: http://purl.bioontology.org/ontology/SNOMEDCT/
+#   VHOG: http://purl.obolibrary.org/obo/VHOG_
+#   Wikipedia: http://en.wikipedia.org/wiki/
+#   UMLS: https://uts.nlm.nih.gov/uts/umls/concept/
+#   AAO: http://purl.obolibrary.org/obo/AAO_
+#   EHDAA2: http://purl.obolibrary.org/obo/EHDAA2_
+#   EHDAA: http://purl.obolibrary.org/obo/EHDAA_
+#   TAO: http://purl.obolibrary.org/obo/TAO_
+#   ZFA: http://purl.obolibrary.org/obo/ZFA_
+#   FBbt: http://purl.obolibrary.org/obo/FBbt_
+#   FMA_2: 'https://www.ebi.ac.uk/ols4/ontologies/fma/terms?obo_id=FMA:'
+#   XAO: http://purl.obolibrary.org/obo/XAO_
+#   BIRNLEX: http://uri.neuinfo.org/nif/nifstd/birnlex_
+#   DHBA: https://purl.brain-bican.org/ontology/dhbao/DHBA_
+#   HBA: https://purl.brain-bican.org/ontology/hbao/HBA_
+#   neuronames: http://braininfo.rprc.washington.edu/centraldirectory.aspx?ID=
+#   BILA: http://purl.obolibrary.org/obo/BILA_
+#   EHDA: http://purl.obolibrary.org/obo/EHDA_
+#   NLXANAT: http://uri.neuinfo.org/nif/nifstd/nlx_anat_
+#   AEO: http://purl.obolibrary.org/obo/AEO_
+#   HAO: http://purl.obolibrary.org/obo/HAO_
+#   TGMA: http://purl.obolibrary.org/obo/TGMA_
+#   IDOMAL: http://purl.obolibrary.org/obo/IDOMAL_
+#   WBbt: http://purl.obolibrary.org/obo/WBbt_
+#   VSAO: http://purl.obolibrary.org/obo/VSAO_
+#   TAO_RETIRED: http://purl.obolibrary.org/obo/TAO_
+#   ZFA_RETIRED: http://purl.obolibrary.org/obo/ZFA_
+#   SPD: http://purl.obolibrary.org/obo/SPD_
+#   DMBA: https://purl.brain-bican.org/ontology/dmbao/DMBA_
+#   FAO: http://purl.obolibrary.org/obo/FAO_
+#   ENVO: http://purl.obolibrary.org/obo/ENVO_
+#   FBdv: http://purl.obolibrary.org/obo/FBdv_
+#   WBls: http://purl.obolibrary.org/obo/WBls_
+#   HsapDv: http://purl.obolibrary.org/obo/HsapDv_
+#   MmusDv: http://purl.obolibrary.org/obo/MmusDv_
+#   ZFS: http://purl.obolibrary.org/obo/ZFS_
+#   EMAPA_2: 'http://www.informatics.jax.org/vocab/gxd/anatomy/EMAPA:'
+#   EMAPA_RETIRED: http://purl.obolibrary.org/obo/EMAPA_
+#   PdumDv: http://purl.obolibrary.org/obo/PdumDv_
+#   nlx.sub: http://uri.neuinfo.org/nif/nifstd/nlx_subcell_
+#   NLX: http://uri.neuinfo.org/nif/nifstd/nlx_
+#   TADS: http://purl.obolibrary.org/obo/TADS_
+#   EHDAA2_RETIRED: http://purl.obolibrary.org/obo/EHDAA2_
+#   NIF_Subcellular: http://www.neurolex.org/wiki/
+#   GO: http://purl.obolibrary.org/obo/GO_
+#   MBA: https://purl.brain-bican.org/ontology/mbao/MBA_
+#   PBA: https://biopragmatics.github.io/providers/pba/
+#   RETIRED_EHDAA2: http://purl.obolibrary.org/obo/EHDAA2_
+#   ILX: https://scicrunch.org/scicrunch/interlex/view/ilx_
+#   MFMO: http://purl.obolibrary.org/obo/MFMO_
+#   nif.ext: http://uri.neuinfo.org/nif/nifstd/nifext_
+#   FMA_RETIRED: 'https://www.ebi.ac.uk/ols4/ontologies/fma/terms?obo_id=FMA:'
+#   VO: http://purl.obolibrary.org/obo/VO_
+#   AEO_RETIRED: http://purl.obolibrary.org/obo/AEO_
+#   VHOG_RETIRED: http://purl.obolibrary.org/obo/VHOG_
+#   VSAO_RETIRED: http://purl.obolibrary.org/obo/VSAO_
+#   EMAPS: 'https://www.informatics.jax.org/vocab/gxd/anatomy/EMAPS:'
+#   CL: http://purl.obolibrary.org/obo/CL_
+#   nlx.oen: http://uri.neuinfo.org/nif/nifstd/oen_
+#   RadLex: https://radlex.org/RID/
+#   MPATH: http://purl.obolibrary.org/obo/MPATH_
+#   orcid: https://orcid.org/
+#   NeuroNames: http://braininfo.rprc.washington.edu/centraldirectory.aspx?ID=
+subject_id	predicate_id	object_id	mapping_justification	subject_label	object_label
+UBERON:0000000	rdfs:subClassOf	BFO:0000003	semapv:UnspecifiedMatching	obsolete processual entity	occurrent
+UBERON:0000001	oboInOwl:hasDbXref	CARO:0001008	semapv:UnspecifiedMatching	gross anatomical part	gross anatomical part
+UBERON:0000001	rdfs:subClassOf	UBERON:0000465	semapv:UnspecifiedMatching	gross anatomical part	material anatomical entity
+UBERON:0000002	oboInOwl:hasDbXref	BTO:0001421	semapv:UnspecifiedMatching	uterine cervix	uterine cervix
+UBERON:0000002	oboInOwl:hasDbXref	BTO:0002249	semapv:UnspecifiedMatching	uterine cervix	cervical canal
+UBERON:0000002	oboInOwl:hasDbXref	CALOHA:TS-0134	semapv:UnspecifiedMatching	uterine cervix	
+UBERON:0000002	oboInOwl:hasDbXref	EFO:0000979	semapv:UnspecifiedMatching	uterine cervix	obsolete_cervix
+UBERON:0000002	oboInOwl:hasDbXref	EMAPA:29927	semapv:UnspecifiedMatching	uterine cervix	cervix uteri
+UBERON:0000002	oboInOwl:hasDbXref	EV:0100114	semapv:UnspecifiedMatching	uterine cervix	
+UBERON:0000002	oboInOwl:hasDbXref	FMA:17740	semapv:UnspecifiedMatching	uterine cervix	colo do útero
+UBERON:0000002	oboInOwl:hasDbXref	MA:0000392	semapv:UnspecifiedMatching	uterine cervix	uterine cervix
+UBERON:0000002	oboInOwl:hasDbXref	MAT:0000292	semapv:UnspecifiedMatching	uterine cervix	
+UBERON:0000002	oboInOwl:hasDbXref	MESH:D002584	semapv:UnspecifiedMatching	uterine cervix	
+UBERON:0000002	oboInOwl:hasDbXref	NCIT:C12311	semapv:UnspecifiedMatching	uterine cervix	Cervix Uteri
+UBERON:0000002	oboInOwl:hasDbXref	SCTID:181453009	semapv:UnspecifiedMatching	uterine cervix	
+UBERON:0000002	oboInOwl:hasDbXref	VHOG:0001359	semapv:UnspecifiedMatching	uterine cervix	
+UBERON:0000002	oboInOwl:hasDbXref	Wikipedia:Cervix	semapv:UnspecifiedMatching	uterine cervix	
+UBERON:0000002	oboInOwl:hasDbXref	UMLS:C0007874	semapv:UnspecifiedMatching	uterine cervix	
+UBERON:0000003	oboInOwl:hasDbXref	AAO:0000311	semapv:UnspecifiedMatching	naris	
+UBERON:0000003	oboInOwl:hasDbXref	EHDAA2:0001225	semapv:UnspecifiedMatching	naris	
+UBERON:0000003	oboInOwl:hasDbXref	EHDAA:9083	semapv:UnspecifiedMatching	naris	
+UBERON:0000003	oboInOwl:hasDbXref	EMAPA:17847	semapv:UnspecifiedMatching	naris	naris
+UBERON:0000003	oboInOwl:hasDbXref	MA:0000282	semapv:UnspecifiedMatching	naris	naris
+UBERON:0000003	oboInOwl:hasDbXref	SCTID:272650008	semapv:UnspecifiedMatching	naris	
+UBERON:0000003	oboInOwl:hasDbXref	VHOG:0000663	semapv:UnspecifiedMatching	naris	
+UBERON:0000004	oboInOwl:hasDbXref	BTO:0000840	semapv:UnspecifiedMatching	nose	nose
+UBERON:0000004	oboInOwl:hasDbXref	CALOHA:TS-2037	semapv:UnspecifiedMatching	nose	
+UBERON:0000004	oboInOwl:hasDbXref	EHDAA2:0001274	semapv:UnspecifiedMatching	nose	
+UBERON:0000004	oboInOwl:hasDbXref	EHDAA:1502	semapv:UnspecifiedMatching	nose	
+UBERON:0000004	oboInOwl:hasDbXref	EMAPA:16542	semapv:UnspecifiedMatching	nose	nose
+UBERON:0000004	oboInOwl:hasDbXref	EV:0100037	semapv:UnspecifiedMatching	nose	
+UBERON:0000004	oboInOwl:hasDbXref	EV:0100370	semapv:UnspecifiedMatching	nose	
+UBERON:0000004	oboInOwl:hasDbXref	FMA:46472	semapv:UnspecifiedMatching	nose	nariz
+UBERON:0000004	oboInOwl:hasDbXref	MA:0000281	semapv:UnspecifiedMatching	nose	nose
+UBERON:0000004	oboInOwl:hasDbXref	MAT:0000139	semapv:UnspecifiedMatching	nose	
+UBERON:0000004	oboInOwl:hasDbXref	MESH:D009666	semapv:UnspecifiedMatching	nose	
+UBERON:0000004	oboInOwl:hasDbXref	NCIT:C12756	semapv:UnspecifiedMatching	nose	Nose
+UBERON:0000004	oboInOwl:hasDbXref	SCTID:181195007	semapv:UnspecifiedMatching	nose	
+UBERON:0000004	oboInOwl:hasDbXref	TAO:0000047	semapv:UnspecifiedMatching	nose	
+UBERON:0000004	oboInOwl:hasDbXref	Wikipedia:Nose	semapv:UnspecifiedMatching	nose	
+UBERON:0000004	oboInOwl:hasDbXref	ZFA:0000047	semapv:UnspecifiedMatching	nose	peripheral olfactory organ
+UBERON:0000004	oboInOwl:hasDbXref	UMLS:C0028429	semapv:UnspecifiedMatching	nose	
+UBERON:0000005	oboInOwl:hasDbXref	FBbt:00005157	semapv:UnspecifiedMatching	chemosensory organ	chemosensory sensory organ
+UBERON:0000006	oboInOwl:hasDbXref	AAO:0010406	semapv:UnspecifiedMatching	islet of Langerhans	
+UBERON:0000006	oboInOwl:hasDbXref	BTO:0000991	semapv:UnspecifiedMatching	islet of Langerhans	pancreatic islet
+UBERON:0000006	oboInOwl:hasDbXref	CALOHA:TS-0741	semapv:UnspecifiedMatching	islet of Langerhans	
+UBERON:0000006	oboInOwl:hasDbXref	EFO:0000856	semapv:UnspecifiedMatching	islet of Langerhans	obsolete_islet of Langerhans
+UBERON:0000006	oboInOwl:hasDbXref	EMAPA:32927	semapv:UnspecifiedMatching	islet of Langerhans	islets of Langerhans
+UBERON:0000006	oboInOwl:hasDbXref	EV:0100130	semapv:UnspecifiedMatching	islet of Langerhans	
+UBERON:0000006	oboInOwl:hasDbXref	FMA_2:16016	semapv:UnspecifiedMatching	islet of Langerhans	
+UBERON:0000006	oboInOwl:hasDbXref	MA:0000127	semapv:UnspecifiedMatching	islet of Langerhans	pancreatic islet
+UBERON:0000006	oboInOwl:hasDbXref	MAT:0000076	semapv:UnspecifiedMatching	islet of Langerhans	
+UBERON:0000006	oboInOwl:hasDbXref	MESH:D007515	semapv:UnspecifiedMatching	islet of Langerhans	
+UBERON:0000006	oboInOwl:hasDbXref	NCIT:C12608	semapv:UnspecifiedMatching	islet of Langerhans	Islet of Langerhans
+UBERON:0000006	oboInOwl:hasDbXref	VHOG:0000646	semapv:UnspecifiedMatching	islet of Langerhans	
+UBERON:0000006	oboInOwl:hasDbXref	Wikipedia:Islets_of_Langerhans	semapv:UnspecifiedMatching	islet of Langerhans	
+UBERON:0000006	oboInOwl:hasDbXref	XAO:0000159	semapv:UnspecifiedMatching	islet of Langerhans	islets of Langerhans
+UBERON:0000006	oboInOwl:hasDbXref	UMLS:C0022131	semapv:UnspecifiedMatching	islet of Langerhans	
+UBERON:0000007	oboInOwl:hasDbXref	AAO:0010536	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	BIRNLEX:1353	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	BTO:0001073	semapv:UnspecifiedMatching	pituitary gland	hypophysis
+UBERON:0000007	oboInOwl:hasDbXref	CALOHA:TS-0798	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	DHBA:10505	semapv:UnspecifiedMatching	pituitary gland	pituitary body  ( human dev )
+UBERON:0000007	oboInOwl:hasDbXref	EFO:0000857	semapv:UnspecifiedMatching	pituitary gland	obsolete_pituitary
+UBERON:0000007	oboInOwl:hasDbXref	EHDAA2:0001471	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	EHDAA:2183	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	EHDAA:4477	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	EMAPA:35998	semapv:UnspecifiedMatching	pituitary gland	pituitary gland
+UBERON:0000007	oboInOwl:hasDbXref	EV:0100132	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	FMA_2:13889	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	HBA:4634	semapv:UnspecifiedMatching	pituitary gland	pituitary body  ( human )
+UBERON:0000007	oboInOwl:hasDbXref	MA:0000176	semapv:UnspecifiedMatching	pituitary gland	pituitary gland
+UBERON:0000007	oboInOwl:hasDbXref	MAT:0000077	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	MESH:D010902	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	NCIT:C12399	semapv:UnspecifiedMatching	pituitary gland	Pituitary Gland
+UBERON:0000007	oboInOwl:hasDbXref	SCTID:181125003	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	TAO:0000118	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	VHOG:0000143	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	Wikipedia:Pituitary_gland	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	XAO:0000017	semapv:UnspecifiedMatching	pituitary gland	hypophysis
+UBERON:0000007	oboInOwl:hasDbXref	ZFA:0000118	semapv:UnspecifiedMatching	pituitary gland	hypophysis
+UBERON:0000007	oboInOwl:hasDbXref	UMLS:C0032005	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	oboInOwl:hasDbXref	neuronames:399	semapv:UnspecifiedMatching	pituitary gland	
+UBERON:0000007	rdfs:subClassOf	UBERON:0002368	semapv:UnspecifiedMatching	pituitary gland	endocrine gland
+UBERON:0000009	oboInOwl:hasDbXref	BTO:0002107	semapv:UnspecifiedMatching	submucosa	submucosa
+UBERON:0000009	oboInOwl:hasDbXref	FMA_2:85391	semapv:UnspecifiedMatching	submucosa	
+UBERON:0000009	oboInOwl:hasDbXref	FMA_2:85392	semapv:UnspecifiedMatching	submucosa	
+UBERON:0000009	oboInOwl:hasDbXref	NCIT:C13167	semapv:UnspecifiedMatching	submucosa	Submucosa
+UBERON:0000009	oboInOwl:hasDbXref	SCTID:68439008	semapv:UnspecifiedMatching	submucosa	
+UBERON:0000009	oboInOwl:hasDbXref	Wikipedia:Submucosa	semapv:UnspecifiedMatching	submucosa	
+UBERON:0000009	oboInOwl:hasDbXref	UMLS:C0225344	semapv:UnspecifiedMatching	submucosa	
+UBERON:0000010	oboInOwl:hasDbXref	AAO:0000429	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	BILA:0000081	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	BIRNLEX:1111	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	BTO:0001028	semapv:UnspecifiedMatching	peripheral nervous system	peripheral nervous system
+UBERON:0000010	oboInOwl:hasDbXref	CALOHA:TS-0808	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	EFO:0000891	semapv:UnspecifiedMatching	peripheral nervous system	obsolete_peripheral nervous system
+UBERON:0000010	oboInOwl:hasDbXref	EHDAA2:0001445	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	EHDAA:2893	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	EMAPA:16665	semapv:UnspecifiedMatching	peripheral nervous system	peripheral nervous system
+UBERON:0000010	oboInOwl:hasDbXref	EV:0100335	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	FMA_2:9903	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	MA:0000218	semapv:UnspecifiedMatching	peripheral nervous system	peripheral nervous system
+UBERON:0000010	oboInOwl:hasDbXref	MAT:0000338	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	MESH:D017933	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	NCIT:C12465	semapv:UnspecifiedMatching	peripheral nervous system	Peripheral Nervous System
+UBERON:0000010	oboInOwl:hasDbXref	SCTID:362292005	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	TAO:0000142	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	VHOG:0000399	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	Wikipedia:Peripheral_nervous_system	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	XAO:0000178	semapv:UnspecifiedMatching	peripheral nervous system	peripheral nervous system
+UBERON:0000010	oboInOwl:hasDbXref	ZFA:0000142	semapv:UnspecifiedMatching	peripheral nervous system	peripheral nervous system
+UBERON:0000010	oboInOwl:hasDbXref	neuronames:3232	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	FBbt:00005098	semapv:UnspecifiedMatching	peripheral nervous system	peripheral nervous system
+UBERON:0000010	oboInOwl:hasDbXref	UMLS:C0206417	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	oboInOwl:hasDbXref	UMLS:C1305921	semapv:UnspecifiedMatching	peripheral nervous system	
+UBERON:0000010	rdfs:subClassOf	UBERON:0011216	semapv:UnspecifiedMatching	peripheral nervous system	organ system subdivision
+UBERON:0000011	oboInOwl:hasDbXref	AAO:0010488	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	BIRNLEX:2517	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	BTO:0001833	semapv:UnspecifiedMatching	parasympathetic nervous system	parasympathetic nervous system
+UBERON:0000011	oboInOwl:hasDbXref	CALOHA:TS-2094	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	EFO:0000894	semapv:UnspecifiedMatching	parasympathetic nervous system	obsolete_parasympathetic nervous system
+UBERON:0000011	oboInOwl:hasDbXref	EHDA:10096	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	EHDAA2:0001402	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	EHDAA:4655	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	EMAPA:17270	semapv:UnspecifiedMatching	parasympathetic nervous system	parasympathetic nervous system
+UBERON:0000011	oboInOwl:hasDbXref	FMA_2:9907	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	MA:0000223	semapv:UnspecifiedMatching	parasympathetic nervous system	parasympathetic nervous system
+UBERON:0000011	oboInOwl:hasDbXref	MAT:0000101	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	MESH:D010275	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	NCIT:C12764	semapv:UnspecifiedMatching	parasympathetic nervous system	Parasympathetic Nervous System
+UBERON:0000011	oboInOwl:hasDbXref	SCTID:362496006	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	TAO:0001575	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	VHOG:0000755	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	Wikipedia:Parasympathetic_nervous_system	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	ZFA:0001575	semapv:UnspecifiedMatching	parasympathetic nervous system	parasympathetic nervous system
+UBERON:0000011	oboInOwl:hasDbXref	UMLS:C0030510	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	oboInOwl:hasDbXref	UMLS:C1305770	semapv:UnspecifiedMatching	parasympathetic nervous system	
+UBERON:0000011	rdfs:subClassOf	UBERON:0011216	semapv:UnspecifiedMatching	parasympathetic nervous system	organ system subdivision
+UBERON:0000012	oboInOwl:hasDbXref	EFO:0000892	semapv:UnspecifiedMatching	somatic nervous system	
+UBERON:0000012	oboInOwl:hasDbXref	FMA_2:9904	semapv:UnspecifiedMatching	somatic nervous system	
+UBERON:0000012	oboInOwl:hasDbXref	MA:0002850	semapv:UnspecifiedMatching	somatic nervous system	somatic nervous system
+UBERON:0000012	oboInOwl:hasDbXref	MAT:0000099	semapv:UnspecifiedMatching	somatic nervous system	
+UBERON:0000012	oboInOwl:hasDbXref	NLXANAT:100301	semapv:UnspecifiedMatching	somatic nervous system	
+UBERON:0000012	oboInOwl:hasDbXref	Wikipedia:Somatic_nervous_system	semapv:UnspecifiedMatching	somatic nervous system	
+UBERON:0000012	rdfs:subClassOf	UBERON:0011216	semapv:UnspecifiedMatching	somatic nervous system	organ system subdivision
+UBERON:0000013	oboInOwl:hasDbXref	AAO:0010487	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	BIRNLEX:2516	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	BTO:0001832	semapv:UnspecifiedMatching	sympathetic nervous system	sympathetic nervous system
+UBERON:0000013	oboInOwl:hasDbXref	CALOHA:TS-2050	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	EFO:0000893	semapv:UnspecifiedMatching	sympathetic nervous system	obsolete_sympathetic nervous system
+UBERON:0000013	oboInOwl:hasDbXref	EHDAA2:0001971	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	EHDAA:3769	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	EMAPA:16985	semapv:UnspecifiedMatching	sympathetic nervous system	sympathetic nervous system
+UBERON:0000013	oboInOwl:hasDbXref	FMA_2:9906	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	MA:0000225	semapv:UnspecifiedMatching	sympathetic nervous system	sympathetic nervous system
+UBERON:0000013	oboInOwl:hasDbXref	MESH:D013564	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	NCIT:C12795	semapv:UnspecifiedMatching	sympathetic nervous system	Sympathetic Nervous System
+UBERON:0000013	oboInOwl:hasDbXref	SCTID:362484004	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	TAO:0001576	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	VHOG:0000384	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	Wikipedia:Sympathetic_nervous_system	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	ZFA:0001576	semapv:UnspecifiedMatching	sympathetic nervous system	sympathetic nervous system
+UBERON:0000013	oboInOwl:hasDbXref	UMLS:C0039044	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	oboInOwl:hasDbXref	UMLS:C1269646	semapv:UnspecifiedMatching	sympathetic nervous system	
+UBERON:0000013	rdfs:subClassOf	UBERON:0011216	semapv:UnspecifiedMatching	sympathetic nervous system	organ system subdivision
+UBERON:0000014	oboInOwl:hasDbXref	EHDAA:6530	semapv:UnspecifiedMatching	zone of skin	
+UBERON:0000014	oboInOwl:hasDbXref	EV:0100152	semapv:UnspecifiedMatching	zone of skin	
+UBERON:0000014	oboInOwl:hasDbXref	FMA:86166	semapv:UnspecifiedMatching	zone of skin	
+UBERON:0000014	oboInOwl:hasDbXref	MA:0000151	semapv:UnspecifiedMatching	zone of skin	skin
+UBERON:0000014	oboInOwl:hasDbXref	MAT:0000284	semapv:UnspecifiedMatching	zone of skin	
+UBERON:0000014	oboInOwl:hasDbXref	MESH:D012867	semapv:UnspecifiedMatching	zone of skin	
+UBERON:0000014	oboInOwl:hasDbXref	SCTID:20795001	semapv:UnspecifiedMatching	zone of skin	
+UBERON:0000014	oboInOwl:hasDbXref	VHOG:0000860	semapv:UnspecifiedMatching	zone of skin	
+UBERON:0000014	oboInOwl:hasDbXref	Wikipedia:Skin	semapv:UnspecifiedMatching	zone of skin	
+UBERON:0000014	rdfs:subClassOf	UBERON:0034944	semapv:UnspecifiedMatching	zone of skin	zone of organ
+UBERON:0000015	oboInOwl:hasDbXref	AEO:0000192	semapv:UnspecifiedMatching	non-material anatomical boundary	anatomical surface feature
+UBERON:0000015	oboInOwl:hasDbXref	CARO:0000010	semapv:UnspecifiedMatching	non-material anatomical boundary	anatomical boundary
+UBERON:0000015	oboInOwl:hasDbXref	FMA_2:50705	semapv:UnspecifiedMatching	non-material anatomical boundary	
+UBERON:0000015	rdfs:subClassOf	UBERON:0000466	semapv:UnspecifiedMatching	non-material anatomical boundary	immaterial anatomical entity
+UBERON:0000016	oboInOwl:hasDbXref	BTO:0000650	semapv:UnspecifiedMatching	endocrine pancreas	endocrine pancreas
+UBERON:0000016	oboInOwl:hasDbXref	CALOHA:TS-1302	semapv:UnspecifiedMatching	endocrine pancreas	
+UBERON:0000016	oboInOwl:hasDbXref	EFO:0002542	semapv:UnspecifiedMatching	endocrine pancreas	obsolete_islet cell
+UBERON:0000016	oboInOwl:hasDbXref	EMAPA:35305	semapv:UnspecifiedMatching	endocrine pancreas	endocrine pancreas
+UBERON:0000016	oboInOwl:hasDbXref	EV:0100129	semapv:UnspecifiedMatching	endocrine pancreas	
+UBERON:0000016	oboInOwl:hasDbXref	FMA_2:16018	semapv:UnspecifiedMatching	endocrine pancreas	
+UBERON:0000016	oboInOwl:hasDbXref	MA:0001582	semapv:UnspecifiedMatching	endocrine pancreas	endocrine pancreas
+UBERON:0000016	oboInOwl:hasDbXref	NCIT:C32509	semapv:UnspecifiedMatching	endocrine pancreas	Endocrine Pancreas
+UBERON:0000016	oboInOwl:hasDbXref	SCTID:361339003	semapv:UnspecifiedMatching	endocrine pancreas	
+UBERON:0000016	oboInOwl:hasDbXref	TAO:0001260	semapv:UnspecifiedMatching	endocrine pancreas	
+UBERON:0000016	oboInOwl:hasDbXref	VHOG:0000049	semapv:UnspecifiedMatching	endocrine pancreas	
+UBERON:0000016	oboInOwl:hasDbXref	Wikipedia:Islets_of_Langerhans	semapv:UnspecifiedMatching	endocrine pancreas	
+UBERON:0000016	oboInOwl:hasDbXref	ZFA:0001260	semapv:UnspecifiedMatching	endocrine pancreas	endocrine pancreas
+UBERON:0000016	oboInOwl:hasDbXref	MESH:D007515	semapv:UnspecifiedMatching	endocrine pancreas	
+UBERON:0000016	rdfs:subClassOf	UBERON:0000471	semapv:UnspecifiedMatching	endocrine pancreas	compound organ component
+UBERON:0000017	oboInOwl:hasDbXref	AAO:0010407	semapv:UnspecifiedMatching	exocrine pancreas	
+UBERON:0000017	oboInOwl:hasDbXref	BTO:0000434	semapv:UnspecifiedMatching	exocrine pancreas	exocrine pancreas
+UBERON:0000017	oboInOwl:hasDbXref	CALOHA:TS-1241	semapv:UnspecifiedMatching	exocrine pancreas	
+UBERON:0000017	oboInOwl:hasDbXref	EMAPA:35328	semapv:UnspecifiedMatching	exocrine pancreas	exocrine pancreas
+UBERON:0000017	oboInOwl:hasDbXref	EV:0100093	semapv:UnspecifiedMatching	exocrine pancreas	
+UBERON:0000017	oboInOwl:hasDbXref	FMA_2:16017	semapv:UnspecifiedMatching	exocrine pancreas	
+UBERON:0000017	oboInOwl:hasDbXref	MA:0002415	semapv:UnspecifiedMatching	exocrine pancreas	exocrine pancreas
+UBERON:0000017	oboInOwl:hasDbXref	NCIT:C32546	semapv:UnspecifiedMatching	exocrine pancreas	Exocrine Pancreas
+UBERON:0000017	oboInOwl:hasDbXref	SCTID:248202004	semapv:UnspecifiedMatching	exocrine pancreas	
+UBERON:0000017	oboInOwl:hasDbXref	TAO:0001249	semapv:UnspecifiedMatching	exocrine pancreas	
+UBERON:0000017	oboInOwl:hasDbXref	VHOG:0000048	semapv:UnspecifiedMatching	exocrine pancreas	
+UBERON:0000017	oboInOwl:hasDbXref	Wikipedia:Exocrine_component_of_pancreas	semapv:UnspecifiedMatching	exocrine pancreas	
+UBERON:0000017	oboInOwl:hasDbXref	XAO:0000137	semapv:UnspecifiedMatching	exocrine pancreas	exocrine pancreas
+UBERON:0000017	oboInOwl:hasDbXref	ZFA:0001249	semapv:UnspecifiedMatching	exocrine pancreas	exocrine pancreas
+UBERON:0000017	oboInOwl:hasDbXref	MESH:D046790	semapv:UnspecifiedMatching	exocrine pancreas	
+UBERON:0000017	oboInOwl:hasDbXref	UMLS:C0553695	semapv:UnspecifiedMatching	exocrine pancreas	
+UBERON:0000018	oboInOwl:hasDbXref	BTO:0001921	semapv:UnspecifiedMatching	compound eye	compound eye
+UBERON:0000018	oboInOwl:hasDbXref	HAO:0000217	semapv:UnspecifiedMatching	compound eye	compound eye
+UBERON:0000018	oboInOwl:hasDbXref	TGMA:0000024	semapv:UnspecifiedMatching	compound eye	
+UBERON:0000018	oboInOwl:hasDbXref	Wikipedia:Compound_eye	semapv:UnspecifiedMatching	compound eye	
+UBERON:0000018	oboInOwl:hasDbXref	FBbt:00004508	semapv:UnspecifiedMatching	compound eye	eye
+UBERON:0000018	oboInOwl:hasDbXref	IDOMAL:0002421	semapv:UnspecifiedMatching	compound eye	
+UBERON:0000019	oboInOwl:hasDbXref	AAO:0010340	semapv:UnspecifiedMatching	camera-type eye	
+UBERON:0000019	oboInOwl:hasDbXref	BIRNLEX:1169	semapv:UnspecifiedMatching	camera-type eye	
+UBERON:0000019	oboInOwl:hasDbXref	BTO:0004688	semapv:UnspecifiedMatching	camera-type eye	regio orbitalis
+UBERON:0000019	oboInOwl:hasDbXref	EHDAA2:0000484	semapv:UnspecifiedMatching	camera-type eye	
+UBERON:0000019	oboInOwl:hasDbXref	EHDAA:936	semapv:UnspecifiedMatching	camera-type eye	
+UBERON:0000019	oboInOwl:hasDbXref	EMAPA:16198	semapv:UnspecifiedMatching	camera-type eye	eye
+UBERON:0000019	oboInOwl:hasDbXref	FMA:54448	semapv:UnspecifiedMatching	camera-type eye	olho
+UBERON:0000019	oboInOwl:hasDbXref	MA:0000261	semapv:UnspecifiedMatching	camera-type eye	eye
+UBERON:0000019	oboInOwl:hasDbXref	NCIT:C12401	semapv:UnspecifiedMatching	camera-type eye	Eye
+UBERON:0000019	oboInOwl:hasDbXref	SCTID:181143004	semapv:UnspecifiedMatching	camera-type eye	
+UBERON:0000019	oboInOwl:hasDbXref	TAO:0000107	semapv:UnspecifiedMatching	camera-type eye	
+UBERON:0000019	oboInOwl:hasDbXref	VHOG:0000275	semapv:UnspecifiedMatching	camera-type eye	
+UBERON:0000019	oboInOwl:hasDbXref	XAO:0000179	semapv:UnspecifiedMatching	camera-type eye	eye
+UBERON:0000019	oboInOwl:hasDbXref	ZFA:0000107	semapv:UnspecifiedMatching	camera-type eye	eye
+UBERON:0000019	oboInOwl:hasDbXref	UMLS:C0015392	semapv:UnspecifiedMatching	camera-type eye	
+UBERON:0000019	oboInOwl:hasDbXref	UMLS:C1280202	semapv:UnspecifiedMatching	camera-type eye	
+UBERON:0000020	oboInOwl:hasDbXref	AEO:0000094	semapv:UnspecifiedMatching	sense organ	sense organ
+UBERON:0000020	oboInOwl:hasDbXref	BTO:0000202	semapv:UnspecifiedMatching	sense organ	sense organ
+UBERON:0000020	oboInOwl:hasDbXref	CALOHA:TS-2043	semapv:UnspecifiedMatching	sense organ	
+UBERON:0000020	oboInOwl:hasDbXref	EHDAA2:0001824	semapv:UnspecifiedMatching	sense organ	
+UBERON:0000020	oboInOwl:hasDbXref	EHDAA:500	semapv:UnspecifiedMatching	sense organ	
+UBERON:0000020	oboInOwl:hasDbXref	EMAPA:35955	semapv:UnspecifiedMatching	sense organ	sensory organ
+UBERON:0000020	oboInOwl:hasDbXref	HAO:0000930	semapv:UnspecifiedMatching	sense organ	sense organ
+UBERON:0000020	oboInOwl:hasDbXref	MA:0000017	semapv:UnspecifiedMatching	sense organ	sensory organ
+UBERON:0000020	oboInOwl:hasDbXref	MESH:D012679	semapv:UnspecifiedMatching	sense organ	
+UBERON:0000020	oboInOwl:hasDbXref	NCIT:C33224	semapv:UnspecifiedMatching	sense organ	Organ of Special Sense
+UBERON:0000020	oboInOwl:hasDbXref	SCTID:244485009	semapv:UnspecifiedMatching	sense organ	
+UBERON:0000020	oboInOwl:hasDbXref	VHOG:0001407	semapv:UnspecifiedMatching	sense organ	
+UBERON:0000020	oboInOwl:hasDbXref	WBbt:0006929	semapv:UnspecifiedMatching	sense organ	sensillum
+UBERON:0000020	oboInOwl:hasDbXref	FBbt:00005155	semapv:UnspecifiedMatching	sense organ	sense organ
+UBERON:0000020	oboInOwl:hasDbXref	UMLS:C0935626	semapv:UnspecifiedMatching	sense organ	
+UBERON:0000021	oboInOwl:hasDbXref	CALOHA:TS-0051	semapv:UnspecifiedMatching	cutaneous appendage	
+UBERON:0000021	oboInOwl:hasDbXref	FMA_2:71012	semapv:UnspecifiedMatching	cutaneous appendage	
+UBERON:0000021	oboInOwl:hasDbXref	SCTID:276160000	semapv:UnspecifiedMatching	cutaneous appendage	
+UBERON:0000022	oboInOwl:hasDbXref	BTO:0000447	semapv:UnspecifiedMatching	feather	feather
+UBERON:0000022	oboInOwl:hasDbXref	EFO:0000955	semapv:UnspecifiedMatching	feather	obsolete_feather
+UBERON:0000022	oboInOwl:hasDbXref	MAT:0000156	semapv:UnspecifiedMatching	feather	
+UBERON:0000022	oboInOwl:hasDbXref	MESH:D005241	semapv:UnspecifiedMatching	feather	
+UBERON:0000022	oboInOwl:hasDbXref	SCTID:410027006	semapv:UnspecifiedMatching	feather	
+UBERON:0000022	oboInOwl:hasDbXref	Wikipedia:Feather	semapv:UnspecifiedMatching	feather	
+UBERON:0000023	oboInOwl:hasDbXref	BTO:0001463	semapv:UnspecifiedMatching	wing	wing
+UBERON:0000023	oboInOwl:hasDbXref	EFO:0000885	semapv:UnspecifiedMatching	wing	obsolete_wing
+UBERON:0000023	oboInOwl:hasDbXref	MAT:0000202	semapv:UnspecifiedMatching	wing	
+UBERON:0000023	oboInOwl:hasDbXref	MESH:D014921	semapv:UnspecifiedMatching	wing	
+UBERON:0000023	oboInOwl:hasDbXref	Wikipedia:Wing	semapv:UnspecifiedMatching	wing	
+UBERON:0000026	oboInOwl:hasDbXref	AEO:0000193	semapv:UnspecifiedMatching	appendage	appendage
+UBERON:0000026	oboInOwl:hasDbXref	BILA:0000018	semapv:UnspecifiedMatching	appendage	
+UBERON:0000026	oboInOwl:hasDbXref	BTO:0001492	semapv:UnspecifiedMatching	appendage	limb
+UBERON:0000026	oboInOwl:hasDbXref	CARO:0010003	semapv:UnspecifiedMatching	appendage	appendage
+UBERON:0000026	oboInOwl:hasDbXref	EFO:0000799	semapv:UnspecifiedMatching	appendage	obsolete_appendage
+UBERON:0000026	oboInOwl:hasDbXref	EHDAA2:0003193	semapv:UnspecifiedMatching	appendage	
+UBERON:0000026	oboInOwl:hasDbXref	EV:0100155	semapv:UnspecifiedMatching	appendage	
+UBERON:0000026	oboInOwl:hasDbXref	HAO:0000144	semapv:UnspecifiedMatching	appendage	appendage
+UBERON:0000026	oboInOwl:hasDbXref	MAT:0000023	semapv:UnspecifiedMatching	appendage	
+UBERON:0000026	oboInOwl:hasDbXref	MESH:D005121	semapv:UnspecifiedMatching	appendage	
+UBERON:0000026	oboInOwl:hasDbXref	NCIT:C61460	semapv:UnspecifiedMatching	appendage	Appendage
+UBERON:0000026	oboInOwl:hasDbXref	VSAO:0000075	semapv:UnspecifiedMatching	appendage	
+UBERON:0000026	oboInOwl:hasDbXref	Wikipedia:Appendage	semapv:UnspecifiedMatching	appendage	
+UBERON:0000026	oboInOwl:hasDbXref	XAO:0000218	semapv:UnspecifiedMatching	appendage	appendage
+UBERON:0000026	oboInOwl:hasDbXref	EMAPA:37283	semapv:UnspecifiedMatching	appendage	appendage
+UBERON:0000026	oboInOwl:hasDbXref	FBbt:00007000	semapv:UnspecifiedMatching	appendage	appendage
+UBERON:0000026	oboInOwl:hasDbXref	UMLS:C0598782	semapv:UnspecifiedMatching	appendage	
+UBERON:0000029	oboInOwl:hasDbXref	BTO:0000784	semapv:UnspecifiedMatching	lymph node	lymph node
+UBERON:0000029	oboInOwl:hasDbXref	CALOHA:TS-0579	semapv:UnspecifiedMatching	lymph node	
+UBERON:0000029	oboInOwl:hasDbXref	EFO:0000872	semapv:UnspecifiedMatching	lymph node	obsolete_lymph node
+UBERON:0000029	oboInOwl:hasDbXref	EMAPA:35523	semapv:UnspecifiedMatching	lymph node	lymph node
+UBERON:0000029	oboInOwl:hasDbXref	EV:0100050	semapv:UnspecifiedMatching	lymph node	
+UBERON:0000029	oboInOwl:hasDbXref	FMA_2:5034	semapv:UnspecifiedMatching	lymph node	
+UBERON:0000029	oboInOwl:hasDbXref	MA:0000139	semapv:UnspecifiedMatching	lymph node	lymph node
+UBERON:0000029	oboInOwl:hasDbXref	MAT:0000442	semapv:UnspecifiedMatching	lymph node	
+UBERON:0000029	oboInOwl:hasDbXref	MESH:D008198	semapv:UnspecifiedMatching	lymph node	
+UBERON:0000029	oboInOwl:hasDbXref	NCIT:C12745	semapv:UnspecifiedMatching	lymph node	Lymph Node
+UBERON:0000029	oboInOwl:hasDbXref	NCIT:C33027	semapv:UnspecifiedMatching	lymph node	Lymph Node by Anatomic Site
+UBERON:0000029	oboInOwl:hasDbXref	SCTID:181756000	semapv:UnspecifiedMatching	lymph node	
+UBERON:0000029	oboInOwl:hasDbXref	TAO_RETIRED:0005318	semapv:UnspecifiedMatching	lymph node	
+UBERON:0000029	oboInOwl:hasDbXref	VHOG:0001273	semapv:UnspecifiedMatching	lymph node	
+UBERON:0000029	oboInOwl:hasDbXref	Wikipedia:Lymph_node	semapv:UnspecifiedMatching	lymph node	
+UBERON:0000029	oboInOwl:hasDbXref	ZFA_RETIRED:0005318	semapv:UnspecifiedMatching	lymph node	
+UBERON:0000029	oboInOwl:hasDbXref	UMLS:C0024204	semapv:UnspecifiedMatching	lymph node	
+UBERON:0000030	oboInOwl:hasDbXref	BTO:0002330	semapv:UnspecifiedMatching	lamina propria	lamina propria
+UBERON:0000030	oboInOwl:hasDbXref	FMA_2:62517	semapv:UnspecifiedMatching	lamina propria	
+UBERON:0000030	oboInOwl:hasDbXref	NCIT:C32918	semapv:UnspecifiedMatching	lamina propria	Lamina Propria
+UBERON:0000030	oboInOwl:hasDbXref	SCTID:298225002	semapv:UnspecifiedMatching	lamina propria	
+UBERON:0000030	oboInOwl:hasDbXref	Wikipedia:Lamina_propria	semapv:UnspecifiedMatching	lamina propria	
+UBERON:0000030	oboInOwl:hasDbXref	UMLS:C1179187	semapv:UnspecifiedMatching	lamina propria	
+UBERON:0000031	oboInOwl:hasDbXref	EMAPA:35877	semapv:UnspecifiedMatching	lamina propria of trachea	trachea lamina propria
+UBERON:0000031	oboInOwl:hasDbXref	FMA_2:265157	semapv:UnspecifiedMatching	lamina propria of trachea	
+UBERON:0000031	oboInOwl:hasDbXref	MA:0001858	semapv:UnspecifiedMatching	lamina propria of trachea	trachea lamina propria
+UBERON:0000031	oboInOwl:hasDbXref	NCIT:C49305	semapv:UnspecifiedMatching	lamina propria of trachea	Trachea Lamina Propria
+UBERON:0000031	oboInOwl:hasDbXref	UMLS:C1710457	semapv:UnspecifiedMatching	lamina propria of trachea	
+UBERON:0000033	oboInOwl:hasDbXref	AAO:0010335	semapv:UnspecifiedMatching	head	
+UBERON:0000033	oboInOwl:hasDbXref	AEO:0000106	semapv:UnspecifiedMatching	head	head
+UBERON:0000033	oboInOwl:hasDbXref	BILA:0000115	semapv:UnspecifiedMatching	head	
+UBERON:0000041	rdfs:subClassOf	UBERON:0007380	semapv:UnspecifiedMatching	odontode scale	dermal scale
+UBERON:0000043	rdfs:subClassOf	UBERON:0007846	semapv:UnspecifiedMatching	tendon	dense regular connective tissue
+UBERON:0000044	rdfs:subClassOf	UBERON:0001800	semapv:UnspecifiedMatching	dorsal root ganglion	sensory ganglion
+UBERON:0000045	rdfs:subClassOf	UBERON:0000061	semapv:UnspecifiedMatching	ganglion	anatomical structure
+UBERON:0000047	rdfs:subClassOf	UBERON:0000970	semapv:UnspecifiedMatching	simple eye	eye
+UBERON:0000049	rdfs:subClassOf	UBERON:0000047	semapv:UnspecifiedMatching	spherical lensed eye	simple eye
+UBERON:0000059	rdfs:subClassOf	UBERON:0004921	semapv:UnspecifiedMatching	large intestine	subdivision of digestive tract
+UBERON:0000063	rdfs:subClassOf	UBERON:0000064	semapv:UnspecifiedMatching	organ subunit	organ part
+UBERON:0000075	rdfs:subClassOf	UBERON:0011216	semapv:UnspecifiedMatching	subdivision of skeletal system	organ system subdivision
+UBERON:0000076	rdfs:subClassOf	UBERON:0000490	semapv:UnspecifiedMatching	external ectoderm	unilaminar epithelium
+UBERON:0000084	rdfs:subClassOf	UBERON:0007499	semapv:UnspecifiedMatching	ureteric bud	epithelial sac
+UBERON:0000093	rdfs:subClassOf	UBERON:0000464	semapv:UnspecifiedMatching	sulcus	anatomical space
+UBERON:0000101	rdfs:subClassOf	UBERON:0009912	semapv:UnspecifiedMatching	lobe of lung	anatomical lobe
+UBERON:0000118	rdfs:subClassOf	UBERON:0005153	semapv:UnspecifiedMatching	lung bud	epithelial bud
+UBERON:0000121	rdfs:subClassOf	UBERON:0011822	semapv:UnspecifiedMatching	perineurium	dense irregular connective tissue
+UBERON:0000123	rdfs:subClassOf	UBERON:0006804	semapv:UnspecifiedMatching	endoneurium	reticular tissue
+UBERON:0000124	rdfs:subClassOf	UBERON:0011822	semapv:UnspecifiedMatching	epineurium	dense irregular connective tissue
+UBERON:0000130	rdfs:subClassOf	UBERON:0004111	semapv:UnspecifiedMatching	transverse foramen	anatomical conduit
+UBERON:0000144	rdfs:subClassOf	UBERON:0005913	semapv:UnspecifiedMatching	trochlea of humerus	zone of bone organ
+UBERON:0000151	rdfs:subClassOf	UBERON:0004710	semapv:UnspecifiedMatching	pectoral fin	pectoral appendage
+UBERON:0000152	rdfs:subClassOf	UBERON:0004709	semapv:UnspecifiedMatching	pelvic fin	pelvic appendage
+UBERON:0000160	rdfs:subClassOf	UBERON:0004921	semapv:UnspecifiedMatching	intestine	subdivision of digestive tract
+UBERON:0000161	rdfs:subClassOf	UBERON:0004111	semapv:UnspecifiedMatching	orifice	anatomical conduit
+UBERON:0000166	rdfs:subClassOf	UBERON:0000161	semapv:UnspecifiedMatching	oral opening	orifice
+UBERON:0000168	rdfs:subClassOf	UBERON:0004921	semapv:UnspecifiedMatching	proximal-distal subdivision of colon	subdivision of digestive tract
+UBERON:0000172	rdfs:subClassOf	UBERON:0036017	semapv:UnspecifiedMatching	vomit	regurgitated substance
+UBERON:0000209	rdfs:subClassOf	UBERON:0010428	semapv:UnspecifiedMatching	tetrapod frontal bone	flat bone
+UBERON:0000210	rdfs:subClassOf	UBERON:0010428	semapv:UnspecifiedMatching	tetrapod parietal bone	flat bone
+UBERON:0000221	rdfs:subClassOf	UBERON:0006983	semapv:UnspecifiedMatching	supraauricular point	anatomical point
+UBERON:0000303	rdfs:subClassOf	UBERON:0011144	semapv:UnspecifiedMatching	adductor longus	adductor muscle of hip
+UBERON:0000309	rdfs:subClassOf	UBERON:0000475	semapv:UnspecifiedMatching	body wall	organism subdivision
+UBERON:0000325	rdfs:subClassOf	UBERON:0002365	semapv:UnspecifiedMatching	gastric gland	exocrine gland
+UBERON:0000359	rdfs:subClassOf	UBERON:0015251	semapv:UnspecifiedMatching	preputial gland	modified sebaceous gland
+UBERON:0000368	rdfs:subClassOf	UBERON:0011144	semapv:UnspecifiedMatching	adductor brevis	adductor muscle of hip
+UBERON:0000370	rdfs:subClassOf	UBERON:0011144	semapv:UnspecifiedMatching	adductor magnus	adductor muscle of hip
+UBERON:0000371	rdfs:subClassOf	UBERON:0002050	semapv:UnspecifiedMatching	syncytiotrophoblast	embryonic structure
+UBERON:0000382	rdfs:subClassOf	UBERON:0001820	semapv:UnspecifiedMatching	apocrine sweat gland	sweat gland
+UBERON:0000392	rdfs:subClassOf	UBERON:0004518	semapv:UnspecifiedMatching	longissimus muscle	muscle of vertebral column
+UBERON:0000400	rdfs:subClassOf	UBERON:0001902	semapv:UnspecifiedMatching	jejunal epithelium	epithelium of small intestine
+UBERON:0000408	rdfs:subClassOf	UBERON:0001806	semapv:UnspecifiedMatching	vertebral ganglion	sympathetic ganglion
+UBERON:0000411	rdfs:subClassOf	UBERON:0035014	semapv:UnspecifiedMatching	visual cortex	functional part of brain
+UBERON:0000423	rdfs:subClassOf	UBERON:0010243	semapv:UnspecifiedMatching	eccrine sweat gland	merocrine gland
+UBERON:0000431	rdfs:subClassOf	UBERON:0010009	semapv:UnspecifiedMatching	ventral medial complex of thalamus	aggregate regional part of brain
+UBERON:0000433	rdfs:subClassOf	UBERON:0001920	semapv:UnspecifiedMatching	posterior paraventricular nucleus of thalamus	paraventricular nucleus of thalamus
+UBERON:0000434	rdfs:subClassOf	UBERON:0001920	semapv:UnspecifiedMatching	anterior paraventricular nucleus of thalamus	paraventricular nucleus of thalamus
+UBERON:0000437	rdfs:subClassOf	UBERON:0004923	semapv:UnspecifiedMatching	arachnoid barrier layer	organ component layer
+UBERON:0000444	rdfs:subClassOf	UBERON:0001744	semapv:UnspecifiedMatching	lymphoid follicle	lymphoid tissue
+UBERON:0000450	rdfs:subClassOf	UBERON:0003982	semapv:UnspecifiedMatching	corpus albicans	mature ovarian follicle
+UBERON:0000460	rdfs:subClassOf	UBERON:0000414	semapv:UnspecifiedMatching	major vestibular gland	mucous gland
+UBERON:0000461	rdfs:subClassOf	UBERON:0010145	semapv:UnspecifiedMatching	minor vestibular gland	paraurethral gland
+UBERON:0000468	rdfs:subClassOf	UBERON:0010000	semapv:UnspecifiedMatching	multicellular organism	multicellular anatomical structure
+UBERON:0000472	rdfs:subClassOf	UBERON:0000062	semapv:UnspecifiedMatching	simple organ	organ
+UBERON:0000475	rdfs:subClassOf	UBERON:0010000	semapv:UnspecifiedMatching	organism subdivision	multicellular anatomical structure
+UBERON:0000476	rdfs:subClassOf	UBERON:0000001	semapv:UnspecifiedMatching	acellular anatomical structure	gross anatomical part
+UBERON:0000477	rdfs:subClassOf	UBERON:0034923	semapv:UnspecifiedMatching	anatomical cluster	disconnected anatomical group
+UBERON:0000479	rdfs:subClassOf	UBERON:0010000	semapv:UnspecifiedMatching	tissue	multicellular anatomical structure
+UBERON:0000481	rdfs:subClassOf	UBERON:0010000	semapv:UnspecifiedMatching	multi-tissue structure	multicellular anatomical structure
+UBERON:0000482	rdfs:subClassOf	UBERON:0005764	semapv:UnspecifiedMatching	basal lamina of epithelium	acellular membrane
+UBERON:0000486	rdfs:subClassOf	UBERON:0000483	semapv:UnspecifiedMatching	multilaminar epithelium	epithelium
+UBERON:0000488	rdfs:subClassOf	UBERON:0000483	semapv:UnspecifiedMatching	atypical epithelium	epithelium
+UBERON:0000490	rdfs:subClassOf	UBERON:0000483	semapv:UnspecifiedMatching	unilaminar epithelium	epithelium
+UBERON:0000491	rdfs:subClassOf	UBERON:0003103	semapv:UnspecifiedMatching	solid compound organ	compound organ
+UBERON:0000569	rdfs:subClassOf	UBERON:0003978	semapv:UnspecifiedMatching	ileocecal valve	valve
+UBERON:0000569	rdfs:subClassOf	UBERON:0004590	semapv:UnspecifiedMatching	ileocecal valve	sphincter muscle
+UBERON:0000711	rdfs:subClassOf	UBERON:0002252	semapv:UnspecifiedMatching	splenius capitis	splenius
+UBERON:0000908	rdfs:subClassOf	UBERON:0005340	semapv:UnspecifiedMatching	hippocampal commissure	dorsal telencephalic commissure
+UBERON:0000910	rdfs:subClassOf	UBERON:0006314	semapv:UnspecifiedMatching	chyme	bodily fluid
+UBERON:0000910	rdfs:subClassOf	UBERON:0012112	semapv:UnspecifiedMatching	chyme	ingested food
+UBERON:0000914	rdfs:subClassOf	UBERON:0000475	semapv:UnspecifiedMatching	organismal segment	organism subdivision
+UBERON:0000915	rdfs:subClassOf	UBERON:0009569	semapv:UnspecifiedMatching	thoracic segment of trunk	subdivision of trunk
+UBERON:0000926	rdfs:subClassOf	UBERON:0000923	semapv:UnspecifiedMatching	mesoderm	germ layer
+UBERON:0000931	rdfs:subClassOf	UBERON:0016566	semapv:UnspecifiedMatching	proctodeum	pit
+UBERON:0000935	rdfs:subClassOf	UBERON:0002473	semapv:UnspecifiedMatching	anterior commissure	intercerebral commissure
+UBERON:0000935	rdfs:subClassOf	UBERON:0005341	semapv:UnspecifiedMatching	anterior commissure	ventral commissure
+UBERON:0000939	rdfs:subClassOf	UBERON:0000481	semapv:UnspecifiedMatching	imaginal disc	multi-tissue structure
+UBERON:0000945	rdfs:subClassOf	UBERON:0004921	semapv:UnspecifiedMatching	stomach	subdivision of digestive tract
+UBERON:0000945	rdfs:subClassOf	UBERON:0010039	semapv:UnspecifiedMatching	stomach	food storage organ
+UBERON:0000947	rdfs:subClassOf	UBERON:0003509	semapv:UnspecifiedMatching	aorta	arterial blood vessel
+UBERON:0000950	rdfs:subClassOf	UBERON:0011144	semapv:UnspecifiedMatching	gracilis	adductor muscle of hip
+UBERON:0000955	rdfs:subClassOf	UBERON:0000062	semapv:UnspecifiedMatching	brain	organ
+UBERON:0000956	rdfs:subClassOf	UBERON:0016548	semapv:UnspecifiedMatching	cerebral cortex	central nervous system gray matter layer
+UBERON:0000971	rdfs:subClassOf	UBERON:0000970	semapv:UnspecifiedMatching	ommatidium	eye
+UBERON:0000972	rdfs:subClassOf	UBERON:0000026	semapv:UnspecifiedMatching	antenna	appendage
+UBERON:0000975	rdfs:subClassOf	UBERON:0010363	semapv:UnspecifiedMatching	sternum	endochondral element
+UBERON:0000976	rdfs:subClassOf	UBERON:0002495	semapv:UnspecifiedMatching	humerus	long bone
+UBERON:0000979	rdfs:subClassOf	UBERON:0002495	semapv:UnspecifiedMatching	tibia	long bone
+UBERON:0000980	rdfs:subClassOf	UBERON:0005913	semapv:UnspecifiedMatching	trochanter	zone of bone organ
+UBERON:0000981	rdfs:subClassOf	UBERON:0008202	semapv:UnspecifiedMatching	femur	bone of hip region
+UBERON:0000987	rdfs:subClassOf	UBERON:0000026	semapv:UnspecifiedMatching	haltere	appendage
+UBERON:0000989	rdfs:subClassOf	UBERON:0008811	semapv:UnspecifiedMatching	penis	intromittent organ
+UBERON:0000995	rdfs:subClassOf	UBERON:0013515	semapv:UnspecifiedMatching	uterus	subdivision of oviduct
+UBERON:0000996	rdfs:subClassOf	UBERON:0013515	semapv:UnspecifiedMatching	vagina	subdivision of oviduct
+UBERON:0001012	rdfs:subClassOf	UBERON:0005913	semapv:UnspecifiedMatching	head of radius	zone of bone organ
+UBERON:0001013	rdfs:subClassOf	UBERON:0011822	semapv:UnspecifiedMatching	adipose tissue	dense irregular connective tissue
+UBERON:0001017	rdfs:subClassOf	UBERON:0011216	semapv:UnspecifiedMatching	central nervous system	organ system subdivision
+UBERON:0001019	rdfs:subClassOf	UBERON:0000122	semapv:UnspecifiedMatching	nerve fasciculus	neuron projection bundle
+UBERON:0001021	rdfs:subClassOf	UBERON:0000122	semapv:UnspecifiedMatching	nerve	neuron projection bundle
+UBERON:0001035	rdfs:subClassOf	UBERON:0002209	semapv:UnspecifiedMatching	dento-alveolar joint	fibrous joint
+UBERON:0001037	rdfs:subClassOf	UBERON:0000021	semapv:UnspecifiedMatching	strand of hair	cutaneous appendage
+UBERON:0001040	rdfs:subClassOf	UBERON:0005631	semapv:UnspecifiedMatching	yolk sac	extraembryonic membrane
+UBERON:0001040	rdfs:subClassOf	UBERON:0007499	semapv:UnspecifiedMatching	yolk sac	epithelial sac
+UBERON:0001041	rdfs:subClassOf	UBERON:0004921	semapv:UnspecifiedMatching	foregut	subdivision of digestive tract
+UBERON:0001043	rdfs:subClassOf	UBERON:0000062	semapv:UnspecifiedMatching	esophagus	organ
+UBERON:0001048	rdfs:subClassOf	UBERON:0005423	semapv:UnspecifiedMatching	primordium	developing anatomical structure
+UBERON:0001049	rdfs:subClassOf	UBERON:0003914	semapv:UnspecifiedMatching	neural tube	epithelial tube
+UBERON:0001052	rdfs:subClassOf	UBERON:0004921	semapv:UnspecifiedMatching	rectum	subdivision of digestive tract
+UBERON:0001054	rdfs:subClassOf	UBERON:0009773	semapv:UnspecifiedMatching	Malpighian tubule	renal tubule
+UBERON:0001057	rdfs:subClassOf	UBERON:0002368	semapv:UnspecifiedMatching	corpus allatum	endocrine gland
+UBERON:0001062	rdfs:subClassOf	BFO:0000004	semapv:UnspecifiedMatching	anatomical entity	independent continuant
+UBERON:0001064	rdfs:subClassOf	UBERON:0007329	semapv:UnspecifiedMatching	ventral pancreatic duct	pancreatic duct
+UBERON:0001068	rdfs:subClassOf	UBERON:0001085	semapv:UnspecifiedMatching	skin of back	skin of trunk
+UBERON:0001070	rdfs:subClassOf	UBERON:0005396	semapv:UnspecifiedMatching	external carotid artery	carotid artery segment
+UBERON:0001074	rdfs:subClassOf	UBERON:0002323	semapv:UnspecifiedMatching	pericardial cavity	coelemic cavity lumen
+UBERON:0001077	rdfs:subClassOf	UBERON:0006061	semapv:UnspecifiedMatching	transverse process of vertebra	process of vertebra
+UBERON:0001079	rdfs:subClassOf	UBERON:0006062	semapv:UnspecifiedMatching	prezygapophysis	zygapophysis
+UBERON:0001080	rdfs:subClassOf	UBERON:0006062	semapv:UnspecifiedMatching	postzygapophysis	zygapophysis
+UBERON:0001090	rdfs:subClassOf	UBERON:0007794	semapv:UnspecifiedMatching	synovial fluid	secretion of serous gland
+UBERON:0001097	rdfs:subClassOf	UBERON:0003968	semapv:UnspecifiedMatching	axillary lymph node	peripheral lymph node
+UBERON:0001100	rdfs:subClassOf	UBERON:0001495	semapv:UnspecifiedMatching	pectoralis minor	pectoral muscle
+UBERON:0001105	rdfs:subClassOf	UBERON:0002495	semapv:UnspecifiedMatching	clavicle bone	long bone
+UBERON:0001107	rdfs:subClassOf	UBERON:0008523	semapv:UnspecifiedMatching	sternohyoid muscle	infrahyoid muscle
+UBERON:0001108	rdfs:subClassOf	UBERON:0008523	semapv:UnspecifiedMatching	omohyoid muscle	infrahyoid muscle
+UBERON:0001109	rdfs:subClassOf	UBERON:0008523	semapv:UnspecifiedMatching	sternothyroid muscle	infrahyoid muscle
+UBERON:0001110	rdfs:subClassOf	UBERON:0008523	semapv:UnspecifiedMatching	thyrohyoid muscle	infrahyoid muscle
+UBERON:0001113	rdfs:subClassOf	UBERON:0009912	semapv:UnspecifiedMatching	lobe of liver	anatomical lobe
+UBERON:0001114	rdfs:subClassOf	UBERON:0001113	semapv:UnspecifiedMatching	right lobe of liver	lobe of liver
+UBERON:0001115	rdfs:subClassOf	UBERON:0001113	semapv:UnspecifiedMatching	left lobe of liver	lobe of liver
+UBERON:0001116	rdfs:subClassOf	UBERON:0001114	semapv:UnspecifiedMatching	quadrate lobe of liver	right lobe of liver
+UBERON:0001117	rdfs:subClassOf	UBERON:0001114	semapv:UnspecifiedMatching	caudate lobe of liver	right lobe of liver
+UBERON:0001126	rdfs:subClassOf	UBERON:0011217	semapv:UnspecifiedMatching	serratus dorsalis superior muscle	serratus dorsalis muscle
+UBERON:0001127	rdfs:subClassOf	UBERON:0011217	semapv:UnspecifiedMatching	serratus dorsalis inferior muscle	serratus dorsalis muscle
+UBERON:0001139	rdfs:subClassOf	UBERON:0005610	semapv:UnspecifiedMatching	common iliac vein	iliac vein
+UBERON:0001152	rdfs:subClassOf	UBERON:0003703	semapv:UnspecifiedMatching	cystic duct	extrahepatic bile duct
+UBERON:0001155	rdfs:subClassOf	UBERON:0004921	semapv:UnspecifiedMatching	colon	subdivision of digestive tract
+UBERON:0001156	rdfs:subClassOf	UBERON:0000168	semapv:UnspecifiedMatching	ascending colon	proximal-distal subdivision of colon
+UBERON:0001157	rdfs:subClassOf	UBERON:0000168	semapv:UnspecifiedMatching	transverse colon	proximal-distal subdivision of colon
+UBERON:0001158	rdfs:subClassOf	UBERON:0000168	semapv:UnspecifiedMatching	descending colon	proximal-distal subdivision of colon
+UBERON:0001159	rdfs:subClassOf	UBERON:0000168	semapv:UnspecifiedMatching	sigmoid colon	proximal-distal subdivision of colon
+UBERON:0001161	rdfs:subClassOf	UBERON:0009870	semapv:UnspecifiedMatching	body of stomach	zone of stomach
+UBERON:0001163	rdfs:subClassOf	UBERON:0009870	semapv:UnspecifiedMatching	lesser curvature of stomach	zone of stomach
+UBERON:0001164	rdfs:subClassOf	UBERON:0009870	semapv:UnspecifiedMatching	greater curvature of stomach	zone of stomach
+UBERON:0001165	rdfs:subClassOf	UBERON:0009870	semapv:UnspecifiedMatching	pyloric antrum	zone of stomach
+UBERON:0001170	rdfs:subClassOf	UBERON:0007826	semapv:UnspecifiedMatching	mesentery of small intestine	peritoneal mesentery
+UBERON:0001171	rdfs:subClassOf	UBERON:0009911	semapv:UnspecifiedMatching	portal lobule	lobule
+UBERON:0001172	rdfs:subClassOf	UBERON:0009842	semapv:UnspecifiedMatching	hepatic acinus	glandular acinus
+UBERON:0001175	rdfs:subClassOf	UBERON:0003703	semapv:UnspecifiedMatching	common hepatic duct	extrahepatic bile duct
+UBERON:0001191	rdfs:subClassOf	UBERON:0005609	semapv:UnspecifiedMatching	common iliac artery	iliac artery
+UBERON:0001204	rdfs:subClassOf	UBERON:0001242	semapv:UnspecifiedMatching	mucosa of small intestine	intestinal mucosa
+UBERON:0001206	rdfs:subClassOf	UBERON:0001243	semapv:UnspecifiedMatching	serosa of small intestine	serosa of intestine
+UBERON:0001207	rdfs:subClassOf	UBERON:0001242	semapv:UnspecifiedMatching	mucosa of large intestine	intestinal mucosa
+UBERON:0001209	rdfs:subClassOf	UBERON:0001243	semapv:UnspecifiedMatching	serosa of large intestine	serosa of intestine
+UBERON:0001210	rdfs:subClassOf	UBERON:0001240	semapv:UnspecifiedMatching	muscularis mucosae of small intestine	muscularis mucosae of intestine
+UBERON:0001211	rdfs:subClassOf	UBERON:0001962	semapv:UnspecifiedMatching	Peyer's patch	gut-associated lymphoid tissue
+UBERON:0001212	rdfs:subClassOf	UBERON:0000414	semapv:UnspecifiedMatching	duodenal gland	mucous gland
+UBERON:0001213	rdfs:subClassOf	UBERON:0004923	semapv:UnspecifiedMatching	intestinal villus	organ component layer
+UBERON:0001216	rdfs:subClassOf	UBERON:0002017	semapv:UnspecifiedMatching	jejunal vein	portal vein
+UBERON:0001221	rdfs:subClassOf	UBERON:0002461	semapv:UnspecifiedMatching	transversus abdominis muscle	anterior abdominal wall muscle
+UBERON:0001226	rdfs:subClassOf	UBERON:0006517	semapv:UnspecifiedMatching	major calyx	kidney calyx
+UBERON:0001227	rdfs:subClassOf	UBERON:0006517	semapv:UnspecifiedMatching	minor calyx	kidney calyx
+UBERON:0001231	rdfs:subClassOf	UBERON:0009773	semapv:UnspecifiedMatching	nephron tubule	renal tubule
+UBERON:0001237	rdfs:subClassOf	UBERON:0012279	semapv:UnspecifiedMatching	paraaortic body	chromaffin paraganglion
+UBERON:0001239	rdfs:subClassOf	UBERON:0001240	semapv:UnspecifiedMatching	muscularis mucosae of large intestine	muscularis mucosae of intestine
+UBERON:0001244	rdfs:subClassOf	UBERON:0004231	semapv:UnspecifiedMatching	internal anal sphincter	anal region smooth muscle
+UBERON:0001246	rdfs:subClassOf	UBERON:0003704	semapv:UnspecifiedMatching	interlobular bile duct	intrahepatic bile duct
+UBERON:0001255	rdfs:subClassOf	UBERON:0018707	semapv:UnspecifiedMatching	urinary bladder	bladder organ
+UBERON:0001268	rdfs:subClassOf	UBERON:0007794	semapv:UnspecifiedMatching	peritoneal fluid	secretion of serous gland
+UBERON:0001269	rdfs:subClassOf	UBERON:0005913	semapv:UnspecifiedMatching	acetabular part of hip bone	zone of bone organ
+UBERON:0001270	rdfs:subClassOf	UBERON:0000075	semapv:UnspecifiedMatching	bony pelvis	subdivision of skeletal system
+UBERON:0001272	rdfs:subClassOf	UBERON:0010428	semapv:UnspecifiedMatching	innominate bone	flat bone
+UBERON:0001274	rdfs:subClassOf	UBERON:0002513	semapv:UnspecifiedMatching	ischium	endochondral bone
+UBERON:0001274	rdfs:subClassOf	UBERON:0007830	semapv:UnspecifiedMatching	ischium	pelvic girdle bone/zone
+UBERON:0001274	rdfs:subClassOf	UBERON:0008202	semapv:UnspecifiedMatching	ischium	bone of hip region
+UBERON:0001275	rdfs:subClassOf	UBERON:0002513	semapv:UnspecifiedMatching	pubis	endochondral bone
+UBERON:0001275	rdfs:subClassOf	UBERON:0007830	semapv:UnspecifiedMatching	pubis	pelvic girdle bone/zone
+UBERON:0001275	rdfs:subClassOf	UBERON:0008202	semapv:UnspecifiedMatching	pubis	bone of hip region
+UBERON:0001282	rdfs:subClassOf	UBERON:0003704	semapv:UnspecifiedMatching	intralobular bile duct	intrahepatic bile duct
+UBERON:0001283	rdfs:subClassOf	UBERON:0000464	semapv:UnspecifiedMatching	bile canaliculus	anatomical space
+UBERON:0001287	rdfs:subClassOf	UBERON:0006534	semapv:UnspecifiedMatching	proximal convoluted tubule	renal convoluted tubule
+UBERON:0001289	rdfs:subClassOf	UBERON:0007685	semapv:UnspecifiedMatching	descending limb of loop of Henle	region of nephron tubule
+UBERON:0001290	rdfs:subClassOf	UBERON:0009035	semapv:UnspecifiedMatching	proximal straight tubule	renal straight tubule
+UBERON:0001291	rdfs:subClassOf	UBERON:0009035	semapv:UnspecifiedMatching	thick ascending limb of loop of Henle	renal straight tubule
+UBERON:0001292	rdfs:subClassOf	UBERON:0006534	semapv:UnspecifiedMatching	distal convoluted tubule	renal convoluted tubule
+UBERON:0001296	rdfs:subClassOf	UBERON:0004923	semapv:UnspecifiedMatching	myometrium	organ component layer
+UBERON:0001298	rdfs:subClassOf	UBERON:0008450	semapv:UnspecifiedMatching	psoas major muscle	psoas muscle
+UBERON:0001308	rdfs:subClassOf	UBERON:0005609	semapv:UnspecifiedMatching	external iliac artery	iliac artery
+UBERON:0001309	rdfs:subClassOf	UBERON:0005609	semapv:UnspecifiedMatching	internal iliac artery	iliac artery
+UBERON:0001316	rdfs:subClassOf	UBERON:0005610	semapv:UnspecifiedMatching	external iliac vein	iliac vein
+UBERON:0001317	rdfs:subClassOf	UBERON:0005610	semapv:UnspecifiedMatching	internal iliac vein	iliac vein
+UBERON:0001318	rdfs:subClassOf	UBERON:0002460	semapv:UnspecifiedMatching	inferior vesical vein	vesical vein
+UBERON:0001325	rdfs:subClassOf	UBERON:0003833	semapv:UnspecifiedMatching	muscle of pelvis	abdominal segment muscle
+UBERON:0001329	rdfs:subClassOf	UBERON:0001328	semapv:UnspecifiedMatching	prostate gland anterior lobe	lobe of prostate
+UBERON:0001338	rdfs:subClassOf	UBERON:0000414	semapv:UnspecifiedMatching	urethral gland	mucous gland
+UBERON:0001340	rdfs:subClassOf	UBERON:0001637	semapv:UnspecifiedMatching	dorsal artery of penis	artery
+UBERON:0001349	rdfs:subClassOf	UBERON:0002553	semapv:UnspecifiedMatching	externally connecting tube lumen	anatomical cavity
+UBERON:0001350	rdfs:subClassOf	UBERON:0008001	semapv:UnspecifiedMatching	coccyx	irregular bone
+UBERON:0001359	rdfs:subClassOf	UBERON:0007779	semapv:UnspecifiedMatching	cerebrospinal fluid	transudate
+UBERON:0001365	rdfs:subClassOf	UBERON:0011107	semapv:UnspecifiedMatching	sacro-iliac joint	synovial joint of pelvic girdle
+UBERON:0001367	rdfs:subClassOf	UBERON:0004832	semapv:UnspecifiedMatching	external anal sphincter	anal region skeletal muscle
+UBERON:0001368	rdfs:subClassOf	UBERON:0011043	semapv:UnspecifiedMatching	obturator externus	obturator muscle
+UBERON:0001368	rdfs:subClassOf	UBERON:0011144	semapv:UnspecifiedMatching	obturator externus	adductor muscle of hip
+UBERON:0001369	rdfs:subClassOf	UBERON:0001497	semapv:UnspecifiedMatching	iliacus muscle	muscle of pelvic girdle
+UBERON:0001372	rdfs:subClassOf	UBERON:0008450	semapv:UnspecifiedMatching	psoas minor muscle	psoas muscle
+UBERON:0001374	rdfs:subClassOf	UBERON:0002463	semapv:UnspecifiedMatching	biceps femoris	muscle of posterior compartment of hindlimb stylopod
+UBERON:0001375	rdfs:subClassOf	UBERON:0002463	semapv:UnspecifiedMatching	semitendinosus	muscle of posterior compartment of hindlimb stylopod
+UBERON:0001378	rdfs:subClassOf	UBERON:0001377	semapv:UnspecifiedMatching	rectus femoris	quadriceps femoris
+UBERON:0001379	rdfs:subClassOf	UBERON:0001377	semapv:UnspecifiedMatching	vastus lateralis	quadriceps femoris
+UBERON:0001380	rdfs:subClassOf	UBERON:0001377	semapv:UnspecifiedMatching	vastus medialis	quadriceps femoris
+UBERON:0001381	rdfs:subClassOf	UBERON:0002463	semapv:UnspecifiedMatching	semimembranosus muscle	muscle of posterior compartment of hindlimb stylopod
+UBERON:0001382	rdfs:subClassOf	UBERON:0011144	semapv:UnspecifiedMatching	pectineus muscle	adductor muscle of hip
+UBERON:0001386	rdfs:subClassOf	UBERON:0000311	semapv:UnspecifiedMatching	extensor digitorum longus	extensor muscle
+UBERON:0001400	rdfs:subClassOf	UBERON:0002251	semapv:UnspecifiedMatching	iliocostalis thoracis muscle	iliocostalis muscle
+UBERON:0001401	rdfs:subClassOf	UBERON:0000392	semapv:UnspecifiedMatching	longissimus thoracis muscle	longissimus muscle
+UBERON:0001405	rdfs:subClassOf	UBERON:0011013	semapv:UnspecifiedMatching	spinalis thoracis muscle	spinalis muscle
+UBERON:0001407	rdfs:subClassOf	UBERON:0011017	semapv:UnspecifiedMatching	semispinalis thoracis	semispinalis muscle
+UBERON:0001408	rdfs:subClassOf	UBERON:0011017	semapv:UnspecifiedMatching	semispinalis cervicis	semispinalis muscle
+UBERON:0001409	rdfs:subClassOf	UBERON:0011017	semapv:UnspecifiedMatching	semispinalis capitis	semispinalis muscle
+UBERON:0001412	rdfs:subClassOf	UBERON:0004563	semapv:UnspecifiedMatching	common palmar digital vein	forelimb digital vein
+UBERON:0001427	rdfs:subClassOf	UBERON:0001480	semapv:UnspecifiedMatching	radiale	proximal carpal bone
+UBERON:0001428	rdfs:subClassOf	UBERON:0001480	semapv:UnspecifiedMatching	intermedium	proximal carpal bone
+UBERON:0001429	rdfs:subClassOf	UBERON:0001480	semapv:UnspecifiedMatching	pisiform	proximal carpal bone
+UBERON:0001430	rdfs:subClassOf	UBERON:0001481	semapv:UnspecifiedMatching	distal carpal bone 1	distal carpal bone
+UBERON:0001432	rdfs:subClassOf	UBERON:0001481	semapv:UnspecifiedMatching	distal carpal bone 3	distal carpal bone
+UBERON:0001433	rdfs:subClassOf	UBERON:0001481	semapv:UnspecifiedMatching	distal carpal bone 4	distal carpal bone
+UBERON:0001443	rdfs:subClassOf	UBERON:0009569	semapv:UnspecifiedMatching	chest	subdivision of trunk
+UBERON:0001446	rdfs:subClassOf	UBERON:0002495	semapv:UnspecifiedMatching	fibula	long bone
+UBERON:0001448	rdfs:subClassOf	UBERON:0003821	semapv:UnspecifiedMatching	metatarsal bone	metapodium bone
+UBERON:0001461	rdfs:subClassOf	UBERON:0002529	semapv:UnspecifiedMatching	elbow	limb segment
+UBERON:0001468	rdfs:subClassOf	UBERON:0002216	semapv:UnspecifiedMatching	intervertebral joint	symphysis
+UBERON:0001469	rdfs:subClassOf	UBERON:0011108	semapv:UnspecifiedMatching	sternoclavicular joint	synovial joint of pectoral girdle
+UBERON:0001470	rdfs:subClassOf	UBERON:0011139	semapv:UnspecifiedMatching	glenohumeral joint	synovial limb joint
+UBERON:0001476	rdfs:subClassOf	UBERON:0001482	semapv:UnspecifiedMatching	deltoid	muscle of shoulder
+UBERON:0001479	rdfs:subClassOf	UBERON:0013630	semapv:UnspecifiedMatching	sesamoid bone	short bone
+UBERON:0001481	rdfs:subClassOf	UBERON:0002513	semapv:UnspecifiedMatching	distal carpal bone	endochondral bone
+UBERON:0001486	rdfs:subClassOf	UBERON:0011107	semapv:UnspecifiedMatching	hip joint	synovial joint of pelvic girdle
+UBERON:0001490	rdfs:subClassOf	UBERON:0002217	semapv:UnspecifiedMatching	elbow joint	synovial joint
+UBERON:0001495	rdfs:subClassOf	UBERON:0008196	semapv:UnspecifiedMatching	pectoral muscle	muscle of pectoral girdle
+UBERON:0001496	rdfs:subClassOf	UBERON:0001515	semapv:UnspecifiedMatching	ascending aorta	thoracic aorta
+UBERON:0001501	rdfs:subClassOf	UBERON:0014375	semapv:UnspecifiedMatching	lumbrical muscle of manus	intrinsic muscle of manus
+UBERON:0001502	rdfs:subClassOf	UBERON:0014375	semapv:UnspecifiedMatching	interosseous muscle of manus	intrinsic muscle of manus
+UBERON:0001504	rdfs:subClassOf	UBERON:0014378	semapv:UnspecifiedMatching	lumbrical muscle of pes	intrinsic muscle of pes
+UBERON:0001505	rdfs:subClassOf	UBERON:0004255	semapv:UnspecifiedMatching	coracobrachialis muscle	forelimb stylopod muscle
+UBERON:0001508	rdfs:subClassOf	UBERON:0001515	semapv:UnspecifiedMatching	arch of aorta	thoracic aorta
+UBERON:0001513	rdfs:subClassOf	UBERON:0003532	semapv:UnspecifiedMatching	skin of pes	hindlimb skin
+UBERON:0001514	rdfs:subClassOf	UBERON:0005800	semapv:UnspecifiedMatching	descending aorta	section of aorta
+UBERON:0001523	rdfs:subClassOf	UBERON:0000366	semapv:UnspecifiedMatching	flexor digitorum profundus	flexor muscle
+UBERON:0001526	rdfs:subClassOf	UBERON:0011024	semapv:UnspecifiedMatching	extensor carpi ulnaris muscle	extrinsic extensor muscle of manus
+UBERON:0001528	rdfs:subClassOf	UBERON:0011139	semapv:UnspecifiedMatching	radio-ulnar joint	synovial limb joint
+UBERON:0001530	rdfs:subClassOf	UBERON:0004573	semapv:UnspecifiedMatching	common carotid artery plus branches	systemic artery
+UBERON:0001531	rdfs:subClassOf	UBERON:0001530	semapv:UnspecifiedMatching	right common carotid artery plus branches	common carotid artery plus branches
+UBERON:0001532	rdfs:subClassOf	UBERON:0005396	semapv:UnspecifiedMatching	internal carotid artery	carotid artery segment
+UBERON:0001536	rdfs:subClassOf	UBERON:0001530	semapv:UnspecifiedMatching	left common carotid artery plus branches	common carotid artery plus branches
+UBERON:0001537	rdfs:subClassOf	UBERON:0007610	semapv:UnspecifiedMatching	anterior tibial artery	tibial artery
+UBERON:0001538	rdfs:subClassOf	UBERON:0007610	semapv:UnspecifiedMatching	posterior tibial artery	tibial artery
+UBERON:0001542	rdfs:subClassOf	UBERON:0003968	semapv:UnspecifiedMatching	inguinal lymph node	peripheral lymph node
+UBERON:0001543	rdfs:subClassOf	UBERON:0003968	semapv:UnspecifiedMatching	popliteal lymph node	peripheral lymph node
+UBERON:0001545	rdfs:subClassOf	UBERON:0010370	semapv:UnspecifiedMatching	anterior tibial vein	tibial vein
+UBERON:0001546	rdfs:subClassOf	UBERON:0010370	semapv:UnspecifiedMatching	posterior tibial vein	tibial vein
+UBERON:0001560	rdfs:subClassOf	UBERON:0034944	semapv:UnspecifiedMatching	neck of organ	zone of organ
+UBERON:0001562	rdfs:subClassOf	UBERON:0008571	semapv:UnspecifiedMatching	digastric muscle group	suprahyoid muscle
+UBERON:0001563	rdfs:subClassOf	UBERON:0008549	semapv:UnspecifiedMatching	longus capitis muscle	prevertebral muscle
+UBERON:0001564	rdfs:subClassOf	UBERON:0008571	semapv:UnspecifiedMatching	mylohyoid muscle	suprahyoid muscle
+UBERON:0001565	rdfs:subClassOf	UBERON:0008571	semapv:UnspecifiedMatching	geniohyoid muscle	suprahyoid muscle
+UBERON:0001569	rdfs:subClassOf	UBERON:0000933	semapv:UnspecifiedMatching	constrictor muscle of pharynx	chordate pharyngeal muscle
+UBERON:0001571	rdfs:subClassOf	UBERON:0001575	semapv:UnspecifiedMatching	genioglossus muscle	extrinsic muscle of tongue
+UBERON:0001572	rdfs:subClassOf	UBERON:0001575	semapv:UnspecifiedMatching	hyoglossus muscle	extrinsic muscle of tongue
+UBERON:0001573	rdfs:subClassOf	UBERON:0001575	semapv:UnspecifiedMatching	styloglossus	extrinsic muscle of tongue
+UBERON:0001575	rdfs:subClassOf	UBERON:0000378	semapv:UnspecifiedMatching	extrinsic muscle of tongue	tongue muscle
+UBERON:0001576	rdfs:subClassOf	UBERON:0000378	semapv:UnspecifiedMatching	intrinsic muscle of tongue	tongue muscle
+UBERON:0001578	rdfs:subClassOf	UBERON:0003660	semapv:UnspecifiedMatching	orbicularis oculi muscle	eyelid muscle
+UBERON:0001580	rdfs:subClassOf	UBERON:0001577	semapv:UnspecifiedMatching	levator labii superioris	facial muscle
+UBERON:0001581	rdfs:subClassOf	UBERON:0001577	semapv:UnspecifiedMatching	depressor labii inferioris	facial muscle
+UBERON:0001589	rdfs:subClassOf	UBERON:0005194	semapv:UnspecifiedMatching	internal thoracic vein	thoracic vein
+UBERON:0001596	rdfs:subClassOf	UBERON:0001595	semapv:UnspecifiedMatching	intrinsic auricular muscle	auricular muscle
+UBERON:0001597	rdfs:subClassOf	UBERON:0003681	semapv:UnspecifiedMatching	masseter muscle	masticatory muscle
+UBERON:0001602	rdfs:subClassOf	UBERON:0006533	semapv:UnspecifiedMatching	medial rectus extraocular muscle	rectus extraocular muscle
+UBERON:0001603	rdfs:subClassOf	UBERON:0006533	semapv:UnspecifiedMatching	lateral rectus extra-ocular muscle	rectus extraocular muscle
+UBERON:0001604	rdfs:subClassOf	UBERON:0001601	semapv:UnspecifiedMatching	levator palpebrae superioris	extra-ocular muscle
+UBERON:0001605	rdfs:subClassOf	UBERON:0003386	semapv:UnspecifiedMatching	ciliary muscle	smooth muscle of eye
+UBERON:0001605	rdfs:subClassOf	UBERON:0011222	semapv:UnspecifiedMatching	ciliary muscle	intra-ocular muscle
+UBERON:0001606	rdfs:subClassOf	UBERON:0011222	semapv:UnspecifiedMatching	muscle of iris	intra-ocular muscle
+UBERON:0001607	rdfs:subClassOf	UBERON:0004234	semapv:UnspecifiedMatching	sphincter pupillae	iris smooth muscle
+UBERON:0001608	rdfs:subClassOf	UBERON:0004234	semapv:UnspecifiedMatching	dilatator pupillae	iris smooth muscle
+UBERON:0001623	rdfs:subClassOf	UBERON:0015156	semapv:UnspecifiedMatching	dorsal nasal artery	terminal branch of ophthalmic artery
+UBERON:0001639	rdfs:subClassOf	UBERON:0002017	semapv:UnspecifiedMatching	hepatic portal vein	portal vein
+UBERON:0001640	rdfs:subClassOf	UBERON:0004573	semapv:UnspecifiedMatching	celiac artery	systemic artery
+UBERON:0001675	rdfs:subClassOf	UBERON:0001800	semapv:UnspecifiedMatching	trigeminal ganglion	sensory ganglion
+UBERON:0001676	rdfs:subClassOf	UBERON:0010428	semapv:UnspecifiedMatching	occipital bone	flat bone
+UBERON:0001677	rdfs:subClassOf	UBERON:0008193	semapv:UnspecifiedMatching	sphenoid bone	pneumatized bone
+UBERON:0001678	rdfs:subClassOf	UBERON:0008193	semapv:UnspecifiedMatching	temporal bone	pneumatized bone
+UBERON:0001679	rdfs:subClassOf	UBERON:0002513	semapv:UnspecifiedMatching	ethmoid bone	endochondral bone
