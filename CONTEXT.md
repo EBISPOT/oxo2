@@ -167,7 +167,7 @@ expansion), `oxo2-sssom2json` (detector), and `oxo2-json2inferences` (folded-cyc
 (`subject_id`, `predicate_id`, `predicate_modifier`, `object_id`) into one *mapping group* row, via the denormalised Solr `spo_key` 
 field and the Solr CollapsingQParserPlugin + ExpandComponent (ADR-0023, replacing the original result grouping whose 
 `group.ngroups` count cost ~19s on high-frequency terms). Collapse is presentation-layer, layered on top of the inference-type 
-filter, and a page counts groups not documents (the collapsed `numFound`); the Advanced tab stays flat. See 
+filter, and a page counts groups not documents (the collapsed `numFound`). See 
 [ADR-0013](docs/adr/0013-group-same-spo-mappings-in-result-views.md) and 
 [ADR-0023](docs/adr/0023-collapse-for-same-spo.md). Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` 
 (collapse query path + `group_members` transport), and `oxo2-frontend` (expandable rows, paging over groups).
@@ -186,7 +186,7 @@ stored `distance` is now populated as an ontology span, not a v1 hop count
 Affects `oxo2-dataload` (`subject_prefix` / `object_prefix` population + reindex), `oxo2-backend`
 (`/api/v2/ontologies`, the prefix-filtered `GET /api/v2/mappings?from=&to=` + `POST …/search`,
 `batch-map`, `?format=` export, the v1 `/api/search` adapter), and `oxo2-frontend` (from/to prefix
-selectors on the Search tab, batch + export UI).
+selectors on the search form, batch + export UI).
 - **The default search matches the subject side only** — a mapping is a directed *subject → predicate
 → object* statement, and a mapping search is asked from the subject's perspective, so the classified
 (default) search matches each term against the subject column alone (IRI → `subject_iri`, CURIE →
@@ -194,21 +194,21 @@ selectors on the Search tab, batch + export UI).
 shared with batch mapping (ADR-0024) and the v1 adapter. Mappings *into* a term are still found when the
 predicate is strong — the closure ([ADR-0016](docs/adr/0016-single-pass-sssom-reasoning.md))
 materialises the symmetric/inverse row whose subject is the term — but weak, non-closed predicates
-(`skos:closeMatch`, `oboInOwl:hasDbXref`, …) become directional and are reached via the Advanced tab or
-the v1 listing. The Advanced tab, `queryFields` and column filters still target any field. Query-only
-change, no reindex. See [ADR-0030](docs/adr/0030-subject-side-default-search.md). Affects `oxo2-backend`
+(`skos:closeMatch`, `oboInOwl:hasDbXref`, …) become directional and are reached via the v1 listing or
+the API's field queries. `queryFields`, `advancedFieldQueries` and column filters still target any
+field. Query-only change, no reindex. See [ADR-0030](docs/adr/0030-subject-side-default-search.md). Affects `oxo2-backend`
 (classified-query construction) and `oxo2-frontend` (search copy).
 - **Label matching in a normal search is a configurable mode** — a free-text (label) term in the
 classified/normal search matches the **subject** label ([ADR-0030](docs/adr/0030-subject-side-default-search.md))
 by one of three modes: *partial* (the analyzed `subject_label` subsequence match), *case-insensitive
 exact* (the whole label folded, via the `subject_label_ci` `string_ci` field) — the **default** — or
 *case-sensitive exact* (`subject_label_str`). IRI / CURIE terms stay exact `subject_iri` / `subject_id`
-lookups regardless, and the Advanced tab and batch-map / v1 paths are unaffected. Changing the default
+lookups regardless, and the batch-map / v1 paths are unaffected. Changing the default
 from partial to case-insensitive exact required a schema field + reindex. See
 [ADR-0026](docs/adr/0026-configurable-label-match-mode.md). Affects `oxo2-dataload` (`string_ci` field
 type + `*_label_ci` fields + reindex), `oxo2-shared` (`LabelMatchType`), `oxo2-backend` (`labelMatch`
 request field + classified-query field selection), and `oxo2-frontend` (the match-mode control on the
-Search tab, carried in the URL `?match=`).
+search form, carried in the URL `?match=`).
 - **OxO2 exposes the mapping-commons SSSOM API at `/api/sssom`** — a third API surface (beside
 `/api/v2` and the v1 compat paths) implementing the [SSSOM spec](https://github.com/mapping-commons/sssom-api):
 `/mappings` (with a `filter=field|operator|value` grammar, plus a `mapping_set_id` param scoping to one
@@ -229,11 +229,10 @@ mapping), so it has no per-entity view and its only n-gram fields are *infix* �
 typeahead. Prefix matching uses two new **edge**-n-gram field types (prefix-of-any-token for labels,
 whole-string for CURIEs); Solr's `SuggestComponent` is deliberately **not** used, because it takes no
 `fq` (so it could honour neither the subject-side default nor the ontology/corpus filters) and over a
-denormalised index would suggest once per *mapping*. Three surfaces, three mechanisms by field
+denormalised index would suggest once per *mapping*. Two surfaces, two mechanisms by field
 cardinality: the main box → global entity suggest (subject-side, ADR-0030); column filters →
 a `facet.prefix` scoped to the **live query**, reusing `SolrQueryBuilder.buildSolrQuery` so a
-suggestion can never yield zero rows; Advanced search → entity suggest, a cached distinct-values facet,
-or nothing, per field. Picking a suggestion applies an **exact** filter (`FilterMatchType`); typing
+suggestion can never yield zero rows. Picking a suggestion applies an **exact** filter (`FilterMatchType`); typing
 free text keeps *contains*. `oxo2-entities` is a read model, rebuildable alone via
 `START_STAGE=mappings2entities`. Facets read only whole-value, **original-casing** fields — faceting a
 `text_general` field returns analyzed tokens ("the", "disease") and faceting a case-folding `_ci` field
@@ -242,8 +241,7 @@ twins for the `text_general` vocabulary fields. See
 [ADR-0034](docs/adr/0034-entity-collection-for-typeahead.md). Affects `oxo2-dataload` (the new
 collection, the `mappings2entities` stage, and the seven `_str` twins — a bounded re-post, not a
 re-inference), `oxo2-shared` (`EntityConstants`, `FilterMatchType`, `EntitySide`), `oxo2-backend`
-(`SuggestController`, `EntitySuggestQueryBuilder`) and `oxo2-frontend` (the suggest components and the
-48-field tier map).
+(`SuggestController`, `EntitySuggestQueryBuilder`) and `oxo2-frontend` (the suggest components).
 - **The weak predicates are a user-visible control, and the typeahead obeys it** — `rdfs:subClassOf`
 and `oboInOwl:hasDbXref` assert no equivalence and swamp an OLS-derived corpus, so both stay hidden by
 default; but each is now independently revealable by a checkbox (search page and Predicate column
@@ -269,6 +267,12 @@ reordering lives only on the results table's per-column "Sort by" popovers (the 
 dropdown was removed 2026-07-23). A new search option must join one of the three groups and add its
 summary hint. See [ADR-0036](docs/adr/0036-search-form-options-grouped-by-intent.md). Affects
 `oxo2-frontend` only.
+- **There is no Advanced search surface in the frontend** — the per-field query tab and its flat
+wide results table were removed because the loaded corpora carry too little SSSOM metadata to
+justify 40+ per-field query boxes. Per-field narrowing in the UI lives on the results table's
+column filter popovers; the API's `advancedFieldQueries` / `queryFields` paths remain for API
+clients, so the backend is unchanged. See
+[ADR-0040](docs/adr/0040-remove-advanced-search.md). Affects `oxo2-frontend` only.
 - **Ontology sets carry a promoted prefix and name; the picker splits by category** — OLS extracts put
 the ontology's CURIE prefix and display name in the SSSOM `other` bag, and the dataload promotes them to
 discrete `prefix` / `ontology` fields on `oxo2-mappingsets` (serialize-only accessors on `MappingSet`,

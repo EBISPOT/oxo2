@@ -1,14 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { AdvancedFieldQuery, SearchInput, SearchMode, initialSearchState } from "../../model/Search";
+import { SearchInput, SearchMode, initialSearchState } from "../../model/Search";
 import { LabelMatchMode, LABEL_MATCH_LABELS, LABEL_MATCH_ORDER, DEFAULT_LABEL_MATCH } from "../../model/LabelMatchMode";
 import { CorpusMode, CORPUS_LABELS, DEFAULT_CORPUS, corpusToUrlParam } from "../../model/MappingSetCategory";
 import { WeakPredicate, WEAK_PREDICATE_ORDER, WEAK_PREDICATE_LABELS, WEAK_PREDICATE_HINTS, WEAK_PREDICATE_SHORT_LABELS, DEFAULT_WEAK_PREDICATES } from "../../model/WeakPredicate";
-import { ADVANCED_FIELD_NAMES } from "../../model/AdvancedFields";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import React from "react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { useQuery } from "@tanstack/react-query";
-import { AdvancedSearch } from "./AdvancedSearch";
 import { CorpusSelector } from "./CorpusSelector";
 import { EntitySuggest } from "./EntitySuggest";
 import { MappingSetSelector } from "./MappingSetSelector";
@@ -23,8 +21,6 @@ const tableTheme = createTheme({
         secondary: { main: "#525252", light: "#99a1af", dark: "#373a36", contrastText: "#fff" },
     },
 });
-
-type ActiveTab = 'search' | 'advanced';
 
 const SINGLE_EXAMPLE = "cataract";
 const MULTIPLE_EXAMPLE = "UBERON:0002107\nCataract\nhttp://purl.obolibrary.org/obo/MP_0001289";
@@ -51,20 +47,12 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
 }) {
     const navigate = useNavigate();
     const [searchState, setSearchState] = useState<SearchInput>(searchInput);
-    const [activeTab, setActiveTab] = useState<ActiveTab>(searchInput.activeTab ?? 'search');
     const [searchMode, setSearchMode] = useState<SearchMode>(searchInput.searchMode ?? 'single');
-    const [advancedValues, setAdvancedValues] = useState<Record<string, string>>(() =>
-        Object.fromEntries(
-            (searchInput.advancedFieldQueries ?? [])
-                .filter((q) => ADVANCED_FIELD_NAMES.has(q.field))
-                .map((q) => [q.field, q.value])
-        )
-    );
 
     // Mapping-set selection is held in searchState.mappingSetIds and passed down to the
     // (memoised) MappingSetSelector as controlled state. selectedIds / onSelectionChange
     // are kept referentially stable so the selector — a table of hundreds of rows — is
-    // skipped by React.memo while the user types in the search box or advanced fields.
+    // skipped by React.memo while the user types in the search box.
     const selectedIds = useMemo(
         () => searchState.mappingSetIds ?? [],
         [searchState.mappingSetIds]
@@ -125,21 +113,6 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
     useEffect(() => {
         setSearchState((prev) => ({ ...prev, mappingSetIds: searchInput.mappingSetIds }));
     }, [incomingIdsKey]);
-
-    // Pick up advanced values arriving via URL after mount.
-    const incomingAdvancedKey = JSON.stringify(searchInput.advancedFieldQueries ?? []);
-    useEffect(() => {
-        setAdvancedValues(
-            Object.fromEntries(
-                (searchInput.advancedFieldQueries ?? [])
-                    .filter((q) => ADVANCED_FIELD_NAMES.has(q.field))
-                    .map((q) => [q.field, q.value])
-            )
-        );
-        if (searchInput.activeTab) {
-            setActiveTab(searchInput.activeTab);
-        }
-    }, [incomingAdvancedKey, searchInput.activeTab]);
 
     // Pick up from/to prefixes arriving via URL after mount.
     const incomingPrefixKey = (searchInput.subjectPrefixes ?? []).join(",")
@@ -239,7 +212,6 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
             userSearchInput: "",
             sanitizedSearchInput: [],
             mappingSetIds: undefined,
-            activeTab,
             searchMode,
         });
         setSubjectPrefixes([]);
@@ -255,39 +227,6 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
         onClear?.();
     };
 
-    const handleAdvancedChange = (field: string, value: string) => {
-        setAdvancedValues((prev) => ({ ...prev, [field]: value }));
-    };
-
-    const handleAdvancedSearch = () => {
-        const filled: AdvancedFieldQuery[] = Object.entries(advancedValues)
-            .filter(([, v]) => v && v.trim() !== "")
-            .map(([field, value]) => ({ field, value: value.trim() }));
-        if (filled.length === 0) return;
-
-        const params = new URLSearchParams();
-        for (const fq of filled) {
-            params.append("af", `${fq.field}=${fq.value}`);
-        }
-        const ids = searchState.mappingSetIds ?? [];
-        for (const id of ids) {
-            params.append("mapping_set_id", id);
-        }
-        const query = params.toString();
-        navigate(`/search/_advanced${query ? `?${query}` : ""}`);
-    };
-
-    const handleAdvancedClear = () => {
-        setAdvancedValues({});
-    };
-
-    const tabButtonClass = (tab: ActiveTab) =>
-        `px-4 py-1 text-base font-semibold border-b-2 cursor-pointer ${
-            activeTab === tab
-                ? "border-primary text-primary"
-                : "border-transparent text-tertiary hover:text-primary"
-        }`;
-
     const modeButtonClass = (mode: SearchMode) =>
         `px-3 py-1 rounded-md text-base cursor-pointer transition-colors ${
             searchMode === mode
@@ -298,49 +237,22 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
     const termCount = searchState.sanitizedSearchInput.length;
 
     // Names every non-default choice hiding behind the collapsed "More options", so a search
-    // arriving via URL never applies an invisible filter. The corpus/predicate/label-match
-    // controls only exist on the Search tab, so their hints are suppressed on Advanced.
+    // arriving via URL never applies an invisible filter.
     const moreOptionsHints: string[] = [];
     if (selectedIds.length > 0) {
         moreOptionsHints.push(
             `${selectedIds.length} mapping ${selectedIds.length === 1 ? 'set' : 'sets'} selected`);
     }
-    if (activeTab === 'search') {
-        if (corpus !== DEFAULT_CORPUS) {
-            moreOptionsHints.push(`${CORPUS_LABELS[corpus].toLowerCase()} only`);
-        }
-        if (weakPredicates.length > 0) {
-            moreOptionsHints.push(
-                `also showing ${weakPredicates.map((code) => WEAK_PREDICATE_SHORT_LABELS[code]).join(', ')}`);
-        }
-        if (labelMatch !== DEFAULT_LABEL_MATCH) {
-            moreOptionsHints.push(`label matching: ${LABEL_MATCH_LABELS[labelMatch].toLowerCase()}`);
-        }
+    if (corpus !== DEFAULT_CORPUS) {
+        moreOptionsHints.push(`${CORPUS_LABELS[corpus].toLowerCase()} only`);
     }
-
-    // The full mapping-set table is hundreds of rows, so it sits behind its own nested disclosure:
-    // opening "More options" should show compact groups, not a wall of table. Rendered on both
-    // tabs — the Advanced search carries mapping_set_id params too.
-    const mappingSetPicker = (
-        <details>
-            <summary className="link-default cursor-pointer select-none">
-                Choose specific mapping sets…
-                {selectedIds.length > 0 && (
-                    <span className="text-tertiary text-sm ml-2">
-                        ({selectedIds.length} selected — click a row to toggle)
-                    </span>
-                )}
-            </summary>
-            <div className="mt-2">
-                <ThemeProvider theme={tableTheme}>
-                    <MappingSetSelector
-                        selectedIds={selectedIds}
-                        onSelectionChange={handleSelectionChange}
-                    />
-                </ThemeProvider>
-            </div>
-        </details>
-    );
+    if (weakPredicates.length > 0) {
+        moreOptionsHints.push(
+            `also showing ${weakPredicates.map((code) => WEAK_PREDICATE_SHORT_LABELS[code]).join(', ')}`);
+    }
+    if (labelMatch !== DEFAULT_LABEL_MATCH) {
+        moreOptionsHints.push(`label matching: ${LABEL_MATCH_LABELS[labelMatch].toLowerCase()}`);
+    }
 
     return (
         <div className="search-container">
@@ -349,163 +261,134 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
                     Welcome to the EMBL-EBI OxO Mapping Service
                 </div>
             )}
-            <div className="flex border-b border-gray-200 mb-3">
+            <div
+                role="radiogroup"
+                aria-label="How many terms are you mapping?"
+                className="inline-flex gap-1 mb-3 p-1 rounded-md bg-white"
+            >
+                {(['single', 'multiple'] as SearchMode[]).map((mode) => (
+                    <button
+                        key={mode}
+                        type="button"
+                        role="radio"
+                        aria-checked={searchMode === mode}
+                        className={modeButtonClass(mode)}
+                        onClick={() => setSearchMode(mode)}
+                    >
+                        {mode === 'single' ? 'Single term' : 'Multiple terms'}
+                    </button>
+                ))}
+            </div>
+
+            <div>
+                <div className="flex flex-col md:flex-row justify-between mb-2">
+                    <label htmlFor="home-search" className="text-tertiary">
+                        {searchMode === 'single'
+                            ? 'Which term do you want to map?'
+                            : 'Which terms do you want to map? One per line.'}
+                    </label>
+                    <button
+                        type="button"
+                        className="link-default md:mx-0.5"
+                        onClick={() => setTermText(searchMode === 'single' ? SINGLE_EXAMPLE : MULTIPLE_EXAMPLE)}
+                    >
+                        {searchMode === 'single' ? 'Example...' : 'Examples...'}
+                    </button>
+                </div>
+                {searchMode === 'single' ? (
+                    // Typeahead over entities (ADR-0034). Subject-side, because the default
+                    // search matches the subject side only (ADR-0030) — an object-only entity
+                    // would complete to zero rows. Restricted to the chosen source ontologies,
+                    // so the "From" selector narrows the suggestions for free.
+                    <EntitySuggest
+                        inputId="home-search"
+                        value={searchState.userSearchInput}
+                        onTyped={setTermText}
+                        onPick={(entity) => {
+                            setTermText(entity.id);
+                            // Pass the CURIE explicitly: setTermText has not landed yet.
+                            handleSearch(entity.id);
+                        }}
+                        onSubmit={() => handleSearch()}
+                        side="subject"
+                        prefixes={subjectPrefixes}
+                        includeWeakPredicates={weakPredicates}
+                        placeholder="A label, CURIE or IRI — e.g. cataract, MP:0001289"
+                    />
+                ) : (
+                    <>
+                        <textarea
+                            id="home-search"
+                            rows={4}
+                            className="input-default text-lg resize-y min-h-24"
+                            placeholder={"cataract\nMP:0001289\nhttp://purl.obolibrary.org/obo/UBERON_0002107"}
+                            value={searchState.userSearchInput}
+                            onChange={handleInputChange}
+                        />
+                        <div className="mt-2">
+                            <TermFileDrop onTerms={handleFileTerms} />
+                        </div>
+                        {termCount > 0 && (
+                            <div className="text-tertiary text-sm mt-1">
+                                {termCount} {termCount === 1 ? 'term' : 'terms'} to map
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+
+            <div className="mt-4">
+                <div className="text-tertiary mb-2">
+                    Between which ontologies? Leave either side empty for "all".
+                </div>
+                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
+                    <div className="flex-1">
+                        <OntologySelector
+                            label="From ontologies"
+                            placeholder="source, e.g. DOID"
+                            options={allPrefixes}
+                            counts={subjectCounts}
+                            value={subjectPrefixes}
+                            onChange={setSubjectPrefixes}
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        title="Swap source and target"
+                        className="link-default px-2 py-1 text-xl"
+                        onClick={handleSwap}
+                    >
+                        ⇄
+                    </button>
+                    <div className="flex-1">
+                        <OntologySelector
+                            label="To ontologies"
+                            placeholder="target, e.g. EFO, MONDO"
+                            options={targetOptions}
+                            counts={targetCounts}
+                            value={objectPrefixes}
+                            onChange={setObjectPrefixes}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Actions come after both questions they submit, and before the More options
+                disclosure so they don't jump when it opens. */}
+            <div className="flex gap-2 mt-4">
                 <button
-                    type="button"
-                    className={tabButtonClass('search')}
-                    onClick={() => setActiveTab('search')}
+                    className="button-primary text-base font-bold px-4 py-1"
+                    onClick={() => handleSearch()}
                 >
                     Search
                 </button>
                 <button
-                    type="button"
-                    className={tabButtonClass('advanced')}
-                    onClick={() => setActiveTab('advanced')}
+                    className="button-secondary text-base px-4 py-1"
+                    onClick={handleClear}
                 >
-                    Advanced
+                    Clear
                 </button>
             </div>
-
-            {activeTab === 'search' ? (
-                <>
-                <div
-                    role="radiogroup"
-                    aria-label="How many terms are you mapping?"
-                    className="inline-flex gap-1 mb-3 p-1 rounded-md bg-white"
-                >
-                    {(['single', 'multiple'] as SearchMode[]).map((mode) => (
-                        <button
-                            key={mode}
-                            type="button"
-                            role="radio"
-                            aria-checked={searchMode === mode}
-                            className={modeButtonClass(mode)}
-                            onClick={() => setSearchMode(mode)}
-                        >
-                            {mode === 'single' ? 'Single term' : 'Multiple terms'}
-                        </button>
-                    ))}
-                </div>
-
-                <div>
-                    <div className="flex flex-col md:flex-row justify-between mb-2">
-                        <label htmlFor="home-search" className="text-tertiary">
-                            {searchMode === 'single'
-                                ? 'Which term do you want to map?'
-                                : 'Which terms do you want to map? One per line.'}
-                        </label>
-                        <button
-                            type="button"
-                            className="link-default md:mx-0.5"
-                            onClick={() => setTermText(searchMode === 'single' ? SINGLE_EXAMPLE : MULTIPLE_EXAMPLE)}
-                        >
-                            {searchMode === 'single' ? 'Example...' : 'Examples...'}
-                        </button>
-                    </div>
-                    {searchMode === 'single' ? (
-                        // Typeahead over entities (ADR-0034). Subject-side, because the default
-                        // search matches the subject side only (ADR-0030) — an object-only entity
-                        // would complete to zero rows. Restricted to the chosen source ontologies,
-                        // so the "From" selector narrows the suggestions for free.
-                        <EntitySuggest
-                            inputId="home-search"
-                            value={searchState.userSearchInput}
-                            onTyped={setTermText}
-                            onPick={(entity) => {
-                                setTermText(entity.id);
-                                // Pass the CURIE explicitly: setTermText has not landed yet.
-                                handleSearch(entity.id);
-                            }}
-                            onSubmit={() => handleSearch()}
-                            side="subject"
-                            prefixes={subjectPrefixes}
-                            includeWeakPredicates={weakPredicates}
-                            placeholder="A label, CURIE or IRI — e.g. cataract, MP:0001289"
-                        />
-                    ) : (
-                        <>
-                            <textarea
-                                id="home-search"
-                                rows={4}
-                                className="input-default text-lg resize-y min-h-24"
-                                placeholder={"cataract\nMP:0001289\nhttp://purl.obolibrary.org/obo/UBERON_0002107"}
-                                value={searchState.userSearchInput}
-                                onChange={handleInputChange}
-                            />
-                            <div className="mt-2">
-                                <TermFileDrop onTerms={handleFileTerms} />
-                            </div>
-                            {termCount > 0 && (
-                                <div className="text-tertiary text-sm mt-1">
-                                    {termCount} {termCount === 1 ? 'term' : 'terms'} to map
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
-
-                <div className="mt-4">
-                    <div className="text-tertiary mb-2">
-                        Between which ontologies? Leave either side empty for "all".
-                    </div>
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
-                        <div className="flex-1">
-                            <OntologySelector
-                                label="From ontologies"
-                                placeholder="source, e.g. DOID"
-                                options={allPrefixes}
-                                counts={subjectCounts}
-                                value={subjectPrefixes}
-                                onChange={setSubjectPrefixes}
-                            />
-                        </div>
-                        <button
-                            type="button"
-                            title="Swap source and target"
-                            className="link-default px-2 py-1 text-xl"
-                            onClick={handleSwap}
-                        >
-                            ⇄
-                        </button>
-                        <div className="flex-1">
-                            <OntologySelector
-                                label="To ontologies"
-                                placeholder="target, e.g. EFO, MONDO"
-                                options={targetOptions}
-                                counts={targetCounts}
-                                value={objectPrefixes}
-                                onChange={setObjectPrefixes}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Actions come after both questions they submit, and before the More options
-                    disclosure so they don't jump when it opens — same order as the Advanced tab. */}
-                <div className="flex gap-2 mt-4">
-                    <button
-                        className="button-primary text-base font-bold px-4 py-1"
-                        onClick={() => handleSearch()}
-                    >
-                        Search
-                    </button>
-                    <button
-                        className="button-secondary text-base px-4 py-1"
-                        onClick={handleClear}
-                    >
-                        Clear
-                    </button>
-                </div>
-
-                </>
-            ) : (
-                <AdvancedSearch
-                    values={advancedValues}
-                    onChange={handleAdvancedChange}
-                    onSubmit={handleAdvancedSearch}
-                    onClear={handleAdvancedClear}
-                />
-            )}
 
             <details className="mt-6 group">
                 <summary className="link-default text-base list-none cursor-pointer select-none">
@@ -519,70 +402,84 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
                 </summary>
 
                 <div className="mt-3 flex flex-col gap-5">
-                    {activeTab === 'search' ? (
-                        <>
-                        {/* Group 1: which mappings should be searched — the corpus category, and
-                            beneath it the same question at a finer granularity: specific sets. */}
-                        <div>
-                            <CorpusSelector value={corpus} onChange={setCorpus} />
-                            <div className="mt-2">
-                                {mappingSetPicker}
-                            </div>
-                        </div>
-                        {/* Group 2: the normally-hidden predicates (ADR-0035). Here rather than
-                            only on the result table because they also decide what the search box
-                            above will SUGGEST: with both unticked, an entity whose every mapping is
-                            an xref is not offered, since picking it would land on an empty table. */}
-                        <div>
-                            <span className="text-tertiary mb-2 block">Also show</span>
-                            {WEAK_PREDICATE_ORDER.map((predicate) => (
-                                <label key={predicate} className="flex items-start gap-2 mb-1">
-                                    <input
-                                        type="checkbox"
-                                        className="mt-1"
-                                        checked={weakPredicates.includes(predicate)}
-                                        onChange={(event) =>
-                                            setWeakPredicates(
-                                                WEAK_PREDICATE_ORDER.filter((code) =>
-                                                    code === predicate
-                                                        ? event.target.checked
-                                                        : weakPredicates.includes(code)
-                                                )
-                                            )
-                                        }
-                                    />
-                                    <span>
-                                        <span className="text-base">{WEAK_PREDICATE_LABELS[predicate]}</span>
-                                        <span className="text-tertiary text-sm block">
-                                            {WEAK_PREDICATE_HINTS[predicate]}
+                    {/* Group 1: which mappings should be searched — the corpus category, and
+                        beneath it the same question at a finer granularity: specific sets. The
+                        full mapping-set table is hundreds of rows, so it sits behind its own
+                        nested disclosure: opening "More options" should show compact groups,
+                        not a wall of table. */}
+                    <div>
+                        <CorpusSelector value={corpus} onChange={setCorpus} />
+                        <div className="mt-2">
+                            <details>
+                                <summary className="link-default cursor-pointer select-none">
+                                    Choose specific mapping sets…
+                                    {selectedIds.length > 0 && (
+                                        <span className="text-tertiary text-sm ml-2">
+                                            ({selectedIds.length} selected — click a row to toggle)
                                         </span>
+                                    )}
+                                </summary>
+                                <div className="mt-2">
+                                    <ThemeProvider theme={tableTheme}>
+                                        <MappingSetSelector
+                                            selectedIds={selectedIds}
+                                            onSelectionChange={handleSelectionChange}
+                                        />
+                                    </ThemeProvider>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                    {/* Group 2: the normally-hidden predicates (ADR-0035). Here rather than
+                        only on the result table because they also decide what the search box
+                        above will SUGGEST: with both unticked, an entity whose every mapping is
+                        an xref is not offered, since picking it would land on an empty table. */}
+                    <div>
+                        <span className="text-tertiary mb-2 block">Also show</span>
+                        {WEAK_PREDICATE_ORDER.map((predicate) => (
+                            <label key={predicate} className="flex items-start gap-2 mb-1">
+                                <input
+                                    type="checkbox"
+                                    className="mt-1"
+                                    checked={weakPredicates.includes(predicate)}
+                                    onChange={(event) =>
+                                        setWeakPredicates(
+                                            WEAK_PREDICATE_ORDER.filter((code) =>
+                                                code === predicate
+                                                    ? event.target.checked
+                                                    : weakPredicates.includes(code)
+                                            )
+                                        )
+                                    }
+                                />
+                                <span>
+                                    <span className="text-base">{WEAK_PREDICATE_LABELS[predicate]}</span>
+                                    <span className="text-tertiary text-sm block">
+                                        {WEAK_PREDICATE_HINTS[predicate]}
                                     </span>
-                                </label>
-                            ))}
-                        </div>
-                        {/* Group 3: how free-text terms match labels (ADR-0026). */}
-                        <div>
-                            <label htmlFor="label-match" className="text-tertiary mb-2 block">
-                                Label matching
+                                </span>
                             </label>
-                            <select
-                                id="label-match"
-                                className="input-default text-base py-1 w-auto"
-                                value={labelMatch}
-                                onChange={(event) => setLabelMatch(event.target.value as LabelMatchMode)}
-                            >
-                                {LABEL_MATCH_ORDER.map((mode) => (
-                                    <option key={mode} value={mode}>{LABEL_MATCH_LABELS[mode]}</option>
-                                ))}
-                            </select>
-                            <div className="text-tertiary text-sm mt-1">
-                                Applies to label searches; a CURIE or IRI always matches exactly.
-                            </div>
+                        ))}
+                    </div>
+                    {/* Group 3: how free-text terms match labels (ADR-0026). */}
+                    <div>
+                        <label htmlFor="label-match" className="text-tertiary mb-2 block">
+                            Label matching
+                        </label>
+                        <select
+                            id="label-match"
+                            className="input-default text-base py-1 w-auto"
+                            value={labelMatch}
+                            onChange={(event) => setLabelMatch(event.target.value as LabelMatchMode)}
+                        >
+                            {LABEL_MATCH_ORDER.map((mode) => (
+                                <option key={mode} value={mode}>{LABEL_MATCH_LABELS[mode]}</option>
+                            ))}
+                        </select>
+                        <div className="text-tertiary text-sm mt-1">
+                            Applies to label searches; a CURIE or IRI always matches exactly.
                         </div>
-                        </>
-                    ) : (
-                        mappingSetPicker
-                    )}
+                    </div>
                 </div>
             </details>
         </div>

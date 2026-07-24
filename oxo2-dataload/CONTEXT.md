@@ -414,17 +414,18 @@ between fixtures with a `delete *:*` (see `oxo2-integration-tests/CONTEXT.md` §
 
 > **Re-post required (ADR-0034):** `oxo2-mappings` gained seven whole-value `_str` twins
 > (`subject_category`, `object_category`, `mapping_tool`, `mapping_set_title`, `author_label`,
-> `creator_label`, `reviewer_label`) plus their copyFields. They back the Advanced tab's vocabulary
-> typeahead: faceting a `text_general` field returns its *analyzed tokens*, so without a whole-value
-> twin the autocomplete would offer "the" and "disease" as completions of a mapping set title.
+> `creator_label`, `reviewer_label`) plus their copyFields. They back the distinct-values suggest
+> (`GET /api/v2/suggest/values`; API-only since the Advanced tab's removal, ADR-0040): faceting a
+> `text_general` field returns its *analyzed tokens*, so without a whole-value
+> twin the suggest would offer "the" and "disease" as completions of a mapping set title.
 > Deliberately **not** `_ci` twins (ADR-0026) — a case-folding field hands back a lower-cased value,
 > which is wrong to display or to filter back on.
 >
 > This is a **re-post, not a re-inference**: copyFields populate at index time, so it needs
 > `START_STAGE=index-asserted`, which re-runs the `json2solr` posting stages against the JSON already
 > on disk and preserves `download` / `sssom2json` / `nquads` / `infer` / `shard` / `explain` — the
-> 6 CPU-hours of ADR-0028's explain stage are not re-run. Until it happens the seven fields are empty,
-> so those Advanced boxes degrade to plain text inputs rather than breaking. The new `oxo2-entities`
+> 6 CPU-hours of ADR-0028's explain stage are not re-run. Until it happens the seven fields are empty
+> and the values suggest returns nothing for them. The new `oxo2-entities`
 > collection needs no mappings reindex at all — see `START_STAGE=mappings2entities` above.
 
 ### Input validation

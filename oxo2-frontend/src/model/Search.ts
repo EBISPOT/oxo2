@@ -2,11 +2,6 @@ import { LabelMatchMode, DEFAULT_LABEL_MATCH } from "./LabelMatchMode";
 import { CorpusMode, DEFAULT_CORPUS } from "./MappingSetCategory";
 import { WeakPredicate, DEFAULT_WEAK_PREDICATES } from "./WeakPredicate";
 
-export interface AdvancedFieldQuery {
-    field: string;
-    value: string;
-}
-
 /** Single term vs. a batch of terms. Only changes the entry control, never the query semantics. */
 export type SearchMode = 'single' | 'multiple';
 
@@ -14,8 +9,6 @@ export interface SearchInput {
     userSearchInput: string;
     sanitizedSearchInput: string[];
     mappingSetIds?: string[];
-    advancedFieldQueries?: AdvancedFieldQuery[];
-    activeTab?: 'search' | 'advanced';
     searchMode?: SearchMode;
     // Cross-ontology mapping (ADR-0024): source/target ontology (CURIE) prefixes.
     subjectPrefixes?: string[];
@@ -33,8 +26,6 @@ export const initialSearchState: SearchInput = {
     userSearchInput: '',
     sanitizedSearchInput: [],
     mappingSetIds: undefined,
-    advancedFieldQueries: undefined,
-    activeTab: 'search',
     searchMode: 'single',
     subjectPrefixes: undefined,
     objectPrefixes: undefined,

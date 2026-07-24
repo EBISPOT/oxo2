@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { MRT_ColumnFiltersState, MRT_PaginationState, MRT_SortingState } from "material-react-table";
+import type { MRT_PaginationState, MRT_SortingState } from "material-react-table";
 import { INFERENCE_TYPE_LABELS, InferenceType } from "../model/InferenceType";
 import { WEAK_PREDICATE_ORDER, WeakPredicate } from "../model/WeakPredicate";
 
@@ -144,12 +144,12 @@ function writeSorting(params: URLSearchParams, next: MRT_SortingState, defaultSo
 
 /**
  * @param defaultSorting must be a stable (module-level) reference.
- * @param resetPageOnChange whether changing the sort resets to the first page (mirrors
- *        the table's existing behaviour: the compact table resets, the Advanced table does not).
+ *
+ * Changing the sort resets to the first page, so a reordered result set cannot strand
+ * the user on an out-of-range page.
  */
 export function useUrlSorting(
-    defaultSorting: MRT_SortingState,
-    resetPageOnChange: boolean
+    defaultSorting: MRT_SortingState
 ): [MRT_SortingState, (updater: Updater<MRT_SortingState>) => void] {
     const { searchParams, update } = useUrlState();
     const rawSort = searchParams.getAll(SORT_PARAM);
@@ -162,9 +162,9 @@ export function useUrlSorting(
             update((params) => {
                 const next = applyUpdater(updater, readSorting(params.getAll(SORT_PARAM), defaultSorting));
                 writeSorting(params, next, defaultSorting);
-            }, resetPageOnChange);
+            }, true);
         },
-        [update, defaultSorting, resetPageOnChange]
+        [update, defaultSorting]
     );
 
     return [sorting, setSorting];
@@ -314,9 +314,8 @@ export function useUrlFieldFilters(): [Record<string, string>, (filters: Record<
  *
  * A picked value came out of the index and is unambiguous, so it filters EXACTly; a typed value is a
  * fragment, so it keeps the existing "contains" behaviour. Carried as its own repeatable `fx=<field>`
- * param rather than by extending the `filter=<field>=<value>` encoding — that encoding is shared with
- * the Advanced table's column filters, and widening it would ripple somewhere this feature has no
- * business touching. Bookmarkable like every other bit of table state here.
+ * param rather than by extending the `filter=<field>=<value>` encoding, which stays purely
+ * `field=value`. Bookmarkable like every other bit of table state here.
  */
 export function useUrlExactFilters(): [Set<string>, (fields: Set<string>) => void] {
     const { searchParams, update } = useUrlState();
@@ -334,49 +333,4 @@ export function useUrlExactFilters(): [Set<string>, (fields: Set<string>) => voi
     );
 
     return [exact, setExact];
-}
-
-// ---------- column filters (MRT-shaped, for the Advanced table) ----------
-
-function readColumnFilters(raw: string[]): MRT_ColumnFiltersState {
-    const filters: MRT_ColumnFiltersState = [];
-    raw.forEach((entry) => {
-        const separator = entry.indexOf("=");
-        if (separator <= 0) return;
-        const value = entry.slice(separator + 1);
-        if (value.trim() !== "") filters.push({ id: entry.slice(0, separator), value });
-    });
-    return filters;
-}
-
-function writeColumnFilters(params: URLSearchParams, next: MRT_ColumnFiltersState): void {
-    params.delete(FILTER_PARAM);
-    next
-        .filter((filter) => filter.value != null && String(filter.value).trim() !== "")
-        .forEach((filter) => params.append(FILTER_PARAM, `${filter.id}=${String(filter.value)}`));
-}
-
-/**
- * @param resetPageOnChange whether changing a filter resets to the first page (the
- *        Advanced table preserves its page, matching its existing behaviour).
- */
-export function useUrlColumnFilters(
-    resetPageOnChange: boolean
-): [MRT_ColumnFiltersState, (updater: Updater<MRT_ColumnFiltersState>) => void] {
-    const { searchParams, update } = useUrlState();
-    const rawFilters = searchParams.getAll(FILTER_PARAM);
-    const filterKey = rawFilters.join(NUL);
-    const columnFilters = useMemo(() => readColumnFilters(rawFilters), [filterKey]);
-
-    const setColumnFilters = useCallback(
-        (updater: Updater<MRT_ColumnFiltersState>) => {
-            update((params) => {
-                const next = applyUpdater(updater, readColumnFilters(params.getAll(FILTER_PARAM)));
-                writeColumnFilters(params, next);
-            }, resetPageOnChange);
-        },
-        [update, resetPageOnChange]
-    );
-
-    return [columnFilters, setColumnFilters];
 }

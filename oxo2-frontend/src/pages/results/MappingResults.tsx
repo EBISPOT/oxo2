@@ -1,14 +1,12 @@
 import {useCallback, useEffect, useState} from "react";
 import {useParams, useSearchParams} from "react-router-dom";
 import {Search} from "../../components/search/Search";
-import {AdvancedFieldQuery, SearchInput} from "../../model/Search";
+import {SearchInput} from "../../model/Search";
 import {asLabelMatchMode} from "../../model/LabelMatchMode";
 import {asCorpusMode} from "../../model/MappingSetCategory";
 import {asWeakPredicate, WeakPredicate} from "../../model/WeakPredicate";
-import {ADVANCED_FIELD_NAMES} from "../../model/AdvancedFields";
 import {ThemeProvider, createTheme} from '@mui/material/styles';
 import {NormalResultsTable} from "./NormalResultsTable";
-import {AdvancedResultsTable} from "./AdvancedResultsTable";
 
 const tableTheme = createTheme({
     palette: {
@@ -29,10 +27,7 @@ const tableTheme = createTheme({
 
 /**
  * Results page. Parses the query from the route, renders the shared search bar, and
- * picks the results table: the compact NormalResultsTable for the default "Search"
- * tab, or the full-width AdvancedResultsTable (unchanged legacy table) for the
- * "Advanced" tab. The two tables are deliberately separate so the Advanced surface
- * keeps every column and its inline per-column filtering.
+ * the compact NormalResultsTable beneath it.
  */
 function MappingResults() {
     const { curies } = useParams<{ curies: string }>();
@@ -52,33 +47,16 @@ function MappingResults() {
         .getAll("wp")
         .map(asWeakPredicate)
         .filter((predicate): predicate is WeakPredicate => predicate !== null);
-    const isAdvanced = curies === "_advanced";
     const isMap = curies === "_map";
 
-    const advancedFieldQueries: AdvancedFieldQuery[] = isAdvanced
-        ? searchParams
-              .getAll("af")
-              .map((s) => {
-                  const eq = s.indexOf("=");
-                  if (eq < 0) return null;
-                  const field = s.slice(0, eq);
-                  const value = s.slice(eq + 1);
-                  if (!ADVANCED_FIELD_NAMES.has(field) || value === "") return null;
-                  return { field, value };
-              })
-              .filter((x): x is AdvancedFieldQuery => x !== null)
-        : [];
-
-    const queriesForBackend = (isAdvanced || isMap) ? [] : (curies
+    const queriesForBackend = isMap ? [] : (curies
         ? curies.split(/[\n,]+/).filter((item) => item.trim() !== "")
         : []);
 
     const searchInput: SearchInput = {
-        userSearchInput: (isAdvanced || isMap) ? "" : (curies || ""),
+        userSearchInput: isMap ? "" : (curies || ""),
         sanitizedSearchInput: queriesForBackend,
         mappingSetIds: mappingSetIds.length > 0 ? mappingSetIds : undefined,
-        advancedFieldQueries: isAdvanced && advancedFieldQueries.length > 0 ? advancedFieldQueries : undefined,
-        activeTab: isAdvanced ? "advanced" : "search",
         subjectPrefixes: subjectPrefixes.length > 0 ? subjectPrefixes : undefined,
         objectPrefixes: objectPrefixes.length > 0 ? objectPrefixes : undefined,
         labelMatch,
@@ -121,22 +99,15 @@ function MappingResults() {
             <Search searchInput={searchInput} onClear={handleClear} />
 
             <ThemeProvider theme={tableTheme}>
-                {isAdvanced ? (
-                    <AdvancedResultsTable
-                        advancedFieldQueries={advancedFieldQueries}
-                        mappingSetIds={mappingSetIds}
-                    />
-                ) : (
-                    <NormalResultsTable
-                        key={clearNonce}
-                        queries={queriesForBackend}
-                        mappingSetIds={mappingSetIds}
-                        subjectPrefixes={subjectPrefixes}
-                        objectPrefixes={objectPrefixes}
-                        labelMatch={labelMatch}
-                        corpus={corpus}
-                    />
-                )}
+                <NormalResultsTable
+                    key={clearNonce}
+                    queries={queriesForBackend}
+                    mappingSetIds={mappingSetIds}
+                    subjectPrefixes={subjectPrefixes}
+                    objectPrefixes={objectPrefixes}
+                    labelMatch={labelMatch}
+                    corpus={corpus}
+                />
             </ThemeProvider>
         </div>
     );

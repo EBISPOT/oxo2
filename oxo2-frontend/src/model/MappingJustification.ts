@@ -63,8 +63,8 @@ function semapvLocalName(raw: string): string | null {
 
 // Compact display of a `mapping_justification` value: a recognised SEMAPV matching-process term
 // renders as its CamelCase local name (`MappingChaining`); any other value (SEMAPV terms outside our
-// table, non-SSSOM free text) is returned verbatim. This is what the result tables, the filter
-// dropdowns and the Advanced typeahead show — pair it with `mappingJustificationLabel` for the tooltip.
+// table, non-SSSOM free text) is returned verbatim. This is what the result tables and the filter
+// dropdowns show — pair it with `mappingJustificationLabel` for the tooltip.
 export function mappingJustificationShortName(raw?: string | null): string {
     if (!raw) return '';
 

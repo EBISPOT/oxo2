@@ -119,22 +119,12 @@ function sharedValue(mapping: Mapping, pick: (member: Mapping) => string | undef
     return distinct.size <= 1 ? (pick(mapping) || '') : null;
 }
 
-// Deep-link to the flat Advanced view filtered to this exact triple (the "+N more" overflow target).
-function advancedHrefForTriple(mapping: Mapping): string {
-    const params = new URLSearchParams();
-    params.append('af', `subject_id=${mapping.subjectId}`);
-    params.append('af', `predicate_id=${mapping.predicateId}`);
-    params.append('af', `object_id=${mapping.objectId}`);
-    return `/search/_advanced?${params.toString()}`;
-}
-
 /**
- * Default ("Search" tab) results: a compact, readable table of Subject / Predicate /
+ * The results table: a compact, readable table of Subject / Predicate /
  * Object (each an id › label › IRI cell) plus mapping justification, provider, and
  * set. Same-SPO mappings are collapsed into one expandable row (ADR-0013): the parent shows the
  * representative triple with the distinct inference types and a member count, and the row expands to
- * the underlying mappings. Field-level filtering is offered via per-column popovers; the Advanced tab
- * remains the home for exhaustive per-field filtering (see AdvancedResultsTable).
+ * the underlying mappings. Field-level filtering is offered via per-column popovers.
  */
 export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [], objectPrefixes = [],
     initialInferenceTypes = DEFAULT_INFERENCE_TYPES, labelMatch = DEFAULT_LABEL_MATCH,
@@ -161,7 +151,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     // Changing the sort or a filter resets to the first page (as before) — the URL hooks
     // fold that reset into the same write.
     const [pagination, setPagination] = useUrlPagination();
-    const [sorting, setSorting] = useUrlSorting(DEFAULT_SORTING, true);
+    const [sorting, setSorting] = useUrlSorting(DEFAULT_SORTING);
     const [inferenceTypes, setInferenceTypes] = useUrlInferenceTypes(initialInferenceTypes, true);
     const [urlFilters, setUrlFilters] = useUrlFieldFilters();
     // The normally-hidden predicates to also show (ADR-0035), read from the `wp` URL param that the
@@ -228,7 +218,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const suggestContext = useMemo(
         () => buildSearchRequest(
             queries, pagination.pageIndex, pagination.pageSize, columnFiltersForBackend, sorting,
-            mappingSetIds, undefined, inferenceTypes, false,
+            mappingSetIds, inferenceTypes, false,
             subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates),
         [queries, pagination.pageIndex, pagination.pageSize, columnFiltersForBackend, sorting,
             mappingSetIdsKey, inferenceTypes.join(","), subjectPrefixesKey, objectPrefixesKey,
@@ -259,7 +249,6 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 columnFiltersForBackend,
                 sorting,
                 mappingSetIds,
-                undefined,
                 inferenceTypes,
                 groupBySpo, // group same-SPO mappings into one row (ADR-0013); off for set-detail views
                 subjectPrefixes,
@@ -611,10 +600,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         </tbody>
                     </table>
                     {overflow > 0 && (
-                        <div className="mt-2 text-sm">
-                            <a className="text-[#d4522c] hover:underline" href={advancedHrefForTriple(row.original)}>
-                                +{overflow} more — view all in Advanced search
-                            </a>
+                        <div className="mt-2 text-sm text-tertiary">
+                            +{overflow} more not shown
                         </div>
                     )}
                 </div>

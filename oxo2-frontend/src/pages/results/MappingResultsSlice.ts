@@ -40,11 +40,6 @@ export const emptyMappingPage: MappingPage = {
     size: 0
 }
 
-interface AdvancedFieldQueryRequest {
-    field: string;
-    value: string;
-}
-
 interface SearchRequest {
     queries: string[];
     page: number;
@@ -54,7 +49,6 @@ interface SearchRequest {
     columnFilters: unknown[];
     sortedFields: unknown[];
     mappingSetIds?: string[];
-    advancedFieldQueries?: AdvancedFieldQueryRequest[];
     // Multi-select inference-type filter (ADR-0011): omitted/empty = all types; otherwise restrict
     // to the listed codes (ASSERTED / SSSOM_INFERENCE).
     inferenceType?: string[];
@@ -301,7 +295,6 @@ export function fromJson(json: MappingSearchResponse|undefined): MappingPage {
  */
 export function buildSearchRequest(queries: string[], page: number, pageSize: number, columnFilters: unknown[],
                            sorting: unknown[], mappingSetIds?: string[],
-                           advancedFieldQueries?: AdvancedFieldQueryRequest[],
                            inferenceType?: InferenceType[], groupBySpo: boolean = false,
                            subjectPrefixes?: string[], objectPrefixes?: string[],
                            labelMatch?: LabelMatchMode,
@@ -317,7 +310,6 @@ export function buildSearchRequest(queries: string[], page: number, pageSize: nu
         columnFilters: columnFilters,
         sortedFields: sorting,
         ...(mappingSetIds && mappingSetIds.length > 0 ? { mappingSetIds } : {}),
-        ...(advancedFieldQueries && advancedFieldQueries.length > 0 ? { advancedFieldQueries } : {}),
         ...(inferenceType && inferenceType.length > 0 ? { inferenceType } : {}),
         ...(groupBySpo ? { groupBySpo } : {}),
         ...(subjectPrefixes && subjectPrefixes.length > 0 ? { subjectPrefixes } : {}),
@@ -386,7 +378,6 @@ export async function fetchConfidenceByMappingIds(mappingIds: string[]): Promise
 
 export function fetchMappings(queries: string[], page: number = 0, pageSize: number = 10, columnFilters: unknown[],
                               sorting: unknown[], mappingSetIds?: string[],
-                              advancedFieldQueries?: AdvancedFieldQueryRequest[],
                               inferenceType?: InferenceType[],
                               groupBySpo: boolean = false,
                               subjectPrefixes?: string[],
@@ -395,7 +386,7 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
                               mappingSetCategory?: MappingSetCategory[],
                               includeWeakPredicates?: WeakPredicate[]): Promise<MappingSearchResponse> {
     const requestBody = buildSearchRequest(queries, page, pageSize, columnFilters, sorting, mappingSetIds,
-        advancedFieldQueries, inferenceType, groupBySpo, subjectPrefixes, objectPrefixes, labelMatch,
+        inferenceType, groupBySpo, subjectPrefixes, objectPrefixes, labelMatch,
         mappingSetCategory, includeWeakPredicates);
     return post<SearchRequest, MappingSearchResponse>('/api/v2/mappings/search', requestBody);
 }
@@ -413,7 +404,7 @@ export function exportMappings(queries: string[], columnFilters: unknown[], mapp
     // The export must carry the checkbox state too, or the downloaded TSV would hold rows the user
     // could not see on screen (or, worse, be missing the ones they had asked for).
     const requestBody = buildSearchRequest(queries, 0, 10, columnFilters, [], mappingSetIds,
-        undefined, inferenceType, false, subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory,
+        inferenceType, false, subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory,
         includeWeakPredicates);
     return downloadPost('/api/v2/mappings/search?format=sssom-tsv', requestBody, 'oxo2-mappings.tsv');
 }

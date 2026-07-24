@@ -208,7 +208,7 @@ boost would silently reorder results on every query. It is available as an expli
 
 #### Same-SPO grouping
 
-When the request sets `groupBySpo` (the normal/inferences result tables do; the Advanced tab does not),
+When the request sets `groupBySpo` (the normal/inferences result tables do),
 `SolrQueryBuilder` adds Solr result grouping on the `spo_key` field — `group=true`, `group.ngroups=true`,
 `group.limit`, `group.sort=score desc` (the representative is the highest inference-tier member, via the
 boost above), and `spo_key` is appended as the final sort key so paging is a stable total order. The page
@@ -250,15 +250,15 @@ the subject's perspective, so the classified/normal search (`constructClassified
 a `subjectSideClause` — the one subject-side classifier shared with batch mapping (ADR-0024) and the
 v1 `/api/search` adapter: an IRI → `subject_iri`, a CURIE → `subject_id` (normalised to its stored
 prefix casing via `EntityReference`), anything else → the subject label field the `labelMatch` mode
-selects. Terms OR together. The Advanced tab, `queryFields` and column filters still reach the object
-and predicate fields — subject-side matching is only the *default* path.
+selects. Terms OR together. `queryFields`, `advancedFieldQueries` and column filters still reach the
+object and predicate fields — subject-side matching is only the *default* path.
 
 Mappings *into* a term are not lost when the predicate is strong: the inference closure
 ([ADR-0016](../docs/adr/0016-single-pass-sssom-reasoning.md)) materialises the symmetric/inverse row
 (the four equivalence predicates, `skos:exactMatch`, broad/narrow and crossSpecies inverses), whose
 subject is the term. Weak predicates (`skos:closeMatch`, `skos:relatedMatch`, `oboInOwl:hasDbXref`,
 `rdfs:seeAlso`) are not closed, so a term appearing only as the *object* of a weak predicate is
-directional and reached through the Advanced tab or the v1 listing instead.
+directional and reached through the API's field queries or the v1 listing instead.
 
 #### Free-text label matching
 
@@ -267,8 +267,8 @@ A plain **label** term (neither IRI nor CURIE) goes to a subject label field cho
 `subject_label` (`text_general`, subsequence phrase), `EXACT_CASE_INSENSITIVE` → `subject_label_ci`
 (`string_ci` = keyword + lowercase + trim, whole label case-folded), `EXACT_CASE_SENSITIVE` →
 `subject_label_str` (`string`, whole label byte-for-byte). The value is quoted and `ClientUtils`-escaped
-in every mode. The mode affects only the label branch — never IRI/CURIE routing, the Advanced tab, or
-batch-map/v1. The `*_label_ci` fields require a reindex to populate. See
+in every mode. The mode affects only the label branch — never IRI/CURIE routing, `advancedFieldQueries`,
+or batch-map/v1. The `*_label_ci` fields require a reindex to populate. See
 [ADR-0026](../docs/adr/0026-configurable-label-match-mode.md).
 
 #### Column-filter matching

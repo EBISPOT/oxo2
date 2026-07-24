@@ -90,19 +90,6 @@ export interface ValueSuggestion {
     count: number;
 }
 
-/**
- * Every distinct value of a controlled-vocabulary field, most common first.
- *
- * Fetched ONCE and cached forever (the corpus is static between dataloads), then filtered
- * client-side as the user types — the same shape the ontology selector uses. Only low-cardinality
- * fields are allowed; the backend rejects anything else, because a global facet on an entity field
- * would enumerate millions of terms.
- */
-export function fetchDistinctValues(field: string, size = 500): Promise<ValueSuggestion[]> {
-    const params = new URLSearchParams({ field, size: String(size) });
-    return get<ValueSuggestion[]>(`/api/v2/suggest/values?${params.toString()}`);
-}
-
 interface ValueSuggestRequest {
     field: string;
     query: string;
