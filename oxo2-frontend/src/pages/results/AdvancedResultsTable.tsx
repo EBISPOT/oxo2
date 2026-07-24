@@ -4,7 +4,7 @@ import {DEFAULT_INFERENCE_TYPES} from "../../model/InferenceType";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {InferenceTypeFilterPopover} from "../../components/mapping/InferenceTypeFilterPopover";
 import {AdvancedFieldQuery} from "../../model/Search";
-import {emptyMappingPage, MappingPage, fetchMappings, fromJson} from "./MappingResultsSlice";
+import {emptyMappingPage, MappingPage, fetchMappings, fromJson, buildSearchRequest} from "./MappingResultsSlice";
 import {useQuery} from "@tanstack/react-query";
 import {
     MaterialReactTable,
@@ -13,6 +13,8 @@ import {
     useMaterialReactTable,
 } from 'material-react-table';
 import {Mapping} from "../../model/Mapping.ts";
+import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
+import {VocabSelect} from "../../components/search/VocabSelect";
 import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlColumnFilters} from "../../util/tableUrlState";
 
 // Default sort for the Advanced table. Module-level so its reference is stable across
@@ -79,6 +81,18 @@ export function AdvancedResultsTable({
 
     const mappingResults: MappingPage = data ? fromJson(data) : emptyMappingPage;
 
+    // The live search, for the justification filter's contextual suggestions (ADR-0034). Built with
+    // the SAME buildSearchRequest that fetchMappings uses (same args, in the same order), so the
+    // values the dropdown offers are faceted over exactly the rows on screen and can never yield zero.
+    // Memoised on the same primitive keys as the useQuery key above.
+    const advancedSuggestContext = useMemo(
+        () => buildSearchRequest(
+            [], pagination.pageIndex, pagination.pageSize, columnFilters, sorting, mappingSetIds,
+            advancedFieldQueries.length > 0 ? advancedFieldQueries : undefined, inferenceTypes, false),
+        [pagination.pageIndex, pagination.pageSize, columnFilters, sorting, mappingSetIdsKey,
+            advancedKey, inferenceTypes.join(",")]
+    );
+
     const columns = useMemo<MRT_ColumnDef<Mapping>[]>(
         () => [
             {
@@ -131,6 +145,28 @@ export function AdvancedResultsTable({
             {
                 accessorKey: "mappingJustification",
                 header: "Mapping Justification",
+                Cell: ({ row }) => (
+                    <span title={mappingJustificationLabel(row.original.mappingJustification)}>
+                        {mappingJustificationShortName(row.original.mappingJustification)}
+                    </span>
+                ),
+                // Closed SEMAPV vocabulary shown by label: a pick-only combobox over the values present
+                // in the current results, applying the exact CURIE. A plain contains box would filter
+                // the raw CURIE case-sensitively and never match the label the user reads (see
+                // NormalResultsTable).
+                Filter: ({ column }) => (
+                    <div style={{ minWidth: 200 }}>
+                        <VocabSelect
+                            field="mapping_justification"
+                            value={(column.getFilterValue() as string) ?? ""}
+                            onPick={(picked) => column.setFilterValue(picked || undefined)}
+                            formatOption={mappingJustificationShortName}
+                            formatOptionTitle={mappingJustificationLabel}
+                            search={advancedSuggestContext}
+                            placeholder="Filter"
+                        />
+                    </div>
+                ),
             },
             {
                 // Inference type (ADR-0011). Filtering of this field is driven by the single-select

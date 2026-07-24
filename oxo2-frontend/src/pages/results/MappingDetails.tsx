@@ -1,5 +1,6 @@
 import React, {ReactNode, useState} from "react";
 import {InferredMapping, Mapping, MappingFields} from "../../model/Mapping";
+import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
 import {Link, useNavigate} from "react-router-dom";
 import {mappingSetHref} from "../../util/mappingSetUrl";
 import {MappingItem} from "../../components/mapping/MappingItem";
@@ -15,13 +16,13 @@ const hasValue = (value?: string | number | string[] | Record<string, string> | 
     return true;
 };
 
-function LabeledValue({ label, value }: { label: string; value?: string | number }) {
+function LabeledValue({ label, value, title }: { label: string; value?: string | number; title?: string }) {
     if (!hasValue(value)) return null;
 
     return (
         <div className="mb-2">
             <span className="font-semibold">{label}:</span>{" "}
-            <span className="ml-2">{value}</span>
+            <span className="ml-2" title={title}>{value}</span>
         </div>
     );
 }
@@ -130,7 +131,11 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                     MappingFields.mappingJustification,
                     MappingFields.confidence])}
             >
-                <LabeledValue label="Mapping Justification" value={mapping.mappingJustification} />
+                <LabeledValue
+                    label="Mapping Justification"
+                    value={mappingJustificationShortName(mapping.mappingJustification)}
+                    title={mappingJustificationLabel(mapping.mappingJustification)}
+                />
                 <LabeledValue label="Confidence" value={mapping.confidence} />
             </Section>
 

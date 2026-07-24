@@ -2,6 +2,7 @@ import { useState, type JSX, type MouseEvent } from "react";
 import { Badge, Box, Button, IconButton, Popover, TextField, Typography } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { ValueSuggest } from "../search/ValueSuggest";
+import { VocabSelect } from "../search/VocabSelect";
 
 export interface FilterFieldDef {
     /** Canonical Solr field name (snake_case); resolved by the backend MappingEnum. */
@@ -11,10 +12,25 @@ export interface FilterFieldDef {
     /**
      * `contextual` gives this field a typeahead whose values are faceted over the LIVE search
      * (ADR-0034) — so a suggested value can never yield zero rows, and it arrives with the count of
-     * rows it would leave. Fields without it stay plain text boxes. Data, not a switch statement:
-     * turning a column's suggest on is a one-flag change.
+     * rows it would leave. `vocab` is the same live-scoped facet shown as a pick-only combobox (all
+     * values present in the current results, no typing needed to reveal them); use it for a
+     * low-cardinality field whose stored values are opaque codes shown by a friendly label (see
+     * `formatOption`), which a "contains" fragment could never match. Fields without either stay
+     * plain text boxes. Data, not a switch statement: turning a column's suggest on is a one-flag
+     * change.
      */
-    suggest?: "contextual" | "none";
+    suggest?: "contextual" | "vocab" | "none";
+    /**
+     * For `vocab` fields: map a stored value to its display label (e.g. a SEMAPV CURIE to its short
+     * CamelCase name). The filter still applies the raw value; only the dropdown text is translated.
+     */
+    formatOption?: (value: string) => string;
+    /**
+     * For `vocab` fields: map a stored value to a fuller description shown as the option's hover
+     * tooltip, for when `formatOption` shortens the label (e.g. the SEMAPV rdfs:label behind the
+     * CamelCase name).
+     */
+    formatOptionTitle?: (value: string) => string;
     /**
      * Render as a number input (min 1, integer steps) instead of a free-text box. Distance is the
      * only numeric filter today; the backend reads its value as an inclusive maximum ("at most N").
@@ -100,7 +116,25 @@ export function ColumnFilterPopover({
                         {`Filter by ${title}`}
                     </Typography>
                     {fields.map((fieldDef) => (
-                        fieldDef.suggest === "contextual" ? (
+                        fieldDef.suggest === "vocab" ? (
+                            <VocabSelect
+                                key={fieldDef.field}
+                                field={fieldDef.field}
+                                label={fieldDef.label}
+                                value={values[fieldDef.field] ?? ""}
+                                formatOption={fieldDef.formatOption}
+                                formatOptionTitle={fieldDef.formatOptionTitle}
+                                // Scoped to the live search, exactly like the contextual branch below:
+                                // the dropdown only offers values present in the current results.
+                                search={suggestContext}
+                                // This popover exists solely to pick a value, so drop the list open the
+                                // moment it appears rather than making the user find the caret first.
+                                autoOpen
+                                // A closed vocabulary: only a pick sets the filter (an exact value),
+                                // and clearing removes it. There is no "contains" typing path.
+                                onPick={(picked) => handlePick(fieldDef.field, picked)}
+                            />
+                        ) : fieldDef.suggest === "contextual" ? (
                             <ValueSuggest
                                 key={fieldDef.field}
                                 field={fieldDef.field}

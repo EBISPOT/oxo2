@@ -446,7 +446,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
 
                 <div className="mt-4">
                     <div className="text-tertiary mb-2">
-                        Between which ontologies? Leave either side empty for "any".
+                        Between which ontologies? Leave either side empty for "all".
                     </div>
                     <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
                         <div className="flex-1">

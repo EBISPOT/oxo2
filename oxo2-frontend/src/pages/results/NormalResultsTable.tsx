@@ -13,6 +13,7 @@ import {
 import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlFieldFilters, useUrlExactFilters,
     useUrlWeakPredicates, fieldFiltersEqual} from "../../util/tableUrlState";
 import {Mapping} from "../../model/Mapping.ts";
+import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
 import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
 import {LabelMatchMode, DEFAULT_LABEL_MATCH} from "../../model/LabelMatchMode";
 import {CorpusMode, DEFAULT_CORPUS, corpusToRequest} from "../../model/MappingSetCategory";
@@ -46,6 +47,15 @@ const OBJECT_FILTER_FIELDS: FilterFieldDef[] = [
     {field: "object_id", label: "Object ID", suggest: "contextual"},
     {field: "object_label", label: "Object label", suggest: "contextual"},
     {field: "object_iri", label: "Object IRI", suggest: "contextual"},
+];
+// Mapping justification is a closed SEMAPV vocabulary shown by its short CamelCase name (full
+// rdfs:label on hover), so it uses a pick-only combobox (`vocab`) rather than a contains box: a typed
+// label fragment could never match the raw CURIE the backend filters on. Like the contextual columns
+// it is scoped to the live search, so the dropdown only offers justifications present in the current
+// results. Picking applies the exact CURIE.
+const JUSTIFICATION_FILTER_FIELDS: FilterFieldDef[] = [
+    {field: "mapping_justification", label: "Mapping justification", suggest: "vocab",
+        formatOption: mappingJustificationShortName, formatOptionTitle: mappingJustificationLabel},
 ];
 
 // Per-column sort choices (id / label / iri). Same canonical Solr field names as the
@@ -349,8 +359,10 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         <span>Mapping justification</span>
                         <ColumnFilterPopover
                             title="Mapping justification"
-                            fields={[{ field: "mapping_justification", label: "Mapping justification" }]}
+                            fields={JUSTIFICATION_FILTER_FIELDS}
                             onChange={handleFilterChange}
+                            onPick={handleFilterPick}
+                            suggestContext={suggestContext}
                             initialValues={initialFieldFilters}
                         />
                     </span>
@@ -359,7 +371,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                     const shared = sharedValue(row.original, (member) => member.mappingJustification);
                     return shared === null
                         ? <span className="italic text-gray-500">Multiple</span>
-                        : <span className="break-all">{shared}</span>;
+                        : <span className="break-all" title={mappingJustificationLabel(shared)}>{mappingJustificationShortName(shared)}</span>;
                 },
             },
             // Mapping confidence, shown in every view. A same-SPO group (search view) can span sets
@@ -555,7 +567,9 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                             {members.map((member, index) => (
                                 <tr key={member.mappingId || index} className="border-t border-gray-200 align-top">
                                     <td className="py-1 pr-4"><InferenceTypeBadge value={member.inferenceType} /></td>
-                                    <td className="py-1 pr-4 break-all">{member.mappingJustification}</td>
+                                    <td className="py-1 pr-4 break-all" title={mappingJustificationLabel(member.mappingJustification)}>
+                                        {mappingJustificationShortName(member.mappingJustification)}
+                                    </td>
                                     <td className="py-1 pr-4">
                                         {typeof member.confidence === "number"
                                             ? member.confidence
