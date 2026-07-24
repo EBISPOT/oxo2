@@ -10,6 +10,7 @@ import {Link} from "react-router-dom";
 import {mappingSetHref} from "../../util/mappingSetUrl";
 import {fetchConfidenceByMappingIds} from "./MappingResultsSlice";
 import {InferredMapping, Mapping} from "../../model/Mapping.ts";
+import {formatMappingJustification} from "../../model/MappingJustification";
 import {EntityRefCell} from "../../components/mapping/EntityRefCell";
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
 import {SortingContext} from "../../components/mapping/sortingContext";
@@ -173,7 +174,9 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 header: "Mapping justification",
                 size: 200,
                 Cell: ({ row }) => (
-                    <span className="break-all">{row.original.mappingJustification}</span>
+                    <span className="break-all" title={row.original.mappingJustification}>
+                        {formatMappingJustification(row.original.mappingJustification)}
+                    </span>
                 ),
             },
             // The premise's source set, linking to that set's detail page. An asserted premise only

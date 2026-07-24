@@ -13,6 +13,7 @@ import {
     useMaterialReactTable,
 } from 'material-react-table';
 import {Mapping} from "../../model/Mapping.ts";
+import {formatMappingJustification} from "../../model/MappingJustification";
 import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlColumnFilters} from "../../util/tableUrlState";
 
 // Default sort for the Advanced table. Module-level so its reference is stable across
@@ -131,6 +132,11 @@ export function AdvancedResultsTable({
             {
                 accessorKey: "mappingJustification",
                 header: "Mapping Justification",
+                Cell: ({ row }) => (
+                    <span title={row.original.mappingJustification}>
+                        {formatMappingJustification(row.original.mappingJustification)}
+                    </span>
+                ),
             },
             {
                 // Inference type (ADR-0011). Filtering of this field is driven by the single-select

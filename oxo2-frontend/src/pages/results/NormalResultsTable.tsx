@@ -13,6 +13,7 @@ import {
 import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlFieldFilters, useUrlExactFilters,
     useUrlWeakPredicates, fieldFiltersEqual} from "../../util/tableUrlState";
 import {Mapping} from "../../model/Mapping.ts";
+import {formatMappingJustification} from "../../model/MappingJustification";
 import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
 import {LabelMatchMode, DEFAULT_LABEL_MATCH} from "../../model/LabelMatchMode";
 import {CorpusMode, DEFAULT_CORPUS, corpusToRequest} from "../../model/MappingSetCategory";
@@ -359,7 +360,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                     const shared = sharedValue(row.original, (member) => member.mappingJustification);
                     return shared === null
                         ? <span className="italic text-gray-500">Multiple</span>
-                        : <span className="break-all">{shared}</span>;
+                        : <span className="break-all" title={shared}>{formatMappingJustification(shared)}</span>;
                 },
             },
             // Mapping confidence, shown in every view. A same-SPO group (search view) can span sets
@@ -555,7 +556,9 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                             {members.map((member, index) => (
                                 <tr key={member.mappingId || index} className="border-t border-gray-200 align-top">
                                     <td className="py-1 pr-4"><InferenceTypeBadge value={member.inferenceType} /></td>
-                                    <td className="py-1 pr-4 break-all">{member.mappingJustification}</td>
+                                    <td className="py-1 pr-4 break-all" title={member.mappingJustification}>
+                                        {formatMappingJustification(member.mappingJustification)}
+                                    </td>
                                     <td className="py-1 pr-4">
                                         {typeof member.confidence === "number"
                                             ? member.confidence
