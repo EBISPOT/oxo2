@@ -1,0 +1,766 @@
+# mapping_set_id: https://w3id.org/commons/ols/mappings/efo.ols.sssom.tsv
+# mapping_set_group: ols_sssom_extracts
+# mapping_set_confidence: '0.7'
+# mapping_provider: https://www.ebi.ac.uk/ols4/ontologies/efo
+# mapping_tool: https://www.ebi.ac.uk/ols4
+# mapping_set_title: OLS extracted EFO mappings
+# mapping_set_description: These mappings were extracted during the OLS dataload from EFO
+# mapping_date: '2026-07-27'
+# other:
+#   local_id: efo.ols
+#   prefix: EFO
+#   ontology: Experimental Factor Ontology (EFO)
+# local_name: efo.ols.sssom.tsv
+# curie_map:
+#   semapv: https://w3id.org/semapv/vocab/
+#   owl: http://www.w3.org/2002/07/owl#
+#   rdfs: http://www.w3.org/2000/01/rdf-schema#
+#   skos: http://www.w3.org/2004/02/skos/core#
+#   oboInOwl: http://www.geneontology.org/formats/oboInOwl#
+#   chebi: http://purl.obolibrary.org/obo/chebi/
+#   inchi: 'https://bioregistry.io/inchi:'
+#   inchikey: 'https://bioregistry.io/inchikey:'
+#   smiles: 'https://bioregistry.io/smiles:'
+#   EFO: http://www.ebi.ac.uk/efo/EFO_
+#   MO: https://mged.sourceforge.net/ontologies/MGEDontology.php#
+#   NCBITaxon: http://purl.obolibrary.org/obo/NCBITaxon_
+#   MedDRA: https://bioportal.bioontology.org/ontologies/MEDDRA?p=classes&conceptid=
+#   NCIt: http://purl.obolibrary.org/obo/NCIT_
+#   OMIM: https://omim.org/entry/
+#   MONDO: http://purl.obolibrary.org/obo/MONDO_
+#   BTO: http://purl.obolibrary.org/obo/BTO_
+#   DOID: http://purl.obolibrary.org/obo/DOID_
+#   MESH: http://id.nlm.nih.gov/mesh/
+#   SNOMEDCT: http://purl.bioontology.org/ontology/SNOMEDCT/
+#   FBbt: 'http://flybase.org/cgi-bin/fbcvq.html?query=FBbt:'
+#   UBERON: http://purl.obolibrary.org/obo/UBERON_
+#   GO: http://purl.obolibrary.org/obo/GO_
+#   BFO: http://purl.obolibrary.org/obo/BFO_
+#   OBI: http://purl.obolibrary.org/obo/OBI_
+#   ICD10: https://icd.who.int/browse10/2019/en#/
+#   IAO: http://purl.obolibrary.org/obo/IAO_
+#   CHEBI: http://purl.obolibrary.org/obo/CHEBI_
+#   CL: http://purl.obolibrary.org/obo/CL_
+#   PMID: https://pubmed.ncbi.nlm.nih.gov/
+#   Wikipedia: http://en.wikipedia.org/wiki/
+#   NCIT: http://purl.obolibrary.org/obo/NCIT_
+#   Orphanet: http://www.orpha.net/ORDO/Orphanet_
+#   SCTID: http://purl.bioontology.org/ontology/SNOMEDCT/
+#   NCIm: http://ncim.nci.nih.gov/ncimbrowser/ConceptReport.jsp?dictionary=NCI%20MetaThesaurus&code=
+#   MAT: http://purl.obolibrary.org/obo/MAT_
+#   MA: 'http://www.informatics.jax.org/searches/AMA.cgi?id=MA:'
+#   TGMA: http://purl.obolibrary.org/obo/TGMA_
+#   ZFA: 'https://zfin.org/action/ontology/term/ZFA:'
+#   TAO: http://purl.obolibrary.org/obo/TAO_
+#   EV: http://purl.obolibrary.org/obo/EV_
+#   FMA: 'https://www.ebi.ac.uk/ols4/ontologies/fma/terms?obo_id=FMA:'
+#   XAO: http://purl.obolibrary.org/obo/XAO_
+#   AAO: http://purl.obolibrary.org/obo/AAO_
+#   TADS: http://purl.obolibrary.org/obo/TADS_
+#   WBbt: http://www.wormbase.org/get?name=
+#   PO: 'http://browser.planteome.org/amigo/term/PO:'
+#   ZEA: http://purl.obolibrary.org/obo/ZEA_
+#   PO_2: http://purl.obolibrary.org/obo/PO_
+#   RRID: 'https://scicrunch.org/resolver/RRID:'
+#   CLO: http://purl.obolibrary.org/obo/CLO_
+#   PATO: http://purl.obolibrary.org/obo/PATO_
+#   FBdv: 'http://flybase.org/cgi-bin/fbcvq.html?query=FBdv:'
+#   WBls: http://www.wormbase.org/get?name=
+#   ZFS: http://purl.obolibrary.org/obo/ZFS_
+#   EHDAA: http://purl.obolibrary.org/obo/EHDAA_
+#   EMAPA: 'http://www.informatics.jax.org/vocab/gxd/anatomy/EMAPA:'
+#   MFO: http://purl.obolibrary.org/obo/MFO_
+#   JAX: https://www.jax.org/strain/
+#   RGD: https://rgd.mcw.edu/rgdweb/search/search.html?term=
+#   atcc: https://www.atcc.org/products/
+#   UO: http://purl.obolibrary.org/obo/UO_
+#   MP: http://purl.obolibrary.org/obo/MP_
+#   IDOMAL: http://purl.obolibrary.org/obo/IDOMAL_
+#   HP: http://purl.obolibrary.org/obo/HP_
+#   pr: https://purl.obolibrary.org/obo/PR_
+#   DSSTox_Generic_SID: https://pubchem.ncbi.nlm.nih.gov/substance/
+#   CASRN: https://commonchemistry.cas.org/detail?cas_rn=
+#   DSSTox_CID: https://pubchem.ncbi.nlm.nih.gov/compound/
+#   ICD9: http://www.icd9data.com/getICD9Code.ashx?icd9=
+#   chebi_2: 'http://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:'
+#   UMLS: https://uts.nlm.nih.gov/uts/umls/concept/
+#   uniprot: http://purl.uniprot.org/uniprot/
+#   CMO: http://purl.obolibrary.org/obo/CMO_
+#   coriell: http://ccr.coriell.org/Sections/Search/Sample_Detail.aspx?Ref=
+#   ATC_code: http://www.whocc.no/atc_ddd_index/?code=
+#   MmusDv: http://purl.obolibrary.org/obo/MmusDv_
+#   GO_2: 'http://amigo.geneontology.org/amigo/term/GO:'
+#   ATCC: https://www.atcc.org/products/
+#   OGMS: http://purl.obolibrary.org/obo/OGMS_
+#   OBA: http://purl.obolibrary.org/obo/OBA_
+#   ERO: http://purl.obolibrary.org/obo/ERO_
+#   BAO: http://www.bioassayontology.org/bao#BAO_
+#   FBDV: 'http://flybase.org/cgi-bin/fbcvq.html?query=FBdv:'
+#   HsapDv: http://purl.obolibrary.org/obo/HsapDv_
+#   doi: http://dx.doi.org/
+#   pubchem.compound: https://pubchem.ncbi.nlm.nih.gov/compound/
+#   OMIMPS: https://omim.org/MIM:PS
+#   cmo: http://purl.obolibrary.org/obo/CMO_
+#   ncit: http://purl.obolibrary.org/obo/NCIT_
+#   orcid: https://orcid.org/
+#   mpath: http://purl.obolibrary.org/obo/MPATH_
+#   ogms: http://purl.obolibrary.org/obo/OGMS_
+#   omit: http://purl.obolibrary.org/obo/OMIT_
+#   OAE: http://purl.obolibrary.org/obo/OAE_
+#   snomedct: http://purl.bioontology.org/ontology/SNOMEDCT/
+#   Reactome: https://www.reactome.org/content/detail/
+#   mondo: http://purl.obolibrary.org/obo/MONDO_
+#   HMDB: http://www.hmdb.ca/metabolites/
+#   SYMP: http://purl.obolibrary.org/obo/SYMP_
+#   OMIT: http://purl.obolibrary.org/obo/OMIT_
+#   CHMO: http://purl.obolibrary.org/obo/CHMO_
+#   PRIDE: http://purl.obolibrary.org/obo/PRIDE_
+#   MEDGEN: https://www.ncbi.nlm.nih.gov/medgen/
+#   MedGen: https://www.ncbi.nlm.nih.gov/medgen/
+#   ORCID: https://orcid.org/
+#   hpscreg: https://hpscreg.eu/cell-line/
+#   jaxmice: https://www.jax.org/strain/
+#   enm: http://purl.enanomapper.org/onto/ENM_
+#   ENM: http://purl.enanomapper.org/onto/ENM_
+#   NPO: http://purl.bioontology.org/ontology/npo#NPO_
+#   TXPO: http://purl.obolibrary.org/obo/TXPO_
+#   ICD10CM: https://www.icd10data.com/search?s=
+#   Medgen: https://www.ncbi.nlm.nih.gov/medgen/
+#   MGI: http://www.informatics.jax.org/accession/
+#   FBcv: http://purl.obolibrary.org/obo/FBcv_
+#   CAS: https://commonchemistry.cas.org/detail?cas_rn=
+#   PubChem: https://pubchem.ncbi.nlm.nih.gov/compound/
+#   TGEMO: http://gemma.msl.ubc.ca/ont/TGEMO_
+#   SNOMED: http://purl.bioontology.org/ontology/SNOMEDCT/
+#   MPATH: http://purl.obolibrary.org/obo/MPATH_
+#   INO: http://purl.obolibrary.org/obo/INO_
+#   ADO: http://purl.obolibrary.org/obo/ADO_
+#   ukbiobank.field: https://biobank.ndph.ox.ac.uk/crystal/field.cgi?id=
+#   ukbiobank.category: https://biobank.ndph.ox.ac.uk/showcase/label.cgi?id=
+#   PR: https://purl.obolibrary.org/obo/PR_
+#   scdo: http://purl.obolibrary.org/obo/SCDO_
+#   T3DB: http://www.t3db.org/toxins/
+#   MI: http://purl.obolibrary.org/obo/MI_
+#   BSPO: http://purl.obolibrary.org/obo/BSPO_
+#   ORDO: http://www.orpha.net/ORDO/Orphanet_
+#   RO: http://purl.obolibrary.org/obo/RO_
+subject_id	predicate_id	object_id	mapping_justification	subject_label	object_label
+EFO:0000001	oboInOwl:hasDbXref	MO:10	semapv:UnspecifiedMatching	experimental factor	
+EFO:0000002	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57511	Arabidopsis thaliana
+EFO:0000003	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57512	Arabidopsis thaliana
+EFO:0000004	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57515	Arabidopsis thaliana
+EFO:0000005	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57520	Arabidopsis thaliana
+EFO:0000006	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57521	Arabidopsis thaliana
+EFO:0000007	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57537	Arabidopsis thaliana
+EFO:0000008	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57541	Arabidopsis thaliana
+EFO:0000009	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57543	Arabidopsis thaliana
+EFO:0000010	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57544	Arabidopsis thaliana
+EFO:0000011	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57548	Arabidopsis thaliana
+EFO:0000012	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57549	Arabidopsis thaliana
+EFO:0000013	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57551	Arabidopsis thaliana
+EFO:0000014	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57556	Arabidopsis thaliana
+EFO:0000015	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57560	Arabidopsis thaliana
+EFO:0000016	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57563	Arabidopsis thaliana
+EFO:0000017	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57569	Arabidopsis thaliana
+EFO:0000018	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57570	Arabidopsis thaliana
+EFO:0000019	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57572	Arabidopsis thaliana
+EFO:0000020	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57580	Arabidopsis thaliana
+EFO:0000021	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57581	Arabidopsis thaliana
+EFO:0000022	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57583	Arabidopsis thaliana
+EFO:0000023	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57586	Arabidopsis thaliana
+EFO:0000024	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57587	Arabidopsis thaliana
+EFO:0000025	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57591	Arabidopsis thaliana
+EFO:0000026	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57595	Arabidopsis thaliana
+EFO:0000027	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57596	Arabidopsis thaliana
+EFO:0000028	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57598	Arabidopsis thaliana
+EFO:0000029	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57601	Arabidopsis thaliana
+EFO:0000030	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57603	Arabidopsis thaliana
+EFO:0000031	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57606	Arabidopsis thaliana
+EFO:0000032	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57610	Arabidopsis thaliana
+EFO:0000033	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57615	Arabidopsis thaliana
+EFO:0000034	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57616	Arabidopsis thaliana
+EFO:0000035	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57618	Arabidopsis thaliana
+EFO:0000036	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57619	Arabidopsis thaliana
+EFO:0000037	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57620	Arabidopsis thaliana
+EFO:0000038	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57621	Arabidopsis thaliana
+EFO:0000039	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57622	Arabidopsis thaliana
+EFO:0000040	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57624	Arabidopsis thaliana
+EFO:0000041	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57625	Arabidopsis thaliana
+EFO:0000042	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57626	Arabidopsis thaliana
+EFO:0000043	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57627	Arabidopsis thaliana
+EFO:0000044	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57628	Arabidopsis thaliana
+EFO:0000045	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57629	Arabidopsis thaliana
+EFO:0000046	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57630	Arabidopsis thaliana
+EFO:0000047	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57631	Arabidopsis thaliana
+EFO:0000048	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57637	Arabidopsis thaliana
+EFO:0000049	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57641	Arabidopsis thaliana
+EFO:0000050	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57644	Arabidopsis thaliana
+EFO:0000051	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57646	Arabidopsis thaliana
+EFO:0000052	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57648	Arabidopsis thaliana
+EFO:0000053	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57655	Arabidopsis thaliana
+EFO:0000054	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57658	Arabidopsis thaliana
+EFO:0000055	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57660	Arabidopsis thaliana
+EFO:0000056	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57663	Arabidopsis thaliana
+EFO:0000057	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57664	Arabidopsis thaliana
+EFO:0000058	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57666	Arabidopsis thaliana
+EFO:0000059	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57671	Arabidopsis thaliana
+EFO:0000060	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57677	Arabidopsis thaliana
+EFO:0000061	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57691	Arabidopsis thaliana
+EFO:0000062	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57692	Arabidopsis thaliana
+EFO:0000063	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57699	Arabidopsis thaliana
+EFO:0000064	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57701	Arabidopsis thaliana
+EFO:0000065	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57704	Arabidopsis thaliana
+EFO:0000066	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57705	Arabidopsis thaliana
+EFO:0000067	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57706	Arabidopsis thaliana
+EFO:0000068	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57709	Arabidopsis thaliana
+EFO:0000069	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57710	Arabidopsis thaliana
+EFO:0000070	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57714	Arabidopsis thaliana
+EFO:0000071	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57715	Arabidopsis thaliana
+EFO:0000072	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57716	Arabidopsis thaliana
+EFO:0000073	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57717	Arabidopsis thaliana
+EFO:0000074	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57719	Arabidopsis thaliana
+EFO:0000075	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57722	Arabidopsis thaliana
+EFO:0000076	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57727	Arabidopsis thaliana
+EFO:0000077	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57731	Arabidopsis thaliana
+EFO:0000078	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57732	Arabidopsis thaliana
+EFO:0000079	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57733	Arabidopsis thaliana
+EFO:0000080	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57735	Arabidopsis thaliana
+EFO:0000081	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57737	Arabidopsis thaliana
+EFO:0000082	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57740	Arabidopsis thaliana
+EFO:0000083	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57742	Arabidopsis thaliana
+EFO:0000084	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57743	Arabidopsis thaliana
+EFO:0000085	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57750	Arabidopsis thaliana
+EFO:0000086	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57751	Arabidopsis thaliana
+EFO:0000087	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57752	Arabidopsis thaliana
+EFO:0000088	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57753	Arabidopsis thaliana
+EFO:0000089	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57758	Arabidopsis thaliana
+EFO:0000090	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57769	Arabidopsis thaliana
+EFO:0000098	rdfs:subClassOf	NCBITaxon:4932	semapv:UnspecifiedMatching	BY4741	Saccharomyces cerevisiae
+EFO:0000100	rdfs:subClassOf	NCBITaxon:4932	semapv:UnspecifiedMatching	BY5251	Saccharomyces cerevisiae
+EFO:0000111	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57770	Arabidopsis thaliana
+EFO:0000112	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57771	Arabidopsis thaliana
+EFO:0000113	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57776	Arabidopsis thaliana
+EFO:0000114	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57777	Arabidopsis thaliana
+EFO:0000115	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57778	Arabidopsis thaliana
+EFO:0000116	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57779	Arabidopsis thaliana
+EFO:0000117	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57783	Arabidopsis thaliana
+EFO:0000118	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57785	Arabidopsis thaliana
+EFO:0000119	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57789	Arabidopsis thaliana
+EFO:0000120	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57790	Arabidopsis thaliana
+EFO:0000121	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57801	Arabidopsis thaliana
+EFO:0000122	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57803	Arabidopsis thaliana
+EFO:0000123	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57807	Arabidopsis thaliana
+EFO:0000124	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57810	Arabidopsis thaliana
+EFO:0000125	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57811	Arabidopsis thaliana
+EFO:0000126	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57812	Arabidopsis thaliana
+EFO:0000127	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57813	Arabidopsis thaliana
+EFO:0000128	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57816	Arabidopsis thaliana
+EFO:0000129	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57820	Arabidopsis thaliana
+EFO:0000130	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57822	Arabidopsis thaliana
+EFO:0000131	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57823	Arabidopsis thaliana
+EFO:0000132	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57824	Arabidopsis thaliana
+EFO:0000133	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57825	Arabidopsis thaliana
+EFO:0000134	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57826	Arabidopsis thaliana
+EFO:0000135	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57827	Arabidopsis thaliana
+EFO:0000136	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57828	Arabidopsis thaliana
+EFO:0000137	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57834	Arabidopsis thaliana
+EFO:0000138	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57835	Arabidopsis thaliana
+EFO:0000139	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57836	Arabidopsis thaliana
+EFO:0000140	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57840	Arabidopsis thaliana
+EFO:0000141	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57842	Arabidopsis thaliana
+EFO:0000142	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57843	Arabidopsis thaliana
+EFO:0000143	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57847	Arabidopsis thaliana
+EFO:0000144	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57848	Arabidopsis thaliana
+EFO:0000145	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57850	Arabidopsis thaliana
+EFO:0000146	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57854	Arabidopsis thaliana
+EFO:0000147	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57858	Arabidopsis thaliana
+EFO:0000148	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57859	Arabidopsis thaliana
+EFO:0000149	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57867	Arabidopsis thaliana
+EFO:0000150	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57870	Arabidopsis thaliana
+EFO:0000151	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57871	Arabidopsis thaliana
+EFO:0000152	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57873	Arabidopsis thaliana
+EFO:0000153	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57874	Arabidopsis thaliana
+EFO:0000154	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57875	Arabidopsis thaliana
+EFO:0000155	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57876	Arabidopsis thaliana
+EFO:0000156	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57883	Arabidopsis thaliana
+EFO:0000157	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57884	Arabidopsis thaliana
+EFO:0000158	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57886	Arabidopsis thaliana
+EFO:0000159	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57890	Arabidopsis thaliana
+EFO:0000160	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57896	Arabidopsis thaliana
+EFO:0000161	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57901	Arabidopsis thaliana
+EFO:0000162	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57904	Arabidopsis thaliana
+EFO:0000163	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57905	Arabidopsis thaliana
+EFO:0000164	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57908	Arabidopsis thaliana
+EFO:0000165	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57923	Arabidopsis thaliana
+EFO:0000166	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS57924	Arabidopsis thaliana
+EFO:0000167	rdfs:subClassOf	NCBITaxon:3702	semapv:UnspecifiedMatching	CS8581	Arabidopsis thaliana
+EFO:0000175	rdfs:subClassOf	NCBITaxon:4932	semapv:UnspecifiedMatching	FUM1	Saccharomyces cerevisiae
+EFO:0000176	rdfs:subClassOf	NCBITaxon:10116	semapv:UnspecifiedMatching	Fischer 344	Rattus norvegicus
+EFO:0000179	rdfs:subClassOf	NCBITaxon:10116	semapv:UnspecifiedMatching	Goto-Kakizaki	Rattus norvegicus
+EFO:0000180	oboInOwl:hasDbXref	MedDRA:10068341	semapv:UnspecifiedMatching	HIV-1 infection	
+EFO:0000180	oboInOwl:hasDbXref	NCIt:C14220	semapv:UnspecifiedMatching	HIV-1 infection	
+EFO:0000180	oboInOwl:hasDbXref	OMIM:609423	semapv:UnspecifiedMatching	HIV-1 infection	
+EFO:0000180	rdfs:subClassOf	MONDO:0005109	semapv:UnspecifiedMatching	HIV-1 infection	HIV infectious disease
+EFO:0000187	oboInOwl:hasDbXref	BTO:0002071	semapv:UnspecifiedMatching	Kaposi's sarcoma cell	
+EFO:0000187	oboInOwl:hasDbXref	OMIM:148000	semapv:UnspecifiedMatching	Kaposi's sarcoma cell	
+EFO:0000195	oboInOwl:hasDbXref	DOID:14221	semapv:UnspecifiedMatching	metabolic syndrome	
+EFO:0000195	oboInOwl:hasDbXref	MESH:D024821	semapv:UnspecifiedMatching	metabolic syndrome	
+EFO:0000195	oboInOwl:hasDbXref	MedDRA:10052066	semapv:UnspecifiedMatching	metabolic syndrome	
+EFO:0000195	oboInOwl:hasDbXref	NCIt:C84442	semapv:UnspecifiedMatching	metabolic syndrome	
+EFO:0000195	oboInOwl:hasDbXref	OMIM:605552	semapv:UnspecifiedMatching	metabolic syndrome	
+EFO:0000195	oboInOwl:hasDbXref	OMIM:615812	semapv:UnspecifiedMatching	metabolic syndrome	
+EFO:0000195	oboInOwl:hasDbXref	SNOMEDCT:237602007	semapv:UnspecifiedMatching	metabolic syndrome	
+EFO:0000244	oboInOwl:hasDbXref	FBbt:00000449	semapv:UnspecifiedMatching	adult midgut precursor	
+EFO:0000244	rdfs:subClassOf	EFO:0000795	semapv:UnspecifiedMatching	adult midgut precursor	animal developmental tissue
+EFO:0000246	oboInOwl:hasDbXref	MO:467	semapv:UnspecifiedMatching	age	
+EFO:0000246	oboInOwl:hasDbXref	NCIt:C25150	semapv:UnspecifiedMatching	age	
+EFO:0000246	oboInOwl:hasDbXref	SNOMEDCT:397669002	semapv:UnspecifiedMatching	age	
+EFO:0000246	rdfs:subClassOf	EFO:0000719	semapv:UnspecifiedMatching	age	temporal measurement
+EFO:0000254	oboInOwl:hasDbXref	FBbt:00005482	semapv:UnspecifiedMatching	anal pad specific anlage	
+EFO:0000254	rdfs:subClassOf	UBERON:0001353	semapv:UnspecifiedMatching	anal pad specific anlage	anal region
+EFO:0000258	oboInOwl:hasDbXref	FBbt:00005537	semapv:UnspecifiedMatching	antennal primordium2	
+EFO:0000258	rdfs:subClassOf	EFO:0000795	semapv:UnspecifiedMatching	antennal primordium2	animal developmental tissue
+EFO:0000260	oboInOwl:hasDbXref	FBbt:00005418	semapv:UnspecifiedMatching	anterior endoderm anlage in statu nascendi	
+EFO:0000260	rdfs:subClassOf	EFO:0000795	semapv:UnspecifiedMatching	anterior endoderm anlage in statu nascendi	animal developmental tissue
+EFO:0000261	oboInOwl:hasDbXref	FBbt:00005524	semapv:UnspecifiedMatching	anterior endoderm primordium	
+EFO:0000261	rdfs:subClassOf	EFO:0000795	semapv:UnspecifiedMatching	anterior endoderm primordium	animal developmental tissue
+EFO:0000263	oboInOwl:hasDbXref	FBbt:00005487	semapv:UnspecifiedMatching	anterior spiracle specific anlage	
+EFO:0000263	rdfs:subClassOf	EFO:0000795	semapv:UnspecifiedMatching	anterior spiracle specific anlage	animal developmental tissue
+EFO:0000264	oboInOwl:hasDbXref	MESH:D000906	semapv:UnspecifiedMatching	antibody	
+EFO:0000264	oboInOwl:hasDbXref	MO:833	semapv:UnspecifiedMatching	antibody	
+EFO:0000264	oboInOwl:hasDbXref	NCIt:C16295	semapv:UnspecifiedMatching	antibody	
+EFO:0000264	oboInOwl:hasDbXref	SNOMEDCT:68498002	semapv:UnspecifiedMatching	antibody	
+EFO:0000264	rdfs:subClassOf	GO:0003674	semapv:UnspecifiedMatching	antibody	molecular_function
+EFO:0000266	oboInOwl:hasDbXref	DOID:1712	semapv:UnspecifiedMatching	aortic stenosis	
+EFO:0000266	oboInOwl:hasDbXref	MESH:D001024	semapv:UnspecifiedMatching	aortic stenosis	
+EFO:0000266	oboInOwl:hasDbXref	MedDRA:10002906	semapv:UnspecifiedMatching	aortic stenosis	
+EFO:0000266	oboInOwl:hasDbXref	NCIt:C50462	semapv:UnspecifiedMatching	aortic stenosis	
+EFO:0000266	oboInOwl:hasDbXref	NCIt:C64938	semapv:UnspecifiedMatching	aortic stenosis	
+EFO:0000266	oboInOwl:hasDbXref	OMIM:109730	semapv:UnspecifiedMatching	aortic stenosis	
+EFO:0000266	oboInOwl:hasDbXref	SNOMEDCT:420503003	semapv:UnspecifiedMatching	aortic stenosis	
+EFO:0000266	oboInOwl:hasDbXref	SNOMEDCT:60573004	semapv:UnspecifiedMatching	aortic stenosis	
+EFO:0000269	rdfs:subClassOf	EFO:0001451	semapv:UnspecifiedMatching	array design	instrument design
+EFO:0000273	oboInOwl:hasDbXref	MESH:D001272	semapv:UnspecifiedMatching	atmosphere	
+EFO:0000273	oboInOwl:hasDbXref	MO:498	semapv:UnspecifiedMatching	atmosphere	
+EFO:0000273	oboInOwl:hasDbXref	NCIt:C54711	semapv:UnspecifiedMatching	atmosphere	
+EFO:0000273	oboInOwl:hasDbXref	SNOMEDCT:304607008	semapv:UnspecifiedMatching	atmosphere	
+EFO:0000273	rdfs:subClassOf	EFO:0000469	semapv:UnspecifiedMatching	atmosphere	environmental factor
+EFO:0000283	oboInOwl:hasDbXref	MO:674	semapv:UnspecifiedMatching	behavioral stimulus	
+EFO:0000283	rdfs:subClassOf	EFO:0002694	semapv:UnspecifiedMatching	behavioral stimulus	experimental process
+EFO:0000287	rdfs:subClassOf	EFO:0001444	semapv:UnspecifiedMatching	biopsy number	measurement
+EFO:0000288	oboInOwl:hasDbXref	NCIt:C77677	semapv:UnspecifiedMatching	biopsy site	
+EFO:0000288	oboInOwl:hasDbXref	SNOMEDCT:396991001	semapv:UnspecifiedMatching	biopsy site	
+EFO:0000288	rdfs:subClassOf	BFO:0000029	semapv:UnspecifiedMatching	biopsy site	site
+EFO:0000312	oboInOwl:hasDbXref	MO:26	semapv:UnspecifiedMatching	cancer site	
+EFO:0000312	rdfs:subClassOf	BFO:0000029	semapv:UnspecifiedMatching	cancer site	site
+EFO:0000315	oboInOwl:hasDbXref	FBbt:00005541	semapv:UnspecifiedMatching	cardiac mesoderm primordium	
+EFO:0000315	oboInOwl:hasDbXref	SNOMEDCT:360387000	semapv:UnspecifiedMatching	cardiac mesoderm primordium	
+EFO:0000315	rdfs:subClassOf	UBERON:0000926	semapv:UnspecifiedMatching	cardiac mesoderm primordium	mesoderm
+EFO:0000323	oboInOwl:hasDbXref	BTO:0002322	semapv:UnspecifiedMatching	cell property	
+EFO:0000323	rdfs:subClassOf	BFO:0000019	semapv:UnspecifiedMatching	cell property	quality
+EFO:0000324	oboInOwl:hasDbXref	MO:548	semapv:UnspecifiedMatching	cell type	
+EFO:0000324	rdfs:subClassOf	BFO:0000040	semapv:UnspecifiedMatching	cell type	material entity
+EFO:0000325	rdfs:subClassOf	EFO:0002694	semapv:UnspecifiedMatching	cellular modification	experimental process
+EFO:0000336	oboInOwl:hasDbXref	MO:78	semapv:UnspecifiedMatching	chromosomal aberration	
+EFO:0000336	rdfs:subClassOf	EFO:0000510	semapv:UnspecifiedMatching	chromosomal aberration	genetic modification
+EFO:0000344	oboInOwl:hasDbXref	FBbt:00017015	semapv:UnspecifiedMatching	circular visceral mesoderm primordium	
+EFO:0000344	rdfs:subClassOf	UBERON:0000926	semapv:UnspecifiedMatching	circular visceral mesoderm primordium	mesoderm
+EFO:0000347	rdfs:subClassOf	OBI:0200000	semapv:UnspecifiedMatching	classifier prediction	data transformation
+EFO:0000352	oboInOwl:hasDbXref	ICD10:Z87	semapv:UnspecifiedMatching	clinical history	
+EFO:0000352	oboInOwl:hasDbXref	MO:189	semapv:UnspecifiedMatching	clinical history	
+EFO:0000352	rdfs:subClassOf	IAO:0000030	semapv:UnspecifiedMatching	clinical history	information entity
+EFO:0000355	oboInOwl:hasDbXref	MO:384	semapv:UnspecifiedMatching	clinical treatment protocol	
+EFO:0000355	rdfs:subClassOf	EFO:0003969	semapv:UnspecifiedMatching	clinical treatment protocol	treatment protocol
+EFO:0000368	rdfs:subClassOf	EFO:0004003	semapv:UnspecifiedMatching	minor histocompatibility congenic strain	congenic strain
+EFO:0000369	oboInOwl:hasDbXref	MO:798	semapv:UnspecifiedMatching	compound based treatment	
+EFO:0000369	rdfs:subClassOf	EFO:0000727	semapv:UnspecifiedMatching	compound based treatment	treatment
+EFO:0000370	oboInOwl:hasDbXref	SNOMEDCT:282109005	semapv:UnspecifiedMatching	chemically induced mutation	
+EFO:0000370	rdfs:subClassOf	EFO:0005315	semapv:UnspecifiedMatching	chemically induced mutation	induced mutation
+EFO:0000375	oboInOwl:hasDbXref	MO:364	semapv:UnspecifiedMatching	array control spike calibration	
+EFO:0000375	rdfs:subClassOf	EFO:0005440	semapv:UnspecifiedMatching	array control spike calibration	array control design
+EFO:0000386	oboInOwl:hasDbXref	FBbt:00005463	semapv:UnspecifiedMatching	crystal cell specific anlage	
+EFO:0000386	rdfs:subClassOf	EFO:0000795	semapv:UnspecifiedMatching	crystal cell specific anlage	animal developmental tissue
+EFO:0000388	oboInOwl:hasDbXref	NCIt:C48434	semapv:UnspecifiedMatching	electrical current	
+EFO:0000388	rdfs:subClassOf	EFO:0001444	semapv:UnspecifiedMatching	electrical current	measurement
+EFO:0000391	rdfs:subClassOf	EFO:0001444	semapv:UnspecifiedMatching	damage intensity	measurement
+EFO:0000393	oboInOwl:hasDbXref	NCIt:C28447	semapv:UnspecifiedMatching	Robertsonian translocation	
+EFO:0000393	oboInOwl:hasDbXref	SNOMEDCT:81568008	semapv:UnspecifiedMatching	Robertsonian translocation	
+EFO:0000393	rdfs:subClassOf	EFO:0004024	semapv:UnspecifiedMatching	Robertsonian translocation	translocation
+EFO:0000395	oboInOwl:hasDbXref	MO:223	semapv:UnspecifiedMatching	delivery method	
+EFO:0000395	rdfs:subClassOf	OBI:0000272	semapv:UnspecifiedMatching	delivery method	protocol
+EFO:0000397	rdfs:subClassOf	MONDO:0016755	semapv:UnspecifiedMatching	dermal neurofibroma	neurofibroma
+EFO:0000399	oboInOwl:hasDbXref	MO:878	semapv:UnspecifiedMatching	developmental stage	
+EFO:0000399	oboInOwl:hasDbXref	NCIt:C43531	semapv:UnspecifiedMatching	developmental stage	
+EFO:0000399	rdfs:subClassOf	BFO:0000015	semapv:UnspecifiedMatching	developmental stage	process
+EFO:0000409	oboInOwl:hasDbXref	MESH:D018572	semapv:UnspecifiedMatching	disease free survival	
+EFO:0000409	rdfs:subClassOf	EFO:0000482	semapv:UnspecifiedMatching	disease free survival	event free survival time
+EFO:0000410	oboInOwl:hasDbXref	MO:792	semapv:UnspecifiedMatching	disease staging	
+EFO:0000410	rdfs:subClassOf	BFO:0000016	semapv:UnspecifiedMatching	disease staging	disposition
+EFO:0000412	rdfs:subClassOf	EFO:0004919	semapv:UnspecifiedMatching	distant metastasis free survival	metastasis free survival
+EFO:0000413	oboInOwl:hasDbXref	FBbt:00005476	semapv:UnspecifiedMatching	dorsal apodeme specific anlage	
+EFO:0000413	rdfs:subClassOf	EFO:0000795	semapv:UnspecifiedMatching	dorsal apodeme specific anlage	animal developmental tissue
+EFO:0000415	oboInOwl:hasDbXref	FBbt:00005832	semapv:UnspecifiedMatching	dorsal ectoderm anlage in statu nascendi	
+EFO:0000415	rdfs:subClassOf	EFO:0000795	semapv:UnspecifiedMatching	dorsal ectoderm anlage in statu nascendi	animal developmental tissue
+EFO:0000416	oboInOwl:hasDbXref	FBbt:00005527	semapv:UnspecifiedMatching	dorsal ectoderm primordium	
+EFO:0000416	rdfs:subClassOf	EFO:0000795	semapv:UnspecifiedMatching	dorsal ectoderm primordium	animal developmental tissue
+EFO:0000423	oboInOwl:hasDbXref	FBbt:00000489	semapv:UnspecifiedMatching	dorsal prothoracic pharyngeal muscle	
+EFO:0000423	rdfs:subClassOf	EFO:0000795	semapv:UnspecifiedMatching	dorsal prothoracic pharyngeal muscle	animal developmental tissue
+EFO:0000428	oboInOwl:hasDbXref	NCIt:C25488	semapv:UnspecifiedMatching	dose	
+EFO:0000428	rdfs:subClassOf	EFO:0001444	semapv:UnspecifiedMatching	dose	measurement
+EFO:0000433	oboInOwl:hasDbXref	NCIt:C25330	semapv:UnspecifiedMatching	duration	
+EFO:0000433	oboInOwl:hasDbXref	SNOMEDCT:103335007	semapv:UnspecifiedMatching	duration	
+EFO:0000433	rdfs:subClassOf	EFO:0000719	semapv:UnspecifiedMatching	duration	temporal measurement
+EFO:0000434	oboInOwl:hasDbXref	MESH:D060146	semapv:UnspecifiedMatching	ecotype	
+EFO:0000434	oboInOwl:hasDbXref	MO:71	semapv:UnspecifiedMatching	ecotype	
+EFO:0000434	rdfs:subClassOf	OBI:0000181	semapv:UnspecifiedMatching	ecotype	population
+EFO:0000435	oboInOwl:hasDbXref	FBbt:00005414	semapv:UnspecifiedMatching	ectoderm anlage in statu nascendi	
+EFO:0000447	oboInOwl:hasDbXref	FBbt:00001056	semapv:UnspecifiedMatching	embryonic central nervous system	
+EFO:0000447	rdfs:subClassOf	UBERON:0002050	semapv:UnspecifiedMatching	embryonic central nervous system	embryonic structure
+EFO:0000448	oboInOwl:hasDbXref	FBbt:00001719	semapv:UnspecifiedMatching	embryonic corpus allatum	
+EFO:0000448	rdfs:subClassOf	UBERON:0002050	semapv:UnspecifiedMatching	embryonic corpus allatum	embryonic structure
+EFO:0000449	oboInOwl:hasDbXref	FBbt:00001720	semapv:UnspecifiedMatching	embryonic corpus cardiacum	
+EFO:0000449	rdfs:subClassOf	UBERON:0002050	semapv:UnspecifiedMatching	embryonic corpus cardiacum	embryonic structure
+EFO:0000450	oboInOwl:hasDbXref	FBbt:00005625	semapv:UnspecifiedMatching	embryonic cuprophilic cell	
+EFO:0000450	rdfs:subClassOf	UBERON:0002050	semapv:UnspecifiedMatching	embryonic cuprophilic cell	embryonic structure
+EFO:0000470	oboInOwl:hasDbXref	MO:227	semapv:UnspecifiedMatching	environmental stress treatment	
+EFO:0000470	rdfs:subClassOf	EFO:0000727	semapv:UnspecifiedMatching	environmental stress treatment	treatment
+EFO:0000472	rdfs:subClassOf	IAO:0000030	semapv:UnspecifiedMatching	epigenetic factor	information entity
+EFO:0000480	rdfs:subClassOf	EFO:0001444	semapv:UnspecifiedMatching	event death	measurement
+EFO:0000482	rdfs:subClassOf	EFO:0000714	semapv:UnspecifiedMatching	event free survival time	survival time
+EFO:0000483	oboInOwl:hasDbXref	MESH:D015444	semapv:UnspecifiedMatching	exercise	
+EFO:0000483	oboInOwl:hasDbXref	MedDRA:10015634	semapv:UnspecifiedMatching	exercise	
+EFO:0000483	oboInOwl:hasDbXref	NCIt:C16567	semapv:UnspecifiedMatching	exercise	
+EFO:0000483	oboInOwl:hasDbXref	SNOMEDCT:256235009	semapv:UnspecifiedMatching	exercise	
+EFO:0000483	rdfs:subClassOf	EFO:0003940	semapv:UnspecifiedMatching	exercise	physical activity
+EFO:0000487	oboInOwl:hasDbXref	ICD10:Z58	semapv:UnspecifiedMatching	exposure	
+EFO:0000487	oboInOwl:hasDbXref	NCIt:C17941	semapv:UnspecifiedMatching	exposure	
+EFO:0000487	rdfs:subClassOf	EFO:0002694	semapv:UnspecifiedMatching	exposure	experimental process
+EFO:0000488	rdfs:subClassOf	EFO:0002658	semapv:UnspecifiedMatching	external control ratio	protocol parameter
+EFO:0000490	rdfs:subClassOf	OBI:0000272	semapv:UnspecifiedMatching	extraction protocol	protocol
+EFO:0000493	oboInOwl:hasDbXref	ICD10:Z84	semapv:UnspecifiedMatching	family history	
+EFO:0000493	oboInOwl:hasDbXref	MO:59	semapv:UnspecifiedMatching	family history	
+EFO:0000493	rdfs:subClassOf	EFO:0000352	semapv:UnspecifiedMatching	family history	clinical history
+EFO:0000494	oboInOwl:hasDbXref	MO:928	semapv:UnspecifiedMatching	feature extraction	
+EFO:0000494	rdfs:subClassOf	OBI:0200000	semapv:UnspecifiedMatching	feature extraction	data transformation
+EFO:0000506	oboInOwl:hasDbXref	MO:771	semapv:UnspecifiedMatching	gene knock out	
+EFO:0000506	rdfs:subClassOf	EFO:0000510	semapv:UnspecifiedMatching	gene knock out	genetic modification
+EFO:0000507	oboInOwl:hasDbXref	MO:43	semapv:UnspecifiedMatching	generation	
+EFO:0000507	oboInOwl:hasDbXref	NCIt:C48151	semapv:UnspecifiedMatching	generation	
+EFO:0000507	oboInOwl:hasDbXref	NCIt:C88214	semapv:UnspecifiedMatching	generation	
+EFO:0000507	rdfs:subClassOf	BFO:0000019	semapv:UnspecifiedMatching	generation	quality
+EFO:0000510	oboInOwl:hasDbXref	MO:927	semapv:UnspecifiedMatching	genetic modification	
+EFO:0000511	rdfs:subClassOf	BFO:0000019	semapv:UnspecifiedMatching	genetic trait	quality
+EFO:0000513	oboInOwl:hasDbXref	MESH:D005838	semapv:UnspecifiedMatching	genotype	
+EFO:0000513	oboInOwl:hasDbXref	MO:51	semapv:UnspecifiedMatching	genotype	
+EFO:0000513	oboInOwl:hasDbXref	NCIt:C16631	semapv:UnspecifiedMatching	genotype	
+EFO:0000523	oboInOwl:hasDbXref	MO:183	semapv:UnspecifiedMatching	growth condition	
+EFO:0000523	rdfs:subClassOf	CHEBI:24432	semapv:UnspecifiedMatching	growth condition	biological role
+EFO:0000524	oboInOwl:hasDbXref	NCIt:C27571	semapv:UnspecifiedMatching	head and neck disorder	
+EFO:0000532	oboInOwl:hasDbXref	MO:101	semapv:UnspecifiedMatching	host	
+EFO:0000532	oboInOwl:hasDbXref	NCIt:C66819	semapv:UnspecifiedMatching	host	
+EFO:0000532	rdfs:subClassOf	CHEBI:24432	semapv:UnspecifiedMatching	host	biological role
+EFO:0000534	oboInOwl:hasDbXref	MESH:D006874	semapv:UnspecifiedMatching	hydrostatic pressure	
+EFO:0000534	rdfs:subClassOf	EFO:0000469	semapv:UnspecifiedMatching	hydrostatic pressure	environmental factor
+EFO:0000541	oboInOwl:hasDbXref	SNOMEDCT:77662002	semapv:UnspecifiedMatching	immunoprecipitate	
+EFO:0000541	rdfs:subClassOf	CHEBI:24431	semapv:UnspecifiedMatching	immunoprecipitate	chemical entity
+EFO:0000542	oboInOwl:hasDbXref	SNOMEDCT:385435006	semapv:UnspecifiedMatching	individual	
+EFO:0000542	rdfs:subClassOf	OBI:0100051	semapv:UnspecifiedMatching	individual	specimen
+EFO:0000544	oboInOwl:hasDbXref	MESH:D007239	semapv:UnspecifiedMatching	infection	
+EFO:0000544	oboInOwl:hasDbXref	MedDRA:10021789	semapv:UnspecifiedMatching	infection	
+EFO:0000544	rdfs:subClassOf	OBI:1110122	semapv:UnspecifiedMatching	infection	pathologic process
+EFO:0000548	oboInOwl:hasDbXref	MO:113	semapv:UnspecifiedMatching	instrument	
+EFO:0000548	oboInOwl:hasDbXref	MO:134	semapv:UnspecifiedMatching	instrument	
+EFO:0000548	oboInOwl:hasDbXref	SNOMEDCT:57134006	semapv:UnspecifiedMatching	instrument	
+EFO:0000548	rdfs:subClassOf	BFO:0000040	semapv:UnspecifiedMatching	instrument	material entity
+EFO:0000551	oboInOwl:hasDbXref	ICD10:I62	semapv:UnspecifiedMatching	intracranial hemorrhage	
+EFO:0000551	oboInOwl:hasDbXref	MESH:D020300	semapv:UnspecifiedMatching	intracranial hemorrhage	
+EFO:0000551	oboInOwl:hasDbXref	MedDRA:10022763	semapv:UnspecifiedMatching	intracranial hemorrhage	
+EFO:0000551	oboInOwl:hasDbXref	MedDRA:10055295	semapv:UnspecifiedMatching	intracranial hemorrhage	
+EFO:0000551	oboInOwl:hasDbXref	SNOMEDCT:1386000	semapv:UnspecifiedMatching	intracranial hemorrhage	
+EFO:0000554	oboInOwl:hasDbXref	MO:770	semapv:UnspecifiedMatching	irradiate	
+EFO:0000554	rdfs:subClassOf	EFO:0002694	semapv:UnspecifiedMatching	irradiate	experimental process
+EFO:0000556	oboInOwl:hasDbXref	DOID:326	semapv:UnspecifiedMatching	ischemia	
+EFO:0000556	oboInOwl:hasDbXref	MESH:D007511	semapv:UnspecifiedMatching	ischemia	
+EFO:0000556	oboInOwl:hasDbXref	MedDRA:10054438	semapv:UnspecifiedMatching	ischemia	
+EFO:0000556	oboInOwl:hasDbXref	NCIt:C34738	semapv:UnspecifiedMatching	ischemia	
+EFO:0000556	oboInOwl:hasDbXref	SNOMEDCT:52674009	semapv:UnspecifiedMatching	ischemia	
+EFO:0000561	rdfs:subClassOf	EFO:0002694	semapv:UnspecifiedMatching	knock in expression	experimental process
+EFO:0000562	oboInOwl:hasDbXref	MO:471	semapv:UnspecifiedMatching	labelling	
+EFO:0000562	oboInOwl:hasDbXref	NCIt:C54694	semapv:UnspecifiedMatching	labelling	
+EFO:0000562	rdfs:subClassOf	EFO:0002694	semapv:UnspecifiedMatching	labelling	experimental process
+EFO:0000568	oboInOwl:hasDbXref	MESH:D008027	semapv:UnspecifiedMatching	light	
+EFO:0000568	oboInOwl:hasDbXref	MO:60	semapv:UnspecifiedMatching	light	
+EFO:0000568	oboInOwl:hasDbXref	NCIt:C64650	semapv:UnspecifiedMatching	light	
+EFO:0000568	oboInOwl:hasDbXref	SNOMEDCT:56242006	semapv:UnspecifiedMatching	light	
+EFO:0000568	rdfs:subClassOf	EFO:0000469	semapv:UnspecifiedMatching	light	environmental factor
+EFO:0000572	oboInOwl:hasDbXref	BTO:0000772	semapv:UnspecifiedMatching	lymphoblast	
+EFO:0000572	oboInOwl:hasDbXref	NCIt:C13013	semapv:UnspecifiedMatching	lymphoblast	
+EFO:0000572	oboInOwl:hasDbXref	SNOMEDCT:15433008	semapv:UnspecifiedMatching	lymphoblast	
+EFO:0000579	oboInOwl:hasDbXref	MO:545	semapv:UnspecifiedMatching	media	
+EFO:0000579	oboInOwl:hasDbXref	NCIt:C19442	semapv:UnspecifiedMatching	media	
+EFO:0000579	oboInOwl:hasDbXref	SNOMEDCT:228654009	semapv:UnspecifiedMatching	media	
+EFO:0000579	rdfs:subClassOf	EFO:0000523	semapv:UnspecifiedMatching	media	growth condition
+EFO:0000586	oboInOwl:hasDbXref	CL:0000134	semapv:UnspecifiedMatching	mesenchymal stem cell	
+EFO:0000586	oboInOwl:hasDbXref	NCIt:C43423	semapv:UnspecifiedMatching	mesenchymal stem cell	
+EFO:0000586	oboInOwl:hasDbXref	SNOMEDCT:418124002	semapv:UnspecifiedMatching	mesenchymal stem cell	
+EFO:0000586	rdfs:subClassOf	CL:0000034	semapv:UnspecifiedMatching	mesenchymal stem cell	stem cell
+EFO:0000597	rdfs:subClassOf	NCBITaxon:10090	semapv:UnspecifiedMatching	129 mouse strain	Mus musculus
+EFO:0000598	rdfs:subClassOf	EFO:0000597	semapv:UnspecifiedMatching	129S6	129 mouse strain
+EFO:0000599	rdfs:subClassOf	EFO:0000597	semapv:UnspecifiedMatching	129/Sv	129 mouse strain
+EFO:0000600	rdfs:subClassOf	EFO:0000597	semapv:UnspecifiedMatching	129X1/SvJ	129 mouse strain
+EFO:0000601	oboInOwl:hasDbXref	PMID:15015938	semapv:UnspecifiedMatching	129xC57BL/6	
+EFO:0000601	rdfs:subClassOf	EFO:0000597	semapv:UnspecifiedMatching	129xC57BL/6	129 mouse strain
+EFO:0000602	rdfs:subClassOf	NCBITaxon:10090	semapv:UnspecifiedMatching	BALB/c	Mus musculus
+EFO:0000603	rdfs:subClassOf	NCBITaxon:10090	semapv:UnspecifiedMatching	BALB/cByJ	Mus musculus
+EFO:0000604	rdfs:subClassOf	EFO:0005181	semapv:UnspecifiedMatching	C57BL/10	C57BL
+EFO:0000606	rdfs:subClassOf	EFO:0005181	semapv:UnspecifiedMatching	C57BL/6J	C57BL
+EFO:0000625	oboInOwl:hasDbXref	MESH:D009506	semapv:UnspecifiedMatching	nevus	
+EFO:0000625	oboInOwl:hasDbXref	MedDRA:10029384	semapv:UnspecifiedMatching	nevus	
+EFO:0000625	oboInOwl:hasDbXref	MedDRA:10029391	semapv:UnspecifiedMatching	nevus	
+EFO:0000625	oboInOwl:hasDbXref	OMIM:162900	semapv:UnspecifiedMatching	nevus	
+EFO:0000625	oboInOwl:hasDbXref	Wikipedia:Nevus	semapv:UnspecifiedMatching	nevus	
+EFO:0000627	rdfs:subClassOf	EFO:0001444	semapv:UnspecifiedMatching	number of injections	measurement
+EFO:0000629	rdfs:subClassOf	EFO:0004667	semapv:UnspecifiedMatching	observational design	biological variation design
+EFO:0000633	oboInOwl:hasDbXref	MO:38	semapv:UnspecifiedMatching	operator variation	
+EFO:0000635	oboInOwl:hasDbXref	MO:954	semapv:UnspecifiedMatching	organism part	
+EFO:0000635	oboInOwl:hasDbXref	NCIt:C103199	semapv:UnspecifiedMatching	organism part	
+EFO:0000635	rdfs:subClassOf	BFO:0000040	semapv:UnspecifiedMatching	organism part	material entity
+EFO:0000643	oboInOwl:hasDbXref	NCIt:C80324	semapv:UnspecifiedMatching	pathogen	
+EFO:0000643	rdfs:subClassOf	CHEBI:24432	semapv:UnspecifiedMatching	pathogen	biological role
+EFO:0000644	oboInOwl:hasDbXref	MO:184	semapv:UnspecifiedMatching	pathogen test	
+EFO:0000644	rdfs:subClassOf	EFO:0002694	semapv:UnspecifiedMatching	pathogen test	experimental process
+EFO:0000648	rdfs:subClassOf	EFO:0004949	semapv:UnspecifiedMatching	period of infection	clinical temporal measurement
+EFO:0000651	oboInOwl:hasDbXref	MESH:D010641	semapv:UnspecifiedMatching	phenotype	
+EFO:0000651	oboInOwl:hasDbXref	MO:192	semapv:UnspecifiedMatching	phenotype	
+EFO:0000651	oboInOwl:hasDbXref	NCIt:C16977	semapv:UnspecifiedMatching	phenotype	
+EFO:0000651	oboInOwl:hasDbXref	SNOMEDCT:8116006	semapv:UnspecifiedMatching	phenotype	
+EFO:0000651	rdfs:subClassOf	BFO:0000019	semapv:UnspecifiedMatching	phenotype	quality
+EFO:0000658	oboInOwl:hasDbXref	DOID:5151	semapv:UnspecifiedMatching	plexiform neurofibroma	
+EFO:0000658	oboInOwl:hasDbXref	MESH:D018318	semapv:UnspecifiedMatching	plexiform neurofibroma	
+EFO:0000658	oboInOwl:hasDbXref	MedDRA:10065866	semapv:UnspecifiedMatching	plexiform neurofibroma	
+EFO:0000658	oboInOwl:hasDbXref	NCIt:C3797	semapv:UnspecifiedMatching	plexiform neurofibroma	
+EFO:0000658	oboInOwl:hasDbXref	SNOMEDCT:403818001	semapv:UnspecifiedMatching	plexiform neurofibroma	
+EFO:0000658	oboInOwl:hasDbXref	SNOMEDCT:41252002	semapv:UnspecifiedMatching	plexiform neurofibroma	
+EFO:0000658	rdfs:subClassOf	MONDO:0016755	semapv:UnspecifiedMatching	plexiform neurofibroma	neurofibroma
+EFO:0000663	oboInOwl:hasDbXref	MO:779	semapv:UnspecifiedMatching	pool	
+EFO:0000663	oboInOwl:hasDbXref	NCIt:C68779	semapv:UnspecifiedMatching	pool	
+EFO:0000663	oboInOwl:hasDbXref	SNOMEDCT:69297003	semapv:UnspecifiedMatching	pool	
+EFO:0000663	rdfs:subClassOf	BFO:0000040	semapv:UnspecifiedMatching	pool	material entity
+EFO:0000672	rdfs:subClassOf	OBI:0000181	semapv:UnspecifiedMatching	prognostic subgroup	population
+EFO:0000683	oboInOwl:hasDbXref	NCIt:C28038	semapv:UnspecifiedMatching	replicate	
+EFO:0000683	rdfs:subClassOf	BFO:0000023	semapv:UnspecifiedMatching	replicate	role
+EFO:0000686	rdfs:subClassOf	EFO:0001444	semapv:UnspecifiedMatching	risk status	measurement
+EFO:0000688	rdfs:subClassOf	BFO:0000029	semapv:UnspecifiedMatching	sampling site	site
+EFO:0000689	oboInOwl:hasDbXref	MO:866	semapv:UnspecifiedMatching	sampling time	
+EFO:0000689	rdfs:subClassOf	EFO:0000719	semapv:UnspecifiedMatching	sampling time	temporal measurement
+EFO:0000696	rdfs:subClassOf	EFO:0002694	semapv:UnspecifiedMatching	shear stressing	experimental process
+EFO:0000700	rdfs:subClassOf	EFO:0000324	semapv:UnspecifiedMatching	integumental cell	cell type
+EFO:0000714	oboInOwl:hasDbXref	MESH:D013534	semapv:UnspecifiedMatching	survival time	
+EFO:0000714	oboInOwl:hasDbXref	NCIt:C17177	semapv:UnspecifiedMatching	survival time	
+EFO:0000714	oboInOwl:hasDbXref	SNOMEDCT:445320007	semapv:UnspecifiedMatching	survival time	
+EFO:0000714	rdfs:subClassOf	EFO:0004949	semapv:UnspecifiedMatching	survival time	clinical temporal measurement
+EFO:0000715	rdfs:subClassOf	BFO:0000016	semapv:UnspecifiedMatching	survival probability	disposition
+EFO:0000719	rdfs:subClassOf	EFO:0001444	semapv:UnspecifiedMatching	temporal measurement	measurement
+EFO:0000720	rdfs:subClassOf	IAO:0000030	semapv:UnspecifiedMatching	test result	information entity
+EFO:0000721	oboInOwl:hasDbXref	MESH:D013995	semapv:UnspecifiedMatching	time	
+EFO:0000721	oboInOwl:hasDbXref	NCIt:C25207	semapv:UnspecifiedMatching	time	
+EFO:0000721	oboInOwl:hasDbXref	SNOMEDCT:410669006	semapv:UnspecifiedMatching	time	
+EFO:0000721	oboInOwl:hasDbXref	SNOMEDCT:410670007	semapv:UnspecifiedMatching	time	
+EFO:0000721	oboInOwl:hasDbXref	SNOMEDCT:900000000000475002	semapv:UnspecifiedMatching	time	
+EFO:0000721	rdfs:subClassOf	EFO:0000719	semapv:UnspecifiedMatching	time	temporal measurement
+EFO:0000724	oboInOwl:hasDbXref	MO:738	semapv:UnspecifiedMatching	timepoint	
+EFO:0000724	oboInOwl:hasDbXref	NCIt:C68568	semapv:UnspecifiedMatching	timepoint	
+EFO:0000724	rdfs:subClassOf	EFO:0000719	semapv:UnspecifiedMatching	timepoint	temporal measurement
+EFO:0000726	oboInOwl:hasDbXref	MESH:D014162	semapv:UnspecifiedMatching	transfection	
+EFO:0000726	oboInOwl:hasDbXref	MO:849	semapv:UnspecifiedMatching	transfection	
+EFO:0000726	oboInOwl:hasDbXref	NCIt:C17209	semapv:UnspecifiedMatching	transfection	
+EFO:0000726	rdfs:subClassOf	EFO:0002694	semapv:UnspecifiedMatching	transfection	experimental process
+EFO:0000727	oboInOwl:hasDbXref	MO:23	semapv:UnspecifiedMatching	treatment	
+EFO:0000727	rdfs:subClassOf	EFO:0004542	semapv:UnspecifiedMatching	treatment	planned process
+EFO:0000735	rdfs:subClassOf	EFO:0002694	semapv:UnspecifiedMatching	washing	experimental process
+EFO:0000746	oboInOwl:hasDbXref	NCIt:C62669	semapv:UnspecifiedMatching	proteomic profiling	
+EFO:0000750	oboInOwl:hasDbXref	NCIt:C45447	semapv:UnspecifiedMatching	genotyping	
+EFO:0000752	rdfs:subClassOf	EFO:0002772	semapv:UnspecifiedMatching	metabolomic profiling	assay by molecule
+EFO:0000768	oboInOwl:hasDbXref	DOID:0050156	semapv:UnspecifiedMatching	idiopathic pulmonary fibrosis	
+EFO:0000768	oboInOwl:hasDbXref	EFO:0000768	semapv:UnspecifiedMatching	idiopathic pulmonary fibrosis	idiopathic pulmonary fibrosis
+EFO:0000768	oboInOwl:hasDbXref	MESH:D054990	semapv:UnspecifiedMatching	idiopathic pulmonary fibrosis	
+EFO:0000768	oboInOwl:hasDbXref	MedDRA:10021240	semapv:UnspecifiedMatching	idiopathic pulmonary fibrosis	
+EFO:0000768	oboInOwl:hasDbXref	NCIT:C35716	semapv:UnspecifiedMatching	idiopathic pulmonary fibrosis	
+EFO:0000768	oboInOwl:hasDbXref	OMIM:178500	semapv:UnspecifiedMatching	idiopathic pulmonary fibrosis	
+EFO:0000768	oboInOwl:hasDbXref	Orphanet:2032	semapv:UnspecifiedMatching	idiopathic pulmonary fibrosis	
+EFO:0000768	oboInOwl:hasDbXref	SCTID:196125002	semapv:UnspecifiedMatching	idiopathic pulmonary fibrosis	
+EFO:0000782	oboInOwl:hasDbXref	NCIm:C1017212	semapv:UnspecifiedMatching	Hibiscus chlorotic ringspot virus infection	
+EFO:0000782	rdfs:subClassOf	MONDO:0005108	semapv:UnspecifiedMatching	Hibiscus chlorotic ringspot virus infection	viral infectious disease
+EFO:0000786	oboInOwl:hasDbXref	MAT:0000000	semapv:UnspecifiedMatching	anatomy basic component	
+EFO:0000786	rdfs:subClassOf	EFO:0000635	semapv:UnspecifiedMatching	anatomy basic component	organism part
+EFO:0000788	oboInOwl:hasDbXref	MAT:0000002	semapv:UnspecifiedMatching	fungal component	
+EFO:0000788	rdfs:subClassOf	EFO:0000786	semapv:UnspecifiedMatching	fungal component	anatomy basic component
+EFO:0000792	oboInOwl:hasDbXref	FBbt:00003007	semapv:UnspecifiedMatching	craniofacial tissue	
+EFO:0000792	oboInOwl:hasDbXref	MA:0000316	semapv:UnspecifiedMatching	craniofacial tissue	
+EFO:0000792	oboInOwl:hasDbXref	MAT:0000017	semapv:UnspecifiedMatching	craniofacial tissue	
+EFO:0000792	oboInOwl:hasDbXref	TGMA:0000720	semapv:UnspecifiedMatching	craniofacial tissue	
+EFO:0000792	oboInOwl:hasDbXref	ZFA:0001114	semapv:UnspecifiedMatching	craniofacial tissue	
+EFO:0000792	rdfs:subClassOf	UBERON:0000061	semapv:UnspecifiedMatching	craniofacial tissue	anatomical structure
+EFO:0000795	oboInOwl:hasDbXref	FBbt:00000052	semapv:UnspecifiedMatching	animal developmental tissue	
+EFO:0000795	oboInOwl:hasDbXref	NCIt:C13229	semapv:UnspecifiedMatching	animal developmental tissue	
+EFO:0000795	oboInOwl:hasDbXref	SNOMEDCT:667009	semapv:UnspecifiedMatching	animal developmental tissue	
+EFO:0000795	oboInOwl:hasDbXref	TAO:0001105	semapv:UnspecifiedMatching	animal developmental tissue	
+EFO:0000808	oboInOwl:hasDbXref	EV:0100008	semapv:UnspecifiedMatching	animal body part	
+EFO:0000808	oboInOwl:hasDbXref	FMA:67504	semapv:UnspecifiedMatching	animal body part	
+EFO:0000808	oboInOwl:hasDbXref	MAT:0000293	semapv:UnspecifiedMatching	animal body part	
+EFO:0000808	oboInOwl:hasDbXref	NCIt:C32221	semapv:UnspecifiedMatching	animal body part	
+EFO:0000808	oboInOwl:hasDbXref	TAO:0001308	semapv:UnspecifiedMatching	animal body part	
+EFO:0000808	oboInOwl:hasDbXref	XAO:0003013	semapv:UnspecifiedMatching	animal body part	
+EFO:0000808	rdfs:subClassOf	UBERON:0000061	semapv:UnspecifiedMatching	animal body part	anatomical structure
+EFO:0000811	oboInOwl:hasDbXref	AAO:0000157	semapv:UnspecifiedMatching	fat body sensu amphibia	
+EFO:0000811	oboInOwl:hasDbXref	MAT:0000456	semapv:UnspecifiedMatching	fat body sensu amphibia	
+EFO:0000811	rdfs:subClassOf	UBERON:0001013	semapv:UnspecifiedMatching	fat body sensu amphibia	adipose tissue
+EFO:0000884	oboInOwl:hasDbXref	FBbt:00004640	semapv:UnspecifiedMatching	invertebrate limb	
+EFO:0000884	oboInOwl:hasDbXref	MAT:0000095	semapv:UnspecifiedMatching	invertebrate limb	
+EFO:0000884	oboInOwl:hasDbXref	MESH:D007866	semapv:UnspecifiedMatching	invertebrate limb	
+EFO:0000884	oboInOwl:hasDbXref	NCIt:C32974	semapv:UnspecifiedMatching	invertebrate limb	
+EFO:0000884	oboInOwl:hasDbXref	TADS:0000002	semapv:UnspecifiedMatching	invertebrate limb	
+EFO:0000884	oboInOwl:hasDbXref	TGMA:0000164	semapv:UnspecifiedMatching	invertebrate limb	
+EFO:0000884	rdfs:subClassOf	UBERON:0000026	semapv:UnspecifiedMatching	invertebrate limb	appendage
+EFO:0000889	oboInOwl:hasDbXref	BTO:0001260	semapv:UnspecifiedMatching	smooth muscle	
+EFO:0000889	oboInOwl:hasDbXref	EV:0100378	semapv:UnspecifiedMatching	smooth muscle	
+EFO:0000889	oboInOwl:hasDbXref	FBbt:00003525	semapv:UnspecifiedMatching	smooth muscle	
+EFO:0000889	oboInOwl:hasDbXref	MAT:0000303	semapv:UnspecifiedMatching	smooth muscle	
+EFO:0000889	oboInOwl:hasDbXref	XAO:0000175	semapv:UnspecifiedMatching	smooth muscle	
+EFO:0000889	rdfs:subClassOf	UBERON:0001015	semapv:UnspecifiedMatching	smooth muscle	musculature
+EFO:0000890	oboInOwl:hasDbXref	FBbt:00005137	semapv:UnspecifiedMatching	invertebrate ganglion	
+EFO:0000890	oboInOwl:hasDbXref	MAT:0000207	semapv:UnspecifiedMatching	invertebrate ganglion	
+EFO:0000890	rdfs:subClassOf	UBERON:0000045	semapv:UnspecifiedMatching	invertebrate ganglion	ganglion
+EFO:0000897	oboInOwl:hasDbXref	MAT:0000341	semapv:UnspecifiedMatching	pharyngeal nervous system	
+EFO:0000897	oboInOwl:hasDbXref	WBbt:0005440	semapv:UnspecifiedMatching	pharyngeal nervous system	
+EFO:0000897	rdfs:subClassOf	UBERON:0001017	semapv:UnspecifiedMatching	pharyngeal nervous system	central nervous system
+EFO:0000938	oboInOwl:hasDbXref	FBbt:00005177	semapv:UnspecifiedMatching	sensory bristle	
+EFO:0000938	oboInOwl:hasDbXref	MAT:0000152	semapv:UnspecifiedMatching	sensory bristle	
+EFO:0000938	rdfs:subClassOf	UBERON:0001032	semapv:UnspecifiedMatching	sensory bristle	sensory system
+EFO:0000949	oboInOwl:hasDbXref	BTO:0000206	semapv:UnspecifiedMatching	cartilage	
+EFO:0000949	oboInOwl:hasDbXref	EV:0100141	semapv:UnspecifiedMatching	cartilage	
+EFO:0000949	oboInOwl:hasDbXref	MA:0000104	semapv:UnspecifiedMatching	cartilage	
+EFO:0000949	oboInOwl:hasDbXref	MAT:0000189	semapv:UnspecifiedMatching	cartilage	
+EFO:0000949	oboInOwl:hasDbXref	MESH:D002356	semapv:UnspecifiedMatching	cartilage	
+EFO:0000949	oboInOwl:hasDbXref	NCIt:C12373	semapv:UnspecifiedMatching	cartilage	
+EFO:0000949	oboInOwl:hasDbXref	TAO:0001501	semapv:UnspecifiedMatching	cartilage	
+EFO:0000949	oboInOwl:hasDbXref	XAO:0000170	semapv:UnspecifiedMatching	cartilage	
+EFO:0000988	oboInOwl:hasDbXref	BTO:0000495	semapv:UnspecifiedMatching	gametophyte	
+EFO:0000988	oboInOwl:hasDbXref	MAT:0000004	semapv:UnspecifiedMatching	gametophyte	
+EFO:0000988	oboInOwl:hasDbXref	PO:0009004	semapv:UnspecifiedMatching	gametophyte	
+EFO:0000988	oboInOwl:hasDbXref	ZEA:0015175	semapv:UnspecifiedMatching	gametophyte	
+EFO:0000988	rdfs:subClassOf	PO_2:0025131	semapv:UnspecifiedMatching	gametophyte	plant anatomical entity
+EFO:0000989	oboInOwl:hasDbXref	BTO:0001188	semapv:UnspecifiedMatching	root structure	
+EFO:0000989	oboInOwl:hasDbXref	MAT:0000005	semapv:UnspecifiedMatching	root structure	
+EFO:0000989	oboInOwl:hasDbXref	NCIt:C33446	semapv:UnspecifiedMatching	root structure	
+EFO:0000989	oboInOwl:hasDbXref	NCIt:C79664	semapv:UnspecifiedMatching	root structure	
+EFO:0000989	oboInOwl:hasDbXref	PO:0009005	semapv:UnspecifiedMatching	root structure	
+EFO:0000989	oboInOwl:hasDbXref	ZEA:0015034	semapv:UnspecifiedMatching	root structure	
+EFO:0000989	rdfs:subClassOf	PO_2:0025131	semapv:UnspecifiedMatching	root structure	plant anatomical entity
+EFO:0000991	oboInOwl:hasDbXref	BTO:0001226	semapv:UnspecifiedMatching	seed structure	
+EFO:0000991	oboInOwl:hasDbXref	MAT:0000008	semapv:UnspecifiedMatching	seed structure	
+EFO:0000991	oboInOwl:hasDbXref	NCIt:C54575	semapv:UnspecifiedMatching	seed structure	
+EFO:0000991	oboInOwl:hasDbXref	NCIt:C70596	semapv:UnspecifiedMatching	seed structure	
+EFO:0000991	oboInOwl:hasDbXref	NCIt:C73913	semapv:UnspecifiedMatching	seed structure	
+EFO:0000991	oboInOwl:hasDbXref	PO:0009010	semapv:UnspecifiedMatching	seed structure	
+EFO:0000991	oboInOwl:hasDbXref	SNOMEDCT:264337003	semapv:UnspecifiedMatching	seed structure	
+EFO:0000991	oboInOwl:hasDbXref	ZEA:0015178	semapv:UnspecifiedMatching	seed structure	
+EFO:0000991	rdfs:subClassOf	PO_2:0025131	semapv:UnspecifiedMatching	seed structure	plant anatomical entity
+EFO:0000992	oboInOwl:hasDbXref	BTO:0001243	semapv:UnspecifiedMatching	shoot	
+EFO:0000992	oboInOwl:hasDbXref	MAT:0000009	semapv:UnspecifiedMatching	shoot	
+EFO:0000992	oboInOwl:hasDbXref	NCIt:C48053	semapv:UnspecifiedMatching	shoot	
+EFO:0000992	oboInOwl:hasDbXref	NCIt:C79689	semapv:UnspecifiedMatching	shoot	
+EFO:0000992	oboInOwl:hasDbXref	ZEA:0015180	semapv:UnspecifiedMatching	shoot	
+EFO:0000992	owl:equivalentClass	PO_2:0009006	semapv:UnspecifiedMatching	shoot	shoot system
+EFO:0000992	rdfs:subClassOf	PO_2:0025131	semapv:UnspecifiedMatching	shoot	plant anatomical entity
+EFO:0000994	oboInOwl:hasDbXref	MAT:0000347	semapv:UnspecifiedMatching	plant fluid	
+EFO:0000994	rdfs:subClassOf	PO_2:0025131	semapv:UnspecifiedMatching	plant fluid	plant anatomical entity
+EFO:0000995	oboInOwl:hasDbXref	MAT:0000351	semapv:UnspecifiedMatching	gall tissue	
+EFO:0000995	rdfs:subClassOf	PO_2:0025131	semapv:UnspecifiedMatching	gall tissue	plant anatomical entity
+EFO:0000997	oboInOwl:hasDbXref	MAT:0000366	semapv:UnspecifiedMatching	storage organ	
+EFO:0000997	rdfs:subClassOf	PO_2:0025131	semapv:UnspecifiedMatching	storage organ	plant anatomical entity
+EFO:0000998	oboInOwl:hasDbXref	MAT:0000514	semapv:UnspecifiedMatching	plant reproductive system structure	
+EFO:0000998	rdfs:subClassOf	PO_2:0025131	semapv:UnspecifiedMatching	plant reproductive system structure	plant anatomical entity
+EFO:0000999	oboInOwl:hasDbXref	MAT:0000518	semapv:UnspecifiedMatching	plant developmental tissue	
+EFO:0000999	rdfs:subClassOf	PO_2:0025131	semapv:UnspecifiedMatching	plant developmental tissue	plant anatomical entity
+EFO:0001004	oboInOwl:hasDbXref	BTO:0001276	semapv:UnspecifiedMatching	pollen tube	
+EFO:0001004	oboInOwl:hasDbXref	MAT:0000217	semapv:UnspecifiedMatching	pollen tube	
+EFO:0001004	oboInOwl:hasDbXref	MESH:D053205	semapv:UnspecifiedMatching	pollen tube	
+EFO:0001004	oboInOwl:hasDbXref	PO:0006345	semapv:UnspecifiedMatching	pollen tube	
+EFO:0001004	rdfs:subClassOf	EFO:0000988	semapv:UnspecifiedMatching	pollen tube	gametophyte
+EFO:0001005	oboInOwl:hasDbXref	MAT:0000218	semapv:UnspecifiedMatching	plant sperm	
+EFO:0001005	oboInOwl:hasDbXref	PO:0000084	semapv:UnspecifiedMatching	plant sperm	
+EFO:0001005	rdfs:subClassOf	EFO:0000988	semapv:UnspecifiedMatching	plant sperm	gametophyte
+EFO:0001010	oboInOwl:hasDbXref	MAT:0000221	semapv:UnspecifiedMatching	lateral root meristem	
+EFO:0001010	oboInOwl:hasDbXref	PO:0006308	semapv:UnspecifiedMatching	lateral root meristem	
+EFO:0001010	oboInOwl:hasDbXref	ZEA:0015158	semapv:UnspecifiedMatching	lateral root meristem	
+EFO:0001010	rdfs:subClassOf	EFO:0000989	semapv:UnspecifiedMatching	lateral root meristem	root structure
+EFO:0001018	oboInOwl:hasDbXref	MAT:0000225	semapv:UnspecifiedMatching	lateral shoot meristem	
+EFO:0001018	oboInOwl:hasDbXref	PO:0006344	semapv:UnspecifiedMatching	lateral shoot meristem	
+EFO:0001039	oboInOwl:hasDbXref	MAT:0000237	semapv:UnspecifiedMatching	seedhead	
+EFO:0001045	oboInOwl:hasDbXref	MAT:0000348	semapv:UnspecifiedMatching	apoplasm	
+EFO:0001045	rdfs:subClassOf	EFO:0000994	semapv:UnspecifiedMatching	apoplasm	plant fluid
+EFO:0001046	oboInOwl:hasDbXref	BTO:0000537	semapv:UnspecifiedMatching	nectar	
+EFO:0001046	oboInOwl:hasDbXref	MAT:0000349	semapv:UnspecifiedMatching	nectar	
+EFO:0001046	rdfs:subClassOf	EFO:0000994	semapv:UnspecifiedMatching	nectar	plant fluid
+EFO:0001047	oboInOwl:hasDbXref	MAT:0000350	semapv:UnspecifiedMatching	sap	
+EFO:0001047	oboInOwl:hasDbXref	NCIt:C79665	semapv:UnspecifiedMatching	sap	
+EFO:0001047	rdfs:subClassOf	EFO:0000994	semapv:UnspecifiedMatching	sap	plant fluid
+EFO:0001048	oboInOwl:hasDbXref	BTO:0000159	semapv:UnspecifiedMatching	bulb	
+EFO:0001048	oboInOwl:hasDbXref	MAT:0000367	semapv:UnspecifiedMatching	bulb	
+EFO:0001048	oboInOwl:hasDbXref	NCIt:C61486	semapv:UnspecifiedMatching	bulb	
+EFO:0001048	oboInOwl:hasDbXref	NCIt:C79686	semapv:UnspecifiedMatching	bulb	
+EFO:0001048	oboInOwl:hasDbXref	SNOMEDCT:228657002	semapv:UnspecifiedMatching	bulb	
+EFO:0001048	rdfs:subClassOf	EFO:0000997	semapv:UnspecifiedMatching	bulb	storage organ
+EFO:0001058	oboInOwl:hasDbXref	DOID:0050155	semapv:UnspecifiedMatching	sensory system disease	
+EFO:0001058	rdfs:subClassOf	MONDO:0005071	semapv:UnspecifiedMatching	sensory system disease	nervous system disorder
+EFO:0001063	oboInOwl:hasDbXref	MESH:D003638	semapv:UnspecifiedMatching	deafness	
+EFO:0001063	oboInOwl:hasDbXref	MedDRA:10011878	semapv:UnspecifiedMatching	deafness	
+EFO:0001063	oboInOwl:hasDbXref	NCIt:C27644	semapv:UnspecifiedMatching	deafness	
+EFO:0001063	oboInOwl:hasDbXref	OMIM:301018	semapv:UnspecifiedMatching	deafness	
+EFO:0001063	oboInOwl:hasDbXref	SNOMEDCT:162344009	semapv:UnspecifiedMatching	deafness	
+EFO:0001063	rdfs:subClassOf	MONDO:0005365	semapv:UnspecifiedMatching	deafness	hearing loss disorder
+EFO:0001070	oboInOwl:hasDbXref	MESH:D005494	semapv:UnspecifiedMatching	folate deficiency	
+EFO:0001070	oboInOwl:hasDbXref	MedDRA:10016880	semapv:UnspecifiedMatching	folate deficiency	
+EFO:0001070	oboInOwl:hasDbXref	SNOMEDCT:190633005	semapv:UnspecifiedMatching	folate deficiency	
+EFO:0001070	rdfs:subClassOf	EFO:0005878	semapv:UnspecifiedMatching	folate deficiency	vitamin deficiency
+EFO:0001072	oboInOwl:hasDbXref	MedDRA:10027175	semapv:UnspecifiedMatching	memory impairment	
+EFO:0001072	oboInOwl:hasDbXref	NCIt:C55427	semapv:UnspecifiedMatching	memory impairment	
+EFO:0001072	oboInOwl:hasDbXref	NCIt:C78444	semapv:UnspecifiedMatching	memory impairment	
+EFO:0001072	oboInOwl:hasDbXref	SNOMEDCT:386807006	semapv:UnspecifiedMatching	memory impairment	
+EFO:0001080	oboInOwl:hasDbXref	RRID:CVCL_4827	semapv:UnspecifiedMatching	267B1	
+EFO:0001082	oboInOwl:hasDbXref	BTO:0002181	semapv:UnspecifiedMatching	293T	
+EFO:0001082	oboInOwl:hasDbXref	CLO:0037372	semapv:UnspecifiedMatching	293T	
+EFO:0001082	oboInOwl:hasDbXref	RRID:CVCL_0063	semapv:UnspecifiedMatching	293T	
+EFO:0001084	oboInOwl:hasDbXref	BTO:0000011	semapv:UnspecifiedMatching	3T3-L1	
+EFO:0001084	oboInOwl:hasDbXref	CLO:0001352	semapv:UnspecifiedMatching	3T3-L1	
+EFO:0001084	oboInOwl:hasDbXref	RRID:CVCL_0123	semapv:UnspecifiedMatching	3T3-L1	
+EFO:0001086	oboInOwl:hasDbXref	BTO:0000018	semapv:UnspecifiedMatching	A549	
+EFO:0001086	oboInOwl:hasDbXref	CLO:0001601	semapv:UnspecifiedMatching	A549	
+EFO:0001268	rdfs:subClassOf	BFO:0000019	semapv:UnspecifiedMatching	mating type	quality
+EFO:0001269	rdfs:subClassOf	EFO:0001268	semapv:UnspecifiedMatching	mating type h minus	mating type
+EFO:0001270	rdfs:subClassOf	EFO:0001268	semapv:UnspecifiedMatching	mating type alpha	mating type
+EFO:0001271	rdfs:subClassOf	OBI:0000181	semapv:UnspecifiedMatching	mixed sex population	population
+EFO:0001272	rdfs:subClassOf	EFO:0000399	semapv:UnspecifiedMatching	adult	developmental stage
+EFO:0001273	rdfs:subClassOf	UBERON:0000108	semapv:UnspecifiedMatching	blastula 128-cell	blastula stage
+EFO:0001274	rdfs:subClassOf	UBERON:0000108	semapv:UnspecifiedMatching	blastula 1k-cell	blastula stage
+EFO:0001275	rdfs:subClassOf	EFO:0001268	semapv:UnspecifiedMatching	mating type a	mating type
+EFO:0001276	rdfs:subClassOf	UBERON:0000108	semapv:UnspecifiedMatching	blastula 256-cell	blastula stage
+EFO:0002901	owl:equivalentClass	UO:0000064	semapv:UnspecifiedMatching	micromole per liter	micromolar
+EFO:0003021	skos:exactMatch	pr:000024938	semapv:UnspecifiedMatching	interferon alpha	
+EFO:0003836	skos:exactMatch	chebi_2:6495	semapv:UnspecifiedMatching	lipoprotein	
+EFO:0007589	owl:equivalentClass	BTO:0000332	semapv:UnspecifiedMatching	etiolation	culture condition:dark-grown cell
+EFO:0010161	skos:exactMatch	pr:000034449	semapv:UnspecifiedMatching	carbonic anhydrase 2	
+EFO:1000090	skos:exactMatch	ncit:C3689	semapv:UnspecifiedMatching	Appendix Goblet Cell Carcinoid	
+EFO:1000178	skos:exactMatch	ncit:C4563	semapv:UnspecifiedMatching	Chronic Eosinophilic Leukemia, Not Otherwise Specified	
+EFO:1000222	skos:exactMatch	ncit:C111786	semapv:UnspecifiedMatching	Ductal or Ductular Proliferation	
+EFO:1000301	skos:exactMatch	ncit:C3456	semapv:UnspecifiedMatching	Inclusion Body Fibromatosis	
+EFO:1000466	skos:exactMatch	ncit:C3316	semapv:UnspecifiedMatching	Penile Fibromatosis	
+EFO:1000592	skos:exactMatch	ncit:C4946	semapv:UnspecifiedMatching	Thyroid Gland Oncocytic Follicular Carcinoma	
+EFO:0000741	rdfs:subPropertyOf	EFO:0000824	semapv:UnspecifiedMatching	has_tumor_type	relationship
+EFO:0000742	rdfs:subPropertyOf	EFO:0000824	semapv:UnspecifiedMatching	is_tumor_of	relationship
+EFO:0000784	rdfs:subPropertyOf	RO:0001025	semapv:UnspecifiedMatching	has_disease_location	located_in
+EFO:0000785	rdfs:subPropertyOf	RO:0001015	semapv:UnspecifiedMatching	is_location_of_disease	location_of
+EFO:0000794	rdfs:subPropertyOf	EFO:0000824	semapv:UnspecifiedMatching	is_broader_than	relationship
+EFO:0001697	rdfs:subPropertyOf	EFO:0000824	semapv:UnspecifiedMatching	is_unit_of	relationship
+EFO:0001698	rdfs:subPropertyOf	EFO:0000824	semapv:UnspecifiedMatching	has_unit	relationship
