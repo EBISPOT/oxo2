@@ -57,7 +57,9 @@ public final class SuggestFields {
      * Fields the result-table column filters may suggest values for. The vocabulary fields plus the
      * OBJECT entity fields — high-cardinality, but safe here because a contextual suggest is scoped to
      * the live query AND carries a {@code facet.prefix}, so it never enumerates the whole term
-     * dictionary the way a global facet would.
+     * dictionary the way a global facet would; plus {@code distance}, a small-integer field whose
+     * distinct values in the current result set size the Distance column's range dropdown (its top
+     * entry tracks the real maximum, so it never offers a hop count the search cannot reach).
      */
     public static final Set<MappingEnum> CONTEXTUAL_FIELDS = contextualFields();
 
@@ -66,6 +68,9 @@ public final class SuggestFields {
         fields.add(MappingEnum.OBJECT_ID);
         fields.add(MappingEnum.OBJECT_LABEL);
         fields.add(MappingEnum.OBJECT_IRI);
+        // A pint, faceted through docValues; facetFieldFor returns it unchanged (no _str twin), so the
+        // buckets come back as the raw hop counts (1, 2, …) the dropdown lists.
+        fields.add(MappingEnum.DISTANCE);
         return fields;
     }
 

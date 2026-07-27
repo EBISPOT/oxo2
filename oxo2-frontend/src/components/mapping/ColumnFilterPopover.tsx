@@ -3,6 +3,7 @@ import { Badge, Box, Button, IconButton, Popover, TextField, Typography } from "
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { ValueSuggest } from "../search/ValueSuggest";
 import { VocabSelect } from "../search/VocabSelect";
+import { RangeSelect } from "../search/RangeSelect";
 
 export interface FilterFieldDef {
     /** Canonical Solr field name (snake_case); resolved by the backend MappingEnum. */
@@ -15,11 +16,18 @@ export interface FilterFieldDef {
      * rows it would leave. `vocab` is the same live-scoped facet shown as a pick-only combobox (all
      * values present in the current results, no typing needed to reveal them); use it for a
      * low-cardinality field whose stored values are opaque codes shown by a friendly label (see
-     * `formatOption`), which a "contains" fragment could never match. Fields without either stay
-     * plain text boxes. Data, not a switch statement: turning a column's suggest on is a one-flag
-     * change.
+     * `formatOption`), which a "contains" fragment could never match. `range` is a dropdown for a
+     * small-integer field listing 1..max, where max tracks the maximum present in the current results
+     * (also faceted over the live search); `rangeMax` caps that top, and an "All" entry appears only
+     * when that cap hides longer rows. Fields without any of these stay plain text boxes. Data, not a
+     * switch statement: turning a column's suggest on is a one-flag change.
      */
-    suggest?: "contextual" | "vocab" | "none";
+    suggest?: "contextual" | "vocab" | "range" | "none";
+    /**
+     * For a `range` field: the largest entry the dropdown ever offers. When the results reach further,
+     * the extra values fall under "All". Omitted → uncapped (the top always equals the real maximum).
+     */
+    rangeMax?: number;
     /**
      * For `vocab` fields: map a stored value to its display label (e.g. a SEMAPV CURIE to its short
      * CamelCase name). The filter still applies the raw value; only the dropdown text is translated.
@@ -31,11 +39,6 @@ export interface FilterFieldDef {
      * CamelCase name).
      */
     formatOptionTitle?: (value: string) => string;
-    /**
-     * Render as a number input (min 1, integer steps) instead of a free-text box. Distance is the
-     * only numeric filter today; the backend reads its value as an inclusive maximum ("at most N").
-     */
-    inputType?: "number";
 }
 
 /**
@@ -144,15 +147,22 @@ export function ColumnFilterPopover({
                                 onTyped={(next) => handleChange(fieldDef.field, next)}
                                 onPick={(picked) => handlePick(fieldDef.field, picked)}
                             />
+                        ) : fieldDef.suggest === "range" ? (
+                            <RangeSelect
+                                key={fieldDef.field}
+                                field={fieldDef.field}
+                                label={fieldDef.label}
+                                value={values[fieldDef.field] ?? ""}
+                                search={suggestContext}
+                                max={fieldDef.rangeMax}
+                                onChange={(next) => handleChange(fieldDef.field, next)}
+                            />
                         ) : (
                             <TextField
                                 key={fieldDef.field}
                                 label={fieldDef.label}
                                 size="small"
                                 variant="outlined"
-                                type={fieldDef.inputType ?? "text"}
-                                slotProps={fieldDef.inputType === "number"
-                                    ? { htmlInput: { min: 1, step: 1 } } : undefined}
                                 value={values[fieldDef.field] ?? ""}
                                 onChange={(event) => handleChange(fieldDef.field, event.target.value)}
                             />

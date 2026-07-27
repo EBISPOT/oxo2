@@ -88,7 +88,11 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
         fields.some(field => hasValue(mapping[field]));
 
     return (
-        <div className="container mx-auto px-4 py-8">
+        // Full viewport width (only side/vertical gutters), matching the search results page rather
+        // than Tailwind's `container`, whose breakpoint cap (1536px at 2xl) left dead space on wide
+        // screens and forced the wide Asserted Mappings table into a horizontal scrollbar it did not
+        // need.
+        <div className="w-full px-4 py-8">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Mapping Details</h1>
                 <button

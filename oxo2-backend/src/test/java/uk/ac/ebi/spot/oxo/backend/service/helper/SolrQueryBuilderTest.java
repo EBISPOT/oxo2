@@ -1272,6 +1272,45 @@ class SolrQueryBuilderTest {
         assertThat(joined).contains(labelNgram(MappingEnum.OBJECT_LABEL));
     }
 
+    /**
+     * The Distance column's range dropdown sizes its top entry to the largest hop count present in the
+     * current search, faceted through this same contextual path. So distance must be suggestible, and
+     * as a pint it is faceted directly (no {@code _str} twin), so the buckets are the raw hop counts.
+     */
+    @Test
+    void distanceIsSuggestibleAndFacetedAsAPlainField() {
+        assertThat(SuggestFields.CONTEXTUAL_FIELDS).contains(MappingEnum.DISTANCE);
+        assertThat(SuggestFields.facetFieldFor(MappingEnum.DISTANCE))
+                .isEqualTo(MappingEnum.DISTANCE.getField());
+
+        // Blank prefix (the dropdown wants every distinct value, not a completion) → one plain facet on
+        // the field, no facet.prefix casings.
+        String facetFields = String.join(" ", SolrQueryBuilder
+                .buildValueSuggestQuery(liveSearch(), MappingEnum.DISTANCE, "", 25)
+                .getParams(FACET_FIELD));
+        assertThat(facetFields)
+                .isEqualTo(MappingEnum.DISTANCE.getField())
+                .doesNotContain("facet.prefix");
+    }
+
+    /**
+     * Sizing the dropdown to the max must not depend on which distance is already applied: with the
+     * column's own filter left in, the facet would only ever report values ≤ the current pick and the
+     * top entry could never grow back. The suggest strips the field's own in-progress filter.
+     */
+    @Test
+    void distanceSuggestDropsTheInProgressDistanceFilter() {
+        MappingSearchRequest request = baseRequest();
+        request.setColumnFilters(List.of(
+                new ColumnFilter(MappingEnum.DISTANCE.getField(), "2")));
+
+        String filterQueries = String.join(" ", SolrQueryBuilder
+                .buildValueSuggestQuery(request, MappingEnum.DISTANCE, "", 25)
+                .getFilterQueries());
+
+        assertThat(filterQueries).doesNotContain(MappingEnum.DISTANCE.getField() + ":[* TO");
+    }
+
     /** And it must not mutate the caller's request — that request IS the live search. */
     @Test
     void valueSuggestDoesNotMutateTheCallersRequest() {
