@@ -386,9 +386,15 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             },
             // Distance: hops behind the mapping — 1 for asserted, the chain length for an inference.
             // A same-SPO group can mix an asserted row with inferences of other lengths, so it shares
-            // the confidence column's "Multiple" handling. The filter is a numeric MAXIMUM ("at most
-            // N hops"): the backend turns it into a distance:[* TO N] range, applied before grouping,
-            // so a group keeps only its members within N hops.
+            // the confidence column's "Multiple" handling. The filter is a dropdown of MAXIMA ("at
+            // most N hops"): 1..min(realMax, 5), where realMax is the largest hop count present in the
+            // current search (faceted over the live search, ADR-0034). Capped at 5: a long inference
+            // tail (the corpus reaches distance 12) would otherwise stretch the list to a dozen
+            // barely-used hop counts. "All" (no filter) is added only when that cap bites — realMax > 5,
+            // so "at most 5" would hide the longer rows; below the cap the top number already selects
+            // everything and doubles as the default. The backend turns the picked value into a
+            // distance:[* TO N] range, applied before grouping, so a group keeps only its members
+            // within N hops.
             {
                 id: "distance",
                 accessorFn: (row) => row.distance,
@@ -400,8 +406,9 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         <span>Distance</span>
                         <ColumnFilterPopover
                             title="Distance"
-                            fields={[{ field: "distance", label: "Max distance", inputType: "number" }]}
+                            fields={[{ field: "distance", label: "Max distance", suggest: "range", rangeMax: 5 }]}
                             onChange={handleFilterChange}
+                            suggestContext={suggestContext}
                             initialValues={initialFieldFilters}
                         />
                     </span>
