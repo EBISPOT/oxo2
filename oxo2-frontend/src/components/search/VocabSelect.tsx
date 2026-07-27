@@ -31,6 +31,7 @@ export function VocabSelect({
     value,
     onPick,
     search,
+    localOptions,
     label,
     placeholder,
     formatOption,
@@ -49,6 +50,13 @@ export function VocabSelect({
      * /api/v2/mappings/search for the result table. Omitted only degrades to a whole-corpus facet.
      */
     search?: unknown;
+    /**
+     * A fixed option list, for callers whose rows are local data rather than a backend search (e.g.
+     * the Asserted Mappings table). When given, no facet request is made and `search` is ignored —
+     * the caller is expected to have counted the values over the same rows its table is showing, so
+     * the scoped-to-what-is-on-screen promise above still holds.
+     */
+    localOptions?: ValueSuggestion[];
     label?: string;
     placeholder?: string;
     /** Map a raw value to its display label; identity when omitted. */
@@ -72,14 +80,15 @@ export function VocabSelect({
     // Blank query → the backend facets the whole result set (every value present, most common first).
     // 25 is the backend's contextual cap and comfortably covers any controlled vocabulary. staleTime
     // is short, not Infinity: these are scoped to a result set the user is actively changing.
-    const { data: values, isLoading } = useQuery({
+    const { data: fetchedValues, isLoading } = useQuery({
         queryKey: ["contextualVocab", field, JSON.stringify(search)],
         queryFn: () => fetchContextualValues(field, "", search, 25),
         staleTime: 30_000,
+        enabled: !localOptions,
     });
 
     const format = formatOption ?? ((raw: string) => raw);
-    const options = values ?? [];
+    const options = localOptions ?? fetchedValues ?? [];
     // The applied value is stored as a raw string; resolve it back to the option the list holds so
     // the controlled combobox shows it (humanised) after a reload or a URL restore. It is always in
     // the list — the backend strips this field's own filter before faceting, so the rows carrying the

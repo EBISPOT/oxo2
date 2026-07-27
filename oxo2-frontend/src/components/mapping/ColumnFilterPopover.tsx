@@ -4,6 +4,7 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import { ValueSuggest } from "../search/ValueSuggest";
 import { VocabSelect } from "../search/VocabSelect";
 import { RangeSelect } from "../search/RangeSelect";
+import type { ValueSuggestion } from "../../pages/results/SuggestSlice";
 
 export interface FilterFieldDef {
     /** Canonical Solr field name (snake_case); resolved by the backend MappingEnum. */
@@ -39,6 +40,13 @@ export interface FilterFieldDef {
      * CamelCase name).
      */
     formatOptionTitle?: (value: string) => string;
+    /**
+     * For `vocab` or `contextual` fields whose table holds LOCAL rows rather than a backend search
+     * (e.g. the Asserted Mappings table): the values to offer, counted by the caller over the rows on
+     * screen. When given, the field makes no facet request and `suggestContext` is not needed — the
+     * dropdown (vocab) or typeahead (contextual) draws from this list instead.
+     */
+    localOptions?: ValueSuggestion[];
 }
 
 /**
@@ -130,6 +138,7 @@ export function ColumnFilterPopover({
                                 // Scoped to the live search, exactly like the contextual branch below:
                                 // the dropdown only offers values present in the current results.
                                 search={suggestContext}
+                                localOptions={fieldDef.localOptions}
                                 // This popover exists solely to pick a value, so drop the list open the
                                 // moment it appears rather than making the user find the caret first.
                                 autoOpen
@@ -144,6 +153,7 @@ export function ColumnFilterPopover({
                                 label={fieldDef.label}
                                 value={values[fieldDef.field] ?? ""}
                                 search={suggestContext}
+                                localOptions={fieldDef.localOptions}
                                 onTyped={(next) => handleChange(fieldDef.field, next)}
                                 onPick={(picked) => handlePick(fieldDef.field, picked)}
                             />
