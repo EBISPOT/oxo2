@@ -10,10 +10,11 @@
 # dominate an OLS export (oboInOwl:hasDbXref, rdfs:subClassOf, hidden by default
 # in normal search) so the weak-predicate toggles still have something to reveal.
 #
-# The EFO fixtures come in two flavours split by subject obsolescence — a live
-# export (efo.ols.sssom.tsv) and an obsolete-terms export (efo.ols.obsolete.sssom.tsv)
-# — so a worktree can exercise how obsolete subjects are handled. For those two the
-# committed fixture basename is identical to the source basename.
+# The EFO and MONDO fixtures each come in two flavours split by subject obsolescence
+# — a live export (<ont>.ols.sssom.tsv) and an obsolete-terms export
+# (<ont>.ols.obsolete.sssom.tsv) — so a worktree can exercise how obsolete subjects
+# are handled. For all four the committed fixture basename is identical to the source
+# basename.
 #
 # The source files are the per-ontology OLS SSSOM exports (the extracted members
 # of OLS's sssom.tgz). They are NOT committed — they are multi-MB full exports.
@@ -34,7 +35,8 @@ WEAK_SAMPLE="${WEAK_SAMPLE:-300}"
 FIXTURES=(
   "efo.ols.sssom.tsv|efo.ols.sssom.tsv"
   "efo.ols.obsolete.sssom.tsv|efo.ols.obsolete.sssom.tsv"
-  "mondo.ols.sssom.tsv|mondo.sssom.tsv"
+  "mondo.ols.sssom.tsv|mondo.ols.sssom.tsv"
+  "mondo.ols.obsolete.sssom.tsv|mondo.ols.obsolete.sssom.tsv"
 )
 
 for fixture in "${FIXTURES[@]}"; do

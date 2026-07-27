@@ -1,14 +1,19 @@
 package uk.ac.ebi.spot.oxo.sssom2json;
 
+import static uk.ac.ebi.spot.oxo.sssom2json.parser.TSV2JSON.extractSubjectIris;
 import static uk.ac.ebi.spot.oxo.sssom2json.parser.TSV2JSON.processDirectory;
 import static uk.ac.ebi.spot.oxo.sssom2json.parser.TSV2JSON.processFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -139,16 +144,29 @@ public class SSSOM2JSON {
             return;
         }
 
+        // ADR-0041, Pass 1: emit this input's distinct subject IRIs and stop. sssom2json.nf runs this
+        // over the obsolete-flagged registries and unions the results into the global obsolete-entity set.
+        if (cmd.hasOption("extract-obsolete-entities")) {
+            extractObsoleteEntities(inputFile, inputDirectory, outputDirectory);
+            return;
+        }
+
+        // ADR-0041, Pass 2 inputs: the set-level flag for this run's registry, and the global
+        // obsolete-entity IRI set that both mapping endpoints are stamped against. Absent on a normal load.
+        boolean setObsolete = cmd.hasOption("obsolete");
+        Set<String> obsoleteEntityIris = loadObsoleteEntities(cmd.getOptionValue("obsolete-entities"));
+
         logger.info("Output Directory: {}", outputDirectory);
         logger.info("Mapping Set Category: {}", mappingSetCategory.getCode());
+        logger.info("Set obsolete: {}; obsolete-entity IRIs loaded: {}", setObsolete, obsoleteEntityIris.size());
 
         long startTime = System.currentTimeMillis();
         if (inputFile != null) {
             logger.info("Input File: {}", inputFile);
-            processSingleFile(inputFile, outputDirectory, mappingSetCategory);
+            processSingleFile(inputFile, outputDirectory, mappingSetCategory, obsoleteEntityIris, setObsolete);
         } else {
             logger.info("Input Directory: {}", inputDirectory);
-            processMappingSets(inputDirectory, outputDirectory, mappingSetCategory);
+            processMappingSets(inputDirectory, outputDirectory, mappingSetCategory, obsoleteEntityIris, setObsolete);
         }
         long endTime = System.currentTimeMillis();
 
@@ -156,7 +174,8 @@ public class SSSOM2JSON {
     }
 
     private static void processSingleFile(String inputFile, String outputDirectory,
-                                          MappingSetCategory mappingSetCategory) throws IOException {
+                                          MappingSetCategory mappingSetCategory,
+                                          Set<String> obsoleteEntityIris, boolean setObsolete) throws IOException {
         File tsvFile = new File(inputFile);
         if (!tsvFile.exists() || !tsvFile.isFile()) {
             throw new IOException("Input file does not exist or is not a file: " + inputFile);
@@ -174,7 +193,8 @@ public class SSSOM2JSON {
         }
 
         try {
-            processFile(tsvFile, mappingSetDirectory, mappingDirectory, mappingSetCategory);
+            processFile(tsvFile, mappingSetDirectory, mappingDirectory, mappingSetCategory,
+                    obsoleteEntityIris, setObsolete);
         } catch (Throwable t) {
             logger.error("Error processing file {}", tsvFile, t);
         }
@@ -192,7 +212,8 @@ public class SSSOM2JSON {
      * category resolved from the config for that file's registry.
      */
     private static void processMappingSets(String inputDirectory, String outputDirectory,
-                                           MappingSetCategory mappingSetCategory) throws IOException {
+                                           MappingSetCategory mappingSetCategory,
+                                           Set<String> obsoleteEntityIris, boolean setObsolete) throws IOException {
         Stream<Path> directoriesOfMappingSets = getDirectories(inputDirectory);
 
         String mappingSetDirectory = outputDirectory + File.separator + "mappingSet";
@@ -207,7 +228,8 @@ public class SSSOM2JSON {
         }
 
         directoriesOfMappingSets.forEach(path ->
-                processDirectory(path.toString(), mappingSetDirectory, mappingDirectory, mappingSetCategory));
+                processDirectory(path.toString(), mappingSetDirectory, mappingDirectory, mappingSetCategory,
+                        obsoleteEntityIris, setObsolete));
 
         long usedMemoryBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         double usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0);
@@ -238,6 +260,53 @@ public class SSSOM2JSON {
         }
     }
 
+    /**
+     * Pass 1 of the obsolete-terms dataload (ADR-0041): write the distinct subject IRIs of the input
+     * (a single TSV, or every {@code .tsv} under a directory) to {@code <outputDir>/obsolete-entities.txt},
+     * one per line, sorted. sssom2json.nf runs this over the obsolete-flagged registries and concatenates
+     * the per-file outputs into the global obsolete-entity set fed back to the main (Pass 2) run.
+     */
+    private static void extractObsoleteEntities(String inputFile, String inputDirectory,
+                                                String outputDirectory) throws IOException {
+        Set<String> subjectIris = new TreeSet<>();
+        if (inputFile != null) {
+            subjectIris.addAll(extractSubjectIris(new File(inputFile)));
+        } else {
+            try (Stream<Path> paths = Files.walk(Paths.get(inputDirectory))) {
+                paths.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".tsv"))
+                        .forEach(path -> subjectIris.addAll(extractSubjectIris(path.toFile())));
+            }
+        }
+        Path outputPath = Paths.get(outputDirectory, "obsolete-entities.txt");
+        if (outputPath.getParent() != null) {
+            Files.createDirectories(outputPath.getParent());
+        }
+        String content = subjectIris.stream().map(iri -> iri + "\n").collect(Collectors.joining());
+        Files.writeString(outputPath, content, StandardCharsets.UTF_8);
+        logger.info("Extracted {} distinct obsolete subject IRIs to {}", subjectIris.size(), outputPath);
+    }
+
+    /**
+     * Load the global obsolete-entity IRI set (ADR-0041) from the Pass-1 file: one IRI per line, blanks
+     * ignored. A null/blank path or missing file yields an empty set — a load with no obsolete registry.
+     */
+    private static Set<String> loadObsoleteEntities(String obsoleteEntitiesFile) throws IOException {
+        Set<String> obsoleteEntityIris = new HashSet<>();
+        if (obsoleteEntitiesFile == null || obsoleteEntitiesFile.isBlank()) {
+            return obsoleteEntityIris;
+        }
+        Path path = Paths.get(obsoleteEntitiesFile);
+        if (!Files.exists(path)) {
+            logger.warn("Obsolete-entity file {} does not exist; treating the obsolete set as empty.", path);
+            return obsoleteEntityIris;
+        }
+        try (Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8)) {
+            lines.map(String::trim).filter(line -> !line.isEmpty()).forEach(obsoleteEntityIris::add);
+        }
+        return obsoleteEntityIris;
+    }
+
     private static Options getOptions() {
         Options options = new Options();
 
@@ -258,6 +327,26 @@ public class SSSOM2JSON {
                         + "ONTOLOGY or CURATED (default). Applies to every file processed in this run.");
         category.setRequired(false);
         options.addOption(category);
+
+        // ADR-0041: obsolete-terms support. The set-level flag marks this run's registry obsolete; the
+        // entity list is the global obsolete-entity IRI set (Pass 1's output) against which both mapping
+        // endpoints are stamped; the extract flag switches to Pass 1 — emit this file's subject IRIs.
+        Option obsolete = new Option("s", "obsolete", false,
+                "Mark this run's mapping set(s) as obsolete (all their subjects are obsolete terms).");
+        obsolete.setRequired(false);
+        options.addOption(obsolete);
+
+        Option obsoleteEntities = new Option("b", "obsolete-entities", true,
+                "Path to the global obsolete-entity IRI list (one IRI per line): a mapping endpoint whose "
+                        + "IRI is in this list is stamped obsolete. Omit on a load with no obsolete registry.");
+        obsoleteEntities.setRequired(false);
+        options.addOption(obsoleteEntities);
+
+        Option extractObsoleteEntities = new Option("x", "extract-obsolete-entities", false,
+                "Pass 1: instead of producing mapping JSON, write the input's distinct subject IRIs to "
+                        + "<outputDir>/obsolete-entities.txt (one per line).");
+        extractObsoleteEntities.setRequired(false);
+        options.addOption(extractObsoleteEntities);
 
         return options;
     }

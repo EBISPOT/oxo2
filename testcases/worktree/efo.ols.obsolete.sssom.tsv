@@ -439,3 +439,34 @@ EFO:1001007	skos:closeMatch	doid:4711	semapv:UnspecifiedMatching	obsolete_krebs 
 EFO:1001339	skos:exactMatch	ncit:C3081	semapv:UnspecifiedMatching	obsolete_Heart neoplasm	
 EFO:1001938	skos:exactMatch	ncit:C3457	semapv:UnspecifiedMatching	obsolete_B-cell non-Hodgkins lymphoma	
 EFO:1001960	skos:exactMatch	ncit:C4043	semapv:UnspecifiedMatching	obsolete_hypopharyngeal squamous cell carcinoma	
+EFO:0000776	oboInOwl:hasDbXref	EFO:0000776	semapv:UnspecifiedMatching	obsolete_Aeromonas hydrophila infection	obsolete_Aeromonas hydrophila infection
+EFO:0000779	oboInOwl:hasDbXref	EFO:0000779	semapv:UnspecifiedMatching	obsolete_Drosophila C virus infection	obsolete_Drosophila C virus infection
+EFO:0000781	oboInOwl:hasDbXref	EFO:0000781	semapv:UnspecifiedMatching	obsolete_Pectobacterium carotovorum infection	obsolete_Pectobacterium carotovorum infection
+EFO:0001078	oboInOwl:hasDbXref	EFO:0001078	semapv:UnspecifiedMatching	obsolete_Pseudomonas aeruginosa PA14 infection	obsolete_Pseudomonas aeruginosa PA14 infection
+EFO:0001675	oboInOwl:hasDbXref	EFO:0001675	semapv:UnspecifiedMatching	obsolete_simian immunodeficiency virus infection	obsolete_simian immunodeficiency virus infection
+EFO:0002510	oboInOwl:hasDbXref	EFO:0002510	semapv:UnspecifiedMatching	obsolete_serous cystadenofibroma	obsolete_serous cystadenofibroma
+EFO:0003146	oboInOwl:hasDbXref	EFO:0003146	semapv:UnspecifiedMatching	obsolete_symptomatic heart failure	obsolete_symptomatic heart failure
+EFO:0003147	oboInOwl:hasDbXref	EFO:0003147	semapv:UnspecifiedMatching	obsolete_mild heart failure	obsolete_mild heart failure
+EFO:0003148	oboInOwl:hasDbXref	EFO:0003148	semapv:UnspecifiedMatching	obsolete_moderate heart failure	obsolete_moderate heart failure
+EFO:0003149	oboInOwl:hasDbXref	EFO:0003149	semapv:UnspecifiedMatching	obsolete_advanced heart failure	obsolete_advanced heart failure
+EFO:0003757	oboInOwl:hasDbXref	EFO:0003757	semapv:UnspecifiedMatching	obsolete_Asperger syndrome	obsolete_Asperger syndrome
+EFO:0004287	oboInOwl:hasDbXref	EFO:0004287	semapv:UnspecifiedMatching	obsolete_ventricular fibrillation	obsolete_ventricular fibrillation
+EFO:0004710	oboInOwl:hasDbXref	EFO:0004710	semapv:UnspecifiedMatching	obsolete_pelvic organ prolapse	obsolete_pelvic organ prolapse
+EFO:0004772	oboInOwl:hasDbXref	EFO:0004772	semapv:UnspecifiedMatching	obsolete_early onset hypertension	obsolete_early onset hypertension
+EFO:0004826	oboInOwl:hasDbXref	EFO:0004826	semapv:UnspecifiedMatching	obsolete_anti-neutrophil antibody associated vasculitis	obsolete_anti-neutrophil antibody associated vasculitis
+EFO:0005242	oboInOwl:hasDbXref	EFO:0005242	semapv:UnspecifiedMatching	obsolete_methamphetamine-induced psychosis	obsolete_methamphetamine-induced psychosis
+EFO:0005304	oboInOwl:hasDbXref	EFO:0005304	semapv:UnspecifiedMatching	obsolete_atrial conduction disease	obsolete_atrial conduction disease
+EFO:0005524	oboInOwl:hasDbXref	EFO:0005524	semapv:UnspecifiedMatching	obsolete_large artery stroke	obsolete_large artery stroke
+EFO:0005782	oboInOwl:hasDbXref	EFO:0005782	semapv:UnspecifiedMatching	obsolete_age-related hearing impairment	obsolete_age-related hearing impairment
+EFO:0006315	oboInOwl:hasDbXref	EFO:0006315	semapv:UnspecifiedMatching	obsolete_thiopurine immunosuppressant-induced pancreatitis	obsolete_thiopurine immunosuppressant-induced pancreatitis
+EFO:0006388	oboInOwl:hasDbXref	EFO:0006388	semapv:UnspecifiedMatching	obsolete_cystic renal cell carcinoma	obsolete_cystic renal cell carcinoma
+EFO:0006391	oboInOwl:hasDbXref	EFO:0006391	semapv:UnspecifiedMatching	obsolete_dopaminergic neuroblastoma	obsolete_dopaminergic neuroblastoma
+EFO:0007139	oboInOwl:hasDbXref	EFO:0007139	semapv:UnspecifiedMatching	obsolete_aleutian mink disease	obsolete_aleutian mink disease
+EFO:0007178	oboInOwl:hasDbXref	EFO:0007178	semapv:UnspecifiedMatching	obsolete_borna disease	obsolete_borna disease
+EFO:0007179	oboInOwl:hasDbXref	EFO:0007179	semapv:UnspecifiedMatching	obsolete_boutonneuse fever	obsolete_boutonneuse fever
+EFO:0007314	oboInOwl:hasDbXref	EFO:0007314	semapv:UnspecifiedMatching	obsolete_hookworm infectious disease	obsolete_hookworm infectious disease
+EFO:0009068	oboInOwl:hasDbXref	EFO:0009068	semapv:UnspecifiedMatching	obsolete_dicer1 syndrome	obsolete_dicer1 syndrome
+EFO:0009491	oboInOwl:hasDbXref	EFO:0009491	semapv:UnspecifiedMatching	obsolete_adrenocortical insufficiency	obsolete_adrenocortical insufficiency
+EFO:0009556	oboInOwl:hasDbXref	EFO:0009556	semapv:UnspecifiedMatching	obsolete_mineral metabolism disease	obsolete_mineral metabolism disease
+EFO:1000648	oboInOwl:hasDbXref	EFO:1000648	semapv:UnspecifiedMatching	obsolete_developmental dysplasia of the hip	obsolete_developmental dysplasia of the hip
+EFO:1000900	oboInOwl:hasDbXref	EFO:1000900	semapv:UnspecifiedMatching	obsolete_discitis	obsolete_discitis

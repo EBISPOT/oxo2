@@ -99,6 +99,13 @@ public class MappingSearchRequest {
             + "shows whatever matches, so a filter can never return nothing.")
     private List<WeakPredicate> includeWeakPredicates;
 
+    // Obsolete-terms visibility (ADR-0041). False — the default — hides any mapping with an obsolete
+    // subject OR object, which is what a user doing an ordinary lookup wants. True reveals them, e.g. so
+    // a user holding an obsolete IRI can find its replacement.
+    @Schema(description = "Include mappings whose subject or object is an obsolete term. "
+            + "Default false hides them.", defaultValue = "false")
+    private boolean includeObsolete;
+
 
     /**
      * A shallow copy. Used by the contextual value suggest (ADR-0034), which needs to build the live
@@ -127,6 +134,7 @@ public class MappingSearchRequest {
         copy.groupBySpo = this.groupBySpo;
         copy.labelMatch = this.labelMatch;
         copy.includeWeakPredicates = this.includeWeakPredicates;
+        copy.includeObsolete = this.includeObsolete;
         return copy;
     }
 
@@ -137,6 +145,14 @@ public class MappingSearchRequest {
 
     public void setIncludeWeakPredicates(List<WeakPredicate> includeWeakPredicates) {
         this.includeWeakPredicates = includeWeakPredicates;
+    }
+
+    public boolean isIncludeObsolete() {
+        return includeObsolete;
+    }
+
+    public void setIncludeObsolete(boolean includeObsolete) {
+        this.includeObsolete = includeObsolete;
     }
 
     public List<String> getQueries() {

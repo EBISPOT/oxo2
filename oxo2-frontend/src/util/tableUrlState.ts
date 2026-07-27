@@ -46,6 +46,8 @@ const FILTER_PARAM = "filter";
 const EXACT_PARAM = "fx";
 /** Normally-hidden predicates the user has asked to see (ADR-0035). Absent = both hidden. */
 const WEAK_PREDICATE_PARAM = "wp";
+/** Show obsolete terms (ADR-0041). Absent — the default — hides mappings with an obsolete endpoint. */
+const OBSOLETE_PARAM = "obs";
 
 type Updater<T> = T | ((old: T) => T);
 const applyUpdater = <T,>(updater: Updater<T>, current: T): T =>
@@ -255,6 +257,32 @@ export function useUrlWeakPredicates(
     );
 
     return [weakPredicates, setWeakPredicates];
+}
+
+/**
+ * The "show obsolete terms" checkbox (ADR-0041). Like {@link useUrlWeakPredicates} it is shared by the
+ * result table, the mapping-set picker and the typeahead, so all three hide/reveal obsolete terms
+ * together. Absent from the URL — the default — means hide; only the reveal state is serialised.
+ */
+export function useUrlIncludeObsolete(
+    resetPageOnChange: boolean
+): [boolean, (next: boolean) => void] {
+    const { searchParams, update } = useUrlState();
+    const includeObsolete = searchParams.get(OBSOLETE_PARAM) === "1";
+
+    const setIncludeObsolete = useCallback(
+        (next: boolean) =>
+            update((params) => {
+                if (next) {
+                    params.set(OBSOLETE_PARAM, "1");
+                } else {
+                    params.delete(OBSOLETE_PARAM);
+                }
+            }, resetPageOnChange),
+        [update, resetPageOnChange]
+    );
+
+    return [includeObsolete, setIncludeObsolete];
 }
 
 // ---------- field filters ----------

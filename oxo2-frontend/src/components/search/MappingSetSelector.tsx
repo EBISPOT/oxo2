@@ -73,6 +73,16 @@ const CURATED_COLUMNS: MRT_ColumnDef<MappingSet>[] = [
 const ONTOLOGY_COLUMNS: MRT_ColumnDef<MappingSet>[] = [
     { accessorKey: "ontology", header: "Ontology", size: 340, filterFn: "contains" },
     { accessorKey: "prefix", header: "Prefix", size: 160, filterFn: "contains" },
+    // Obsolete indicator (ADR-0041). Only meaningful once the "obsolete terms" switch reveals obsolete
+    // sets; the Yes/No dropdown then lets the user filter them in or out on their own.
+    {
+        accessorFn: (set) => (set.obsolete ? "Yes" : "No"),
+        id: "obsolete",
+        header: "Obsolete",
+        size: 120,
+        filterVariant: "select",
+        filterFn: "equals",
+    },
 ];
 
 /**
@@ -134,9 +144,13 @@ function useMappingSetTable(
 function MappingSetSelectorInner({
     selectedIds,
     onSelectionChange,
+    includeObsolete,
 }: {
     selectedIds: string[];
     onSelectionChange: (ids: string[]) => void;
+    // Show obsolete sets (ADR-0041). Off — the default — hides them from both tables, matching the
+    // results table and the typeahead, all driven by the one "obsolete terms" switch.
+    includeObsolete: boolean;
 }) {
     const { data: mappingSets = [], isLoading: mappingSetsLoading } = useQuery({
         queryKey: ["fetchMappingSets"],
@@ -152,10 +166,13 @@ function MappingSetSelectorInner({
         const ontology: MappingSet[] = [];
         const curated: MappingSet[] = [];
         for (const set of mappingSets) {
+            // Obsolete sets stay out of the picker unless the switch is on (ADR-0041), so a search
+            // built here cannot silently include a set the results table would then hide.
+            if (!includeObsolete && set.obsolete) continue;
             (set.mappingSetCategory === "ONTOLOGY" ? ontology : curated).push(set);
         }
         return { ontologySets: ontology, curatedSets: curated };
-    }, [mappingSets]);
+    }, [mappingSets, includeObsolete]);
 
     const ontologyIds = useMemo(
         () => new Set(ontologySets.map((set) => set.mappingSetId)),

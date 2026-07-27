@@ -20,6 +20,9 @@ export interface SearchInput {
     // Normally-hidden predicates the user has asked to see (ADR-0035). Omitted = both hidden. Also
     // filters the typeahead, so that it can only offer entities the resulting search can show.
     includeWeakPredicates?: WeakPredicate[];
+    // Obsolete terms (ADR-0041): false/omitted — the default — hides any mapping with an obsolete
+    // subject or object. One control governs the results, the mapping-set picker and the typeahead.
+    includeObsolete?: boolean;
 }
 
 export const initialSearchState: SearchInput = {
@@ -32,4 +35,5 @@ export const initialSearchState: SearchInput = {
     labelMatch: DEFAULT_LABEL_MATCH,
     corpus: DEFAULT_CORPUS,
     includeWeakPredicates: DEFAULT_WEAK_PREDICATES,
+    includeObsolete: false,
 }

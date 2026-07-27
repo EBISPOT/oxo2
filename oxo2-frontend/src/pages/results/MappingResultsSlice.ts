@@ -66,6 +66,8 @@ interface SearchRequest {
     // Normally-hidden predicates the user has ticked (ADR-0035): omitted = hide both rdfs:subClassOf
     // and oboInOwl:hasDbXref, which is the default every caller had before the checkboxes existed.
     includeWeakPredicates?: WeakPredicate[];
+    // Show obsolete terms (ADR-0041): omitted/false = hide any mapping with an obsolete endpoint.
+    includeObsolete?: boolean;
 }
 
 // Batch cross-ontology mapping response (ADR-0024): the page of mappings plus the unmapped inputs.
@@ -299,7 +301,8 @@ export function buildSearchRequest(queries: string[], page: number, pageSize: nu
                            subjectPrefixes?: string[], objectPrefixes?: string[],
                            labelMatch?: LabelMatchMode,
                            mappingSetCategory?: MappingSetCategory[],
-                           includeWeakPredicates?: WeakPredicate[]): SearchRequest {
+                           includeWeakPredicates?: WeakPredicate[],
+                           includeObsolete: boolean = false): SearchRequest {
     return {
         queries: queries,
         page: page,
@@ -318,6 +321,8 @@ export function buildSearchRequest(queries: string[], page: number, pageSize: nu
         ...(mappingSetCategory && mappingSetCategory.length > 0 ? { mappingSetCategory } : {}),
         // Absent means "hide both", which is what the backend defaults to (ADR-0035).
         ...(includeWeakPredicates && includeWeakPredicates.length > 0 ? { includeWeakPredicates } : {}),
+        // Absent/false means "hide obsolete", the backend default (ADR-0041).
+        ...(includeObsolete ? { includeObsolete } : {}),
     };
 }
 
@@ -384,10 +389,11 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
                               objectPrefixes?: string[],
                               labelMatch?: LabelMatchMode,
                               mappingSetCategory?: MappingSetCategory[],
-                              includeWeakPredicates?: WeakPredicate[]): Promise<MappingSearchResponse> {
+                              includeWeakPredicates?: WeakPredicate[],
+                              includeObsolete: boolean = false): Promise<MappingSearchResponse> {
     const requestBody = buildSearchRequest(queries, page, pageSize, columnFilters, sorting, mappingSetIds,
         inferenceType, groupBySpo, subjectPrefixes, objectPrefixes, labelMatch,
-        mappingSetCategory, includeWeakPredicates);
+        mappingSetCategory, includeWeakPredicates, includeObsolete);
     return post<SearchRequest, MappingSearchResponse>('/api/v2/mappings/search', requestBody);
 }
 
@@ -400,12 +406,13 @@ export function exportMappings(queries: string[], columnFilters: unknown[], mapp
                                subjectPrefixes?: string[], objectPrefixes?: string[],
                                labelMatch?: LabelMatchMode,
                                mappingSetCategory?: MappingSetCategory[],
-                               includeWeakPredicates?: WeakPredicate[]): Promise<void> {
+                               includeWeakPredicates?: WeakPredicate[],
+                               includeObsolete: boolean = false): Promise<void> {
     // The export must carry the checkbox state too, or the downloaded TSV would hold rows the user
     // could not see on screen (or, worse, be missing the ones they had asked for).
     const requestBody = buildSearchRequest(queries, 0, 10, columnFilters, [], mappingSetIds,
         inferenceType, false, subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory,
-        includeWeakPredicates);
+        includeWeakPredicates, includeObsolete);
     return downloadPost('/api/v2/mappings/search?format=sssom-tsv', requestBody, 'oxo2-mappings.tsv');
 }
 

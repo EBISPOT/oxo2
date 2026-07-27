@@ -4,6 +4,8 @@ public class EntityDetails {
     private String curie;
     private String iri;
     private String label;
+    /** True iff this term is obsolete (ADR-0041): harvested from the asserted premises' obsolete flags. */
+    private boolean obsolete;
 
     public boolean isCuriePresent() {
         if (curie == null || curie.isBlank())
@@ -49,5 +51,13 @@ public class EntityDetails {
 
     public void setLabel(String label) {
         this.label = label;
+    }
+
+    public boolean isObsolete() {
+        return obsolete;
+    }
+
+    public void setObsolete(boolean obsolete) {
+        this.obsolete = obsolete;
     }
 }

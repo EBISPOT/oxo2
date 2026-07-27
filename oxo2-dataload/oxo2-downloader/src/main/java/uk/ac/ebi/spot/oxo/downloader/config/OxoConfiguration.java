@@ -93,6 +93,16 @@ public class OxoConfiguration {
         @JsonProperty("category")
         private final Optional<String> category;
 
+        /**
+         * Obsolete-terms support (ADR-0041): when {@code true}, every subject of this registry is an
+         * obsolete term. Like {@code category} this is operator knowledge, not an SSSOM property, and is
+         * registered here only so the strict config deserializer accepts the key — the dataload reads it
+         * in Groovy ({@code lib/ObsoleteRegistries.groovy}) and threads it into the SSSOM-to-JSON stage.
+         * Absent → the registry's subjects are live.
+         */
+        @JsonProperty("obsolete")
+        private final Optional<Boolean> obsolete;
+
         public MappingRegistry(Builder builder) {
             this.id = builder.id;
             this.githubRepository = Optional.ofNullable(builder.githubRepository);
@@ -105,6 +115,7 @@ public class OxoConfiguration {
                     ? Collections.emptyList()
                     : List.copyOf(builder.exclude);
             this.category = Optional.ofNullable(builder.category);
+            this.obsolete = Optional.ofNullable(builder.obsolete);
         }
 
         public String getId() {
@@ -143,6 +154,10 @@ public class OxoConfiguration {
             return category;
         }
 
+        public Optional<Boolean> getObsolete() {
+            return obsolete;
+        }
+
         public String getPurl() {
             if (getUrl().isPresent()) {
                 return getUrl().get();
@@ -170,6 +185,7 @@ public class OxoConfiguration {
                     ", mappingCommonsRegistry=" + mappingCommonsRegistry +
                     ", exclude=" + exclude +
                     ", category=" + category +
+                    ", obsolete=" + obsolete +
                     '}';
         }
 
@@ -190,6 +206,8 @@ public class OxoConfiguration {
             private List<String> exclude;
 
             private String category;
+
+            private Boolean obsolete;
 
             public Builder(@JsonProperty("id") String id) {
                 this.id = id;
@@ -242,6 +260,12 @@ public class OxoConfiguration {
             @JsonProperty("category")
             public Builder setCategory(String category) {
                 this.category = category;
+                return this;
+            }
+
+            @JsonProperty("obsolete")
+            public Builder setObsolete(Boolean obsolete) {
+                this.obsolete = obsolete;
                 return this;
             }
 

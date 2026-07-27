@@ -220,16 +220,17 @@ public class DataloadSolr {
     private void indexEntityDetails(Mapping mapping) {
         mapping.subjectIRI().map(Uri::asStringIRI).ifPresent(iri -> mergeEntityDetails(iri,
                 mapping.subjectId().map(EntityReference::getDataAsString).orElse(null),
-                mapping.subjectLabel().orElse(null)));
+                mapping.subjectLabel().orElse(null), mapping.subjectObsolete()));
+        // Predicates have no obsolescence notion; pass false so the predicate IRI never marks an entity.
         mapping.predicateIRI().map(Uri::asStringIRI).ifPresent(iri -> mergeEntityDetails(iri,
                 mapping.predicateId().map(EntityReference::getDataAsString).orElse(null),
-                mapping.predicateLabel().orElse(null)));
+                mapping.predicateLabel().orElse(null), false));
         mapping.objectIRI().map(Uri::asStringIRI).ifPresent(iri -> mergeEntityDetails(iri,
                 mapping.objectId().map(EntityReference::getDataAsString).orElse(null),
-                mapping.objectLabel().orElse(null)));
+                mapping.objectLabel().orElse(null), mapping.objectObsolete()));
     }
 
-    private void mergeEntityDetails(String iri, String curie, String label) {
+    private void mergeEntityDetails(String iri, String curie, String label, boolean obsolete) {
         EntityDetails entityDetails = entityDetailsByIri.computeIfAbsent(iri, key -> {
             EntityDetails created = new EntityDetails();
             created.setIri(iri);
@@ -240,6 +241,12 @@ public class DataloadSolr {
         }
         if (!entityDetails.isLabelPresent() && label != null && !label.isBlank()) {
             entityDetails.setLabel(label);
+        }
+        // Obsolescence is a property of the term (ADR-0041): once any sighting is obsolete, so is the
+        // entity — this is what carries obsolescence onto inferred mappings, whose endpoints are the
+        // subjects/objects of the asserted premises being folded here.
+        if (obsolete) {
+            entityDetails.setObsolete(true);
         }
     }
 

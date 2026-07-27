@@ -33,12 +33,12 @@ class EntitySuggestQueryBuilderTest {
 
     private static SolrQuery suggest(String query) {
         return EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                query, EntitySide.SUBJECT, List.of(), List.of(), 10);
+                query, EntitySide.SUBJECT, List.of(), List.of(), false, 10);
     }
 
     private static SolrQuery suggest(EntitySide side, List<WeakPredicate> includeWeakPredicates) {
         return EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", side, List.of(), includeWeakPredicates, 10);
+                "mel", side, List.of(), includeWeakPredicates, false, 10);
     }
 
     @Test
@@ -213,7 +213,7 @@ class EntitySuggestQueryBuilderTest {
     @Test
     void prefixFilterIsAnOrOfEscapedPrefixes() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of("MONDO", "EFO"), List.of(), 10);
+                "mel", EntitySide.SUBJECT, List.of("MONDO", "EFO"), List.of(), false, 10);
 
         assertThat(solrQuery.getFilterQueries())
                 .contains(EntityConstants.PREFIX + ":" + ClientUtils.escapeQueryChars("MONDO")
@@ -223,7 +223,7 @@ class EntitySuggestQueryBuilderTest {
     @Test
     void blankPrefixesAddNoPrefixFilter() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.ANY, List.of("  ", ""), List.of(), 10);
+                "mel", EntitySide.ANY, List.of("  ", ""), List.of(), false, 10);
 
         assertThat(String.join(" ", solrQuery.getFilterQueries()))
                 .doesNotContain(EntityConstants.PREFIX + ":");
@@ -247,7 +247,7 @@ class EntitySuggestQueryBuilderTest {
     @Test
     void rowsAreCappedAtTheMaximum() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of(), List.of(), 10_000);
+                "mel", EntitySide.SUBJECT, List.of(), List.of(), false, 10_000);
 
         assertThat(solrQuery.getRows()).isEqualTo(EntitySuggestQueryBuilder.MAX_SUGGEST_ROWS);
     }
@@ -255,9 +255,27 @@ class EntitySuggestQueryBuilderTest {
     @Test
     void rowsAreAtLeastOne() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of(), List.of(), 0);
+                "mel", EntitySide.SUBJECT, List.of(), List.of(), false, 0);
 
         assertThat(solrQuery.getRows()).isEqualTo(1);
+    }
+
+    @Test
+    void obsoleteEntitiesAreHiddenByDefault() {
+        SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
+                "mel", EntitySide.SUBJECT, List.of(), List.of(), false, 10);
+
+        assertThat(solrQuery.getFilterQueries())
+                .contains("*:* -" + EntityConstants.OBSOLETE + ":true");
+    }
+
+    @Test
+    void includeObsoleteAddsNoObsoleteFilter() {
+        SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
+                "mel", EntitySide.SUBJECT, List.of(), List.of(), true, 10);
+
+        assertThat(String.join(" ", solrQuery.getFilterQueries()))
+                .doesNotContain(EntityConstants.OBSOLETE);
     }
 
     /**

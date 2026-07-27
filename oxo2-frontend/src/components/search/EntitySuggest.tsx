@@ -35,6 +35,7 @@ export function EntitySuggest({
     side = 'subject',
     prefixes = [],
     includeWeakPredicates = [],
+    includeObsolete = false,
     label,
     placeholder,
     inputId,
@@ -53,6 +54,11 @@ export function EntitySuggest({
      * is suggestable at all, so it must match the search or a pick can land on an empty table.
      */
     includeWeakPredicates?: WeakPredicate[];
+    /**
+     * The "show obsolete terms" switch of the search this box feeds (ADR-0041). Like the weak
+     * predicates it decides suggestability, so it must match the search or a pick lands on empty rows.
+     */
+    includeObsolete?: boolean;
     label?: string;
     placeholder?: string;
     inputId?: string;
@@ -67,9 +73,11 @@ export function EntitySuggest({
     const { data: suggestions, isFetching } = useQuery({
         // weakPredicateKey is part of the key: ticking a box changes WHICH entities are suggestable,
         // so a cached list from the other state would be wrong, not merely stale.
-        queryKey: ["suggestEntities", debouncedValue.trim(), side, prefixes.join(","), weakPredicateKey],
+        queryKey: ["suggestEntities", debouncedValue.trim(), side, prefixes.join(","), weakPredicateKey,
+            includeObsolete],
         queryFn: () =>
-            fetchEntitySuggestions(debouncedValue.trim(), side, prefixes, includeWeakPredicates),
+            fetchEntitySuggestions(debouncedValue.trim(), side, prefixes, includeWeakPredicates, 10,
+                includeObsolete),
         enabled,
         staleTime: 5 * 60_000,
     });

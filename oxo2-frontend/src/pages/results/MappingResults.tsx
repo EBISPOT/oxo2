@@ -47,6 +47,9 @@ function MappingResults() {
         .getAll("wp")
         .map(asWeakPredicate)
         .filter((predicate): predicate is WeakPredicate => predicate !== null);
+    // Show obsolete terms (ADR-0041): the same `obs` param the results table reads, fed back so the form
+    // checkbox stays ticked on Back and re-submitting the search keeps it.
+    const includeObsolete = searchParams.get("obs") === "1";
     const isMap = curies === "_map";
 
     const queriesForBackend = isMap ? [] : (curies
@@ -62,6 +65,7 @@ function MappingResults() {
         labelMatch,
         corpus,
         includeWeakPredicates,
+        includeObsolete,
         // A batch of terms is what the multi-term entry produced; keep that mode on Back.
         searchMode: queriesForBackend.length > 1 ? "multiple" : "single",
     };

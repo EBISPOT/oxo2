@@ -173,6 +173,17 @@ public record Mapping (
         // chains premises from several sets and so has no single source category.
         @JsonProperty(MAPPING_SET_CATEGORY)
         Optional<MappingSetCategory> mappingSetCategory,
+        // Endpoint obsolescence (ADR-0041): true iff the subject / object of this mapping is an obsolete
+        // term (its IRI is a subject of an obsolete-flagged registry). Stamped by the SSSOM-to-JSON stage
+        // — and, for inferred mappings, by the inference stage — from the global obsolete-entity set.
+        // Primitive, defaulting false, so a doc indexed before this field reads not-obsolete. Omitted from
+        // the JSON when false (NON_DEFAULT) so a load with no obsolete registry is byte-for-byte unchanged.
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        @JsonProperty(SUBJECT_OBSOLETE)
+        boolean subjectObsolete,
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        @JsonProperty(OBJECT_OBSOLETE)
+        boolean objectObsolete,
         @JsonIgnore
         Optional<InferredMapping> explanation,
         @JsonProperty(EXPLANATION)
@@ -319,6 +330,10 @@ public record Mapping (
         // Left absent by default: only the SSSOM-to-JSON stage, which knows which config registry a
         // TSV came from, stamps it. Inferred mappings are built here without one (ADR-0027).
         private Optional<MappingSetCategory> mappingSetCategory = Optional.empty();
+        // ADR-0041: stamped true by the SSSOM-to-JSON / inference stages when the endpoint is an obsolete
+        // term; left false otherwise (including for every mapping when no registry is obsolete-flagged).
+        private boolean subjectObsolete = false;
+        private boolean objectObsolete = false;
         private Optional<InferredMapping> explanation = Optional.empty();
         private Optional<String> explanationAsString = Optional.empty();
         private List<InferredMapping> assertedMappings = new ArrayList<>();
@@ -539,6 +554,21 @@ public record Mapping (
         public Builder mappingSetCategory(String mappingSetCategory) {
             if (mappingSetCategory != null && !mappingSetCategory.isBlank())
                 this.mappingSetCategory = Optional.of(MappingSetCategory.fromCode(mappingSetCategory));
+            return this;
+        }
+
+        // ADR-0041: bound from Solr (BoolField) and from JSON; absent leaves the default false.
+        @Field(SUBJECT_OBSOLETE)
+        @JsonProperty(SUBJECT_OBSOLETE)
+        public Builder subjectObsolete(boolean subjectObsolete) {
+            this.subjectObsolete = subjectObsolete;
+            return this;
+        }
+
+        @Field(OBJECT_OBSOLETE)
+        @JsonProperty(OBJECT_OBSOLETE)
+        public Builder objectObsolete(boolean objectObsolete) {
+            this.objectObsolete = objectObsolete;
             return this;
         }
 
@@ -1247,6 +1277,8 @@ public record Mapping (
                     explanationLength,
                     inferenceType,
                     mappingSetCategory,
+                    subjectObsolete,
+                    objectObsolete,
                     explanation,
                     explanationAsString,
                     groupMembersAsString,

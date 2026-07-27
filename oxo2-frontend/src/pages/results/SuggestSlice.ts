@@ -69,6 +69,7 @@ export function fetchEntitySuggestions(
     prefixes: string[] = [],
     includeWeakPredicates: WeakPredicate[] = [],
     size = 10,
+    includeObsolete = false,
 ): Promise<EntitySuggestion[]> {
     const params = new URLSearchParams();
     params.set('q', query);
@@ -79,6 +80,11 @@ export function fetchEntitySuggestions(
     }
     for (const predicate of includeWeakPredicates) {
         params.append('includeWeakPredicates', predicate);
+    }
+    // Same rule as the weak predicates (ADR-0041): the suggest must hide/reveal obsolete terms exactly
+    // as the search it completes into, or a picked suggestion could land on an empty table.
+    if (includeObsolete) {
+        params.set('includeObsolete', 'true');
     }
     return get<EntitySuggestionResponse[]>(`/api/v2/suggest/entities?${params.toString()}`)
         .then((response) => response.map(fromEntitySuggestionResponse));

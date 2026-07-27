@@ -12,6 +12,7 @@ export interface MappingSetResponse {
     mapping_set_category?: string;
     prefix?: string;
     ontology?: string;
+    obsolete?: boolean;
 }
 
 export interface MappingSet {
@@ -27,6 +28,9 @@ export interface MappingSet {
     // Ontology CURIE prefix and display name (ADR-0038), populated only on ONTOLOGY sets; '' otherwise.
     prefix: string;
     ontology: string;
+    // True if every subject of this set is an obsolete term (ADR-0041). Hidden from the picker unless
+    // the "obsolete terms" switch is on; labelled by the Obsolete column when shown.
+    obsolete: boolean;
 }
 
 export function fromMappingSetResponse(r: MappingSetResponse): MappingSet {
@@ -41,5 +45,6 @@ export function fromMappingSetResponse(r: MappingSetResponse): MappingSet {
         mappingSetCategory: asMappingSetCategory(r.mapping_set_category),
         prefix: r.prefix ?? '',
         ontology: r.ontology ?? '',
+        obsolete: r.obsolete ?? false,
     };
 }

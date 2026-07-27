@@ -11,7 +11,7 @@ import {
     useMaterialReactTable,
 } from 'material-react-table';
 import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlFieldFilters, useUrlExactFilters,
-    useUrlWeakPredicates, fieldFiltersEqual} from "../../util/tableUrlState";
+    useUrlWeakPredicates, useUrlIncludeObsolete, fieldFiltersEqual} from "../../util/tableUrlState";
 import {Mapping} from "../../model/Mapping.ts";
 import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
 import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
@@ -158,6 +158,9 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     // search form writes on submit. The table honours it when scoping the query but no longer carries
     // its own control — the "Also show" checkboxes live solely on the search form now.
     const [weakPredicates] = useUrlWeakPredicates(true);
+    // Show obsolete terms (ADR-0041), written by the search form's switch as `obs`. Honoured here the
+    // same way as the weak predicates: it scopes the query, and there is no separate control on the table.
+    const [includeObsolete] = useUrlIncludeObsolete(true);
 
     // The filter inputs keep their own local state for responsive typing (seeded once from
     // the URL so a restored filter shows in the inputs); a short debounce copies them to
@@ -219,10 +222,11 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
         () => buildSearchRequest(
             queries, pagination.pageIndex, pagination.pageSize, columnFiltersForBackend, sorting,
             mappingSetIds, inferenceTypes, false,
-            subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates),
+            subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates,
+            includeObsolete),
         [queries, pagination.pageIndex, pagination.pageSize, columnFiltersForBackend, sorting,
             mappingSetIdsKey, inferenceTypes.join(","), subjectPrefixesKey, objectPrefixesKey,
-            labelMatch, mappingSetCategory, weakPredicatesKey]
+            labelMatch, mappingSetCategory, weakPredicatesKey, includeObsolete]
     );
     const { data, isLoading, isError } = useQuery({
         queryKey: [
@@ -239,6 +243,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             labelMatch,
             corpus,
             weakPredicatesKey,
+            includeObsolete,
             groupBySpo,
         ],
         queryFn: () =>
@@ -255,7 +260,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 objectPrefixes,
                 labelMatch, // label match mode (ADR-0026)
                 mappingSetCategory, // asserted corpora (ADR-0027)
-                weakPredicates // show the normally-hidden predicates the user ticked (ADR-0035)
+                weakPredicates, // show the normally-hidden predicates the user ticked (ADR-0035)
+                includeObsolete // show obsolete terms (ADR-0041)
             ),
         staleTime: Infinity,
     });
@@ -264,11 +270,12 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
     const handleExport = useCallback(() => {
         setIsExporting(true);
         exportMappings(queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
-            subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates)
+            subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates,
+            includeObsolete)
             .catch((error) => console.error("Export failed", error))
             .finally(() => setIsExporting(false));
     }, [queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
-        subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates]);
+        subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates, includeObsolete]);
 
     const mappingResults: MappingPage = data ? fromJson(data) : emptyMappingPage;
 

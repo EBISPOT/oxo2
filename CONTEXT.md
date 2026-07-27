@@ -283,6 +283,23 @@ needs a reindex; the category split works against the current index. See
 [ADR-0038](docs/adr/0038-promote-ontology-prefix-from-other-block.md). Affects `oxo2-shared`
 (`MappingSet`, `MappingConstants`/`MappingSetConstants`), `oxo2-dataload` (`oxo2-mappingsets` schema),
 `oxo2-backend` (`MappingSetSummary`, `MappingSetController`), and `oxo2-frontend` (`MappingSetSelector`).
+- **Obsolete terms are an endpoint property, hidden by default, and one control governs every surface**
+— an optional `"obsolete": true` on a `mapping_registries` entry means every subject of that registry is
+obsolete (operator knowledge, like `category`; read by a Groovy helper, not `OxoConfiguration`). Because a
+term is obsolete on *both* sides of mappings across files (an obsolete EFO term is the object of `MONDO →
+EFO` rows), the dataload runs a global pre-pass that unions the subject IRIs of every `obsolete:true`
+registry into one set, then stamps `subject_obsolete`/`object_obsolete` on every mapping (asserted **and**
+inferred), `obsolete` on every `oxo2-entities` doc, and `obsolete` on every `oxo2-mappingsets` doc.
+Inference is unchanged — obsolete terms still bridge the closure (the `obsolete → X → Z`
+replacement-discovery case), and an inferred mapping's flags reflect only its own endpoints, so a live↔live
+result that merely bridged an obsolete term stays visible. `includeObsolete` on the request (default false)
+excludes `subject_obsolete:true OR object_obsolete:true`; a single "Show obsolete terms" checkbox in More
+options drives the search `fq`, hides obsolete ontology sets in the picker (with an `Obsolete` column when
+revealed), and hides obsolete entities from the typeahead (ADR-0035's rule). See
+[ADR-0041](docs/adr/0041-obsolete-terms-endpoint-property-hidden-by-default.md). Affects `oxo2-shared`
+(`Mapping`/`MappingSet` + constants), `oxo2-dataload` (the `obsolete` config flag, the obsolete-entity
+pre-pass, all three Solr schemas), `oxo2-backend` (`SolrQueryBuilder`, `MappingSearchRequest`,
+`MappingSetSummary`, suggest) and `oxo2-frontend` (the checkbox, its URL param, `MappingSetSelector`).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **A config `url` may be a repo-relative path or a single `.tsv.gz`** — a relative local `url` resolves

@@ -459,6 +459,11 @@ public class ExplainInferredMappings {
                     objectDetails.getCurie() : "")
             .objectLabel((objectDetails != null && objectDetails.getLabel() != null) ?
                     objectDetails.getLabel() : "")
+            // ADR-0041: an inferred mapping's endpoints carry the obsolescence of the terms they name,
+            // harvested from the asserted premises. A live<->live inference that merely bridged an
+            // obsolete term has neither flag set and so stays visible by default.
+            .subjectObsolete(subjectDetails != null && subjectDetails.isObsolete())
+            .objectObsolete(objectDetails != null && objectDetails.isObsolete())
             .mappingJustification(OXOInferenceConstants.OXO_MAPPING_JUSTIFICATION)
             .mappingTool(OXOInferenceConstants.OXO_MAPPING_TOOL)
             .mappingSetId(inferredMappingSetId)

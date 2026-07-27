@@ -39,6 +39,14 @@ public final class EntityConstants {
     public static final String IS_OBJECT = "is_object";
 
     /**
+     * True when the entity is an obsolete term (ADR-0041): its IRI is a subject of an obsolete-flagged
+     * registry, so it took part in at least one mapping as an obsolete endpoint. The suggest hides
+     * obsolete entities unless the caller opts in, so it never offers a term the default search would
+     * then hide (ADR-0035's rule that a suggestion must be a promise the search returns rows).
+     */
+    public static final String OBSOLETE = "obsolete";
+
+    /**
      * Per-side mapping counts split by predicate bucket (ADR-0035). "Strong" is every predicate that
      * is NOT a {@link WeakPredicate}; the rest get one bucket each.
      *

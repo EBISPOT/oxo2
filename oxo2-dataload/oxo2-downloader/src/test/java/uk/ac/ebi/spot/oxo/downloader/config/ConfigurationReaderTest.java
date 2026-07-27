@@ -60,6 +60,29 @@ class ConfigurationReaderTest {
     }
 
     @Test
+    void readsRegistryObsoleteFlagWhenPresent(@TempDir Path tempDir) throws IOException {
+        // The strict mapper would reject `obsolete` if MappingRegistry did not declare it (ADR-0041) —
+        // and rejecting it would take the whole download stage down, so this pins the registration.
+        Path configFile = writeConfig(tempDir, """
+                {
+                  "mapping_registries": [
+                    { "id": "efo.live", "url": "https://example.org/live.sssom.tsv" },
+                    { "id": "efo.obsolete", "url": "https://example.org/obs.sssom.tsv", "obsolete": true }
+                  ]
+                }
+                """);
+
+        Optional<OxoConfiguration> configuration = ConfigurationReader.read(configFile.toString());
+
+        assertTrue(configuration.isPresent(), "a config carrying obsolete must still deserialize");
+        var registries = configuration.get().getMappingRegistries();
+        assertEquals(2, registries.size());
+        assertTrue(registries.get(0).getObsolete().isEmpty(),
+                "a registry without the key leaves obsolete unset (its subjects are live)");
+        assertEquals(Optional.of(true), registries.get(1).getObsolete());
+    }
+
+    @Test
     void unknownTopLevelKeyIsStillRejected(@TempDir Path tempDir) throws IOException {
         Path configFile = writeConfig(tempDir, """
                 {

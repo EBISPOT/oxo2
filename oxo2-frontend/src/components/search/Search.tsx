@@ -79,6 +79,11 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
     // suggestions offered here and the rows shown there are filtered by the same selection.
     const [weakPredicates, setWeakPredicates] =
         useState<WeakPredicate[]>(searchInput.includeWeakPredicates ?? DEFAULT_WEAK_PREDICATES);
+    // Show obsolete terms (ADR-0041). Local state here, carried into the results URL on submit as `obs`.
+    // The one switch governs the results table, the mapping-set picker below and the typeahead, so all
+    // three hide or reveal obsolete terms together. Off by default: an ordinary lookup does not want a
+    // live term's mappings to dead terms.
+    const [includeObsolete, setIncludeObsolete] = useState<boolean>(searchInput.includeObsolete ?? false);
 
     const { data: ontologies } = useQuery({
         queryKey: ["ontologies"], queryFn: fetchOntologies, staleTime: Infinity,
@@ -203,6 +208,10 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
         for (const predicate of weakPredicates) {
             params.append("wp", predicate);
         }
+        // Show obsolete terms (ADR-0041). Off is the default and stays out of the URL.
+        if (includeObsolete) {
+            params.append("obs", "1");
+        }
         const query = params.toString();
         navigate(`/search/${encodeURIComponent(curies)}${query ? `?${query}` : ""}`);
     };
@@ -219,6 +228,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
         setLabelMatch(DEFAULT_LABEL_MATCH);
         setCorpus(DEFAULT_CORPUS);
         setWeakPredicates(DEFAULT_WEAK_PREDICATES);
+        setIncludeObsolete(false);
         // On the results page, hand off to MappingResults to drop the query string (every
         // results-table filter, sort and search option lives there) and remount the table so its local
         // filter inputs re-seed empty instead of debouncing themselves back in — all while keeping the
@@ -249,6 +259,9 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
     if (weakPredicates.length > 0) {
         moreOptionsHints.push(
             `also showing ${weakPredicates.map((code) => WEAK_PREDICATE_SHORT_LABELS[code]).join(', ')}`);
+    }
+    if (includeObsolete) {
+        moreOptionsHints.push("including obsolete terms");
     }
     if (labelMatch !== DEFAULT_LABEL_MATCH) {
         moreOptionsHints.push(`label matching: ${LABEL_MATCH_LABELS[labelMatch].toLowerCase()}`);
@@ -313,6 +326,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
                         side="subject"
                         prefixes={subjectPrefixes}
                         includeWeakPredicates={weakPredicates}
+                        includeObsolete={includeObsolete}
                         placeholder="A label, CURIE or IRI — e.g. cataract, MP:0001289"
                     />
                 ) : (
@@ -424,6 +438,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
                                         <MappingSetSelector
                                             selectedIds={selectedIds}
                                             onSelectionChange={handleSelectionChange}
+                                            includeObsolete={includeObsolete}
                                         />
                                     </ThemeProvider>
                                 </div>
@@ -460,6 +475,23 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
                                 </span>
                             </label>
                         ))}
+                        {/* Show obsolete terms (ADR-0041). One switch drives this picker's rows, the
+                            results table and the typeahead, so all three hide or reveal them together. */}
+                        <label className="flex items-start gap-2 mb-1 mt-2">
+                            <input
+                                type="checkbox"
+                                className="mt-1"
+                                checked={includeObsolete}
+                                onChange={(event) => setIncludeObsolete(event.target.checked)}
+                            />
+                            <span>
+                                <span className="text-base">Obsolete terms</span>
+                                <span className="text-tertiary text-sm block">
+                                    Terms an ontology has deprecated. Hidden by default; a live term's
+                                    mappings to a dead one are hidden too.
+                                </span>
+                            </span>
+                        </label>
                     </div>
                     {/* Group 3: how free-text terms match labels (ADR-0026). */}
                     <div>

@@ -72,6 +72,8 @@ public enum MappingEnum {
     EXPLANATION(MappingConstants.EXPLANATION),
     INFERENCE_TYPE(MappingConstants.INFERENCE_TYPE),
     MAPPING_SET_CATEGORY(MappingConstants.MAPPING_SET_CATEGORY),
+    SUBJECT_OBSOLETE(MappingConstants.SUBJECT_OBSOLETE),
+    OBJECT_OBSOLETE(MappingConstants.OBJECT_OBSOLETE),
     MAPPING_ID(MappingConstants.MAPPING_ID),
     OBJECT_IRI(MappingConstants.OBJECT_IRI),
     PREDICATE_IRI(MappingConstants.PREDICATE_IRI),

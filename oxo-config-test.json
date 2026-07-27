@@ -8,12 +8,19 @@
     {
       "id": "efo.ols.obsolete",
       "url": "testcases/worktree/efo.ols.obsolete.sssom.tsv",
+      "category": "ontology",
+      "obsolete": true
+    },
+    {
+      "id": "mondo.ols",
+      "url": "testcases/worktree/mondo.ols.sssom.tsv",
       "category": "ontology"
     },
     {
-      "id": "mondo",
-      "url": "testcases/worktree/mondo.sssom.tsv",
-      "category": "ontology"
+      "id": "mondo.ols.obsolete",
+      "url": "testcases/worktree/mondo.ols.obsolete.sssom.tsv",
+      "category": "ontology",
+      "obsolete": true
     },
     {
       "id": "uniprot",
