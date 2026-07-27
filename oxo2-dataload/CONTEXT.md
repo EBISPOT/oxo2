@@ -119,6 +119,19 @@ category fails the run. Inferred mappings get no category: an inference chains p
 sets. The JAR's whole-tree `-i` mode applies one category to everything it finds, so it is only
 correct for a single-registry tree.
 
+This stage also stamps **obsolescence** ([ADR-0041](../docs/adr/0041-obsolete-terms-endpoint-property-hidden-by-default.md)).
+A `mapping_registries` entry may carry `obsolete: true`, meaning all its subjects are obsolete terms —
+operator knowledge like `category`, read by `lib/ObsoleteRegistries.groovy`. Because an obsolete term is
+obsolete on *both* sides of mappings across files (an obsolete EFO term is the object of `MONDO → EFO`
+rows), `sssom2json.nf` runs **two passes**: a Pass-1 `EXTRACT_OBSOLETE_ENTITIES` process (`--extract-obsolete-entities`)
+unions the subject IRIs of every obsolete registry into one `obsolete-entities.txt`, broadcast into the
+main run as `-b`; the main run stamps `subject_obsolete`/`object_obsolete` on each mapping by IRI lookup
+and `obsolete` on the set (from a per-file `--obsolete`). The same expansion serves both passes, so their
+IRIs cannot disagree. Inferred mappings inherit obsolescence from their endpoints (harvested from the
+asserted premises in `DataloadSolr`, no extra flag), and `mappings2entities` folds `obsolete` onto each
+entity doc. All the flags are `@JsonInclude(NON_DEFAULT)`, so a load with no obsolete registry is
+byte-for-byte unchanged.
+
 `TSV2JSON` also **promotes `prefix` and `ontology`** onto each mapping-set doc
 ([ADR-0038](../docs/adr/0038-promote-ontology-prefix-from-other-block.md)). OLS extracts carry the
 ontology's CURIE prefix and display name inside the SSSOM `other` extension block; `MappingSet`'s

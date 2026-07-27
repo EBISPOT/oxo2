@@ -113,6 +113,12 @@
   <field name="is_subject" type="boolean" indexed="true" stored="true" docValues="true"/>
   <field name="is_object" type="boolean" indexed="true" stored="true" docValues="true"/>
 
+  <!-- Term obsolescence (ADR-0041): true iff this entity is an obsolete term (its IRI is a subject of an
+       obsolete-flagged registry, i.e. it took part in a mapping as an obsolete endpoint). The suggest
+       hides obsolete entities unless the caller sets includeObsolete, so it never offers a term the
+       default search would then hide (ADR-0035's rule). docValues so it can be a filter/function query. -->
+  <field name="obsolete" type="boolean" indexed="true" stored="true" docValues="true"/>
+
   <!-- Per-side counts split by predicate bucket (ADR-0035). THESE are what the typeahead filters and
        ranks on: summing the buckets the user has enabled gives exactly the number of mappings their
        search will return, so a suggestion can never yield an empty table. "Strong" is every predicate

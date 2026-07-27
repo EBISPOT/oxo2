@@ -104,7 +104,8 @@ public class TSV2JSON {
 
     public static void processDirectory(String directory, String mappingSetOutputDirectory,
                                         String mappingsOutputDirectory,
-                                        MappingSetCategory mappingSetCategory) {
+                                        MappingSetCategory mappingSetCategory,
+                                        Set<String> obsoleteEntityIris, boolean setObsolete) {
 
         Map<String, MappingSet.Builder> filenameToExternalMetadataMap = readExternalMetadata(directory);
 
@@ -121,7 +122,8 @@ public class TSV2JSON {
                             externalMappingSetBuilderOptional = Optional.of(externalMappingBuilderSet);
                         }
                         processOneTSV(path.toFile(), externalMappingSetBuilderOptional,
-                                mappingSetOutputDirectory, mappingsOutputDirectory, mappingSetCategory);
+                                mappingSetOutputDirectory, mappingsOutputDirectory, mappingSetCategory,
+                                obsoleteEntityIris, setObsolete);
                     });
         } catch (Throwable t) {
             logger.error("Error while looking for .yml files in {}", directory, t);
@@ -136,10 +138,15 @@ public class TSV2JSON {
      * @param mappingSetOutputDirectory Output directory for mapping set JSON files
      * @param mappingsOutputDirectory Output directory for mapping JSON files
      * @param mappingSetCategory The OxO curation category of the registry this TSV came from (ADR-0027)
+     * @param obsoleteEntityIris The global obsolete-entity IRI set (ADR-0041); an endpoint is stamped
+     *                           obsolete iff its expanded IRI is in this set. Empty on a normal load.
+     * @param setObsolete        True iff this TSV's registry was config-flagged obsolete; stamped on the
+     *                           mapping-set doc.
      */
     public static void processFile(File tsvFile, String mappingSetOutputDirectory,
                                    String mappingsOutputDirectory,
-                                   MappingSetCategory mappingSetCategory) {
+                                   MappingSetCategory mappingSetCategory,
+                                   Set<String> obsoleteEntityIris, boolean setObsolete) {
         if (!tsvFile.exists() || !tsvFile.isFile()) {
             logger.error("TSV file does not exist or is not a file: {}", tsvFile);
             return;
@@ -166,7 +173,8 @@ public class TSV2JSON {
         }
 
         processOneTSV(tsvFile, externalMappingSetBuilderOptional,
-                mappingSetOutputDirectory, mappingsOutputDirectory, mappingSetCategory);
+                mappingSetOutputDirectory, mappingsOutputDirectory, mappingSetCategory,
+                obsoleteEntityIris, setObsolete);
     }
 
 
@@ -184,7 +192,8 @@ public class TSV2JSON {
                                        Optional<MappingSet.Builder> externalMappingSetBuilderOptional,
                                        String mappingSetOutputDirectory,
                                        String mappingsOutputDirectory,
-                                       MappingSetCategory mappingSetCategory) {
+                                       MappingSetCategory mappingSetCategory,
+                                       Set<String> obsoleteEntityIris, boolean setObsolete) {
         // Drop prior file's CURIE/URI caches before parsing this one. The caches
         // speed up repeated lookups within a single mapping set, but if left to
         // accumulate across files they retain every distinct entity string for
@@ -236,6 +245,9 @@ public class TSV2JSON {
         // The curation category is external to SSSOM — it comes from the OxO config entry for the
         // registry this TSV was downloaded from, not from any TSV column or metadata slot (ADR-0027).
         mappingSetBuilder.mappingSetCategory(mappingSetCategory.getCode());
+        // Set-level obsolescence (ADR-0041): stamped from the registry's config `obsolete` flag, so the
+        // mapping-set picker can hide and label obsolete ontology sets.
+        mappingSetBuilder.obsolete(setObsolete);
         MappingSet mappingSetMetadata = mappingSetBuilder.build();
 
         String baseFilename = mappingSetMetadata.mappingSetId().extractFragmentOrLastPathSegment();
@@ -323,6 +335,15 @@ public class TSV2JSON {
                 // join back to oxo2-mappingsets (ADR-0027). Not a propagated SSSOM slot.
                 mappingBuilder.mappingSetCategory(mappingSetCategory.getCode());
 
+                // Endpoint obsolescence (ADR-0041): a subject/object is obsolete iff its expanded IRI is
+                // in the global obsolete-entity set (the subjects of every obsolete-flagged registry).
+                // Keyed on the IRI, not the CURIE, because CURIE casing varies by source. The default
+                // search hides a mapping with either endpoint obsolete.
+                mappingBuilder.subjectObsolete(isObsoleteEndpoint(
+                        record.isSet(SUBJECT_ID) ? record.get(SUBJECT_ID) : "", optionalCurieMap, obsoleteEntityIris));
+                mappingBuilder.objectObsolete(isObsoleteEndpoint(
+                        record.isSet(OBJECT_ID) ? record.get(OBJECT_ID) : "", optionalCurieMap, obsoleteEntityIris));
+
                 Mapping mapping = mappingBuilder.build();
                 if (seenMappingIds.add(mapping.mappingId())) {
                     objectMapper.writeValue(gen, mapping);
@@ -358,6 +379,69 @@ public class TSV2JSON {
         }
         long endWriteTime = System.currentTimeMillis();
         logger.info("Time taken to write MappingSet JSON file: {} s", (endWriteTime - endReadTime) / 1000);
+    }
+
+    /**
+     * True iff the CURIE expands (via this file's curie map) to an IRI in the global obsolete-entity set
+     * (ADR-0041). An empty set — a load with no obsolete-flagged registry — short-circuits to false so
+     * the output is byte-for-byte unchanged.
+     */
+    private static boolean isObsoleteEndpoint(String curie, Optional<CurieMap> optionalCurieMap,
+                                              Set<String> obsoleteEntityIris) {
+        if (obsoleteEntityIris.isEmpty()) {
+            return false;
+        }
+        return resolveIri(curie, optionalCurieMap).map(obsoleteEntityIris::contains).orElse(false);
+    }
+
+    /** Expand a CURIE to its IRI string via the file's curie map, matching the main pass's subjectIRI. */
+    private static Optional<String> resolveIri(String curie, Optional<CurieMap> optionalCurieMap) {
+        if (curie == null || curie.isBlank() || optionalCurieMap.isEmpty()) {
+            return Optional.empty();
+        }
+        return new EntityReference(curie).toUri(optionalCurieMap.get()).map(Uri::asStringIRI);
+    }
+
+    /**
+     * Pass 1 of the obsolete-terms dataload (ADR-0041): the distinct expanded subject IRIs of one
+     * obsolete-flagged TSV. The union of these across every obsolete registry is the global
+     * obsolete-entity set that {@link #processOneTSV} stamps both endpoints against. Reuses the same
+     * curie-map resolution and {@link EntityReference#toUri} expansion as the main pass, so the IRIs the
+     * two produce for one term cannot disagree. External {@code .yml} sidecars are not consulted here:
+     * obsolete registries are OLS exports that carry an embedded SSSOM header.
+     */
+    public static Set<String> extractSubjectIris(File tsvFile) {
+        EntityReference.clearCache();
+        Uri.clearCache();
+        Set<String> subjectIris = new HashSet<>();
+        if (!tsvFile.exists() || !tsvFile.isFile()) {
+            logger.error("TSV file does not exist or is not a file: {}", tsvFile);
+            return subjectIris;
+        }
+
+        Optional<MappingSet.Builder> embeddedMappingSetBuilderOptional;
+        try {
+            embeddedMappingSetBuilderOptional = readYamlHeader(tsvFile);
+        } catch (IOException e) {
+            logger.error("Error while reading YAML header for TSV file {}", tsvFile, e);
+            return subjectIris;
+        }
+        if (embeddedMappingSetBuilderOptional.isEmpty()) {
+            embeddedMappingSetBuilderOptional = synthesizeMetadataFromColumns(tsvFile);
+        }
+        Optional<CurieMap> optionalCurieMap =
+                mergeCurieMaps(Optional.empty(), embeddedMappingSetBuilderOptional);
+
+        try (CSVParser parser = CSVParser.parse(tsvFile, java.nio.charset.StandardCharsets.UTF_8,
+                CSVFormat.TDF.builder().setCommentMarker('#').setHeader().build())) {
+            for (CSVRecord record : parser) {
+                resolveIri(record.isSet(SUBJECT_ID) ? record.get(SUBJECT_ID) : "", optionalCurieMap)
+                        .ifPresent(subjectIris::add);
+            }
+        } catch (IOException e) {
+            logger.error("Error while extracting subject IRIs from TSV file {}", tsvFile, e);
+        }
+        return subjectIris;
     }
 
     /**

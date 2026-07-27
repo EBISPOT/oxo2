@@ -304,7 +304,8 @@ public class SolrQueryBuilder {
                 mappingSearchRequest.getMappingSetCategory(),
                 mappingSearchRequest.getSubjectPrefixes(),
                 mappingSearchRequest.getObjectPrefixes(),
-                hiddenWeakPredicates(mappingSearchRequest)));
+                hiddenWeakPredicates(mappingSearchRequest),
+                mappingSearchRequest.isIncludeObsolete()));
         solrQuery = constructSortedFields(solrQuery, mappingSearchRequest);
 
         if (mappingSearchRequest.isGroupBySpo()) {
@@ -621,7 +622,8 @@ public class SolrQueryBuilder {
                 request.getMappingSetCategory(),
                 request.getSubjectPrefixes(),
                 request.getObjectPrefixes(),
-                hiddenWeakPredicates(request)));
+                hiddenWeakPredicates(request),
+                request.isIncludeObsolete()));
         solrQuery.setSort(UNIQUE_KEY, SolrQuery.ORDER.asc);
         return solrQuery;
     }
@@ -744,7 +746,8 @@ public class SolrQueryBuilder {
                                                    List<MappingSetCategory> mappingSetCategories,
                                                    List<String> subjectPrefixes,
                                                    List<String> objectPrefixes,
-                                                   List<WeakPredicate> hiddenWeakPredicates) {
+                                                   List<WeakPredicate> hiddenWeakPredicates,
+                                                   boolean includeObsolete) {
         List<String> filterQueriesList = new ArrayList<>();
 
         if (queryFilters != null) {
@@ -787,6 +790,11 @@ public class SolrQueryBuilder {
         String weakPredicateExclusion = weakPredicateExclusionClause(hiddenWeakPredicates);
         if (weakPredicateExclusion != null) {
             filterQueriesList.add(weakPredicateExclusion);
+        }
+
+        String obsoleteExclusion = obsoleteExclusionClause(includeObsolete);
+        if (obsoleteExclusion != null) {
+            filterQueriesList.add(obsoleteExclusion);
         }
 
         return filterQueriesList.toArray(new String[filterQueriesList.size()]);
@@ -885,6 +893,21 @@ public class SolrQueryBuilder {
                 .map(predicate -> field + ":\"" + ClientUtils.escapeQueryChars(predicate.iri()) + "\"")
                 .collect(Collectors.joining(" OR "));
         return "*:* -(" + excluded + ")";
+    }
+
+    /**
+     * Pure-negative filter hiding any mapping with an obsolete subject OR object (ADR-0041), unless the
+     * caller opted in. Null when {@code includeObsolete} is true, so the default reveal path adds no
+     * {@code fq}. As with the weak-predicate clause the leading {@code *:*} is required because Solr
+     * matches nothing for an only-negative filter. Docs indexed before the fields existed have neither
+     * flag set and so are never excluded — the feature is inert until a reindex populates them.
+     */
+    private static String obsoleteExclusionClause(boolean includeObsolete) {
+        if (includeObsolete) {
+            return null;
+        }
+        return "*:* -(" + MappingEnum.SUBJECT_OBSOLETE.getField() + ":true OR "
+                + MappingEnum.OBJECT_OBSOLETE.getField() + ":true)";
     }
 
     /**

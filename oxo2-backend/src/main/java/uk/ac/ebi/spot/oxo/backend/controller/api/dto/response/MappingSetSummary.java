@@ -18,5 +18,6 @@ public record MappingSetSummary(
         @Schema(description = "Source sets this set was derived from (full IRIs).") @JsonProperty(MAPPING_SET_SOURCE) List<String> mappingSetSource,
         @Schema(description = "OxO curation category: `ONTOLOGY` (OLS-derived) or `CURATED`; absent on the synthetic inferences set.") @JsonProperty(MAPPING_SET_CATEGORY) String mappingSetCategory,
         @Schema(description = "CURIE prefix of the ontology (ONTOLOGY sets only), e.g. `ADDICTO`.") @JsonProperty(PREFIX) String prefix,
-        @Schema(description = "Human-readable ontology name (ONTOLOGY sets only), e.g. `Addiction Ontology (ADDICTO)`.") @JsonProperty(ONTOLOGY) String ontology
+        @Schema(description = "Human-readable ontology name (ONTOLOGY sets only), e.g. `Addiction Ontology (ADDICTO)`.") @JsonProperty(ONTOLOGY) String ontology,
+        @Schema(description = "True if every subject of this set is an obsolete term (ADR-0041). Lets the picker hide and label obsolete ontology sets.") @JsonProperty(OBSOLETE) boolean obsolete
 ) {}

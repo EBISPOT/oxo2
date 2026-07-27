@@ -518,6 +518,12 @@
   <field name="object_label_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
   <field name="object_label_ci" type="string_ci" multiValued="false" indexed="true" stored="false"/>
   <field name="object_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
+  <!-- Endpoint obsolescence (ADR-0041): true iff this mapping's object is an obsolete term (its IRI is a
+       subject of an obsolete-flagged registry). Stamped by the dataload from the global obsolete-entity
+       set. Default search hides any mapping with subject_obsolete OR object_obsolete unless the caller
+       sets includeObsolete. Empty (false) on docs indexed before this field, exactly like
+       mapping_set_category — nothing hides until the next full dataload repopulates it. -->
+  <field name="object_obsolete" type="boolean" multiValued="false" indexed="true" stored="true"/>
   <field name="object_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="object_source" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_source_version" type="string" multiValued="false" indexed="true" stored="true"/>
@@ -560,6 +566,9 @@
        mapping_set_category was — nb_entity reads low until the next full dataload repopulates it. -->
   <field name="entity_id" type="strings" multiValued="true" indexed="false" stored="false" docValues="true"/>
   <field name="subject_match_field" type="strings" multiValued="true" indexed="true" stored="true"/>
+  <!-- Endpoint obsolescence (ADR-0041): true iff this mapping's subject is an obsolete term. See
+       object_obsolete for the shared default-hide semantics. -->
+  <field name="subject_obsolete" type="boolean" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_preprocessing" type="strings" multiValued="true" indexed="true" stored="true"/>
   <field name="subject_source" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="subject_source_version" type="string" multiValued="false" indexed="true" stored="true"/>

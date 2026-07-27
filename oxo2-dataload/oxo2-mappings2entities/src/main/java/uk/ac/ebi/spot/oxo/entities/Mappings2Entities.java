@@ -76,10 +76,12 @@ public class Mappings2Entities {
     private static final String SUBJECT_LABEL = "subject_label";
     private static final String SUBJECT_IRI = "subject_iri";
     private static final String SUBJECT_PREFIX = "subject_prefix";
+    private static final String SUBJECT_OBSOLETE = "subject_obsolete";
     private static final String OBJECT_ID = "object_id";
     private static final String OBJECT_LABEL = "object_label";
     private static final String OBJECT_IRI = "object_iri";
     private static final String OBJECT_PREFIX = "object_prefix";
+    private static final String OBJECT_OBSOLETE = "object_obsolete";
 
     /**
      * Read so each sighting can be bucketed by predicate (ADR-0035). The canonical IRI, not
@@ -191,8 +193,8 @@ public class Mappings2Entities {
 
         SolrQuery query = new SolrQuery("*:*");
         query.addFilterQuery(shardFilter(prefix));
-        query.setFields(SUBJECT_ID, SUBJECT_LABEL, SUBJECT_IRI, OBJECT_ID, OBJECT_LABEL, OBJECT_IRI,
-                PREDICATE_IRI);
+        query.setFields(SUBJECT_ID, SUBJECT_LABEL, SUBJECT_IRI, SUBJECT_OBSOLETE,
+                OBJECT_ID, OBJECT_LABEL, OBJECT_IRI, OBJECT_OBSOLETE, PREDICATE_IRI);
         query.setRows(PAGE_SIZE);
         // cursorMark requires a total ordering, so the sort must end in the uniqueKey.
         query.setSort(SolrQuery.SortClause.asc("id"));
@@ -261,10 +263,13 @@ public class Mappings2Entities {
         // checkboxes will actually return (ADR-0035).
         WeakPredicate weakPredicate = weakPredicateOf(string(document, PREDICATE_IRI));
 
+        // ADR-0041: this endpoint's obsolescence, denormalised onto every mapping by the dataload.
+        boolean obsolete = bool(document, asSubject ? SUBJECT_OBSOLETE : OBJECT_OBSOLETE);
+
         entities.computeIfAbsent(id, key -> new EntityDoc(key, curiePrefix.orElse(null)))
                 .observe(string(document, asSubject ? SUBJECT_LABEL : OBJECT_LABEL),
                         string(document, asSubject ? SUBJECT_IRI : OBJECT_IRI),
-                        asSubject, weakPredicate);
+                        asSubject, weakPredicate, obsolete);
     }
 
     /** The weak predicate this IRI names, or null when it names any other (i.e. a strong) predicate. */
@@ -283,6 +288,12 @@ public class Mappings2Entities {
     private static String string(SolrDocument document, String field) {
         Object value = document.getFirstValue(field);
         return value == null ? null : value.toString();
+    }
+
+    /** A boolean field, absent (the NON_DEFAULT case for obsolete flags) reading false. */
+    private static boolean bool(SolrDocument document, String field) {
+        Object value = document.getFirstValue(field);
+        return value instanceof Boolean booleanValue ? booleanValue : Boolean.parseBoolean(String.valueOf(value));
     }
 
     /** Streamed rather than built in memory: a large ontology's shard is a lot of JSON. */
@@ -307,6 +318,11 @@ public class Mappings2Entities {
                 json.writeNumberField(EntityConstants.MAPPING_COUNT, entity.mappingCount());
                 json.writeBooleanField(EntityConstants.IS_SUBJECT, entity.subjectCount() > 0);
                 json.writeBooleanField(EntityConstants.IS_OBJECT, entity.objectCount() > 0);
+                // ADR-0041: written only when true, so an entity core folded from a corpus with no
+                // obsolete registry is byte-for-byte unchanged; absent reads false in the suggest filter.
+                if (entity.obsolete()) {
+                    json.writeBooleanField(EntityConstants.OBSOLETE, true);
+                }
 
                 // The buckets the typeahead filters and ranks on (ADR-0035). Written unconditionally,
                 // zeros included: the suggest sums the enabled buckets as a function query, and a

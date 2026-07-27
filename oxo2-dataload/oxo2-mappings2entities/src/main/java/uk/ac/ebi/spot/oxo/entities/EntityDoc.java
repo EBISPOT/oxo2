@@ -40,6 +40,13 @@ final class EntityDoc {
     private final Map<WeakPredicate, Long> subjectCountsWeak = new EnumMap<>(WeakPredicate.class);
     private final Map<WeakPredicate, Long> objectCountsWeak = new EnumMap<>(WeakPredicate.class);
 
+    /**
+     * True once this entity is seen as an obsolete endpoint of any mapping (ADR-0041). Obsolescence is a
+     * property of the term, so a single obsolete sighting settles it — the suggest hides the entity by
+     * default so it never offers a term the default search would then hide.
+     */
+    private boolean obsolete;
+
     EntityDoc(String id, String prefix) {
         this.id = id;
         this.prefix = prefix;
@@ -51,14 +58,18 @@ final class EntityDoc {
      * @param asSubject     true when the entity is this mapping's subject, false when it is the object
      * @param weakPredicate the mapping's predicate when it is weak, else null — null is the common
      *                      case and means "strong", i.e. any predicate the search shows by default
+     * @param observedObsolete true when this sighting has the entity as an obsolete endpoint (ADR-0041)
      */
     void observe(String observedLabel, String observedIri, boolean asSubject,
-                 WeakPredicate weakPredicate) {
+                 WeakPredicate weakPredicate, boolean observedObsolete) {
         if (isBlank(label) && !isBlank(observedLabel)) {
             label = observedLabel;
         }
         if (isBlank(iri) && !isBlank(observedIri)) {
             iri = observedIri;
+        }
+        if (observedObsolete) {
+            obsolete = true;
         }
         if (weakPredicate == null) {
             if (asSubject) {
@@ -86,6 +97,10 @@ final class EntityDoc {
 
     String iri() {
         return iri;
+    }
+
+    boolean obsolete() {
+        return obsolete;
     }
 
     long subjectCountStrong() {

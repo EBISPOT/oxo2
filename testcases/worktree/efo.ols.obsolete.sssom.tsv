@@ -1,0 +1,472 @@
+# mapping_set_id: https://w3id.org/commons/ols/mappings/efo.ols.obsolete.sssom.tsv
+# mapping_set_group: ols_sssom_extracts
+# mapping_set_confidence: '0.7'
+# mapping_provider: https://www.ebi.ac.uk/ols4/ontologies/efo
+# mapping_tool: https://www.ebi.ac.uk/ols4
+# mapping_set_title: OLS extracted EFO mappings (obsolete terms)
+# mapping_set_description: These mappings were extracted during the OLS dataload from EFO for obsolete terms
+# mapping_date: '2026-07-27'
+# other:
+#   local_id: efo.ols.obsolete
+#   prefix: EFO
+#   ontology: Experimental Factor Ontology (EFO)
+# local_name: efo.ols.obsolete.sssom.tsv
+# curie_map:
+#   semapv: https://w3id.org/semapv/vocab/
+#   owl: http://www.w3.org/2002/07/owl#
+#   rdfs: http://www.w3.org/2000/01/rdf-schema#
+#   skos: http://www.w3.org/2004/02/skos/core#
+#   oboInOwl: http://www.geneontology.org/formats/oboInOwl#
+#   chebi: http://purl.obolibrary.org/obo/chebi/
+#   inchi: 'https://bioregistry.io/inchi:'
+#   inchikey: 'https://bioregistry.io/inchikey:'
+#   smiles: 'https://bioregistry.io/smiles:'
+#   EFO: http://www.ebi.ac.uk/efo/EFO_
+#   DOID: http://purl.obolibrary.org/obo/DOID_
+#   NCIT: http://purl.obolibrary.org/obo/NCIT_
+#   SCTID: http://purl.bioontology.org/ontology/SNOMEDCT/
+#   MESH: http://id.nlm.nih.gov/mesh/
+#   MedDRA: https://bioportal.bioontology.org/ontologies/MEDDRA?p=classes&conceptid=
+#   OMIM: https://omim.org/entry/
+#   Orphanet: http://www.orpha.net/ORDO/Orphanet_
+#   UMLS: https://uts.nlm.nih.gov/uts/umls/concept/
+#   CL: http://purl.obolibrary.org/obo/CL_
+#   NCIt: http://purl.obolibrary.org/obo/NCIT_
+#   BTO: http://purl.obolibrary.org/obo/BTO_
+#   EHDAA: http://purl.obolibrary.org/obo/EHDAA_
+#   EMAPA: 'http://www.informatics.jax.org/vocab/gxd/anatomy/EMAPA:'
+#   EV: http://purl.obolibrary.org/obo/EV_
+#   FMA: 'https://www.ebi.ac.uk/ols4/ontologies/fma/terms?obo_id=FMA:'
+#   MA: 'http://www.informatics.jax.org/searches/AMA.cgi?id=MA:'
+#   MAT: http://purl.obolibrary.org/obo/MAT_
+#   TAO: http://purl.obolibrary.org/obo/TAO_
+#   ZFA: 'https://zfin.org/action/ontology/term/ZFA:'
+#   MFO: http://purl.obolibrary.org/obo/MFO_
+#   XAO: http://purl.obolibrary.org/obo/XAO_
+#   SNOMEDCT: http://purl.bioontology.org/ontology/SNOMEDCT/
+#   ICD10: https://icd.who.int/browse10/2019/en#/
+#   ICD9: http://www.icd9data.com/getICD9Code.ashx?icd9=
+#   Wikipedia: http://en.wikipedia.org/wiki/
+#   ncit: http://purl.obolibrary.org/obo/NCIT_
+#   HGNC: 'https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:'
+#   HP: http://purl.obolibrary.org/obo/HP_
+#   ISBN: https://www.worldcat.org/search?q=bn%3A
+#   MONDO: http://purl.obolibrary.org/obo/MONDO_
+#   NCIm: http://ncim.nci.nih.gov/ncimbrowser/ConceptReport.jsp?dictionary=NCI%20MetaThesaurus&code=
+#   FBbt: 'http://flybase.org/cgi-bin/fbcvq.html?query=FBbt:'
+#   TADS: http://purl.obolibrary.org/obo/TADS_
+#   TGMA: http://purl.obolibrary.org/obo/TGMA_
+#   AAO: http://purl.obolibrary.org/obo/AAO_
+#   MO: https://mged.sourceforge.net/ontologies/MGEDontology.php#
+#   WBbt: http://www.wormbase.org/get?name=
+#   doid: http://purl.obolibrary.org/obo/DOID_
+#   MP: http://purl.obolibrary.org/obo/MP_
+#   PO: 'http://browser.planteome.org/amigo/term/PO:'
+#   ZEA: http://purl.obolibrary.org/obo/ZEA_
+#   PMID: https://pubmed.ncbi.nlm.nih.gov/
+#   FBdv: 'http://flybase.org/cgi-bin/fbcvq.html?query=FBdv:'
+#   WBls: http://www.wormbase.org/get?name=
+#   JAX: https://www.jax.org/strain/
+#   CLO: http://purl.obolibrary.org/obo/CLO_
+#   RRID: 'https://scicrunch.org/resolver/RRID:'
+#   PR: http://purl.obolibrary.org/obo/PR_
+#   UBERON: http://purl.obolibrary.org/obo/UBERON_
+#   CASRN: https://commonchemistry.cas.org/detail?cas_rn=
+#   DSSTox_Generic_SID: https://pubchem.ncbi.nlm.nih.gov/substance/
+#   OMIMPS: https://omim.org/MIM:PS
+#   GO: 'http://amigo.geneontology.org/amigo/term/GO:'
+#   obi: http://purl.obolibrary.org/obo/OBI_
+#   SCTID_2010_1_31: http://purl.bioontology.org/ontology/SNOMEDCT/
+#   IDO: http://purl.obolibrary.org/obo/IDO_
+#   UniProt: http://purl.uniprot.org/uniprot/
+#   ORDO: http://www.orpha.net/ORDO/Orphanet_
+#   uniprot: http://purl.uniprot.org/uniprot/
+#   doi: http://dx.doi.org/
+#   cmo: http://purl.obolibrary.org/obo/CMO_
+#   OBA: http://purl.obolibrary.org/obo/OBA_
+#   uniprot.disease: https://www.uniprot.org/diseases/
+#   Reactome: https://www.reactome.org/content/detail/
+#   CMO: http://purl.obolibrary.org/obo/CMO_
+#   ORCID: https://orcid.org/
+#   Medgen: https://www.ncbi.nlm.nih.gov/medgen/
+#   PubChem: https://pubchem.ncbi.nlm.nih.gov/compound/
+#   VT: http://purl.obolibrary.org/obo/VT_
+#   snomedct: http://purl.bioontology.org/ontology/SNOMEDCT/
+subject_id	predicate_id	object_id	mapping_justification	subject_label	object_label
+EFO:0000094	oboInOwl:hasDbXref	DOID:7061	semapv:UnspecifiedMatching	obsolete_B-cell acute lymphoblastic leukemia	
+EFO:0000094	oboInOwl:hasDbXref	EFO:0000094	semapv:UnspecifiedMatching	obsolete_B-cell acute lymphoblastic leukemia	obsolete_B-cell acute lymphoblastic leukemia
+EFO:0000094	oboInOwl:hasDbXref	NCIT:C8936	semapv:UnspecifiedMatching	obsolete_B-cell acute lymphoblastic leukemia	
+EFO:0000094	oboInOwl:hasDbXref	SCTID:277571004	semapv:UnspecifiedMatching	obsolete_B-cell acute lymphoblastic leukemia	
+EFO:0000095	oboInOwl:hasDbXref	DOID:1040	semapv:UnspecifiedMatching	obsolete_chronic lymphocytic leukemia	
+EFO:0000095	oboInOwl:hasDbXref	EFO:0000095	semapv:UnspecifiedMatching	obsolete_chronic lymphocytic leukemia	obsolete_chronic lymphocytic leukemia
+EFO:0000095	oboInOwl:hasDbXref	MESH:D015451	semapv:UnspecifiedMatching	obsolete_chronic lymphocytic leukemia	
+EFO:0000095	oboInOwl:hasDbXref	MedDRA:10008958	semapv:UnspecifiedMatching	obsolete_chronic lymphocytic leukemia	
+EFO:0000095	oboInOwl:hasDbXref	NCIT:C3163	semapv:UnspecifiedMatching	obsolete_chronic lymphocytic leukemia	
+EFO:0000095	oboInOwl:hasDbXref	OMIM:151400	semapv:UnspecifiedMatching	obsolete_chronic lymphocytic leukemia	
+EFO:0000095	oboInOwl:hasDbXref	Orphanet:67038	semapv:UnspecifiedMatching	obsolete_chronic lymphocytic leukemia	
+EFO:0000095	oboInOwl:hasDbXref	UMLS:C0023434	semapv:UnspecifiedMatching	obsolete_chronic lymphocytic leukemia	
+EFO:0000095	oboInOwl:hasDbXref	UMLS:C0855095	semapv:UnspecifiedMatching	obsolete_chronic lymphocytic leukemia	
+EFO:0000096	oboInOwl:hasDbXref	NCIT:C3457	semapv:UnspecifiedMatching	obsolete_neoplasm of mature B-cells	
+EFO:0000096	oboInOwl:hasDbXref	DOID:706	semapv:UnspecifiedMatching	obsolete_neoplasm of mature B-cells	
+EFO:0000096	oboInOwl:hasDbXref	EFO:0000096	semapv:UnspecifiedMatching	obsolete_neoplasm of mature B-cells	obsolete_neoplasm of mature B-cells
+EFO:0000096	oboInOwl:hasDbXref	NCIT:C27910	semapv:UnspecifiedMatching	obsolete_neoplasm of mature B-cells	
+EFO:0000096	oboInOwl:hasDbXref	SCTID:269476000	semapv:UnspecifiedMatching	obsolete_neoplasm of mature B-cells	
+EFO:0000096	oboInOwl:hasDbXref	UMLS:C1334633	semapv:UnspecifiedMatching	obsolete_neoplasm of mature B-cells	
+EFO:0000097	oboInOwl:hasDbXref	CL:0000236	semapv:UnspecifiedMatching	obsolete_B-lymphocyte	
+EFO:0000097	oboInOwl:hasDbXref	NCIt:C12474	semapv:UnspecifiedMatching	obsolete_B-lymphocyte	
+EFO:0000102	oboInOwl:hasDbXref	CL:0000236	semapv:UnspecifiedMatching	obsolete_B lymphocyte	
+EFO:0000102	oboInOwl:hasDbXref	NCIt:C12474	semapv:UnspecifiedMatching	obsolete_B lymphocyte	
+EFO:0000103	oboInOwl:hasDbXref	DOID:14691	semapv:UnspecifiedMatching	obsolete_Becker's muscular dystrophy	
+EFO:0000103	oboInOwl:hasDbXref	OMIM:300376	semapv:UnspecifiedMatching	obsolete_Becker's muscular dystrophy	
+EFO:0000105	oboInOwl:hasDbXref	NCIt:C22609	semapv:UnspecifiedMatching	obsolete_CNS brain cerebellum MMHCC	
+EFO:0000106	oboInOwl:hasDbXref	NCIt:C22615	semapv:UnspecifiedMatching	obsolete_CNS brain hippocampus MMHCC	
+EFO:0000107	oboInOwl:hasDbXref	BTO:0000614	semapv:UnspecifiedMatching	obsolete_hypothalamus	
+EFO:0000107	oboInOwl:hasDbXref	EHDAA:5446	semapv:UnspecifiedMatching	obsolete_hypothalamus	
+EFO:0000107	oboInOwl:hasDbXref	EMAPA:17536	semapv:UnspecifiedMatching	obsolete_hypothalamus	
+EFO:0000107	oboInOwl:hasDbXref	EV:0100225	semapv:UnspecifiedMatching	obsolete_hypothalamus	
+EFO:0000107	oboInOwl:hasDbXref	FMA:62008	semapv:UnspecifiedMatching	obsolete_hypothalamus	
+EFO:0000107	oboInOwl:hasDbXref	MA:0000173	semapv:UnspecifiedMatching	obsolete_hypothalamus	
+EFO:0000107	oboInOwl:hasDbXref	MAT:0000112	semapv:UnspecifiedMatching	obsolete_hypothalamus	
+EFO:0000107	oboInOwl:hasDbXref	NCIt:C22616	semapv:UnspecifiedMatching	obsolete_hypothalamus	
+EFO:0000107	oboInOwl:hasDbXref	TAO:0000032	semapv:UnspecifiedMatching	obsolete_hypothalamus	
+EFO:0000107	oboInOwl:hasDbXref	ZFA:0000032	semapv:UnspecifiedMatching	obsolete_hypothalamus	
+EFO:0000108	oboInOwl:hasDbXref	BTO:0001362	semapv:UnspecifiedMatching	obsolete_olfactory lobe	
+EFO:0000108	oboInOwl:hasDbXref	EHDAA:5480	semapv:UnspecifiedMatching	obsolete_olfactory lobe	
+EFO:0000108	oboInOwl:hasDbXref	EMAPA:17778	semapv:UnspecifiedMatching	obsolete_olfactory lobe	
+EFO:0000108	oboInOwl:hasDbXref	EV:0100173	semapv:UnspecifiedMatching	obsolete_olfactory lobe	
+EFO:0000108	oboInOwl:hasDbXref	FMA:77624	semapv:UnspecifiedMatching	obsolete_olfactory lobe	
+EFO:0000108	oboInOwl:hasDbXref	MAT:0000116	semapv:UnspecifiedMatching	obsolete_olfactory lobe	
+EFO:0000108	oboInOwl:hasDbXref	NCIt:C22619	semapv:UnspecifiedMatching	obsolete_olfactory lobe	
+EFO:0000108	oboInOwl:hasDbXref	ZFA:0000402	semapv:UnspecifiedMatching	obsolete_olfactory lobe	
+EFO:0000109	oboInOwl:hasDbXref	NCIt:C22622	semapv:UnspecifiedMatching	obsolete_CNS brain striatum MMHCC	
+EFO:0000110	oboInOwl:hasDbXref	BTO:0001279	semapv:UnspecifiedMatching	obsolete_spinal cord	
+EFO:0000110	oboInOwl:hasDbXref	EHDAA:2863	semapv:UnspecifiedMatching	obsolete_spinal cord	
+EFO:0000110	oboInOwl:hasDbXref	EMAPA:17577	semapv:UnspecifiedMatching	obsolete_spinal cord	
+EFO:0000110	oboInOwl:hasDbXref	EV:0100316	semapv:UnspecifiedMatching	obsolete_spinal cord	
+EFO:0000110	oboInOwl:hasDbXref	FMA:7647	semapv:UnspecifiedMatching	obsolete_spinal cord	
+EFO:0000110	oboInOwl:hasDbXref	MA:0000216	semapv:UnspecifiedMatching	obsolete_spinal cord	
+EFO:0000110	oboInOwl:hasDbXref	MAT:0000183	semapv:UnspecifiedMatching	obsolete_spinal cord	
+EFO:0000110	oboInOwl:hasDbXref	MFO:0002860	semapv:UnspecifiedMatching	obsolete_spinal cord	
+EFO:0000110	oboInOwl:hasDbXref	TAO:0000075	semapv:UnspecifiedMatching	obsolete_spinal cord	
+EFO:0000110	oboInOwl:hasDbXref	XAO:0000020	semapv:UnspecifiedMatching	obsolete_spinal cord	
+EFO:0000110	oboInOwl:hasDbXref	ZFA:0000075	semapv:UnspecifiedMatching	obsolete_spinal cord	
+EFO:0000173	oboInOwl:hasDbXref	DOID:3369	semapv:UnspecifiedMatching	obsolete_Ewing family tumor	
+EFO:0000173	oboInOwl:hasDbXref	MESH:D012512	semapv:UnspecifiedMatching	obsolete_Ewing family tumor	
+EFO:0000173	oboInOwl:hasDbXref	NCIt:C27291	semapv:UnspecifiedMatching	obsolete_Ewing family tumor	
+EFO:0000173	oboInOwl:hasDbXref	NCIt:C4817	semapv:UnspecifiedMatching	obsolete_Ewing family tumor	
+EFO:0000173	oboInOwl:hasDbXref	SNOMEDCT:76909002	semapv:UnspecifiedMatching	obsolete_Ewing family tumor	
+EFO:0000174	oboInOwl:hasDbXref	DOID:3369	semapv:UnspecifiedMatching	obsolete_Ewing sarcoma	
+EFO:0000174	oboInOwl:hasDbXref	EFO:0000174	semapv:UnspecifiedMatching	obsolete_Ewing sarcoma	obsolete_Ewing sarcoma
+EFO:0000174	oboInOwl:hasDbXref	MESH:D012512	semapv:UnspecifiedMatching	obsolete_Ewing sarcoma	
+EFO:0000174	oboInOwl:hasDbXref	MedDRA:10015560	semapv:UnspecifiedMatching	obsolete_Ewing sarcoma	
+EFO:0000174	oboInOwl:hasDbXref	NCIT:C4817	semapv:UnspecifiedMatching	obsolete_Ewing sarcoma	
+EFO:0000174	oboInOwl:hasDbXref	OMIM:612219	semapv:UnspecifiedMatching	obsolete_Ewing sarcoma	
+EFO:0000174	oboInOwl:hasDbXref	Orphanet:319	semapv:UnspecifiedMatching	obsolete_Ewing sarcoma	
+EFO:0000174	oboInOwl:hasDbXref	UMLS:C0553580	semapv:UnspecifiedMatching	obsolete_Ewing sarcoma	
+EFO:0000178	oboInOwl:hasDbXref	OMIM:613659	semapv:UnspecifiedMatching	obsolete_gastric carcinoma	
+EFO:0000178	oboInOwl:hasDbXref	DOID:10538	semapv:UnspecifiedMatching	obsolete_gastric carcinoma	
+EFO:0000178	oboInOwl:hasDbXref	DOID:5517	semapv:UnspecifiedMatching	obsolete_gastric carcinoma	
+EFO:0000178	oboInOwl:hasDbXref	EFO:0000178	semapv:UnspecifiedMatching	obsolete_gastric carcinoma	obsolete_gastric carcinoma
+EFO:0000178	oboInOwl:hasDbXref	NCIT:C4911	semapv:UnspecifiedMatching	obsolete_gastric carcinoma	
+EFO:0000178	oboInOwl:hasDbXref	SCTID:187741001	semapv:UnspecifiedMatching	obsolete_gastric carcinoma	
+EFO:0000178	oboInOwl:hasDbXref	UMLS:C0153420	semapv:UnspecifiedMatching	obsolete_gastric carcinoma	
+EFO:0000178	oboInOwl:hasDbXref	UMLS:C0699791	semapv:UnspecifiedMatching	obsolete_gastric carcinoma	
+EFO:0000181	oboInOwl:hasDbXref	DOID:5520	semapv:UnspecifiedMatching	obsolete_head and neck squamous cell carcinoma	
+EFO:0000181	oboInOwl:hasDbXref	EFO:0000181	semapv:UnspecifiedMatching	obsolete_head and neck squamous cell carcinoma	obsolete_head and neck squamous cell carcinoma
+EFO:0000181	oboInOwl:hasDbXref	MESH:D000077195	semapv:UnspecifiedMatching	obsolete_head and neck squamous cell carcinoma	
+EFO:0000181	oboInOwl:hasDbXref	MedDRA:10060121	semapv:UnspecifiedMatching	obsolete_head and neck squamous cell carcinoma	
+EFO:0000181	oboInOwl:hasDbXref	NCIT:C34447	semapv:UnspecifiedMatching	obsolete_head and neck squamous cell carcinoma	
+EFO:0000181	oboInOwl:hasDbXref	OMIM:275355	semapv:UnspecifiedMatching	obsolete_head and neck squamous cell carcinoma	
+EFO:0000181	oboInOwl:hasDbXref	Orphanet:67037	semapv:UnspecifiedMatching	obsolete_head and neck squamous cell carcinoma	
+EFO:0000181	oboInOwl:hasDbXref	SCTID:716659002	semapv:UnspecifiedMatching	obsolete_head and neck squamous cell carcinoma	
+EFO:0000181	oboInOwl:hasDbXref	UMLS:C1168401	semapv:UnspecifiedMatching	obsolete_head and neck squamous cell carcinoma	
+EFO:0000182	oboInOwl:hasDbXref	MedDRA:10007416	semapv:UnspecifiedMatching	obsolete_hepatocellular carcinoma	
+EFO:0000182	oboInOwl:hasDbXref	MedDRA:10024658	semapv:UnspecifiedMatching	obsolete_hepatocellular carcinoma	
+EFO:0000182	oboInOwl:hasDbXref	DOID:684	semapv:UnspecifiedMatching	obsolete_hepatocellular carcinoma	
+EFO:0000182	oboInOwl:hasDbXref	DOID:686	semapv:UnspecifiedMatching	obsolete_hepatocellular carcinoma	
+EFO:0000182	oboInOwl:hasDbXref	EFO:0000182	semapv:UnspecifiedMatching	obsolete_hepatocellular carcinoma	obsolete_hepatocellular carcinoma
+EFO:0000182	oboInOwl:hasDbXref	MESH:D006528	semapv:UnspecifiedMatching	obsolete_hepatocellular carcinoma	
+EFO:0000182	oboInOwl:hasDbXref	MedDRA:10049010	semapv:UnspecifiedMatching	obsolete_hepatocellular carcinoma	
+EFO:0000182	oboInOwl:hasDbXref	NCIT:C3099	semapv:UnspecifiedMatching	obsolete_hepatocellular carcinoma	
+EFO:0000182	oboInOwl:hasDbXref	OMIM:114550	semapv:UnspecifiedMatching	obsolete_hepatocellular carcinoma	
+EFO:0000182	oboInOwl:hasDbXref	Orphanet:88673	semapv:UnspecifiedMatching	obsolete_hepatocellular carcinoma	
+EFO:0000183	oboInOwl:hasDbXref	OMIM:236000	semapv:UnspecifiedMatching	obsolete_Hodgkins lymphoma	
+EFO:0000183	oboInOwl:hasDbXref	DOID:8567	semapv:UnspecifiedMatching	obsolete_Hodgkins lymphoma	
+EFO:0000183	oboInOwl:hasDbXref	EFO:0000183	semapv:UnspecifiedMatching	obsolete_Hodgkins lymphoma	obsolete_Hodgkins lymphoma
+EFO:0000183	oboInOwl:hasDbXref	ICD10:C81	semapv:UnspecifiedMatching	obsolete_Hodgkins lymphoma	
+EFO:0000183	oboInOwl:hasDbXref	ICD9:201	semapv:UnspecifiedMatching	obsolete_Hodgkins lymphoma	
+EFO:0000183	oboInOwl:hasDbXref	MESH:D006689	semapv:UnspecifiedMatching	obsolete_Hodgkins lymphoma	
+EFO:0000183	oboInOwl:hasDbXref	NCIT:C9357	semapv:UnspecifiedMatching	obsolete_Hodgkins lymphoma	
+EFO:0000183	oboInOwl:hasDbXref	Orphanet:98293	semapv:UnspecifiedMatching	obsolete_Hodgkins lymphoma	
+EFO:0000186	oboInOwl:hasDbXref	DOID:3008	semapv:UnspecifiedMatching	obsolete_invasive breast ductal carcinoma	
+EFO:0000186	oboInOwl:hasDbXref	EFO:0000186	semapv:UnspecifiedMatching	obsolete_invasive breast ductal carcinoma	obsolete_invasive breast ductal carcinoma
+EFO:0000186	oboInOwl:hasDbXref	NCIT:C4194	semapv:UnspecifiedMatching	obsolete_invasive breast ductal carcinoma	
+EFO:0000186	oboInOwl:hasDbXref	SCTID:408643008	semapv:UnspecifiedMatching	obsolete_invasive breast ductal carcinoma	
+EFO:0000191	oboInOwl:hasDbXref	DOID:0050909	semapv:UnspecifiedMatching	obsolete_MALT lymphoma	
+EFO:0000191	oboInOwl:hasDbXref	EFO:0000191	semapv:UnspecifiedMatching	obsolete_MALT lymphoma	obsolete_MALT lymphoma
+EFO:0000191	oboInOwl:hasDbXref	MedDRA:10060707	semapv:UnspecifiedMatching	obsolete_MALT lymphoma	
+EFO:0000191	oboInOwl:hasDbXref	NCIT:C3898	semapv:UnspecifiedMatching	obsolete_MALT lymphoma	
+EFO:0000191	oboInOwl:hasDbXref	OMIM:137245	semapv:UnspecifiedMatching	obsolete_MALT lymphoma	
+EFO:0000191	oboInOwl:hasDbXref	Orphanet:52417	semapv:UnspecifiedMatching	obsolete_MALT lymphoma	
+EFO:0000191	oboInOwl:hasDbXref	SCTID:277622004	semapv:UnspecifiedMatching	obsolete_MALT lymphoma	
+EFO:0000191	oboInOwl:hasDbXref	UMLS:C0242647	semapv:UnspecifiedMatching	obsolete_MALT lymphoma	
+EFO:0000191	oboInOwl:hasDbXref	UMLS:C1850900	semapv:UnspecifiedMatching	obsolete_MALT lymphoma	
+EFO:0000191	oboInOwl:hasDbXref	Wikipedia:MALT_lymphoma	semapv:UnspecifiedMatching	obsolete_MALT lymphoma	
+EFO:0000192	oboInOwl:hasDbXref	DOID:3687	semapv:UnspecifiedMatching	obsolete_MELAS syndrome	
+EFO:0000192	oboInOwl:hasDbXref	MESH:D017241	semapv:UnspecifiedMatching	obsolete_MELAS syndrome	
+EFO:0000192	oboInOwl:hasDbXref	OMIM:540000	semapv:UnspecifiedMatching	obsolete_MELAS syndrome	
+EFO:0000193	oboInOwl:hasDbXref	NCIt:C19750	semapv:UnspecifiedMatching	obsolete_MMHCC part	
+EFO:0000194	oboInOwl:hasDbXref	DOID:5940	semapv:UnspecifiedMatching	obsolete_malignant peripheral nerve sheath tumor class	
+EFO:0000194	oboInOwl:hasDbXref	MESH:D018317	semapv:UnspecifiedMatching	obsolete_malignant peripheral nerve sheath tumor class	
+EFO:0000194	oboInOwl:hasDbXref	NCIt:C3798	semapv:UnspecifiedMatching	obsolete_malignant peripheral nerve sheath tumor class	
+EFO:0000194	oboInOwl:hasDbXref	SNOMEDCT:19897006	semapv:UnspecifiedMatching	obsolete_malignant peripheral nerve sheath tumor class	
+EFO:0000194	oboInOwl:hasDbXref	SNOMEDCT:404037002	semapv:UnspecifiedMatching	obsolete_malignant peripheral nerve sheath tumor class	
+EFO:0000196	oboInOwl:hasDbXref	EFO:0000196	semapv:UnspecifiedMatching	obsolete_metastatic prostate cancer	obsolete_metastatic prostate cancer
+EFO:0000196	oboInOwl:hasDbXref	NCIT:C8946	semapv:UnspecifiedMatching	obsolete_metastatic prostate cancer	
+EFO:0000196	oboInOwl:hasDbXref	SCTID:314994000	semapv:UnspecifiedMatching	obsolete_metastatic prostate cancer	
+EFO:0000197	oboInOwl:hasDbXref	DOID:3030	semapv:UnspecifiedMatching	obsolete_mucinous carcinoma	
+EFO:0000197	oboInOwl:hasDbXref	EFO:0000197	semapv:UnspecifiedMatching	obsolete_mucinous carcinoma	obsolete_mucinous carcinoma
+EFO:0000197	oboInOwl:hasDbXref	MESH:D002288	semapv:UnspecifiedMatching	obsolete_mucinous carcinoma	
+EFO:0000197	oboInOwl:hasDbXref	NCIT:C26712	semapv:UnspecifiedMatching	obsolete_mucinous carcinoma	
+EFO:0000197	oboInOwl:hasDbXref	UMLS:C0007130	semapv:UnspecifiedMatching	obsolete_mucinous carcinoma	
+EFO:0000197	oboInOwl:hasDbXref	UMLS:C0334368	semapv:UnspecifiedMatching	obsolete_mucinous carcinoma	
+EFO:0000198	oboInOwl:hasDbXref	MedDRA:10068361	semapv:UnspecifiedMatching	obsolete_myelodysplastic syndrome	
+EFO:0000198	oboInOwl:hasDbXref	DOID:0050908	semapv:UnspecifiedMatching	obsolete_myelodysplastic syndrome	
+EFO:0000198	oboInOwl:hasDbXref	EFO:0000198	semapv:UnspecifiedMatching	obsolete_myelodysplastic syndrome	obsolete_myelodysplastic syndrome
+EFO:0000198	oboInOwl:hasDbXref	MedDRA:10028532	semapv:UnspecifiedMatching	obsolete_myelodysplastic syndrome	
+EFO:0000198	oboInOwl:hasDbXref	NCIT:C3247	semapv:UnspecifiedMatching	obsolete_myelodysplastic syndrome	
+EFO:0000198	oboInOwl:hasDbXref	OMIM:614286	semapv:UnspecifiedMatching	obsolete_myelodysplastic syndrome	
+EFO:0000198	oboInOwl:hasDbXref	Orphanet:52688	semapv:UnspecifiedMatching	obsolete_myelodysplastic syndrome	
+EFO:0000198	oboInOwl:hasDbXref	SCTID:109995007	semapv:UnspecifiedMatching	obsolete_myelodysplastic syndrome	
+EFO:0000198	oboInOwl:hasDbXref	UMLS:C0033027	semapv:UnspecifiedMatching	obsolete_myelodysplastic syndrome	
+EFO:0000198	oboInOwl:hasDbXref	UMLS:C3463824	semapv:UnspecifiedMatching	obsolete_myelodysplastic syndrome	
+EFO:0000199	oboInOwl:hasDbXref	DOID:0050866	semapv:UnspecifiedMatching	obsolete_oral squamous cell carcinoma	
+EFO:0000199	oboInOwl:hasDbXref	EFO:0000199	semapv:UnspecifiedMatching	obsolete_oral squamous cell carcinoma	obsolete_oral squamous cell carcinoma
+EFO:0000199	oboInOwl:hasDbXref	NCIT:C4833	semapv:UnspecifiedMatching	obsolete_oral squamous cell carcinoma	
+EFO:0000199	oboInOwl:hasDbXref	Orphanet:502363	semapv:UnspecifiedMatching	obsolete_oral squamous cell carcinoma	
+EFO:0000199	oboInOwl:hasDbXref	SCTID:307502000	semapv:UnspecifiedMatching	obsolete_oral squamous cell carcinoma	
+EFO:0000199	oboInOwl:hasDbXref	UMLS:C0585362	semapv:UnspecifiedMatching	obsolete_oral squamous cell carcinoma	
+EFO:0000200	oboInOwl:hasDbXref	MedDRA:10035229	semapv:UnspecifiedMatching	obsolete_plasma cell neoplasm	
+EFO:0000200	oboInOwl:hasDbXref	DOID:6536	semapv:UnspecifiedMatching	obsolete_plasma cell neoplasm	
+EFO:0000200	oboInOwl:hasDbXref	EFO:0000200	semapv:UnspecifiedMatching	obsolete_plasma cell neoplasm	obsolete_plasma cell neoplasm
+EFO:0000200	oboInOwl:hasDbXref	MESH:D054219	semapv:UnspecifiedMatching	obsolete_plasma cell neoplasm	
+EFO:0000200	oboInOwl:hasDbXref	NCIT:C4665	semapv:UnspecifiedMatching	obsolete_plasma cell neoplasm	
+EFO:0000200	oboInOwl:hasDbXref	Orphanet:98282	semapv:UnspecifiedMatching	obsolete_plasma cell neoplasm	
+EFO:0000200	oboInOwl:hasDbXref	SCTID:415111003	semapv:UnspecifiedMatching	obsolete_plasma cell neoplasm	
+EFO:0000200	oboInOwl:hasDbXref	UMLS:C1959632	semapv:UnspecifiedMatching	obsolete_plasma cell neoplasm	
+EFO:0000203	oboInOwl:hasDbXref	DOID:7442	semapv:UnspecifiedMatching	obsolete_monoclonal gammopathy	
+EFO:0000203	oboInOwl:hasDbXref	MESH:D008998	semapv:UnspecifiedMatching	obsolete_monoclonal gammopathy	
+EFO:0000203	oboInOwl:hasDbXref	MedDRA:10060880	semapv:UnspecifiedMatching	obsolete_monoclonal gammopathy	
+EFO:0000203	oboInOwl:hasDbXref	NCIt:C35548	semapv:UnspecifiedMatching	obsolete_monoclonal gammopathy	
+EFO:0000203	oboInOwl:hasDbXref	SNOMEDCT:277577000	semapv:UnspecifiedMatching	obsolete_monoclonal gammopathy	
+EFO:0000203	oboInOwl:hasDbXref	SNOMEDCT:35601003	semapv:UnspecifiedMatching	obsolete_monoclonal gammopathy	
+EFO:0000203	oboInOwl:hasDbXref	SNOMEDCT:58648008	semapv:UnspecifiedMatching	obsolete_monoclonal gammopathy	
+EFO:0000204	oboInOwl:hasDbXref	OMIM:262890	semapv:UnspecifiedMatching	obsolete_Scott syndrome	
+EFO:0000204	oboInOwl:hasDbXref	SNOMEDCT:128098009	semapv:UnspecifiedMatching	obsolete_Scott syndrome	
+EFO:0000205	oboInOwl:hasDbXref	EFO:0000205	semapv:UnspecifiedMatching	obsolete_stage I endometrioid carcinoma	obsolete_stage I endometrioid carcinoma
+EFO:0000206	oboInOwl:hasDbXref	EFO:0000206	semapv:UnspecifiedMatching	obsolete_stage II endometrioid carcinoma	obsolete_stage II endometrioid carcinoma
+EFO:0000209	skos:exactMatch	ncit:C3183	semapv:UnspecifiedMatching	obsolete_T-cell acute lymphoblastic leukemia	
+EFO:0000209	oboInOwl:hasDbXref	EFO:0000209	semapv:UnspecifiedMatching	obsolete_T-cell acute lymphoblastic leukemia	obsolete_T-cell acute lymphoblastic leukemia
+EFO:0000209	oboInOwl:hasDbXref	HGNC:5056	semapv:UnspecifiedMatching	obsolete_T-cell acute lymphoblastic leukemia	
+EFO:0000209	oboInOwl:hasDbXref	NCIT:C3183	semapv:UnspecifiedMatching	obsolete_T-cell acute lymphoblastic leukemia	
+EFO:0000210	oboInOwl:hasDbXref	CL:0000542	semapv:UnspecifiedMatching	obsolete_T lymphocyte	
+EFO:0000211	skos:exactMatch	ncit:C4340	semapv:UnspecifiedMatching	obsolete_unspecified peripheral T-cell lymphoma	
+EFO:0000211	oboInOwl:hasDbXref	EFO:0000211	semapv:UnspecifiedMatching	obsolete_unspecified peripheral T-cell lymphoma	obsolete_unspecified peripheral T-cell lymphoma
+EFO:0000211	oboInOwl:hasDbXref	NCIT:C4340	semapv:UnspecifiedMatching	obsolete_unspecified peripheral T-cell lymphoma	
+EFO:0000212	oboInOwl:hasDbXref	DOID:2154	semapv:UnspecifiedMatching	obsolete_Wilms tumor	
+EFO:0000212	oboInOwl:hasDbXref	MESH:D009396	semapv:UnspecifiedMatching	obsolete_Wilms tumor	
+EFO:0000212	oboInOwl:hasDbXref	OMIM:194070	semapv:UnspecifiedMatching	obsolete_Wilms tumor	
+EFO:0000213	oboInOwl:hasDbXref	NCIt:C12664	semapv:UnspecifiedMatching	obsolete_abdominal cavity	
+EFO:0000216	oboInOwl:hasDbXref	DOID:3025	semapv:UnspecifiedMatching	obsolete_acinar cell carcinoma	
+EFO:0000216	oboInOwl:hasDbXref	EFO:0000216	semapv:UnspecifiedMatching	obsolete_acinar cell carcinoma	obsolete_acinar cell carcinoma
+EFO:0000216	oboInOwl:hasDbXref	MESH:D018267	semapv:UnspecifiedMatching	obsolete_acinar cell carcinoma	
+EFO:0000216	oboInOwl:hasDbXref	NCIT:C3768	semapv:UnspecifiedMatching	obsolete_acinar cell carcinoma	
+EFO:0000216	oboInOwl:hasDbXref	UMLS:C0206685	semapv:UnspecifiedMatching	obsolete_acinar cell carcinoma	
+EFO:0000217	oboInOwl:hasDbXref	DOID:4029	semapv:UnspecifiedMatching	obsolete_gastritis	
+EFO:0000217	oboInOwl:hasDbXref	ICD10:K29	semapv:UnspecifiedMatching	obsolete_gastritis	
+EFO:0000217	oboInOwl:hasDbXref	MESH:D005756	semapv:UnspecifiedMatching	obsolete_gastritis	
+EFO:0000217	oboInOwl:hasDbXref	MedDRA:10017853	semapv:UnspecifiedMatching	obsolete_gastritis	
+EFO:0000217	oboInOwl:hasDbXref	NCIt:C26780	semapv:UnspecifiedMatching	obsolete_gastritis	
+EFO:0000217	oboInOwl:hasDbXref	SNOMEDCT:4556007	semapv:UnspecifiedMatching	obsolete_gastritis	
+EFO:0000218	oboInOwl:hasDbXref	OMIM:133180	semapv:UnspecifiedMatching	obsolete_acute erythroleukemia	
+EFO:0000218	oboInOwl:hasDbXref	MESH:D004915	semapv:UnspecifiedMatching	obsolete_acute erythroleukemia	
+EFO:0000218	oboInOwl:hasDbXref	NCIT:C8923	semapv:UnspecifiedMatching	obsolete_acute erythroleukemia	
+EFO:0000218	oboInOwl:hasDbXref	Orphanet:318	semapv:UnspecifiedMatching	obsolete_acute erythroleukemia	
+EFO:0000218	oboInOwl:hasDbXref	SCTID:93451002	semapv:UnspecifiedMatching	obsolete_acute erythroleukemia	
+EFO:0000218	oboInOwl:hasDbXref	UMLS:C0023440	semapv:UnspecifiedMatching	obsolete_acute erythroleukemia	
+EFO:0000219	oboInOwl:hasDbXref	DOID:5600	semapv:UnspecifiedMatching	obsolete_acute lymphoblastic leukemia	
+EFO:0000219	oboInOwl:hasDbXref	NCIt:C7055	semapv:UnspecifiedMatching	obsolete_acute lymphoblastic leukemia	
+EFO:0000220	oboInOwl:hasDbXref	DOID:1037	semapv:UnspecifiedMatching	obsolete_acute lymphoblastic leukemia	
+EFO:0000220	oboInOwl:hasDbXref	DOID:9952	semapv:UnspecifiedMatching	obsolete_acute lymphoblastic leukemia	
+EFO:0000220	oboInOwl:hasDbXref	EFO:0000220	semapv:UnspecifiedMatching	obsolete_acute lymphoblastic leukemia	obsolete_acute lymphoblastic leukemia
+EFO:0000220	oboInOwl:hasDbXref	HP:0006721	semapv:UnspecifiedMatching	obsolete_acute lymphoblastic leukemia	
+EFO:0000220	oboInOwl:hasDbXref	ICD10:C91	semapv:UnspecifiedMatching	obsolete_acute lymphoblastic leukemia	
+EFO:0000220	oboInOwl:hasDbXref	ICD9:204	semapv:UnspecifiedMatching	obsolete_acute lymphoblastic leukemia	
+EFO:0000220	oboInOwl:hasDbXref	NCIT:C3167	semapv:UnspecifiedMatching	obsolete_acute lymphoblastic leukemia	
+EFO:0000220	oboInOwl:hasDbXref	Orphanet:513	semapv:UnspecifiedMatching	obsolete_acute lymphoblastic leukemia	
+EFO:0000220	oboInOwl:hasDbXref	SCTID:91857003	semapv:UnspecifiedMatching	obsolete_acute lymphoblastic leukemia	
+EFO:0000221	oboInOwl:hasDbXref	DOID:8864	semapv:UnspecifiedMatching	obsolete_acute monocytic leukemia	
+EFO:0000221	oboInOwl:hasDbXref	EFO:0000221	semapv:UnspecifiedMatching	obsolete_acute monocytic leukemia	obsolete_acute monocytic leukemia
+EFO:0000221	oboInOwl:hasDbXref	MESH:D007948	semapv:UnspecifiedMatching	obsolete_acute monocytic leukemia	
+EFO:0000221	oboInOwl:hasDbXref	MedDRA:10000871	semapv:UnspecifiedMatching	obsolete_acute monocytic leukemia	
+EFO:0000221	oboInOwl:hasDbXref	MedDRA:10059439	semapv:UnspecifiedMatching	obsolete_acute monocytic leukemia	
+EFO:0000221	oboInOwl:hasDbXref	NCIT:C4861	semapv:UnspecifiedMatching	obsolete_acute monocytic leukemia	
+EFO:0000221	oboInOwl:hasDbXref	OMIM:151380	semapv:UnspecifiedMatching	obsolete_acute monocytic leukemia	
+EFO:0000221	oboInOwl:hasDbXref	Orphanet:514	semapv:UnspecifiedMatching	obsolete_acute monocytic leukemia	
+EFO:0000221	oboInOwl:hasDbXref	SCTID:413441006	semapv:UnspecifiedMatching	obsolete_acute monocytic leukemia	
+EFO:0000221	oboInOwl:hasDbXref	UMLS:C0023465	semapv:UnspecifiedMatching	obsolete_acute monocytic leukemia	
+EFO:0000221	oboInOwl:hasDbXref	UMLS:C1318544	semapv:UnspecifiedMatching	obsolete_acute monocytic leukemia	
+EFO:0000222	oboInOwl:hasDbXref	DOID:9119	semapv:UnspecifiedMatching	obsolete_acute myeloid leukemia	
+EFO:0000222	oboInOwl:hasDbXref	EFO:0000222	semapv:UnspecifiedMatching	obsolete_acute myeloid leukemia	obsolete_acute myeloid leukemia
+EFO:0000222	oboInOwl:hasDbXref	MESH:D015470	semapv:UnspecifiedMatching	obsolete_acute myeloid leukemia	
+EFO:0000222	oboInOwl:hasDbXref	MedDRA:10000880	semapv:UnspecifiedMatching	obsolete_acute myeloid leukemia	
+EFO:0000222	oboInOwl:hasDbXref	NCIT:C3171	semapv:UnspecifiedMatching	obsolete_acute myeloid leukemia	
+EFO:0000222	oboInOwl:hasDbXref	OMIM:601626	semapv:UnspecifiedMatching	obsolete_acute myeloid leukemia	
+EFO:0000222	oboInOwl:hasDbXref	Orphanet:519	semapv:UnspecifiedMatching	obsolete_acute myeloid leukemia	
+EFO:0000222	oboInOwl:hasDbXref	SCTID:91861009	semapv:UnspecifiedMatching	obsolete_acute myeloid leukemia	
+EFO:0000222	oboInOwl:hasDbXref	UMLS:C0023467	semapv:UnspecifiedMatching	obsolete_acute myeloid leukemia	
+EFO:0000223	oboInOwl:hasDbXref	EFO:0000223	semapv:UnspecifiedMatching	obsolete_acute myelomonocytic leukemia	obsolete_acute myelomonocytic leukemia
+EFO:0000223	oboInOwl:hasDbXref	MedDRA:10000890	semapv:UnspecifiedMatching	obsolete_acute myelomonocytic leukemia	
+EFO:0000223	oboInOwl:hasDbXref	NCIT:C7463	semapv:UnspecifiedMatching	obsolete_acute myelomonocytic leukemia	
+EFO:0000223	oboInOwl:hasDbXref	Orphanet:517	semapv:UnspecifiedMatching	obsolete_acute myelomonocytic leukemia	
+EFO:0000223	oboInOwl:hasDbXref	SCTID:110005000	semapv:UnspecifiedMatching	obsolete_acute myelomonocytic leukemia	
+EFO:0000223	oboInOwl:hasDbXref	UMLS:C0023479	semapv:UnspecifiedMatching	obsolete_acute myelomonocytic leukemia	
+EFO:0000224	oboInOwl:hasDbXref	DOID:0060318	semapv:UnspecifiedMatching	obsolete_acute promyelocytic leukemia	
+EFO:0000224	oboInOwl:hasDbXref	EFO:0000224	semapv:UnspecifiedMatching	obsolete_acute promyelocytic leukemia	obsolete_acute promyelocytic leukemia
+EFO:0000224	oboInOwl:hasDbXref	MESH:D015473	semapv:UnspecifiedMatching	obsolete_acute promyelocytic leukemia	
+EFO:0000224	oboInOwl:hasDbXref	MedDRA:10001019	semapv:UnspecifiedMatching	obsolete_acute promyelocytic leukemia	
+EFO:0000224	oboInOwl:hasDbXref	NCIT:C3182	semapv:UnspecifiedMatching	obsolete_acute promyelocytic leukemia	
+EFO:0000224	oboInOwl:hasDbXref	OMIM:612376	semapv:UnspecifiedMatching	obsolete_acute promyelocytic leukemia	
+EFO:0000224	oboInOwl:hasDbXref	Orphanet:520	semapv:UnspecifiedMatching	obsolete_acute promyelocytic leukemia	
+EFO:0000224	oboInOwl:hasDbXref	SCTID:110004001	semapv:UnspecifiedMatching	obsolete_acute promyelocytic leukemia	
+EFO:0000224	oboInOwl:hasDbXref	UMLS:C0023487	semapv:UnspecifiedMatching	obsolete_acute promyelocytic leukemia	
+EFO:0000225	oboInOwl:hasDbXref	ISBN:978-0-387-84846-4	semapv:UnspecifiedMatching	obsolete_acute quadriplegic myopathy	
+EFO:0000225	oboInOwl:hasDbXref	ISBN:978-0-387-84847-1	semapv:UnspecifiedMatching	obsolete_acute quadriplegic myopathy	
+EFO:0000225	oboInOwl:hasDbXref	MONDO:0004969	semapv:UnspecifiedMatching	obsolete_acute quadriplegic myopathy	
+EFO:0000225	oboInOwl:hasDbXref	NCIm:C1135345	semapv:UnspecifiedMatching	obsolete_acute quadriplegic myopathy	
+EFO:0000227	oboInOwl:hasDbXref	ZFA:0000311	semapv:UnspecifiedMatching	obsolete_adductor mandibulae complex	
+EFO:0000228	oboInOwl:hasDbXref	DOID:299	semapv:UnspecifiedMatching	obsolete_adenocarcinoma	
+EFO:0000228	oboInOwl:hasDbXref	EFO:0000228	semapv:UnspecifiedMatching	obsolete_adenocarcinoma	obsolete_adenocarcinoma
+EFO:0000228	oboInOwl:hasDbXref	MESH:D000230	semapv:UnspecifiedMatching	obsolete_adenocarcinoma	
+EFO:0000228	oboInOwl:hasDbXref	NCIT:C2852	semapv:UnspecifiedMatching	obsolete_adenocarcinoma	
+EFO:0000228	oboInOwl:hasDbXref	SCTID:443961001	semapv:UnspecifiedMatching	obsolete_adenocarcinoma	
+EFO:0000228	oboInOwl:hasDbXref	UMLS:C0001418	semapv:UnspecifiedMatching	obsolete_adenocarcinoma	
+EFO:0000229	oboInOwl:hasDbXref	ZFA:0001198	semapv:UnspecifiedMatching	obsolete_adenohypophyseal placode	
+EFO:0000230	oboInOwl:hasDbXref	BTO:0000040	semapv:UnspecifiedMatching	obsolete_adenohypophysis	
+EFO:0000230	oboInOwl:hasDbXref	ZFA:0001282	semapv:UnspecifiedMatching	obsolete_adenohypophysis	
+EFO:0000231	oboInOwl:hasDbXref	DOID:0080202	semapv:UnspecifiedMatching	obsolete_adenoid cystic carcinoma	
+EFO:0000231	oboInOwl:hasDbXref	EFO:0000231	semapv:UnspecifiedMatching	obsolete_adenoid cystic carcinoma	obsolete_adenoid cystic carcinoma
+EFO:0000231	oboInOwl:hasDbXref	MESH:D003528	semapv:UnspecifiedMatching	obsolete_adenoid cystic carcinoma	
+EFO:0000231	oboInOwl:hasDbXref	NCIT:C2970	semapv:UnspecifiedMatching	obsolete_adenoid cystic carcinoma	
+EFO:0000231	oboInOwl:hasDbXref	UMLS:C0010606	semapv:UnspecifiedMatching	obsolete_adenoid cystic carcinoma	
+EFO:0000232	oboInOwl:hasDbXref	DOID:657	semapv:UnspecifiedMatching	obsolete_adenoma	
+EFO:0000232	oboInOwl:hasDbXref	EFO:0000232	semapv:UnspecifiedMatching	obsolete_adenoma	obsolete_adenoma
+EFO:0000232	oboInOwl:hasDbXref	MESH:D000236	semapv:UnspecifiedMatching	obsolete_adenoma	
+EFO:0000232	oboInOwl:hasDbXref	NCIT:C2855	semapv:UnspecifiedMatching	obsolete_adenoma	
+EFO:0000232	oboInOwl:hasDbXref	SCTID:443416007	semapv:UnspecifiedMatching	obsolete_adenoma	
+EFO:0000232	oboInOwl:hasDbXref	UMLS:C0001430	semapv:UnspecifiedMatching	obsolete_adenoma	
+EFO:0000233	oboInOwl:hasDbXref	DOID:4829	semapv:UnspecifiedMatching	obsolete_adenosquamous lung carcinoma	
+EFO:0000233	oboInOwl:hasDbXref	EFO:0000233	semapv:UnspecifiedMatching	obsolete_adenosquamous lung carcinoma	obsolete_adenosquamous lung carcinoma
+EFO:0000233	oboInOwl:hasDbXref	NCIT:C9133	semapv:UnspecifiedMatching	obsolete_adenosquamous lung carcinoma	
+EFO:0000233	oboInOwl:hasDbXref	SCTID:707405009	semapv:UnspecifiedMatching	obsolete_adenosquamous lung carcinoma	
+EFO:0000233	oboInOwl:hasDbXref	UMLS:C0279557	semapv:UnspecifiedMatching	obsolete_adenosquamous lung carcinoma	
+EFO:0000235	oboInOwl:hasDbXref	NCIt:C22703	semapv:UnspecifiedMatching	obsolete_adipose tissue MMHCC	
+EFO:0000236	oboInOwl:hasDbXref	NCIt:C22704	semapv:UnspecifiedMatching	obsolete_adipose tissue brown MMHCC	
+EFO:0000237	oboInOwl:hasDbXref	BTO:0000045	semapv:UnspecifiedMatching	obsolete_adrenal cortex	
+EFO:0000237	oboInOwl:hasDbXref	EMAPA:18427	semapv:UnspecifiedMatching	obsolete_adrenal cortex	
+EFO:0000237	oboInOwl:hasDbXref	EV:0100136	semapv:UnspecifiedMatching	obsolete_adrenal cortex	
+EFO:0000237	oboInOwl:hasDbXref	MA:0000118	semapv:UnspecifiedMatching	obsolete_adrenal cortex	
+EFO:0000237	oboInOwl:hasDbXref	MAT:0000494	semapv:UnspecifiedMatching	obsolete_adrenal cortex	
+EFO:0000237	oboInOwl:hasDbXref	NCIt:C12396	semapv:UnspecifiedMatching	obsolete_adrenal cortex	
+EFO:0000237	oboInOwl:hasDbXref	XAO:0000165	semapv:UnspecifiedMatching	obsolete_adrenal cortex	
+EFO:0000239	oboInOwl:hasDbXref	OMIM:171300	semapv:UnspecifiedMatching	obsolete_adrenal gland pheochromocytoma	
+EFO:0000239	oboInOwl:hasDbXref	DOID:0050892	semapv:UnspecifiedMatching	obsolete_adrenal gland pheochromocytoma	
+EFO:0000239	oboInOwl:hasDbXref	EFO:0000239	semapv:UnspecifiedMatching	obsolete_adrenal gland pheochromocytoma	obsolete_adrenal gland pheochromocytoma
+EFO:0000239	oboInOwl:hasDbXref	NCIT:C3326	semapv:UnspecifiedMatching	obsolete_adrenal gland pheochromocytoma	
+EFO:0000243	oboInOwl:hasDbXref	BTO:0000810	semapv:UnspecifiedMatching	obsolete_Malpighian tubule	
+EFO:0000243	oboInOwl:hasDbXref	FBbt:00005725	semapv:UnspecifiedMatching	obsolete_Malpighian tubule	
+EFO:0000243	oboInOwl:hasDbXref	FBbt:00005786	semapv:UnspecifiedMatching	obsolete_Malpighian tubule	
+EFO:0000243	oboInOwl:hasDbXref	MAT:0000123	semapv:UnspecifiedMatching	obsolete_Malpighian tubule	
+EFO:0000243	oboInOwl:hasDbXref	TADS:0000163	semapv:UnspecifiedMatching	obsolete_Malpighian tubule	
+EFO:0000243	oboInOwl:hasDbXref	TGMA:0001038	semapv:UnspecifiedMatching	obsolete_Malpighian tubule	
+EFO:0000247	oboInOwl:hasDbXref	DOID:8461	semapv:UnspecifiedMatching	obsolete_Aicardi syndrome	
+EFO:0000247	oboInOwl:hasDbXref	NCIt:C35256	semapv:UnspecifiedMatching	obsolete_Aicardi syndrome	
+EFO:0000247	oboInOwl:hasDbXref	OMIM:304050	semapv:UnspecifiedMatching	obsolete_Aicardi syndrome	
+EFO:0000247	oboInOwl:hasDbXref	SNOMEDCT:80651009	semapv:UnspecifiedMatching	obsolete_Aicardi syndrome	
+EFO:0000248	oboInOwl:hasDbXref	DOID:4051	semapv:UnspecifiedMatching	obsolete_alveolar rhabdomyosarcoma	
+EFO:0000248	oboInOwl:hasDbXref	EFO:0000248	semapv:UnspecifiedMatching	obsolete_alveolar rhabdomyosarcoma	obsolete_alveolar rhabdomyosarcoma
+EFO:0000306	skos:exactMatch	doid:0060548	semapv:UnspecifiedMatching	obsolete_breast tumor luminal	
+EFO:0000705	skos:exactMatch	ncit:C27263	semapv:UnspecifiedMatching	obsolete_spindle cell tumor	
+EFO:0002504	skos:exactMatch	ncit:C3783	semapv:UnspecifiedMatching	obsolete_serous cystadenoma	
+EFO:0002938	skos:exactMatch	ncit:C9465	semapv:UnspecifiedMatching	obsolete_hypopharyngeal carcinoma	
+EFO:0003023	skos:exactMatch	PR:000024939	semapv:UnspecifiedMatching	obsolete_interferon beta	interferon beta
+EFO:0003024	skos:exactMatch	PR:000000017	semapv:UnspecifiedMatching	obsolete_interferon gamma	interferon gamma
+EFO:0003028	skos:exactMatch	ncit:C3250	semapv:UnspecifiedMatching	obsolete_acute myeloblastic leukemia with maturation	
+EFO:0003172	skos:exactMatch	PR:000013438	semapv:UnspecifiedMatching	obsolete_pleiotrophin	pleiotrophin
+EFO:0003199	skos:exactMatch	PR:000009758	semapv:UnspecifiedMatching	obsolete_leptin	leptin
+EFO:0003233	skos:exactMatch	PR:000007141	semapv:UnspecifiedMatching	obsolete_erythropoietin	erythropoietin
+EFO:0003236	skos:exactMatch	PR:000016318	semapv:UnspecifiedMatching	obsolete_thrombopoietin	thrombopoietin
+EFO:0003941	skos:exactMatch	PR:000014836	semapv:UnspecifiedMatching	obsolete_sex hormone-binding globulin	sex hormone-binding globulin
+EFO:0005708	skos:exactMatch	ncit:C9385	semapv:UnspecifiedMatching	obsolete_renal cell adenocarcinoma	
+EFO:0005816	skos:exactMatch	PR:000010173	semapv:UnspecifiedMatching	obsolete_microtubule-associated protein tau	microtubule-associated protein tau
+EFO:0006719	skos:exactMatch	ncit:C4072	semapv:UnspecifiedMatching	obsolete_mesonephric adenocarcinoma	
+EFO:0007271	skos:closeMatch	doid:153	semapv:UnspecifiedMatching	obsolete_fibroepithelial neoplasm	
+EFO:0009709	skos:exactMatch	ncit:C3261	semapv:UnspecifiedMatching	obsolete_metastatic neoplasm	
+EFO:0009781	skos:exactMatch	doid:0060078	semapv:UnspecifiedMatching	obsolete_progesterone-receptor negative breast cancer	
+EFO:1000066	skos:exactMatch	ncit:C7462	semapv:UnspecifiedMatching	obsolete_ACTH-Producing Pituitary Gland Adenoma	
+EFO:1000105	skos:exactMatch	ncit:C4121	semapv:UnspecifiedMatching	obsolete_Basaloid Carcinoma	
+EFO:1000106	skos:exactMatch	ncit:C48305	semapv:UnspecifiedMatching	obsolete_Benign Adrenal Gland Pheochromocytoma	
+EFO:1000125	skos:closeMatch	ncit:C39836	semapv:UnspecifiedMatching	obsolete_Bladder Adenocarcinoma	
+EFO:1000158	skos:exactMatch	ncit:C9293	semapv:UnspecifiedMatching	obsolete_Central Nervous System Neoplasm	
+EFO:1000188	skos:exactMatch	ncit:C5497	semapv:UnspecifiedMatching	obsolete_Colon Neuroendocrine Tumor G1	
+EFO:1000194	skos:exactMatch	ncit:C5681	semapv:UnspecifiedMatching	obsolete_Colorectal Juvenile Polyp	
+EFO:1000238	skos:exactMatch	ncit:C27838	semapv:UnspecifiedMatching	obsolete_Endometrial Serous Adenocarcinoma	
+EFO:1000247	skos:exactMatch	ncit:C5778	semapv:UnspecifiedMatching	obsolete_Extrahepatic Bile Duct Adenosquamous Carcinoma	
+EFO:1000248	skos:exactMatch	ncit:C5777	semapv:UnspecifiedMatching	obsolete_Extrahepatic Bile Duct Squamous Cell Carcinoma	
+EFO:1000255	skos:exactMatch	ncit:C7075	semapv:UnspecifiedMatching	obsolete_Fibroblastic Neoplasm	
+EFO:1000261	skos:closeMatch	ncit:C7381	semapv:UnspecifiedMatching	obsolete_Follicular Variant Thyroid Gland Papillary Carcinoma	
+EFO:1000286	skos:exactMatch	ncit:C35815	semapv:UnspecifiedMatching	obsolete_Granulocytic Sarcoma	
+EFO:1000295	skos:exactMatch	ncit:C54664	semapv:UnspecifiedMatching	obsolete_Hidradenocarcinoma	
+EFO:1000377	skos:exactMatch	ncit:C6882	semapv:UnspecifiedMatching	obsolete_Micropapillary Serous Carcinoma	
+EFO:1000401	skos:exactMatch	ncit:C36127	semapv:UnspecifiedMatching	obsolete_Non-Seminomatous Lesion	
+EFO:1000417	skos:exactMatch	ncit:C40061	semapv:UnspecifiedMatching	obsolete_Ovarian Endometrioid Adenocarcinoma with Squamous Differentiation	
+EFO:1000515	skos:exactMatch	ncit:C3678	semapv:UnspecifiedMatching	obsolete_Salivary Gland Basal Cell Adenocarcinoma	
+EFO:1000573	skos:exactMatch	ncit:C3877	semapv:UnspecifiedMatching	obsolete_Testicular Teratoma	
+EFO:1000575	skos:exactMatch	ncit:C27912	semapv:UnspecifiedMatching	obsolete_Therapy-Related Myeloid Neoplasm	
+EFO:1000649	skos:exactMatch	doid:0060075	semapv:UnspecifiedMatching	obsolete_estrogen-receptor positive breast cancer	
+EFO:1000650	skos:exactMatch	doid:0060076	semapv:UnspecifiedMatching	obsolete_estrogen-receptor negative breast cancer	
+EFO:1001007	skos:closeMatch	doid:4711	semapv:UnspecifiedMatching	obsolete_krebs 2 carcinoma	
+EFO:1001339	skos:exactMatch	ncit:C3081	semapv:UnspecifiedMatching	obsolete_Heart neoplasm	
+EFO:1001938	skos:exactMatch	ncit:C3457	semapv:UnspecifiedMatching	obsolete_B-cell non-Hodgkins lymphoma	
+EFO:1001960	skos:exactMatch	ncit:C4043	semapv:UnspecifiedMatching	obsolete_hypopharyngeal squamous cell carcinoma	
+EFO:0000776	oboInOwl:hasDbXref	EFO:0000776	semapv:UnspecifiedMatching	obsolete_Aeromonas hydrophila infection	obsolete_Aeromonas hydrophila infection
+EFO:0000779	oboInOwl:hasDbXref	EFO:0000779	semapv:UnspecifiedMatching	obsolete_Drosophila C virus infection	obsolete_Drosophila C virus infection
+EFO:0000781	oboInOwl:hasDbXref	EFO:0000781	semapv:UnspecifiedMatching	obsolete_Pectobacterium carotovorum infection	obsolete_Pectobacterium carotovorum infection
+EFO:0001078	oboInOwl:hasDbXref	EFO:0001078	semapv:UnspecifiedMatching	obsolete_Pseudomonas aeruginosa PA14 infection	obsolete_Pseudomonas aeruginosa PA14 infection
+EFO:0001675	oboInOwl:hasDbXref	EFO:0001675	semapv:UnspecifiedMatching	obsolete_simian immunodeficiency virus infection	obsolete_simian immunodeficiency virus infection
+EFO:0002510	oboInOwl:hasDbXref	EFO:0002510	semapv:UnspecifiedMatching	obsolete_serous cystadenofibroma	obsolete_serous cystadenofibroma
+EFO:0003146	oboInOwl:hasDbXref	EFO:0003146	semapv:UnspecifiedMatching	obsolete_symptomatic heart failure	obsolete_symptomatic heart failure
+EFO:0003147	oboInOwl:hasDbXref	EFO:0003147	semapv:UnspecifiedMatching	obsolete_mild heart failure	obsolete_mild heart failure
+EFO:0003148	oboInOwl:hasDbXref	EFO:0003148	semapv:UnspecifiedMatching	obsolete_moderate heart failure	obsolete_moderate heart failure
+EFO:0003149	oboInOwl:hasDbXref	EFO:0003149	semapv:UnspecifiedMatching	obsolete_advanced heart failure	obsolete_advanced heart failure
+EFO:0003757	oboInOwl:hasDbXref	EFO:0003757	semapv:UnspecifiedMatching	obsolete_Asperger syndrome	obsolete_Asperger syndrome
+EFO:0004287	oboInOwl:hasDbXref	EFO:0004287	semapv:UnspecifiedMatching	obsolete_ventricular fibrillation	obsolete_ventricular fibrillation
+EFO:0004710	oboInOwl:hasDbXref	EFO:0004710	semapv:UnspecifiedMatching	obsolete_pelvic organ prolapse	obsolete_pelvic organ prolapse
+EFO:0004772	oboInOwl:hasDbXref	EFO:0004772	semapv:UnspecifiedMatching	obsolete_early onset hypertension	obsolete_early onset hypertension
+EFO:0004826	oboInOwl:hasDbXref	EFO:0004826	semapv:UnspecifiedMatching	obsolete_anti-neutrophil antibody associated vasculitis	obsolete_anti-neutrophil antibody associated vasculitis
+EFO:0005242	oboInOwl:hasDbXref	EFO:0005242	semapv:UnspecifiedMatching	obsolete_methamphetamine-induced psychosis	obsolete_methamphetamine-induced psychosis
+EFO:0005304	oboInOwl:hasDbXref	EFO:0005304	semapv:UnspecifiedMatching	obsolete_atrial conduction disease	obsolete_atrial conduction disease
+EFO:0005524	oboInOwl:hasDbXref	EFO:0005524	semapv:UnspecifiedMatching	obsolete_large artery stroke	obsolete_large artery stroke
+EFO:0005782	oboInOwl:hasDbXref	EFO:0005782	semapv:UnspecifiedMatching	obsolete_age-related hearing impairment	obsolete_age-related hearing impairment
+EFO:0006315	oboInOwl:hasDbXref	EFO:0006315	semapv:UnspecifiedMatching	obsolete_thiopurine immunosuppressant-induced pancreatitis	obsolete_thiopurine immunosuppressant-induced pancreatitis
+EFO:0006388	oboInOwl:hasDbXref	EFO:0006388	semapv:UnspecifiedMatching	obsolete_cystic renal cell carcinoma	obsolete_cystic renal cell carcinoma
+EFO:0006391	oboInOwl:hasDbXref	EFO:0006391	semapv:UnspecifiedMatching	obsolete_dopaminergic neuroblastoma	obsolete_dopaminergic neuroblastoma
+EFO:0007139	oboInOwl:hasDbXref	EFO:0007139	semapv:UnspecifiedMatching	obsolete_aleutian mink disease	obsolete_aleutian mink disease
+EFO:0007178	oboInOwl:hasDbXref	EFO:0007178	semapv:UnspecifiedMatching	obsolete_borna disease	obsolete_borna disease
+EFO:0007179	oboInOwl:hasDbXref	EFO:0007179	semapv:UnspecifiedMatching	obsolete_boutonneuse fever	obsolete_boutonneuse fever
+EFO:0007314	oboInOwl:hasDbXref	EFO:0007314	semapv:UnspecifiedMatching	obsolete_hookworm infectious disease	obsolete_hookworm infectious disease
+EFO:0009068	oboInOwl:hasDbXref	EFO:0009068	semapv:UnspecifiedMatching	obsolete_dicer1 syndrome	obsolete_dicer1 syndrome
+EFO:0009491	oboInOwl:hasDbXref	EFO:0009491	semapv:UnspecifiedMatching	obsolete_adrenocortical insufficiency	obsolete_adrenocortical insufficiency
+EFO:0009556	oboInOwl:hasDbXref	EFO:0009556	semapv:UnspecifiedMatching	obsolete_mineral metabolism disease	obsolete_mineral metabolism disease
+EFO:1000648	oboInOwl:hasDbXref	EFO:1000648	semapv:UnspecifiedMatching	obsolete_developmental dysplasia of the hip	obsolete_developmental dysplasia of the hip
+EFO:1000900	oboInOwl:hasDbXref	EFO:1000900	semapv:UnspecifiedMatching	obsolete_discitis	obsolete_discitis

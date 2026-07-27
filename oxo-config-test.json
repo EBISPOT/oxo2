@@ -1,19 +1,26 @@
 {
   "mapping_registries" : [
     {
-      "id": "efo",
-      "url": "testcases/worktree/efo.sssom.tsv",
+      "id": "efo.ols",
+      "url": "testcases/worktree/efo.ols.sssom.tsv",
       "category": "ontology"
     },
     {
-      "id": "mondo",
-      "url": "testcases/worktree/mondo.sssom.tsv",
+      "id": "efo.ols.obsolete",
+      "url": "testcases/worktree/efo.ols.obsolete.sssom.tsv",
+      "category": "ontology",
+      "obsolete": true
+    },
+    {
+      "id": "mondo.ols",
+      "url": "testcases/worktree/mondo.ols.sssom.tsv",
       "category": "ontology"
     },
     {
-      "id": "uberon",
-      "url": "testcases/worktree/uberon.sssom.tsv",
-      "category": "ontology"
+      "id": "mondo.ols.obsolete",
+      "url": "testcases/worktree/mondo.ols.obsolete.sssom.tsv",
+      "category": "ontology",
+      "obsolete": true
     },
     {
       "id": "uniprot",

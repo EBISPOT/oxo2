@@ -22,11 +22,15 @@ workflow {
     // endorsement a set may not have.
     def configFile = params.config_file ? new File(params.config_file) : null
     def categoryByRegistryId = [:]
+    // Obsolete-terms support (ADR-0041): the ids of registries flagged `obsolete: true`. Every subject of
+    // these sets is an obsolete term, so their subject IRIs seed the global obsolete-entity set below.
+    def obsoleteRegistryIds = [] as Set
     if (configFile?.exists()) {
         categoryByRegistryId = MappingSetCategories.byRegistryId(configFile)
+        obsoleteRegistryIds = ObsoleteRegistries.ids(configFile)
     } else {
         log.warn "OXO2_CONFIG not readable (${params.config_file ?: 'unset'}); " +
-                 "treating every mapping set as ${MappingSetCategories.DEFAULT}."
+                 "treating every mapping set as ${MappingSetCategories.DEFAULT} and non-obsolete."
     }
 
     tsv_files = channel.fromPath("${params.input_dir}/**.tsv")
@@ -38,12 +42,20 @@ workflow {
                 : tsvPath.name
             def stem = relative.replaceAll(/\.tsv$/, '').replace('/', '.')
             FilenameGuard.assertSafe(stem)
-            // The downloader writes each registry's files to <sssom root>/<registry id>/, so the first
-            // relative path segment names the registry. A TSV sitting directly in the root belongs to
-            // no registry and takes the default category.
-            def registryId = relative.contains('/') ? relative.substring(0, relative.indexOf('/')) : null
+            // Recover the config registry id from the downloader's on-disk layout: DownloadMappings writes
+            // each registry to `<sssom root>/<registry id>` + extension. A multi-file registry (a .tgz such
+            // as the OLS export) extracts into a `<registry id>/` subdirectory, so the first path segment
+            // names it. A single-file registry (a plain .tsv/.gz — e.g. a repo-relative fixture, ADR-0039)
+            // lands flat as `<registry id>.tsv` (the source basename is discarded), so the filename stem
+            // names it. Getting this right is what lets a set's `category` (ADR-0027) and `obsolete`
+            // (ADR-0041) config flags reach the JAR; treating a flat file as registry-less would silently
+            // drop both.
+            def registryId = relative.contains('/')
+                ? relative.substring(0, relative.indexOf('/'))
+                : relative.replaceAll(/\.tsv$/, '')
             def category = categoryByRegistryId.getOrDefault(registryId, MappingSetCategories.DEFAULT)
-            tuple(stem, tsvPath, category)
+            def obsolete = obsoleteRegistryIds.contains(registryId)
+            tuple(stem, tsvPath, category, obsolete)
         }
     // Stage every external metadata YAML alongside each TSV so that the JAR's
     // readExternalMetadata() pass finds the matching .yml file in the workdir.
@@ -52,7 +64,41 @@ workflow {
         .map { f -> FilenameGuard.assertSafe(f.name); f }
         .collect().ifEmpty([])
 
-    SSSOM2JSON(tsv_files, yml_files)
+    // Pass 1 (ADR-0041): from the obsolete-flagged TSVs only, extract the distinct expanded subject IRIs
+    // — the global obsolete-entity set. Object-side obsolescence (a live term mapping to a dead one) can
+    // only be known globally: the MONDO file cannot tell that an EFO object is obsolete without seeing
+    // EFO's obsolete file. Collected to a single value channel and broadcast into every Pass-2 task.
+    // Always runs exactly once (even with no obsolete registry: the list is empty and the JAR writes an
+    // empty file), so the main pass always has a `-b` input to read.
+    obsolete_tsv_list = tsv_files.filter { it[3] }.map { it[1] }.collect().ifEmpty([])
+    obsolete_entities = EXTRACT_OBSOLETE_ENTITIES(obsolete_tsv_list, yml_files).first()
+
+    SSSOM2JSON(tsv_files, yml_files, obsolete_entities)
+}
+
+// Pass 1 (ADR-0041): union the subject IRIs of every obsolete-flagged TSV into one obsolete-entities.txt.
+// Uses the SSSOM2JSON JAR's --extract-obsolete-entities mode so the CURIE->IRI expansion is identical to
+// the main pass (no risk of the two disagreeing on an IRI). One task for the whole obsolete corpus.
+process EXTRACT_OBSOLETE_ENTITIES {
+    input:
+    path 'obsolete_inputs/*'
+    path yml_files
+
+    output:
+    path "obsolete-entities.txt"
+
+    script:
+    """
+    mkdir -p obsolete_inputs
+    java ${System.getenv('JAVA_OPTS') ?: ''} \
+        -jar "${params.script_dir}/oxo2-sssom2json/target/oxo2-sssom2json-1.0.0-SNAPSHOT.jar" \
+        --extract-obsolete-entities \
+        -i obsolete_inputs \
+        -o .
+
+    # The JAR always writes the file, but guard against an aborted run so the output contract holds.
+    [ -f obsolete-entities.txt ] || : > obsolete-entities.txt
+    """
 }
 
 // One JVM per TSV — gives parallel CPU usage and resets the EntityReference/Uri
@@ -68,19 +114,25 @@ process SSSOM2JSON {
     publishDir "${params.output_dir}", mode: 'copy', pattern: "{mappingSet,mapping}/*.json"
 
     input:
-    tuple val(stem), path(tsv_file), val(category)
+    tuple val(stem), path(tsv_file), val(category), val(obsolete)
     path yml_files
+    path obsolete_entities
 
     output:
     path "mappingSet/${stem}.json", optional: true
     path "mapping/${stem}.json", optional: true
 
     script:
+    // ADR-0041: --obsolete marks this set's subjects obsolete; -b supplies the global obsolete-entity set
+    // so both endpoints of every mapping (here and in other files) are stamped against it.
+    def obsoleteFlag = obsolete ? '--obsolete' : ''
     """
     java ${System.getenv('JAVA_OPTS') ?: ''} \
         -jar "${params.script_dir}/oxo2-sssom2json/target/oxo2-sssom2json-1.0.0-SNAPSHOT.jar" \
         -f "${tsv_file}" \
         -c "${category}" \
+        -b "${obsolete_entities}" \
+        ${obsoleteFlag} \
         -o .
 
     # Rename the JAR's mappingSetId-derived output filenames to the input's

@@ -102,6 +102,11 @@ public class SuggestController {
             @Parameter(description = "Restrict to these CURIE prefixes (ontologies).", example = "MONDO")
             @RequestParam(name = "prefix", required = false) List<String> prefixes,
 
+            @Parameter(description = "Suggest obsolete terms too. Must match the search's obsolete "
+                    + "checkbox, or a suggestion could return no rows (ADR-0041).")
+            @RequestParam(name = "includeObsolete", required = false, defaultValue = "false")
+            boolean includeObsolete,
+
             @Parameter(description = "Maximum suggestions to return.")
             @RequestParam(name = "size", required = false, defaultValue = "" + DEFAULT_SIZE) int size) {
 
@@ -118,7 +123,7 @@ public class SuggestController {
 
         try {
             SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                    query, side, prefixes, weakPredicates, size);
+                    query, side, prefixes, weakPredicates, includeObsolete, size);
             QueryResponse response = solrClient.queryEntities(solrQuery);
             return ResponseEntity.ok(toSuggestions(response));
         } catch (Exception queryFailure) {

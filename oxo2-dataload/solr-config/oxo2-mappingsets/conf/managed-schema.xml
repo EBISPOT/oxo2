@@ -473,6 +473,10 @@
   <field name="object_source" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_source_version" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="object_type" type="string" multiValued="false" indexed="true" stored="true"/>
+  <!-- Set obsolescence (ADR-0041): true iff this registry was config-flagged obsolete (all its subjects
+       are obsolete terms). Lets the mapping-set picker hide/label obsolete ontology sets. Empty (false)
+       on sets indexed before this field until the next full dataload. -->
+  <field name="obsolete" type="boolean" multiValued="false" indexed="true" stored="true"/>
   <!-- Ontology display name, promoted from the OLS `other` block (ADR-0038). Text so it is searchable;
        ontology_str backs sorting/faceting. Absent on curated and inferred sets. -->
   <field name="ontology" type="text_general" multiValued="false" indexed="true" stored="true"/>

@@ -73,6 +73,15 @@ class SolrQueryBuilderTest {
                 "http://www.geneontology.org/formats/oboInOwl#hasDbXref");
     }
 
+    /**
+     * The default obsolete-terms exclusion (ADR-0041) that every search/export query without
+     * {@code includeObsolete} now carries alongside the weak-predicate exclusion.
+     */
+    private static String obsoleteExclusion() {
+        return "*:* -(" + MappingEnum.SUBJECT_OBSOLETE.getField() + ":true OR "
+                + MappingEnum.OBJECT_OBSOLETE.getField() + ":true)";
+    }
+
     /** The exclusion clause for exactly these IRIs — one ticked checkbox leaves only the other. */
     private static String exclusionOf(String... iris) {
         String field = MappingEnum.PREDICATE_IRI.getField();
@@ -97,7 +106,7 @@ class SolrQueryBuilderTest {
         // A non-predicate filter does not bypass the default weak-predicate exclusion.
         String expected = ngramContainsAll(MappingEnum.SUBJECT_LABEL, INJECTION_PAYLOAD);
         assertThat(solrQuery.getFilterQueries())
-                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion(), obsoleteExclusion());
         assertThat(solrQuery.getFilterQueries()[0]).doesNotContain(INJECTION_PAYLOAD);
         assertThat(solrQuery.getFilterQueries()[0]).doesNotContain("\" OR *:*");
     }
@@ -113,7 +122,7 @@ class SolrQueryBuilderTest {
         String ngram = labelNgram(MappingEnum.SUBJECT_LABEL);
         String expected = "(" + ngram + ":*CDISC* AND " + ngram + ":*Questionnaire*)";
         assertThat(solrQuery.getFilterQueries())
-                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -127,7 +136,7 @@ class SolrQueryBuilderTest {
         String ngram = labelNgram(MappingEnum.OBJECT_LABEL);
         String expected = "(" + ngram + ":*CDISC* AND " + ngram + ":*Questionnaire*)";
         assertThat(solrQuery.getFilterQueries())
-                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -140,7 +149,7 @@ class SolrQueryBuilderTest {
 
         String expected = "(" + labelNgram(MappingEnum.SUBJECT_LABEL) + ":*leukemia*)";
         assertThat(solrQuery.getFilterQueries())
-                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -154,7 +163,7 @@ class SolrQueryBuilderTest {
         String expected = MappingEnum.SUBJECT_ID.getField() + ":*"
                 + ClientUtils.escapeQueryChars(INJECTION_PAYLOAD) + "*";
         assertThat(solrQuery.getFilterQueries())
-                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion(), obsoleteExclusion());
     }
 
     // ---------- distance (numeric upper-bound) column filter ----------
@@ -170,7 +179,7 @@ class SolrQueryBuilderTest {
         // "at most 2 hops" — a range, not a substring wildcard (invalid on a point field) or equality.
         String expected = MappingEnum.DISTANCE.getField() + ":[* TO 2]";
         assertThat(solrQuery.getFilterQueries())
-                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -184,7 +193,7 @@ class SolrQueryBuilderTest {
         // A non-integer never reaches Solr as a parse error: the filter is dropped, leaving only the
         // default weak-predicate exclusion.
         assertThat(solrQuery.getFilterQueries())
-                .containsExactly(weakPredicateExclusion());
+                .containsExactly(weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -217,7 +226,7 @@ class SolrQueryBuilderTest {
         String expected = "(" + field + ":\"" + ClientUtils.escapeQueryChars("normal-id") + "\""
                 + " OR " + field + ":\"" + ClientUtils.escapeQueryChars("weird\"id") + "\")";
         assertThat(solrQuery.getFilterQueries())
-                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -230,7 +239,7 @@ class SolrQueryBuilderTest {
         String field = MappingEnum.MAPPING_SET_ID.getField();
         String expected = "(" + field + ":\"" + ClientUtils.escapeQueryChars("kept") + "\")";
         assertThat(solrQuery.getFilterQueries())
-                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -241,7 +250,7 @@ class SolrQueryBuilderTest {
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
         // Only the default weak-predicate exclusion remains (no mapping-set filter).
-        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
+        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion(), obsoleteExclusion());
     }
 
     // ---------- dispatch precedence ----------
@@ -605,7 +614,7 @@ class SolrQueryBuilderTest {
         assertThat(solrQuery.getFilterQueries())
                 .containsExactlyInAnyOrder(
                         "(" + MappingEnum.INFERENCE_TYPE.getField() + ":ASSERTED)",
-                        weakPredicateExclusion());
+                        weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -619,7 +628,7 @@ class SolrQueryBuilderTest {
         assertThat(solrQuery.getFilterQueries())
                 .containsExactlyInAnyOrder(
                         "(" + field + ":ASSERTED OR " + field + ":SSSOM_INFERENCE)",
-                        weakPredicateExclusion());
+                        weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -630,7 +639,7 @@ class SolrQueryBuilderTest {
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
         // Only the default weak-predicate exclusion remains (no inference-type filter).
-        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
+        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -641,7 +650,7 @@ class SolrQueryBuilderTest {
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
         // Only the default weak-predicate exclusion remains (no inference-type filter).
-        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
+        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -657,7 +666,7 @@ class SolrQueryBuilderTest {
         assertThat(solrQuery.getFilterQueries()).containsExactlyInAnyOrder(
                 "(" + MappingEnum.INFERENCE_TYPE.getField() + ":SSSOM_INFERENCE)",
                 mappingSetClause,
-                weakPredicateExclusion());
+                weakPredicateExclusion(), obsoleteExclusion());
     }
 
     // ---------- provenance-led ranking (multiplicative edismax boost, ADR-0027) ----------
@@ -738,7 +747,7 @@ class SolrQueryBuilderTest {
         assertThat(solrQuery.getFilterQueries()).containsExactlyInAnyOrder(
                 "(" + MappingEnum.MAPPING_SET_CATEGORY.getField() + ":ONTOLOGY OR "
                         + MappingEnum.INFERENCE_TYPE.getField() + ":SSSOM_INFERENCE)",
-                weakPredicateExclusion());
+                weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -894,7 +903,7 @@ class SolrQueryBuilderTest {
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
-        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
+        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -929,7 +938,7 @@ class SolrQueryBuilderTest {
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
         assertThat(solrQuery.getFilterQueries())
-                .containsExactly(exclusionOf("http://www.w3.org/2000/01/rdf-schema#subClassOf"));
+                .containsExactlyInAnyOrder(exclusionOf("http://www.w3.org/2000/01/rdf-schema#subClassOf"), obsoleteExclusion());
         assertThat(solrQuery.getFilterQueries()[0]).doesNotContain("hasDbXref");
     }
 
@@ -943,7 +952,7 @@ class SolrQueryBuilderTest {
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
         // No no-op all-docs clause left behind: with nothing hidden there is nothing to subtract.
-        assertThat(solrQuery.getFilterQueries()).isEmpty();
+        assertThat(solrQuery.getFilterQueries()).containsExactly(obsoleteExclusion());
     }
 
     /** The default is unchanged by the new parameter: an absent list still hides both. */
@@ -955,7 +964,7 @@ class SolrQueryBuilderTest {
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
-        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
+        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -969,7 +978,7 @@ class SolrQueryBuilderTest {
         // Explicit predicate filter present → only that filter, no default exclusion.
         String expected = MappingEnum.PREDICATE_ID.getField() + ":*"
                 + ClientUtils.escapeQueryChars("skos:exactMatch") + "*";
-        assertThat(solrQuery.getFilterQueries()).containsExactly(expected);
+        assertThat(solrQuery.getFilterQueries()).containsExactlyInAnyOrder(expected, obsoleteExclusion());
     }
 
     @Test
@@ -981,7 +990,7 @@ class SolrQueryBuilderTest {
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
         String expected = ngramContainsAll(MappingEnum.PREDICATE_LABEL, "exact match");
-        assertThat(solrQuery.getFilterQueries()).containsExactly(expected);
+        assertThat(solrQuery.getFilterQueries()).containsExactlyInAnyOrder(expected, obsoleteExclusion());
     }
 
     @Test
@@ -1008,7 +1017,7 @@ class SolrQueryBuilderTest {
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
         // Advanced predicate clause goes in q, not fq; no column filters → no fq at all.
-        assertThat(solrQuery.getFilterQueries()).isEmpty();
+        assertThat(solrQuery.getFilterQueries()).containsExactly(obsoleteExclusion());
     }
 
     @Test
@@ -1021,7 +1030,7 @@ class SolrQueryBuilderTest {
 
         // A blank value is not a real predicate constraint, so the default exclusion still applies
         // (and the blank filter itself contributes no clause).
-        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
+        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -1034,7 +1043,7 @@ class SolrQueryBuilderTest {
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
-        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
+        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion(), obsoleteExclusion());
     }
 
     // ---------- cross-ontology prefix filters (ADR-0024) ----------
@@ -1049,7 +1058,7 @@ class SolrQueryBuilderTest {
         String field = MappingEnum.SUBJECT_PREFIX.getField();
         String expected = "(" + field + ":DOID OR " + field + ":HP)";
         assertThat(solrQuery.getFilterQueries())
-                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -1065,7 +1074,7 @@ class SolrQueryBuilderTest {
         String subjectClause = "(" + subjectField + ":DOID)";
         String objectClause = "(" + objectField + ":EFO OR " + objectField + ":MONDO)";
         assertThat(solrQuery.getFilterQueries())
-                .containsExactlyInAnyOrder(subjectClause, objectClause, weakPredicateExclusion());
+                .containsExactlyInAnyOrder(subjectClause, objectClause, weakPredicateExclusion(), obsoleteExclusion());
     }
 
     @Test
@@ -1078,7 +1087,7 @@ class SolrQueryBuilderTest {
         String expected = "(" + MappingEnum.SUBJECT_PREFIX.getField() + ":"
                 + ClientUtils.escapeQueryChars(INJECTION_PAYLOAD) + ")";
         assertThat(solrQuery.getFilterQueries())
-                .containsExactlyInAnyOrder(expected, weakPredicateExclusion());
+                .containsExactlyInAnyOrder(expected, weakPredicateExclusion(), obsoleteExclusion());
         assertThat(String.join("", solrQuery.getFilterQueries())).doesNotContain("\" OR *:*");
     }
 
@@ -1090,7 +1099,7 @@ class SolrQueryBuilderTest {
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
         // No prefix clause contributed; only the default weak-predicate exclusion remains.
-        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion());
+        assertThat(solrQuery.getFilterQueries()).containsExactly(weakPredicateExclusion(), obsoleteExclusion());
     }
 
     // ---------- subject-side classification + v1 term query (ADR-0024) ----------

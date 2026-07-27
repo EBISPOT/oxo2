@@ -1,0 +1,1190 @@
+# mapping_set_id: https://w3id.org/commons/ols/mappings/mondo.ols.sssom.tsv
+# mapping_set_group: ols_sssom_extracts
+# mapping_set_confidence: '0.7'
+# mapping_provider: https://www.ebi.ac.uk/ols4/ontologies/mondo
+# mapping_tool: https://www.ebi.ac.uk/ols4
+# mapping_set_title: OLS extracted MONDO mappings
+# mapping_set_description: These mappings were extracted during the OLS dataload from MONDO
+# mapping_date: '2026-07-27'
+# other:
+#   local_id: mondo.ols
+#   prefix: MONDO
+#   ontology: Mondo Disease Ontology (MONDO)
+# local_name: mondo.ols.sssom.tsv
+# curie_map:
+#   semapv: https://w3id.org/semapv/vocab/
+#   owl: http://www.w3.org/2002/07/owl#
+#   rdfs: http://www.w3.org/2000/01/rdf-schema#
+#   skos: http://www.w3.org/2004/02/skos/core#
+#   oboInOwl: http://www.geneontology.org/formats/oboInOwl#
+#   chebi: http://purl.obolibrary.org/obo/chebi/
+#   inchi: 'https://bioregistry.io/inchi:'
+#   inchikey: 'https://bioregistry.io/inchikey:'
+#   smiles: 'https://bioregistry.io/smiles:'
+#   MONDO: http://purl.obolibrary.org/obo/MONDO_
+#   DOID: http://purl.obolibrary.org/obo/DOID_
+#   MESH: http://id.nlm.nih.gov/mesh/
+#   NCIT: http://purl.obolibrary.org/obo/NCIT_
+#   OGMS: http://purl.obolibrary.org/obo/OGMS_
+#   Orphanet: http://www.orpha.net/ORDO/Orphanet_
+#   SCTID: http://purl.bioontology.org/ontology/SNOMEDCT/
+#   BFO: http://purl.obolibrary.org/obo/BFO_
+#   EFO: http://www.ebi.ac.uk/efo/EFO_
+#   MEDGEN: https://www.ncbi.nlm.nih.gov/medgen/
+#   UMLS: https://uts.nlm.nih.gov/uts/umls/concept/
+#   OMIMPS: https://omim.org/MIM:PS
+#   MedDRA: https://bioportal.bioontology.org/ontologies/MEDDRA?p=classes&conceptid=
+#   NANDO: 'https://nanbyodata.jp/disease/NANDO:'
+#   OMIM: https://omim.org/entry/
+#   HP: http://purl.obolibrary.org/obo/HP_
+#   NORD: https://rarediseases.org/?p=
+#   ICD10CM: https://www.icd10data.com/search?s=
+#   doid: http://purl.obolibrary.org/obo/DOID_
+#   ICD9: http://www.icd9data.com/getICD9Code.ashx?icd9=
+#   ICD10WHO: https://icd.who.int/browse10/2019/en#/
+#   ncit: http://purl.obolibrary.org/obo/NCIT_
+#   NDFRT: https://ncit.nci.nih.gov/ncitbrowser/ConceptReport.jsp?dictionary=NDFRT&code=
+#   MFOMD: http://purl.obolibrary.org/obo/MFOMD_
+#   HGNC: 'https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:'
+#   Wikipedia: http://en.wikipedia.org/wiki/
+#   birnlex: http://uri.neuinfo.org/nif/nifstd/birnlex_
+#   efo: http://www.ebi.ac.uk/efo/EFO_
+#   PMID: https://pubmed.ncbi.nlm.nih.gov/
+#   IDO: http://purl.obolibrary.org/obo/IDO_
+#   DECIPHER: https://www.deciphergenomics.org/syndrome/
+#   OBI: http://purl.obolibrary.org/obo/OBI_
+#   orphanet.ordo: http://www.orpha.net/ORDO/Orphanet_
+#   SCDO: http://purl.obolibrary.org/obo/SCDO_
+#   PATO: http://purl.obolibrary.org/obo/PATO_
+#   OMIA: 'https://omia.org/phene/omia:'
+#   MPATH: http://purl.obolibrary.org/obo/MPATH_
+#   RO: http://purl.obolibrary.org/obo/RO_
+subject_id	predicate_id	object_id	mapping_justification	subject_label	object_label
+MONDO:0000001	oboInOwl:hasDbXref	DOID:4	semapv:UnspecifiedMatching	disease	
+MONDO:0000001	oboInOwl:hasDbXref	MESH:D004194	semapv:UnspecifiedMatching	disease	
+MONDO:0000001	oboInOwl:hasDbXref	NCIT:C2991	semapv:UnspecifiedMatching	disease	
+MONDO:0000001	oboInOwl:hasDbXref	OGMS:0000031	semapv:UnspecifiedMatching	disease	
+MONDO:0000001	oboInOwl:hasDbXref	Orphanet:377788	semapv:UnspecifiedMatching	disease	
+MONDO:0000001	oboInOwl:hasDbXref	SCTID:64572001	semapv:UnspecifiedMatching	disease	
+MONDO:0000001	rdfs:subClassOf	BFO:0000016	semapv:UnspecifiedMatching	disease	disposition
+MONDO:0000004	oboInOwl:hasDbXref	DOID:10493	semapv:UnspecifiedMatching	adrenocortical insufficiency	
+MONDO:0000004	oboInOwl:hasDbXref	EFO:0009491	semapv:UnspecifiedMatching	adrenocortical insufficiency	
+MONDO:0000004	oboInOwl:hasDbXref	MEDGEN:589758	semapv:UnspecifiedMatching	adrenocortical insufficiency	
+MONDO:0000004	oboInOwl:hasDbXref	MESH:D000309	semapv:UnspecifiedMatching	adrenocortical insufficiency	
+MONDO:0000004	oboInOwl:hasDbXref	NCIT:C26691	semapv:UnspecifiedMatching	adrenocortical insufficiency	
+MONDO:0000004	oboInOwl:hasDbXref	SCTID:386584007	semapv:UnspecifiedMatching	adrenocortical insufficiency	
+MONDO:0000004	oboInOwl:hasDbXref	UMLS:C0405580	semapv:UnspecifiedMatching	adrenocortical insufficiency	
+MONDO:0000004	rdfs:subClassOf	MONDO:0002816	semapv:UnspecifiedMatching	adrenocortical insufficiency	adrenal cortex disorder
+MONDO:0000005	oboInOwl:hasDbXref	OMIMPS:203655	semapv:UnspecifiedMatching	alopecia, isolated	
+MONDO:0000005	rdfs:subClassOf	MONDO:0100118	semapv:UnspecifiedMatching	alopecia, isolated	hereditary skin disorder
+MONDO:0000009	oboInOwl:hasDbXref	DOID:2218	semapv:UnspecifiedMatching	inherited bleeding disorder, platelet-type	
+MONDO:0000009	oboInOwl:hasDbXref	MEDGEN:610	semapv:UnspecifiedMatching	inherited bleeding disorder, platelet-type	
+MONDO:0000009	oboInOwl:hasDbXref	OMIMPS:231200	semapv:UnspecifiedMatching	inherited bleeding disorder, platelet-type	
+MONDO:0000009	oboInOwl:hasDbXref	UMLS:C0005818	semapv:UnspecifiedMatching	inherited bleeding disorder, platelet-type	
+MONDO:0000009	rdfs:subClassOf	MONDO:0002243	semapv:UnspecifiedMatching	inherited bleeding disorder, platelet-type	hemorrhagic disease
+MONDO:0000009	rdfs:subClassOf	MONDO:0002245	semapv:UnspecifiedMatching	inherited bleeding disorder, platelet-type	blood platelet disease
+MONDO:0000014	rdfs:subClassOf	MONDO:0001703	semapv:UnspecifiedMatching	colorblindness, partial	color vision disorder
+MONDO:0000015	oboInOwl:hasDbXref	MEDGEN:226929	semapv:UnspecifiedMatching	classic complement early component deficiency	
+MONDO:0000015	oboInOwl:hasDbXref	SCTID:363009005	semapv:UnspecifiedMatching	classic complement early component deficiency	
+MONDO:0000015	oboInOwl:hasDbXref	UMLS:C1285186	semapv:UnspecifiedMatching	classic complement early component deficiency	
+MONDO:0000015	rdfs:subClassOf	MONDO:0003832	semapv:UnspecifiedMatching	classic complement early component deficiency	complement deficiency
+MONDO:0000022	oboInOwl:hasDbXref	MEDGEN:124355	semapv:UnspecifiedMatching	nocturnal enuresis	
+MONDO:0000022	oboInOwl:hasDbXref	MESH:D053206	semapv:UnspecifiedMatching	nocturnal enuresis	
+MONDO:0000022	oboInOwl:hasDbXref	NCIT:C118172	semapv:UnspecifiedMatching	nocturnal enuresis	
+MONDO:0000022	oboInOwl:hasDbXref	UMLS:C0270327	semapv:UnspecifiedMatching	nocturnal enuresis	
+MONDO:0000022	rdfs:subClassOf	MONDO:0024290	semapv:UnspecifiedMatching	nocturnal enuresis	enuresis
+MONDO:0000023	oboInOwl:hasDbXref	DOID:0080716	semapv:UnspecifiedMatching	infantile liver failure	
+MONDO:0000023	oboInOwl:hasDbXref	MEDGEN:1813021	semapv:UnspecifiedMatching	infantile liver failure	
+MONDO:0000023	oboInOwl:hasDbXref	OMIMPS:615438	semapv:UnspecifiedMatching	infantile liver failure	
+MONDO:0000023	oboInOwl:hasDbXref	Orphanet:464724	semapv:UnspecifiedMatching	infantile liver failure	
+MONDO:0000023	oboInOwl:hasDbXref	UMLS:C5681094	semapv:UnspecifiedMatching	infantile liver failure	
+MONDO:0000023	rdfs:subClassOf	MONDO:0003847	semapv:UnspecifiedMatching	infantile liver failure	hereditary disease
+MONDO:0000023	rdfs:subClassOf	MONDO:0100192	semapv:UnspecifiedMatching	infantile liver failure	liver failure
+MONDO:0000030	oboInOwl:hasDbXref	DOID:0060681	semapv:UnspecifiedMatching	familial sleep-related hypermotor epilepsy	
+MONDO:0000030	oboInOwl:hasDbXref	MEDGEN:1865268	semapv:UnspecifiedMatching	familial sleep-related hypermotor epilepsy	
+MONDO:0000030	oboInOwl:hasDbXref	MESH:C579932	semapv:UnspecifiedMatching	familial sleep-related hypermotor epilepsy	
+MONDO:0000030	oboInOwl:hasDbXref	OMIMPS:600513	semapv:UnspecifiedMatching	familial sleep-related hypermotor epilepsy	
+MONDO:0000030	oboInOwl:hasDbXref	Orphanet:98784	semapv:UnspecifiedMatching	familial sleep-related hypermotor epilepsy	
+MONDO:0000030	oboInOwl:hasDbXref	SCTID:698021005	semapv:UnspecifiedMatching	familial sleep-related hypermotor epilepsy	
+MONDO:0000030	oboInOwl:hasDbXref	UMLS:C5577629	semapv:UnspecifiedMatching	familial sleep-related hypermotor epilepsy	
+MONDO:0000030	rdfs:subClassOf	MONDO:0017704	semapv:UnspecifiedMatching	familial sleep-related hypermotor epilepsy	familial partial epilepsy
+MONDO:0000030	rdfs:subClassOf	MONDO:0100631	semapv:UnspecifiedMatching	familial sleep-related hypermotor epilepsy	sleep-related hypermotor epilepsy
+MONDO:0000032	oboInOwl:hasDbXref	DOID:0111297	semapv:UnspecifiedMatching	febrile seizures, familial	
+MONDO:0000032	oboInOwl:hasDbXref	OMIMPS:121210	semapv:UnspecifiedMatching	febrile seizures, familial	
+MONDO:0000032	rdfs:subClassOf	MONDO:0003847	semapv:UnspecifiedMatching	febrile seizures, familial	hereditary disease
+MONDO:0000044	oboInOwl:hasDbXref	MedDRA:10060873	semapv:UnspecifiedMatching	hereditary hypophosphatemic rickets	
+MONDO:0000044	oboInOwl:hasDbXref	OMIMPS:193100	semapv:UnspecifiedMatching	hereditary hypophosphatemic rickets	
+MONDO:0000044	oboInOwl:hasDbXref	Orphanet:437	semapv:UnspecifiedMatching	hereditary hypophosphatemic rickets	
+MONDO:0000045	oboInOwl:hasDbXref	OMIMPS:275200	semapv:UnspecifiedMatching	hypothyroidism, congenital, nongoitrous	
+MONDO:0000045	rdfs:subClassOf	MONDO:0018612	semapv:UnspecifiedMatching	hypothyroidism, congenital, nongoitrous	congenital hypothyroidism
+MONDO:0000050	oboInOwl:hasDbXref	DOID:0060870	semapv:UnspecifiedMatching	isolated congenital growth hormone deficiency	
+MONDO:0000050	oboInOwl:hasDbXref	MEDGEN:1843308	semapv:UnspecifiedMatching	isolated congenital growth hormone deficiency	
+MONDO:0000050	oboInOwl:hasDbXref	MedDRA:10035083	semapv:UnspecifiedMatching	isolated congenital growth hormone deficiency	
+MONDO:0000050	oboInOwl:hasDbXref	NANDO:2200317	semapv:UnspecifiedMatching	isolated congenital growth hormone deficiency	
+MONDO:0000050	oboInOwl:hasDbXref	OMIMPS:262400	semapv:UnspecifiedMatching	isolated congenital growth hormone deficiency	
+MONDO:0000050	oboInOwl:hasDbXref	Orphanet:631	semapv:UnspecifiedMatching	isolated congenital growth hormone deficiency	
+MONDO:0000050	oboInOwl:hasDbXref	SCTID:2109003	semapv:UnspecifiedMatching	isolated congenital growth hormone deficiency	
+MONDO:0000050	oboInOwl:hasDbXref	UMLS:C5679572	semapv:UnspecifiedMatching	isolated congenital growth hormone deficiency	
+MONDO:0000050	rdfs:subClassOf	MONDO:0013099	semapv:UnspecifiedMatching	isolated congenital growth hormone deficiency	combined pituitary hormone deficiencies, genetic form
+MONDO:0000060	rdfs:subClassOf	MONDO:0001149	semapv:UnspecifiedMatching	microcephalic osteodysplastic primordial dwarfism	microcephaly
+MONDO:0000062	oboInOwl:hasDbXref	DOID:0080637	semapv:UnspecifiedMatching	isolated microphthalmia	
+MONDO:0000062	oboInOwl:hasDbXref	OMIMPS:251600	semapv:UnspecifiedMatching	isolated microphthalmia	
+MONDO:0000062	rdfs:subClassOf	MONDO:0021129	semapv:UnspecifiedMatching	isolated microphthalmia	microphthalmia
+MONDO:0000065	oboInOwl:hasDbXref	OMIMPS:603933	semapv:UnspecifiedMatching	microvascular complications of diabetes, susceptibility	
+MONDO:0000066	oboInOwl:hasDbXref	MEDGEN:1843270	semapv:UnspecifiedMatching	mitochondrial respiratory chain complex deficiency	
+MONDO:0000066	oboInOwl:hasDbXref	Orphanet:254846	semapv:UnspecifiedMatching	mitochondrial respiratory chain complex deficiency	
+MONDO:0000066	oboInOwl:hasDbXref	UMLS:C5679632	semapv:UnspecifiedMatching	mitochondrial respiratory chain complex deficiency	
+MONDO:0000066	rdfs:subClassOf	MONDO:0016387	semapv:UnspecifiedMatching	mitochondrial respiratory chain complex deficiency	mitochondrial oxidative phosphorylation disorder
+MONDO:0000070	oboInOwl:hasDbXref	MESH:C536092	semapv:UnspecifiedMatching	Mycobacterium tuberculosis, susceptibility	
+MONDO:0000070	oboInOwl:hasDbXref	OMIM:607948	semapv:UnspecifiedMatching	Mycobacterium tuberculosis, susceptibility	
+MONDO:0000078	oboInOwl:hasDbXref	MEDGEN:673840	semapv:UnspecifiedMatching	acrocephalopolysyndactyly	
+MONDO:0000078	oboInOwl:hasDbXref	SCTID:205260006	semapv:UnspecifiedMatching	acrocephalopolysyndactyly	
+MONDO:0000078	oboInOwl:hasDbXref	UMLS:C0687154	semapv:UnspecifiedMatching	acrocephalopolysyndactyly	
+MONDO:0000078	rdfs:subClassOf	MONDO:0019796	semapv:UnspecifiedMatching	acrocephalopolysyndactyly	acrocephalosyndactyly
+MONDO:0000079	oboInOwl:hasDbXref	DOID:0080655	semapv:UnspecifiedMatching	nephrolithiasis/osteoporosis, hypophosphatemic	
+MONDO:0000079	oboInOwl:hasDbXref	OMIMPS:612286	semapv:UnspecifiedMatching	nephrolithiasis/osteoporosis, hypophosphatemic	
+MONDO:0000079	rdfs:subClassOf	MONDO:0005298	semapv:UnspecifiedMatching	nephrolithiasis/osteoporosis, hypophosphatemic	osteoporosis
+MONDO:0000082	oboInOwl:hasDbXref	EFO:0004710	semapv:UnspecifiedMatching	pelvic organ prolapse	
+MONDO:0000082	oboInOwl:hasDbXref	MEDGEN:209090	semapv:UnspecifiedMatching	pelvic organ prolapse	
+MONDO:0000082	oboInOwl:hasDbXref	MESH:D056887	semapv:UnspecifiedMatching	pelvic organ prolapse	
+MONDO:0000082	oboInOwl:hasDbXref	SCTID:237113009	semapv:UnspecifiedMatching	pelvic organ prolapse	
+MONDO:0000082	oboInOwl:hasDbXref	UMLS:C0877015	semapv:UnspecifiedMatching	pelvic organ prolapse	
+MONDO:0000082	rdfs:subClassOf	MONDO:0005039	semapv:UnspecifiedMatching	pelvic organ prolapse	reproductive system disorder
+MONDO:0000087	oboInOwl:hasDbXref	DOID:0080918	semapv:UnspecifiedMatching	polymicrogyria	
+MONDO:0000087	oboInOwl:hasDbXref	MEDGEN:78605	semapv:UnspecifiedMatching	polymicrogyria	
+MONDO:0000087	oboInOwl:hasDbXref	MESH:D065706	semapv:UnspecifiedMatching	polymicrogyria	
+MONDO:0000087	oboInOwl:hasDbXref	NANDO:1201071	semapv:UnspecifiedMatching	polymicrogyria	
+MONDO:0000087	oboInOwl:hasDbXref	NCIT:C116936	semapv:UnspecifiedMatching	polymicrogyria	
+MONDO:0000087	oboInOwl:hasDbXref	Orphanet:35981	semapv:UnspecifiedMatching	polymicrogyria	
+MONDO:0000087	oboInOwl:hasDbXref	SCTID:4945003	semapv:UnspecifiedMatching	polymicrogyria	
+MONDO:0000087	oboInOwl:hasDbXref	UMLS:C0266464	semapv:UnspecifiedMatching	polymicrogyria	
+MONDO:0000087	rdfs:subClassOf	MONDO:0002320	semapv:UnspecifiedMatching	polymicrogyria	congenital nervous system disorder
+MONDO:0000088	oboInOwl:hasDbXref	HP:0000826	semapv:UnspecifiedMatching	precocious puberty	
+MONDO:0000088	oboInOwl:hasDbXref	MEDGEN:18752	semapv:UnspecifiedMatching	precocious puberty	
+MONDO:0000088	oboInOwl:hasDbXref	MESH:D011629	semapv:UnspecifiedMatching	precocious puberty	
+MONDO:0000088	oboInOwl:hasDbXref	MedDRA:10044701	semapv:UnspecifiedMatching	precocious puberty	
+MONDO:0000088	oboInOwl:hasDbXref	MedDRA:10058084	semapv:UnspecifiedMatching	precocious puberty	
+MONDO:0000088	oboInOwl:hasDbXref	NANDO:2100135	semapv:UnspecifiedMatching	precocious puberty	
+MONDO:0000088	oboInOwl:hasDbXref	NCIT:C79704	semapv:UnspecifiedMatching	precocious puberty	
+MONDO:0000088	oboInOwl:hasDbXref	Orphanet:95708	semapv:UnspecifiedMatching	precocious puberty	
+MONDO:0000088	oboInOwl:hasDbXref	SCTID:400179000	semapv:UnspecifiedMatching	precocious puberty	
+MONDO:0000088	oboInOwl:hasDbXref	UMLS:C0034013	semapv:UnspecifiedMatching	precocious puberty	
+MONDO:0000088	rdfs:subClassOf	MONDO:0002259	semapv:UnspecifiedMatching	precocious puberty	gonadal disorder
+MONDO:0000090	oboInOwl:hasDbXref	OMIMPS:157640	semapv:UnspecifiedMatching	progressive external ophthalmoplegia with mitochondrial DNA deletions	
+MONDO:0000090	rdfs:subClassOf	MONDO:0005181	semapv:UnspecifiedMatching	progressive external ophthalmoplegia with mitochondrial DNA deletions	progressive external ophthalmoplegia
+MONDO:0000104	oboInOwl:hasDbXref	MEDGEN:388759	semapv:UnspecifiedMatching	anemia, hypochromic microcytic with iron overload	
+MONDO:0000104	oboInOwl:hasDbXref	MESH:C567144	semapv:UnspecifiedMatching	anemia, hypochromic microcytic with iron overload	
+MONDO:0000104	oboInOwl:hasDbXref	OMIMPS:206100	semapv:UnspecifiedMatching	anemia, hypochromic microcytic with iron overload	
+MONDO:0000104	oboInOwl:hasDbXref	UMLS:C2673913	semapv:UnspecifiedMatching	anemia, hypochromic microcytic with iron overload	
+MONDO:0000104	rdfs:subClassOf	MONDO:0000387	semapv:UnspecifiedMatching	anemia, hypochromic microcytic with iron overload	hypochromic microcytic anemia
+MONDO:0000105	oboInOwl:hasDbXref	MEDGEN:871250	semapv:UnspecifiedMatching	anemia, nonspherocytic hemolytic	
+MONDO:0000105	oboInOwl:hasDbXref	UMLS:C4025735	semapv:UnspecifiedMatching	anemia, nonspherocytic hemolytic	
+MONDO:0000105	rdfs:subClassOf	MONDO:0006506	semapv:UnspecifiedMatching	anemia, nonspherocytic hemolytic	congenital nonspherocytic hemolytic anemia
+MONDO:0000107	oboInOwl:hasDbXref	MEDGEN:355953	semapv:UnspecifiedMatching	auriculocondylar syndrome	
+MONDO:0000107	oboInOwl:hasDbXref	MESH:C538270	semapv:UnspecifiedMatching	auriculocondylar syndrome	
+MONDO:0000107	oboInOwl:hasDbXref	OMIMPS:602483	semapv:UnspecifiedMatching	auriculocondylar syndrome	
+MONDO:0000107	oboInOwl:hasDbXref	Orphanet:137888	semapv:UnspecifiedMatching	auriculocondylar syndrome	
+MONDO:0000107	oboInOwl:hasDbXref	SCTID:702443003	semapv:UnspecifiedMatching	auriculocondylar syndrome	
+MONDO:0000107	oboInOwl:hasDbXref	UMLS:C1865295	semapv:UnspecifiedMatching	auriculocondylar syndrome	
+MONDO:0000107	rdfs:subClassOf	MONDO:0007500	semapv:UnspecifiedMatching	auriculocondylar syndrome	ear malformation
+MONDO:0000108	oboInOwl:hasDbXref	MEDGEN:482276	semapv:UnspecifiedMatching	bacteremia, susceptibility	
+MONDO:0000108	oboInOwl:hasDbXref	UMLS:C3280646	semapv:UnspecifiedMatching	bacteremia, susceptibility	
+MONDO:0000108	rdfs:subClassOf	MONDO:0020573	semapv:UnspecifiedMatching	bacteremia, susceptibility	inherited disease susceptibility
+MONDO:0000110	oboInOwl:hasDbXref	MEDGEN:66379	semapv:UnspecifiedMatching	bifid nose	
+MONDO:0000110	oboInOwl:hasDbXref	MESH:C535441	semapv:UnspecifiedMatching	bifid nose	
+MONDO:0000110	oboInOwl:hasDbXref	Orphanet:2695	semapv:UnspecifiedMatching	bifid nose	
+MONDO:0000110	oboInOwl:hasDbXref	UMLS:C0221363	semapv:UnspecifiedMatching	bifid nose	
+MONDO:0000110	rdfs:subClassOf	MONDO:0015411	semapv:UnspecifiedMatching	bifid nose	facial cleft
+MONDO:0000110	rdfs:subClassOf	MONDO:0024623	semapv:UnspecifiedMatching	bifid nose	otorhinolaryngologic disease
+MONDO:0000111	rdfs:subClassOf	MONDO:0003847	semapv:UnspecifiedMatching	camptodactyly syndrome, Guadalajara	hereditary disease
+MONDO:0000114	rdfs:subClassOf	MONDO:0003847	semapv:UnspecifiedMatching	cerebelloparenchymal disorder	hereditary disease
+MONDO:0000115	oboInOwl:hasDbXref	MEDGEN:2065	semapv:UnspecifiedMatching	Chiari malformation	
+MONDO:0000115	oboInOwl:hasDbXref	MESH:D001139	semapv:UnspecifiedMatching	Chiari malformation	
+MONDO:0000115	oboInOwl:hasDbXref	NCIT:C84570	semapv:UnspecifiedMatching	Chiari malformation	
+MONDO:0000115	oboInOwl:hasDbXref	SCTID:253184003	semapv:UnspecifiedMatching	Chiari malformation	
+MONDO:0000115	oboInOwl:hasDbXref	UMLS:C0003803	semapv:UnspecifiedMatching	Chiari malformation	
+MONDO:0000115	rdfs:subClassOf	MONDO:0003847	semapv:UnspecifiedMatching	Chiari malformation	hereditary disease
+MONDO:0000118	oboInOwl:hasDbXref	OMIMPS:179850	semapv:UnspecifiedMatching	reticulate pigment disorder	
+MONDO:0000118	rdfs:subClassOf	MONDO:0019288	semapv:UnspecifiedMatching	reticulate pigment disorder	skin pigmentation disorder
+MONDO:0000119	rdfs:subClassOf	MONDO:0005453	semapv:UnspecifiedMatching	congenital heart defects, multiple types	congenital heart disease
+MONDO:0000127	oboInOwl:hasDbXref	DOID:0111724	semapv:UnspecifiedMatching	geleophysic dysplasia	
+MONDO:0000127	oboInOwl:hasDbXref	MEDGEN:483679	semapv:UnspecifiedMatching	geleophysic dysplasia	
+MONDO:0000127	oboInOwl:hasDbXref	MedDRA:10063361	semapv:UnspecifiedMatching	geleophysic dysplasia	
+MONDO:0000127	oboInOwl:hasDbXref	OMIMPS:231050	semapv:UnspecifiedMatching	geleophysic dysplasia	
+MONDO:0000127	oboInOwl:hasDbXref	Orphanet:2623	semapv:UnspecifiedMatching	geleophysic dysplasia	
+MONDO:0000127	oboInOwl:hasDbXref	SCTID:28557005	semapv:UnspecifiedMatching	geleophysic dysplasia	
+MONDO:0000127	oboInOwl:hasDbXref	UMLS:C3489726	semapv:UnspecifiedMatching	geleophysic dysplasia	
+MONDO:0000127	rdfs:subClassOf	MONDO:0019695	semapv:UnspecifiedMatching	geleophysic dysplasia	acromelic dysplasia
+MONDO:0000128	oboInOwl:hasDbXref	MEDGEN:1684765	semapv:UnspecifiedMatching	giant axonal neuropathy	
+MONDO:0000128	oboInOwl:hasDbXref	MESH:D056768	semapv:UnspecifiedMatching	giant axonal neuropathy	
+MONDO:0000128	oboInOwl:hasDbXref	NCIT:C84728	semapv:UnspecifiedMatching	giant axonal neuropathy	
+MONDO:0000128	oboInOwl:hasDbXref	NORD:1182	semapv:UnspecifiedMatching	giant axonal neuropathy	
+MONDO:0000128	oboInOwl:hasDbXref	OMIMPS:256850	semapv:UnspecifiedMatching	giant axonal neuropathy	
+MONDO:0000128	oboInOwl:hasDbXref	SCTID:128207002	semapv:UnspecifiedMatching	giant axonal neuropathy	
+MONDO:0000128	oboInOwl:hasDbXref	UMLS:C5200933	semapv:UnspecifiedMatching	giant axonal neuropathy	
+MONDO:0000128	rdfs:subClassOf	MONDO:0004183	semapv:UnspecifiedMatching	giant axonal neuropathy	axonal neuropathy
+MONDO:0000129	oboInOwl:hasDbXref	HP:0003150	semapv:UnspecifiedMatching	glutaric aciduria	
+MONDO:0000129	oboInOwl:hasDbXref	HP:0003530	semapv:UnspecifiedMatching	glutaric aciduria	
+MONDO:0000129	oboInOwl:hasDbXref	MEDGEN:75695	semapv:UnspecifiedMatching	glutaric aciduria	
+MONDO:0000129	oboInOwl:hasDbXref	SCTID:28987007	semapv:UnspecifiedMatching	glutaric aciduria	
+MONDO:0000129	oboInOwl:hasDbXref	UMLS:C0268594	semapv:UnspecifiedMatching	glutaric aciduria	
+MONDO:0000129	rdfs:subClassOf	MONDO:0005066	semapv:UnspecifiedMatching	glutaric aciduria	metabolic disease
+MONDO:0000133	oboInOwl:hasDbXref	DOID:0090007	semapv:UnspecifiedMatching	immunodeficiency-centromeric instability-facial anomalies syndrome	
+MONDO:0000133	oboInOwl:hasDbXref	MEDGEN:140770	semapv:UnspecifiedMatching	immunodeficiency-centromeric instability-facial anomalies syndrome	
+MONDO:0000133	oboInOwl:hasDbXref	MESH:C537362	semapv:UnspecifiedMatching	immunodeficiency-centromeric instability-facial anomalies syndrome	
+MONDO:0000133	oboInOwl:hasDbXref	NANDO:1200334	semapv:UnspecifiedMatching	immunodeficiency-centromeric instability-facial anomalies syndrome	
+MONDO:0000133	oboInOwl:hasDbXref	NANDO:2200708	semapv:UnspecifiedMatching	immunodeficiency-centromeric instability-facial anomalies syndrome	
+MONDO:0000133	oboInOwl:hasDbXref	OMIMPS:242860	semapv:UnspecifiedMatching	immunodeficiency-centromeric instability-facial anomalies syndrome	
+MONDO:0000133	oboInOwl:hasDbXref	Orphanet:2268	semapv:UnspecifiedMatching	immunodeficiency-centromeric instability-facial anomalies syndrome	
+MONDO:0000133	oboInOwl:hasDbXref	SCTID:234633000	semapv:UnspecifiedMatching	immunodeficiency-centromeric instability-facial anomalies syndrome	
+MONDO:0000133	oboInOwl:hasDbXref	UMLS:C0398788	semapv:UnspecifiedMatching	immunodeficiency-centromeric instability-facial anomalies syndrome	
+MONDO:0000133	rdfs:subClassOf	MONDO:0006025	semapv:UnspecifiedMatching	immunodeficiency-centromeric instability-facial anomalies syndrome	autosomal recessive disease
+MONDO:0000133	rdfs:subClassOf	MONDO:0100137	semapv:UnspecifiedMatching	immunodeficiency-centromeric instability-facial anomalies syndrome	telomere syndrome
+MONDO:0000136	oboInOwl:hasDbXref	DOID:0080753	semapv:UnspecifiedMatching	keratosis follicularis spinulosa decalvans	
+MONDO:0000136	oboInOwl:hasDbXref	MEDGEN:83355	semapv:UnspecifiedMatching	keratosis follicularis spinulosa decalvans	
+MONDO:0000136	oboInOwl:hasDbXref	NORD:1288	semapv:UnspecifiedMatching	keratosis follicularis spinulosa decalvans	
+MONDO:0000136	oboInOwl:hasDbXref	Orphanet:2340	semapv:UnspecifiedMatching	keratosis follicularis spinulosa decalvans	
+MONDO:0000136	oboInOwl:hasDbXref	SCTID:238626006	semapv:UnspecifiedMatching	keratosis follicularis spinulosa decalvans	
+MONDO:0000136	oboInOwl:hasDbXref	UMLS:C0343057	semapv:UnspecifiedMatching	keratosis follicularis spinulosa decalvans	
+MONDO:0000136	rdfs:subClassOf	MONDO:0006566	semapv:UnspecifiedMatching	keratosis follicularis spinulosa decalvans	keratosis
+MONDO:0000136	rdfs:subClassOf	MONDO:0018855	semapv:UnspecifiedMatching	keratosis follicularis spinulosa decalvans	keratosis pilaris atrophicans
+MONDO:0000136	rdfs:subClassOf	MONDO:0800159	semapv:UnspecifiedMatching	keratosis follicularis spinulosa decalvans	disorder of polyamine metabolism
+MONDO:0000137	oboInOwl:hasDbXref	OMIMPS:604004	semapv:UnspecifiedMatching	leukoencephalopathy, megalencephalic	
+MONDO:0000138	oboInOwl:hasDbXref	HP:0005871	semapv:UnspecifiedMatching	metaphyseal chondrodysplasia	
+MONDO:0000138	oboInOwl:hasDbXref	MEDGEN:120528	semapv:UnspecifiedMatching	metaphyseal chondrodysplasia	
+MONDO:0000138	oboInOwl:hasDbXref	SCTID:28681006	semapv:UnspecifiedMatching	metaphyseal chondrodysplasia	
+MONDO:0000138	oboInOwl:hasDbXref	UMLS:C0265290	semapv:UnspecifiedMatching	metaphyseal chondrodysplasia	
+MONDO:0000138	rdfs:subClassOf	MONDO:0009943	semapv:UnspecifiedMatching	metaphyseal chondrodysplasia	Pyle disease
+MONDO:0000141	oboInOwl:hasDbXref	DOID:0080688	semapv:UnspecifiedMatching	mosaic variegated aneuploidy syndrome	
+MONDO:0000141	oboInOwl:hasDbXref	MEDGEN:1641418	semapv:UnspecifiedMatching	mosaic variegated aneuploidy syndrome	
+MONDO:0000141	oboInOwl:hasDbXref	MESH:C536987	semapv:UnspecifiedMatching	mosaic variegated aneuploidy syndrome	
+MONDO:0000141	oboInOwl:hasDbXref	OMIMPS:257300	semapv:UnspecifiedMatching	mosaic variegated aneuploidy syndrome	
+MONDO:0000141	oboInOwl:hasDbXref	Orphanet:1052	semapv:UnspecifiedMatching	mosaic variegated aneuploidy syndrome	
+MONDO:0000141	oboInOwl:hasDbXref	SCTID:700056005	semapv:UnspecifiedMatching	mosaic variegated aneuploidy syndrome	
+MONDO:0000141	oboInOwl:hasDbXref	UMLS:C4551972	semapv:UnspecifiedMatching	mosaic variegated aneuploidy syndrome	
+MONDO:0000141	rdfs:subClassOf	MONDO:0015356	semapv:UnspecifiedMatching	mosaic variegated aneuploidy syndrome	hereditary neoplastic syndrome
+MONDO:0000141	rdfs:subClassOf	MONDO:0019040	semapv:UnspecifiedMatching	mosaic variegated aneuploidy syndrome	chromosomal disorder
+MONDO:0000144	oboInOwl:hasDbXref	OMIMPS:614389	semapv:UnspecifiedMatching	pregnancy loss, recurrent, susceptibility	
+MONDO:0000147	oboInOwl:hasDbXref	MEDGEN:137722	semapv:UnspecifiedMatching	polyposis	
+MONDO:0000147	oboInOwl:hasDbXref	NANDO:2100257	semapv:UnspecifiedMatching	polyposis	
+MONDO:0000147	oboInOwl:hasDbXref	NCIT:C4089	semapv:UnspecifiedMatching	polyposis	
+MONDO:0000147	oboInOwl:hasDbXref	UMLS:C0334108	semapv:UnspecifiedMatching	polyposis	
+MONDO:0000147	rdfs:subClassOf	MONDO:0021075	semapv:UnspecifiedMatching	polyposis	neoplastic polyp
+MONDO:0000148	oboInOwl:hasDbXref	OMIMPS:614742	semapv:UnspecifiedMatching	pulmonary fibrosis and/or bone marrow failure, telomere-related	
+MONDO:0000148	rdfs:subClassOf	MONDO:0002771	semapv:UnspecifiedMatching	pulmonary fibrosis and/or bone marrow failure, telomere-related	pulmonary fibrosis
+MONDO:0000148	rdfs:subClassOf	MONDO:0100137	semapv:UnspecifiedMatching	pulmonary fibrosis and/or bone marrow failure, telomere-related	telomere syndrome
+MONDO:0000151	oboInOwl:hasDbXref	MEDGEN:1846284	semapv:UnspecifiedMatching	symphalangism	
+MONDO:0000151	oboInOwl:hasDbXref	SCTID:253975004	semapv:UnspecifiedMatching	symphalangism	
+MONDO:0000151	oboInOwl:hasDbXref	UMLS:C5848178	semapv:UnspecifiedMatching	symphalangism	
+MONDO:0000151	rdfs:subClassOf	MONDO:0005172	semapv:UnspecifiedMatching	symphalangism	skeletal system disorder
+MONDO:0000152	oboInOwl:hasDbXref	OMIMPS:249270	semapv:UnspecifiedMatching	thiamine-responsive dysfunction syndrome	
+MONDO:0000152	rdfs:subClassOf	MONDO:0017578	semapv:UnspecifiedMatching	thiamine-responsive dysfunction syndrome	disorder of thiamine metabolism and transport
+MONDO:0000153	oboInOwl:hasDbXref	MEDGEN:21245	semapv:UnspecifiedMatching	transposition of the great arteries	
+MONDO:0000153	oboInOwl:hasDbXref	MESH:D014188	semapv:UnspecifiedMatching	transposition of the great arteries	
+MONDO:0000153	oboInOwl:hasDbXref	NANDO:2200258	semapv:UnspecifiedMatching	transposition of the great arteries	
+MONDO:0000153	oboInOwl:hasDbXref	NCIT:C84742	semapv:UnspecifiedMatching	transposition of the great arteries	
+MONDO:0000153	oboInOwl:hasDbXref	Orphanet:216675	semapv:UnspecifiedMatching	transposition of the great arteries	
+MONDO:0000153	oboInOwl:hasDbXref	UMLS:C0040761	semapv:UnspecifiedMatching	transposition of the great arteries	
+MONDO:0000153	rdfs:subClassOf	MONDO:0019512	semapv:UnspecifiedMatching	transposition of the great arteries	congenital heart malformation
+MONDO:0000155	rdfs:subClassOf	MONDO:0019245	semapv:UnspecifiedMatching	triglyceride storage disease	lysosomal lipid storage disorder
+MONDO:0000156	oboInOwl:hasDbXref	MEDGEN:82713	semapv:UnspecifiedMatching	trigonocephaly	
+MONDO:0000156	oboInOwl:hasDbXref	SCTID:28740008	semapv:UnspecifiedMatching	trigonocephaly	
+MONDO:0000156	oboInOwl:hasDbXref	UMLS:C0265535	semapv:UnspecifiedMatching	trigonocephaly	
+MONDO:0000158	oboInOwl:hasDbXref	DOID:0060930	semapv:UnspecifiedMatching	developmental dysplasia of the hip	
+MONDO:0000158	oboInOwl:hasDbXref	EFO:1000648	semapv:UnspecifiedMatching	developmental dysplasia of the hip	
+MONDO:0000158	oboInOwl:hasDbXref	MEDGEN:1640560	semapv:UnspecifiedMatching	developmental dysplasia of the hip	
+MONDO:0000158	oboInOwl:hasDbXref	MESH:D000082602	semapv:UnspecifiedMatching	developmental dysplasia of the hip	
+MONDO:0000158	oboInOwl:hasDbXref	OMIMPS:142700	semapv:UnspecifiedMatching	developmental dysplasia of the hip	
+MONDO:0000158	oboInOwl:hasDbXref	SCTID:52781008	semapv:UnspecifiedMatching	developmental dysplasia of the hip	
+MONDO:0000158	oboInOwl:hasDbXref	UMLS:C4551649	semapv:UnspecifiedMatching	developmental dysplasia of the hip	
+MONDO:0000158	rdfs:subClassOf	MONDO:0005497	semapv:UnspecifiedMatching	developmental dysplasia of the hip	bone development disease
+MONDO:0000159	oboInOwl:hasDbXref	MEDGEN:419754	semapv:UnspecifiedMatching	bone marrow failure syndrome	
+MONDO:0000159	oboInOwl:hasDbXref	MESH:C536572	semapv:UnspecifiedMatching	bone marrow failure syndrome	
+MONDO:0000159	oboInOwl:hasDbXref	NCIT:C165614	semapv:UnspecifiedMatching	bone marrow failure syndrome	
+MONDO:0000159	oboInOwl:hasDbXref	OMIMPS:614675	semapv:UnspecifiedMatching	bone marrow failure syndrome	
+MONDO:0000159	oboInOwl:hasDbXref	UMLS:C2931245	semapv:UnspecifiedMatching	bone marrow failure syndrome	
+MONDO:0000159	rdfs:subClassOf	MONDO:0003225	semapv:UnspecifiedMatching	bone marrow failure syndrome	bone marrow disorder
+MONDO:0000160	oboInOwl:hasDbXref	DOID:0111689	semapv:UnspecifiedMatching	epilepsy, familial adult myoclonic	
+MONDO:0000160	oboInOwl:hasDbXref	OMIMPS:601068	semapv:UnspecifiedMatching	epilepsy, familial adult myoclonic	
+MONDO:0000160	rdfs:subClassOf	MONDO:0100577	semapv:UnspecifiedMatching	epilepsy, familial adult myoclonic	myoclonic epilepsy
+MONDO:0000166	oboInOwl:hasDbXref	OMIMPS:610551	semapv:UnspecifiedMatching	encephalopathy, acute, infection-induced	
+MONDO:0000167	rdfs:subClassOf	MONDO:0024237	semapv:UnspecifiedMatching	Huntington disease and related disorders	inherited neurodegenerative disorder
+MONDO:0000170	oboInOwl:hasDbXref	MEDGEN:444071	semapv:UnspecifiedMatching	microphthalmia, isolated, with coloboma	
+MONDO:0000170	oboInOwl:hasDbXref	MESH:C537463	semapv:UnspecifiedMatching	microphthalmia, isolated, with coloboma	
+MONDO:0000170	oboInOwl:hasDbXref	OMIMPS:300345	semapv:UnspecifiedMatching	microphthalmia, isolated, with coloboma	
+MONDO:0000170	oboInOwl:hasDbXref	Orphanet:98938	semapv:UnspecifiedMatching	microphthalmia, isolated, with coloboma	
+MONDO:0000170	oboInOwl:hasDbXref	UMLS:C2931500	semapv:UnspecifiedMatching	microphthalmia, isolated, with coloboma	
+MONDO:0000170	rdfs:subClassOf	MONDO:0000062	semapv:UnspecifiedMatching	microphthalmia, isolated, with coloboma	isolated microphthalmia
+MONDO:0000170	rdfs:subClassOf	MONDO:0001476	semapv:UnspecifiedMatching	microphthalmia, isolated, with coloboma	coloboma
+MONDO:0000170	rdfs:subClassOf	MONDO:0016764	semapv:UnspecifiedMatching	microphthalmia, isolated, with coloboma	isolated anophthalmia-microphthalmia syndrome
+MONDO:0000171	oboInOwl:hasDbXref	DOID:0050560	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type A	
+MONDO:0000171	oboInOwl:hasDbXref	MEDGEN:75553	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type A	
+MONDO:0000171	oboInOwl:hasDbXref	MESH:D058494	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type A	
+MONDO:0000171	oboInOwl:hasDbXref	NCIT:C99109	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type A	
+MONDO:0000171	oboInOwl:hasDbXref	OMIMPS:236670	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type A	
+MONDO:0000171	oboInOwl:hasDbXref	Orphanet:899	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type A	
+MONDO:0000171	oboInOwl:hasDbXref	SCTID:111504002	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type A	
+MONDO:0000171	oboInOwl:hasDbXref	UMLS:C0265221	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type A	
+MONDO:0000171	rdfs:subClassOf	MONDO:0018276	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type A	muscular dystrophy-dystroglycanopathy
+MONDO:0000172	oboInOwl:hasDbXref	DOID:0112375	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type B	
+MONDO:0000172	oboInOwl:hasDbXref	OMIMPS:613155	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type B	
+MONDO:0000172	rdfs:subClassOf	MONDO:0018276	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type B	muscular dystrophy-dystroglycanopathy
+MONDO:0000173	oboInOwl:hasDbXref	OMIMPS:609308	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type C	
+MONDO:0000173	rdfs:subClassOf	MONDO:0018276	semapv:UnspecifiedMatching	muscular dystrophy-dystroglycanopathy, type C	muscular dystrophy-dystroglycanopathy
+MONDO:0000179	oboInOwl:hasDbXref	MEDGEN:78537	semapv:UnspecifiedMatching	Neu-Laxova syndrome	
+MONDO:0000179	oboInOwl:hasDbXref	MESH:C536405	semapv:UnspecifiedMatching	Neu-Laxova syndrome	
+MONDO:0000179	oboInOwl:hasDbXref	OMIMPS:256520	semapv:UnspecifiedMatching	Neu-Laxova syndrome	
+MONDO:0000179	oboInOwl:hasDbXref	Orphanet:2671	semapv:UnspecifiedMatching	Neu-Laxova syndrome	
+MONDO:0000179	oboInOwl:hasDbXref	SCTID:77817004	semapv:UnspecifiedMatching	Neu-Laxova syndrome	
+MONDO:0000179	oboInOwl:hasDbXref	UMLS:C0265218	semapv:UnspecifiedMatching	Neu-Laxova syndrome	
+MONDO:0000179	rdfs:subClassOf	MONDO:0002051	semapv:UnspecifiedMatching	Neu-Laxova syndrome	integumentary system disorder
+MONDO:0000179	rdfs:subClassOf	MONDO:0002254	semapv:UnspecifiedMatching	Neu-Laxova syndrome	syndromic disease
+MONDO:0000179	rdfs:subClassOf	MONDO:0015148	semapv:UnspecifiedMatching	Neu-Laxova syndrome	lissencephaly type 3
+MONDO:0000179	rdfs:subClassOf	MONDO:0015159	semapv:UnspecifiedMatching	Neu-Laxova syndrome	multiple congenital anomalies/dysmorphic syndrome-intellectual disability
+MONDO:0000179	rdfs:subClassOf	MONDO:0018491	semapv:UnspecifiedMatching	Neu-Laxova syndrome	3-phosphoglycerate dehydrogenase deficiency
+MONDO:0000181	oboInOwl:hasDbXref	OMIMPS:251270	semapv:UnspecifiedMatching	microcephaly and chorioretinopathy	
+MONDO:0000181	rdfs:subClassOf	MONDO:0001149	semapv:UnspecifiedMatching	microcephaly and chorioretinopathy	microcephaly
+MONDO:0000182	oboInOwl:hasDbXref	OMIMPS:610542	semapv:UnspecifiedMatching	congenital myasthenic syndrome with tubular aggregates	
+MONDO:0000182	rdfs:subClassOf	MONDO:0018940	semapv:UnspecifiedMatching	congenital myasthenic syndrome with tubular aggregates	congenital myasthenic syndrome
+MONDO:0000188	oboInOwl:hasDbXref	DOID:0070560	semapv:UnspecifiedMatching	GLUT1 deficiency syndrome	
+MONDO:0000188	oboInOwl:hasDbXref	MEDGEN:337833	semapv:UnspecifiedMatching	GLUT1 deficiency syndrome	
+MONDO:0000188	oboInOwl:hasDbXref	NANDO:1200799	semapv:UnspecifiedMatching	GLUT1 deficiency syndrome	
+MONDO:0000188	oboInOwl:hasDbXref	OMIMPS:606777	semapv:UnspecifiedMatching	GLUT1 deficiency syndrome	
+MONDO:0000188	oboInOwl:hasDbXref	UMLS:C1847501	semapv:UnspecifiedMatching	GLUT1 deficiency syndrome	
+MONDO:0000188	rdfs:subClassOf	MONDO:0100033	semapv:UnspecifiedMatching	GLUT1 deficiency syndrome	metabolic epilepsy
+MONDO:0000190	oboInOwl:hasDbXref	EFO:0004287	semapv:UnspecifiedMatching	ventricular fibrillation	
+MONDO:0000190	oboInOwl:hasDbXref	HP:0001663	semapv:UnspecifiedMatching	ventricular fibrillation	
+MONDO:0000190	oboInOwl:hasDbXref	MEDGEN:21844	semapv:UnspecifiedMatching	ventricular fibrillation	
+MONDO:0000190	oboInOwl:hasDbXref	MESH:D014693	semapv:UnspecifiedMatching	ventricular fibrillation	
+MONDO:0000190	oboInOwl:hasDbXref	NANDO:2100052	semapv:UnspecifiedMatching	ventricular fibrillation	
+MONDO:0000190	oboInOwl:hasDbXref	NANDO:2200227	semapv:UnspecifiedMatching	ventricular fibrillation	
+MONDO:0000190	oboInOwl:hasDbXref	NCIT:C50799	semapv:UnspecifiedMatching	ventricular fibrillation	
+MONDO:0000190	oboInOwl:hasDbXref	SCTID:71908006	semapv:UnspecifiedMatching	ventricular fibrillation	
+MONDO:0000190	oboInOwl:hasDbXref	UMLS:C0042510	semapv:UnspecifiedMatching	ventricular fibrillation	
+MONDO:0000190	rdfs:subClassOf	MONDO:0007263	semapv:UnspecifiedMatching	ventricular fibrillation	cardiac rhythm disease
+MONDO:0000192	oboInOwl:hasDbXref	OMIMPS:615895	semapv:UnspecifiedMatching	polyglucosan body myopathy	
+MONDO:0000192	rdfs:subClassOf	MONDO:0005336	semapv:UnspecifiedMatching	polyglucosan body myopathy	myopathy
+MONDO:0000193	oboInOwl:hasDbXref	DOID:0090139	semapv:UnspecifiedMatching	cortisone reductase deficiency	
+MONDO:0000193	oboInOwl:hasDbXref	MEDGEN:266223	semapv:UnspecifiedMatching	cortisone reductase deficiency	
+MONDO:0000193	oboInOwl:hasDbXref	MESH:C536447	semapv:UnspecifiedMatching	cortisone reductase deficiency	
+MONDO:0000193	oboInOwl:hasDbXref	OMIMPS:604931	semapv:UnspecifiedMatching	cortisone reductase deficiency	
+MONDO:0000193	oboInOwl:hasDbXref	Orphanet:168588	semapv:UnspecifiedMatching	cortisone reductase deficiency	
+MONDO:0000193	oboInOwl:hasDbXref	SCTID:124138004	semapv:UnspecifiedMatching	cortisone reductase deficiency	
+MONDO:0000193	oboInOwl:hasDbXref	UMLS:C1291245	semapv:UnspecifiedMatching	cortisone reductase deficiency	
+MONDO:0000193	rdfs:subClassOf	MONDO:0005039	semapv:UnspecifiedMatching	cortisone reductase deficiency	reproductive system disorder
+MONDO:0000193	rdfs:subClassOf	MONDO:0015898	semapv:UnspecifiedMatching	cortisone reductase deficiency	adrenogenital syndrome
+MONDO:0000200	oboInOwl:hasDbXref	MEDGEN:208656	semapv:UnspecifiedMatching	Zimmermann-Laband syndrome	
+MONDO:0000200	oboInOwl:hasDbXref	MESH:C536725	semapv:UnspecifiedMatching	Zimmermann-Laband syndrome	
+MONDO:0000200	oboInOwl:hasDbXref	OMIMPS:135500	semapv:UnspecifiedMatching	Zimmermann-Laband syndrome	
+MONDO:0000200	oboInOwl:hasDbXref	Orphanet:3473	semapv:UnspecifiedMatching	Zimmermann-Laband syndrome	
+MONDO:0000200	oboInOwl:hasDbXref	SCTID:699447001	semapv:UnspecifiedMatching	Zimmermann-Laband syndrome	
+MONDO:0000200	oboInOwl:hasDbXref	UMLS:C0796013	semapv:UnspecifiedMatching	Zimmermann-Laband syndrome	
+MONDO:0000200	rdfs:subClassOf	MONDO:0003847	semapv:UnspecifiedMatching	Zimmermann-Laband syndrome	hereditary disease
+MONDO:0000208	oboInOwl:hasDbXref	MEDGEN:863434	semapv:UnspecifiedMatching	microcephaly, short stature, and impaired glucose metabolism 1	
+MONDO:0000208	oboInOwl:hasDbXref	OMIM:616033	semapv:UnspecifiedMatching	microcephaly, short stature, and impaired glucose metabolism 1	
+MONDO:0000208	oboInOwl:hasDbXref	UMLS:C4014997	semapv:UnspecifiedMatching	microcephaly, short stature, and impaired glucose metabolism 1	
+MONDO:0000208	rdfs:subClassOf	MONDO:0800450	semapv:UnspecifiedMatching	microcephaly, short stature, and impaired glucose metabolism 1	microcephaly, short stature, and impaired glucose metabolism
+MONDO:0000209	oboInOwl:hasDbXref	MEDGEN:1798941	semapv:UnspecifiedMatching	prenatal-onset spinal muscular atrophy with congenital bone fractures	
+MONDO:0000209	oboInOwl:hasDbXref	OMIMPS:616866	semapv:UnspecifiedMatching	prenatal-onset spinal muscular atrophy with congenital bone fractures	
+MONDO:0000209	oboInOwl:hasDbXref	Orphanet:486811	semapv:UnspecifiedMatching	prenatal-onset spinal muscular atrophy with congenital bone fractures	
+MONDO:0000209	oboInOwl:hasDbXref	UMLS:C5567518	semapv:UnspecifiedMatching	prenatal-onset spinal muscular atrophy with congenital bone fractures	
+MONDO:0000209	rdfs:subClassOf	MONDO:0015168	semapv:UnspecifiedMatching	prenatal-onset spinal muscular atrophy with congenital bone fractures	arthrogryposis multiplex congenita
+MONDO:0000209	rdfs:subClassOf	MONDO:0024257	semapv:UnspecifiedMatching	prenatal-onset spinal muscular atrophy with congenital bone fractures	hereditary motor neuron disease
+MONDO:0000210	oboInOwl:hasDbXref	MEDGEN:419361	semapv:UnspecifiedMatching	thiopurine metabolic disease	
+MONDO:0000210	oboInOwl:hasDbXref	OMIMPS:610460	semapv:UnspecifiedMatching	thiopurine metabolic disease	
+MONDO:0000210	oboInOwl:hasDbXref	UMLS:C2931223	semapv:UnspecifiedMatching	thiopurine metabolic disease	
+MONDO:0000210	rdfs:subClassOf	MONDO:0019052	semapv:UnspecifiedMatching	thiopurine metabolic disease	inborn errors of metabolism
+MONDO:0000211	oboInOwl:hasDbXref	MEDGEN:322971	semapv:UnspecifiedMatching	striatal degeneration, autosomal dominant	
+MONDO:0000211	oboInOwl:hasDbXref	MESH:C563783	semapv:UnspecifiedMatching	striatal degeneration, autosomal dominant	
+MONDO:0000211	oboInOwl:hasDbXref	OMIMPS:609161	semapv:UnspecifiedMatching	striatal degeneration, autosomal dominant	
+MONDO:0000211	oboInOwl:hasDbXref	Orphanet:228169	semapv:UnspecifiedMatching	striatal degeneration, autosomal dominant	
+MONDO:0000211	oboInOwl:hasDbXref	UMLS:C1836694	semapv:UnspecifiedMatching	striatal degeneration, autosomal dominant	
+MONDO:0000211	rdfs:subClassOf	MONDO:0003122	semapv:UnspecifiedMatching	striatal degeneration, autosomal dominant	striatonigral degeneration
+MONDO:0000212	oboInOwl:hasDbXref	MEDGEN:1380840	semapv:UnspecifiedMatching	hypercalcemia, infantile	
+MONDO:0000212	oboInOwl:hasDbXref	MESH:C562999	semapv:UnspecifiedMatching	hypercalcemia, infantile	
+MONDO:0000212	oboInOwl:hasDbXref	NCIT:C129734	semapv:UnspecifiedMatching	hypercalcemia, infantile	
+MONDO:0000212	oboInOwl:hasDbXref	OMIMPS:143880	semapv:UnspecifiedMatching	hypercalcemia, infantile	
+MONDO:0000212	oboInOwl:hasDbXref	Orphanet:300547	semapv:UnspecifiedMatching	hypercalcemia, infantile	
+MONDO:0000212	oboInOwl:hasDbXref	SCTID:276645004	semapv:UnspecifiedMatching	hypercalcemia, infantile	
+MONDO:0000212	oboInOwl:hasDbXref	SCTID:34225008	semapv:UnspecifiedMatching	hypercalcemia, infantile	
+MONDO:0000212	oboInOwl:hasDbXref	UMLS:C4329374	semapv:UnspecifiedMatching	hypercalcemia, infantile	
+MONDO:0000213	oboInOwl:hasDbXref	DOID:0061159	semapv:UnspecifiedMatching	autoimmune disease, multisystem, infantile-onset	
+MONDO:0000213	oboInOwl:hasDbXref	OMIMPS:615952	semapv:UnspecifiedMatching	autoimmune disease, multisystem, infantile-onset	
+MONDO:0000213	rdfs:subClassOf	MONDO:0007179	semapv:UnspecifiedMatching	autoimmune disease, multisystem, infantile-onset	autoimmune disease
+MONDO:0000214	oboInOwl:hasDbXref	DOID:0080535	semapv:UnspecifiedMatching	hypermanganesemia with dystonia	
+MONDO:0000214	oboInOwl:hasDbXref	MEDGEN:1632594	semapv:UnspecifiedMatching	hypermanganesemia with dystonia	
+MONDO:0000214	oboInOwl:hasDbXref	OMIMPS:613280	semapv:UnspecifiedMatching	hypermanganesemia with dystonia	
+MONDO:0000214	oboInOwl:hasDbXref	SCTID:768553002	semapv:UnspecifiedMatching	hypermanganesemia with dystonia	
+MONDO:0000214	oboInOwl:hasDbXref	UMLS:C4708509	semapv:UnspecifiedMatching	hypermanganesemia with dystonia	
+MONDO:0000214	rdfs:subClassOf	MONDO:0019052	semapv:UnspecifiedMatching	hypermanganesemia with dystonia	inborn errors of metabolism
+MONDO:0000222	oboInOwl:hasDbXref	DOID:0050004	semapv:UnspecifiedMatching	seminal vesicle acute gonorrhea	
+MONDO:0000222	oboInOwl:hasDbXref	MEDGEN:509196	semapv:UnspecifiedMatching	seminal vesicle acute gonorrhea	
+MONDO:0000222	oboInOwl:hasDbXref	SCTID:65049003	semapv:UnspecifiedMatching	seminal vesicle acute gonorrhea	
+MONDO:0000222	oboInOwl:hasDbXref	UMLS:C0153194	semapv:UnspecifiedMatching	seminal vesicle acute gonorrhea	
+MONDO:0000222	rdfs:subClassOf	MONDO:0001027	semapv:UnspecifiedMatching	seminal vesicle acute gonorrhea	gonococcal seminal vesiculitis
+MONDO:0000224	oboInOwl:hasDbXref	DOID:0050013	semapv:UnspecifiedMatching	acquired carbohydrate metabolism disease	
+MONDO:0000225	oboInOwl:hasDbXref	DOID:0050026	semapv:UnspecifiedMatching	human monocytic ehrlichiosis	
+MONDO:0000225	oboInOwl:hasDbXref	MEDGEN:1826179	semapv:UnspecifiedMatching	human monocytic ehrlichiosis	
+MONDO:0000225	oboInOwl:hasDbXref	NORD:1254	semapv:UnspecifiedMatching	human monocytic ehrlichiosis	
+MONDO:0000225	oboInOwl:hasDbXref	SCTID:359747000	semapv:UnspecifiedMatching	human monocytic ehrlichiosis	
+MONDO:0000225	oboInOwl:hasDbXref	UMLS:C3844799	semapv:UnspecifiedMatching	human monocytic ehrlichiosis	
+MONDO:0000225	rdfs:subClassOf	MONDO:0016003	semapv:UnspecifiedMatching	human monocytic ehrlichiosis	ehrlichiosis
+MONDO:0000226	oboInOwl:hasDbXref	EFO:0009556	semapv:UnspecifiedMatching	mineral metabolism disease	
+MONDO:0000226	oboInOwl:hasDbXref	ICD10CM:E83	semapv:UnspecifiedMatching	mineral metabolism disease	
+MONDO:0000226	oboInOwl:hasDbXref	MEDGEN:509562	semapv:UnspecifiedMatching	mineral metabolism disease	
+MONDO:0000226	oboInOwl:hasDbXref	SCTID:45744005	semapv:UnspecifiedMatching	mineral metabolism disease	
+MONDO:0000226	oboInOwl:hasDbXref	UMLS:C0154260	semapv:UnspecifiedMatching	mineral metabolism disease	
+MONDO:0000226	rdfs:subClassOf	MONDO:0005066	semapv:UnspecifiedMatching	mineral metabolism disease	metabolic disease
+MONDO:0000227	oboInOwl:hasDbXref	DOID:0050035	semapv:UnspecifiedMatching	African tick-bite fever	
+MONDO:0000227	oboInOwl:hasDbXref	MEDGEN:728968	semapv:UnspecifiedMatching	African tick-bite fever	
+MONDO:0000227	oboInOwl:hasDbXref	SCTID:415561000	semapv:UnspecifiedMatching	African tick-bite fever	
+MONDO:0000227	oboInOwl:hasDbXref	UMLS:C1320317	semapv:UnspecifiedMatching	African tick-bite fever	
+MONDO:0000227	rdfs:subClassOf	MONDO:0001195	semapv:UnspecifiedMatching	African tick-bite fever	spotted fever
+MONDO:0000229	oboInOwl:hasDbXref	DOID:0050042	semapv:UnspecifiedMatching	Indian tick typhus	
+MONDO:0000229	oboInOwl:hasDbXref	MEDGEN:1843392	semapv:UnspecifiedMatching	Indian tick typhus	
+MONDO:0000229	oboInOwl:hasDbXref	Orphanet:101335	semapv:UnspecifiedMatching	Indian tick typhus	
+MONDO:0000229	oboInOwl:hasDbXref	UMLS:C0343768	semapv:UnspecifiedMatching	Indian tick typhus	
+MONDO:0000230	skos:exactMatch	doid:0050043	semapv:UnspecifiedMatching	Israeli tick typhus	
+MONDO:0000230	oboInOwl:hasDbXref	DOID:0050043	semapv:UnspecifiedMatching	Israeli tick typhus	
+MONDO:0000231	oboInOwl:hasDbXref	DOID:0050046	semapv:UnspecifiedMatching	Far eastern spotted fever	
+MONDO:0000231	oboInOwl:hasDbXref	MEDGEN:759467	semapv:UnspecifiedMatching	Far eastern spotted fever	
+MONDO:0000232	rdfs:subClassOf	MONDO:0001195	semapv:UnspecifiedMatching	Flinders island spotted fever	spotted fever
+MONDO:0000233	rdfs:subClassOf	MONDO:0001195	semapv:UnspecifiedMatching	Japanese spotted fever	spotted fever
+MONDO:0000234	skos:exactMatch	doid:0050051	semapv:UnspecifiedMatching	Rickettsia parkeri spotted fever	
+MONDO:0000234	rdfs:subClassOf	MONDO:0001195	semapv:UnspecifiedMatching	Rickettsia parkeri spotted fever	spotted fever
+MONDO:0000236	skos:exactMatch	doid:0050059	semapv:UnspecifiedMatching	oropharyngeal anthrax	
+MONDO:0000236	rdfs:subClassOf	MONDO:0001701	semapv:UnspecifiedMatching	oropharyngeal anthrax	gastrointestinal anthrax
+MONDO:0000239	rdfs:subClassOf	MONDO:0000308	semapv:UnspecifiedMatching	adiaspiromycosis	primary systemic mycosis
+MONDO:0000241	rdfs:subClassOf	MONDO:0004994	semapv:UnspecifiedMatching	Keshan disease	cardiomyopathy
+MONDO:0000241	rdfs:subClassOf	MONDO:0005721	semapv:UnspecifiedMatching	Keshan disease	coxsackievirus infectious disease
+MONDO:0000241	rdfs:subClassOf	MONDO:0006873	semapv:UnspecifiedMatching	Keshan disease	nutritional deficiency disease
+MONDO:0000242	rdfs:subClassOf	MONDO:0004678	semapv:UnspecifiedMatching	tinea barbae	dermatophytosis
+MONDO:0000243	skos:exactMatch	doid:0050097	semapv:UnspecifiedMatching	ectothrix infectious disease	
+MONDO:0000243	rdfs:subClassOf	MONDO:0004678	semapv:UnspecifiedMatching	ectothrix infectious disease	dermatophytosis
+MONDO:0000244	skos:exactMatch	doid:0050105	semapv:UnspecifiedMatching	endothrix infectious disease	
+MONDO:0000244	rdfs:subClassOf	MONDO:0004678	semapv:UnspecifiedMatching	endothrix infectious disease	dermatophytosis
+MONDO:0000245	rdfs:subClassOf	MONDO:0001461	semapv:UnspecifiedMatching	tinea imbricata	tinea corporis
+MONDO:0000248	rdfs:subClassOf	MONDO:0005358	semapv:UnspecifiedMatching	dengue shock syndrome	Dengue hemorrhagic fever
+MONDO:0000249	rdfs:subClassOf	MONDO:0001673	semapv:UnspecifiedMatching	secretory diarrhea	diarrheal disease
+MONDO:0000251	rdfs:subClassOf	MONDO:0001673	semapv:UnspecifiedMatching	diarrheal disease secondary to altered bowel motility	diarrheal disease
+MONDO:0000252	rdfs:subClassOf	MONDO:0001673	semapv:UnspecifiedMatching	inflammatory diarrhea	diarrheal disease
+MONDO:0000253	rdfs:subClassOf	MONDO:0002917	semapv:UnspecifiedMatching	piedra	disorder of pilosebaceous unit
+MONDO:0000253	rdfs:subClassOf	MONDO:0024268	semapv:UnspecifiedMatching	piedra	superficial mycosis
+MONDO:0000254	rdfs:subClassOf	MONDO:0002041	semapv:UnspecifiedMatching	cutaneous mycosis	fungal infectious disease
+MONDO:0000256	rdfs:subClassOf	MONDO:0002041	semapv:UnspecifiedMatching	systemic mycosis	fungal infectious disease
+MONDO:0000257	rdfs:subClassOf	MONDO:0001673	semapv:UnspecifiedMatching	acute diarrhea	diarrheal disease
+MONDO:0000259	skos:exactMatch	doid:0050143	semapv:UnspecifiedMatching	asymptomatic dengue	
+MONDO:0000259	rdfs:subClassOf	MONDO:0005502	semapv:UnspecifiedMatching	asymptomatic dengue	dengue disease
+MONDO:0000262	rdfs:subClassOf	MONDO:0004795	semapv:UnspecifiedMatching	otomycosis	otitis externa
+MONDO:0000265	rdfs:subClassOf	MONDO:0005275	semapv:UnspecifiedMatching	aspiration pneumonia	lung disorder
+MONDO:0000266	rdfs:subClassOf	MONDO:0005657	semapv:UnspecifiedMatching	pulmonary aspergilloma	aspergillosis
+MONDO:0000270	rdfs:subClassOf	MONDO:0005087	semapv:UnspecifiedMatching	lower respiratory tract disorder	respiratory system disorder
+MONDO:0000271	rdfs:subClassOf	MONDO:0003619	semapv:UnspecifiedMatching	tuberculous salpingitis	salpingitis
+MONDO:0000271	rdfs:subClassOf	MONDO:0006002	semapv:UnspecifiedMatching	tuberculous salpingitis	urogenital tuberculosis
+MONDO:0000273	skos:exactMatch	doid:0050174	semapv:UnspecifiedMatching	Kunjin virus infectous disease	
+MONDO:0000273	rdfs:subClassOf	MONDO:0019376	semapv:UnspecifiedMatching	Kunjin virus infectous disease	West-Nile encephalitis
+MONDO:0000282	skos:exactMatch	doid:0050199	semapv:UnspecifiedMatching	Whitewater Arroyo hemorrhagic fever	
+MONDO:0000282	rdfs:subClassOf	MONDO:0005108	semapv:UnspecifiedMatching	Whitewater Arroyo hemorrhagic fever	viral infectious disease
+MONDO:0000283	skos:exactMatch	doid:0050200	semapv:UnspecifiedMatching	Hantavirus hemorrhagic fever with renal syndrome, Seoul virus type	
+MONDO:0000283	rdfs:subClassOf	MONDO:0005784	semapv:UnspecifiedMatching	Hantavirus hemorrhagic fever with renal syndrome, Seoul virus type	hantavirus hemorrhagic fever with renal syndrome
+MONDO:0000284	rdfs:subClassOf	MONDO:0005784	semapv:UnspecifiedMatching	Hantavirus hemorrhagic fever with renal syndrome, Puumala virus type	hantavirus hemorrhagic fever with renal syndrome
+MONDO:0000286	rdfs:subClassOf	MONDO:0005111	semapv:UnspecifiedMatching	Epstein-Barr virus hepatitis	Epstein-Barr virus infection
+MONDO:0000286	rdfs:subClassOf	MONDO:0006011	semapv:UnspecifiedMatching	Epstein-Barr virus hepatitis	viral hepatitis
+MONDO:0000288	skos:exactMatch	doid:0050218	semapv:UnspecifiedMatching	polycystic echinococcosis	
+MONDO:0000288	rdfs:subClassOf	MONDO:0005154	semapv:UnspecifiedMatching	polycystic echinococcosis	liver disorder
+MONDO:0000288	rdfs:subClassOf	MONDO:0005738	semapv:UnspecifiedMatching	polycystic echinococcosis	echinococcosis
+MONDO:0000290	rdfs:subClassOf	MONDO:0002428	semapv:UnspecifiedMatching	primary amebic meningoencephalitis	protozoa infectious disease
+MONDO:0000291	rdfs:subClassOf	MONDO:0002428	semapv:UnspecifiedMatching	granulomatous amebic encephalitis	protozoa infectious disease
+MONDO:0000292	skos:exactMatch	doid:0050250	semapv:UnspecifiedMatching	philophthalmiasis	
+MONDO:0000293	rdfs:subClassOf	MONDO:0000367	semapv:UnspecifiedMatching	coenurosis	taeniasis
+MONDO:0000295	rdfs:subClassOf	MONDO:0004664	semapv:UnspecifiedMatching	acanthocephaliasis	helminthiasis
+MONDO:0000302	rdfs:subClassOf	MONDO:0019136	semapv:UnspecifiedMatching	basidiobolomycosis	Zygomycosis
+MONDO:0000303	rdfs:subClassOf	MONDO:0000255	semapv:UnspecifiedMatching	conidiobolomycosis	subcutaneous mycosis
+MONDO:0000307	skos:exactMatch	doid:0050291	semapv:UnspecifiedMatching	parasitic Ichthyosporea infectious disease	
+MONDO:0000307	rdfs:subClassOf	MONDO:0005135	semapv:UnspecifiedMatching	parasitic Ichthyosporea infectious disease	parasitic infectious disease
+MONDO:0000308	skos:exactMatch	doid:0050292	semapv:UnspecifiedMatching	primary systemic mycosis	
+MONDO:0000308	rdfs:subClassOf	MONDO:0000256	semapv:UnspecifiedMatching	primary systemic mycosis	systemic mycosis
+MONDO:0000309	rdfs:subClassOf	MONDO:0004892	semapv:UnspecifiedMatching	aniseikonia	refractive error
+MONDO:0000310	rdfs:subClassOf	MONDO:0017881	semapv:UnspecifiedMatching	Alkhurma hemorrhagic fever	Kyasanur forest disease
+MONDO:0000313	rdfs:subClassOf	MONDO:0002319	semapv:UnspecifiedMatching	hypophosphatemia	phosphorus metabolism disease
+MONDO:0000314	skos:exactMatch	doid:0050338	semapv:UnspecifiedMatching	primary bacterial infectious disease	
+MONDO:0000314	rdfs:subClassOf	MONDO:0005113	semapv:UnspecifiedMatching	primary bacterial infectious disease	bacterial infectious disease
+MONDO:0000315	skos:exactMatch	doid:0050339	semapv:UnspecifiedMatching	commensal bacterial infectious disease	
+MONDO:0000315	rdfs:subClassOf	MONDO:0005113	semapv:UnspecifiedMatching	commensal bacterial infectious disease	bacterial infectious disease
+MONDO:0000316	skos:exactMatch	doid:0050340	semapv:UnspecifiedMatching	opportunistic bacterial infectious disease	
+MONDO:0000316	rdfs:subClassOf	MONDO:0005113	semapv:UnspecifiedMatching	opportunistic bacterial infectious disease	bacterial infectious disease
+MONDO:0000320	rdfs:subClassOf	MONDO:0004928	semapv:UnspecifiedMatching	glandular tularemia	lymph node disorder
+MONDO:0000320	rdfs:subClassOf	MONDO:0018077	semapv:UnspecifiedMatching	glandular tularemia	tularemia
+MONDO:0000321	rdfs:subClassOf	MONDO:0018077	semapv:UnspecifiedMatching	typhoidal tularemia	tularemia
+MONDO:0000327	rdfs:subClassOf	MONDO:0000314	semapv:UnspecifiedMatching	Buruli ulcer disease	primary bacterial infectious disease
+MONDO:0000328	rdfs:subClassOf	MONDO:0002319	semapv:UnspecifiedMatching	hyperphosphatemia	phosphorus metabolism disease
+MONDO:0000330	rdfs:subClassOf	MONDO:0001246	semapv:UnspecifiedMatching	endemic typhus	typhus
+MONDO:0000331	skos:exactMatch	doid:0050484	semapv:UnspecifiedMatching	Rickettsia helvetica spotted fever	
+MONDO:0000331	rdfs:subClassOf	MONDO:0001195	semapv:UnspecifiedMatching	Rickettsia helvetica spotted fever	spotted fever
+MONDO:0000332	rdfs:subClassOf	MONDO:0000314	semapv:UnspecifiedMatching	sennetsu fever	primary bacterial infectious disease
+MONDO:0000333	rdfs:subClassOf	MONDO:0005714	semapv:UnspecifiedMatching	early congenital syphilis	congenital syphilis
+MONDO:0000334	rdfs:subClassOf	MONDO:0006869	semapv:UnspecifiedMatching	multinodular goiter	nodular goiter
+MONDO:0000335	skos:exactMatch	doid:0050490	semapv:UnspecifiedMatching	parenchymatous neurosyphilis	
+MONDO:0000335	rdfs:subClassOf	MONDO:0004944	semapv:UnspecifiedMatching	parenchymatous neurosyphilis	neurosyphilis
+MONDO:0000336	skos:exactMatch	doid:0050491	semapv:UnspecifiedMatching	meningovascular neurosyphilis	
+MONDO:0000336	rdfs:subClassOf	MONDO:0004944	semapv:UnspecifiedMatching	meningovascular neurosyphilis	neurosyphilis
+MONDO:0000337	rdfs:subClassOf	MONDO:0005108	semapv:UnspecifiedMatching	exanthema subitum	viral infectious disease
+MONDO:0000337	rdfs:subClassOf	MONDO:0006547	semapv:UnspecifiedMatching	exanthema subitum	exanthem
+MONDO:0000338	rdfs:subClassOf	MONDO:0004651	semapv:UnspecifiedMatching	variola major infectious disease	smallpox
+MONDO:0000338	rdfs:subClassOf	MONDO:0006547	semapv:UnspecifiedMatching	variola major infectious disease	exanthem
+MONDO:0000339	skos:exactMatch	doid:0050513	semapv:UnspecifiedMatching	spinal polio	
+MONDO:0000339	rdfs:subClassOf	MONDO:0000341	semapv:UnspecifiedMatching	spinal polio	paralytic poliomyelitis
+MONDO:0000340	skos:exactMatch	doid:0050514	semapv:UnspecifiedMatching	bulbospinal polio	
+MONDO:0000340	rdfs:subClassOf	MONDO:0000341	semapv:UnspecifiedMatching	bulbospinal polio	paralytic poliomyelitis
+MONDO:0000341	rdfs:subClassOf	MONDO:0017373	semapv:UnspecifiedMatching	paralytic poliomyelitis	poliomyelitis
+MONDO:0000343	skos:exactMatch	doid:0050517	semapv:UnspecifiedMatching	Barmah forest virus disease	
+MONDO:0000346	skos:exactMatch	doid:0050522	semapv:UnspecifiedMatching	Hantavirus hemorrhagic fever with renal syndrome, Dobrava-Belgrade virus type	
+MONDO:0000346	rdfs:subClassOf	MONDO:0005784	semapv:UnspecifiedMatching	Hantavirus hemorrhagic fever with renal syndrome, Dobrava-Belgrade virus type	hantavirus hemorrhagic fever with renal syndrome
+MONDO:0000351	rdfs:subClassOf	MONDO:0004736	semapv:UnspecifiedMatching	disorder of methionine catabolism	inborn disorder of amino acid metabolism
+MONDO:0000351	rdfs:subClassOf	MONDO:0019222	semapv:UnspecifiedMatching	disorder of methionine catabolism	inborn disorder of methionine cycle and sulfur amino acid metabolism
+MONDO:0000351	rdfs:subClassOf	MONDO:0037938	semapv:UnspecifiedMatching	disorder of methionine catabolism	inborn disorder of aspartate family metabolism
+MONDO:0000355	rdfs:subClassOf	MONDO:0019950	semapv:UnspecifiedMatching	Ullrich congenital muscular dystrophy	congenital muscular dystrophy
+MONDO:0000355	rdfs:subClassOf	MONDO:0019952	semapv:UnspecifiedMatching	Ullrich congenital muscular dystrophy	congenital myopathy
+MONDO:0000358	rdfs:subClassOf	MONDO:0023369	semapv:UnspecifiedMatching	orofacial cleft	disorder of facial skeleton
+MONDO:0000359	rdfs:subClassOf	MONDO:0000812	semapv:UnspecifiedMatching	spondylocostal dysostosis	vertebral column disorder
+MONDO:0000359	rdfs:subClassOf	MONDO:0003847	semapv:UnspecifiedMatching	spondylocostal dysostosis	hereditary disease
+MONDO:0000359	rdfs:subClassOf	MONDO:0018234	semapv:UnspecifiedMatching	spondylocostal dysostosis	dysostosis
+MONDO:0000363	rdfs:subClassOf	MONDO:0004497	semapv:UnspecifiedMatching	gummatous syphilis	tertiary syphilis
+MONDO:0000365	rdfs:subClassOf	MONDO:0020366	semapv:UnspecifiedMatching	primary congenital glaucoma	congenital glaucoma
+MONDO:0000368	rdfs:subClassOf	MONDO:0018076	semapv:UnspecifiedMatching	extrapulmonary tuberculosis	tuberculosis
+MONDO:0000369	rdfs:subClassOf	MONDO:0000368	semapv:UnspecifiedMatching	abdominal tuberculosis	extrapulmonary tuberculosis
+MONDO:0000371	rdfs:subClassOf	MONDO:0004647	semapv:UnspecifiedMatching	oral cavity carcinoma in situ	in situ carcinoma
+MONDO:0000371	rdfs:subClassOf	MONDO:0044925	semapv:UnspecifiedMatching	oral cavity carcinoma in situ	oral cavity carcinoma
+MONDO:0000372	rdfs:subClassOf	MONDO:0004647	semapv:UnspecifiedMatching	pharynx carcinoma in situ	in situ carcinoma
+MONDO:0000372	rdfs:subClassOf	MONDO:0021345	semapv:UnspecifiedMatching	pharynx carcinoma in situ	carcinoma of pharynx
+MONDO:0000373	rdfs:subClassOf	MONDO:0004647	semapv:UnspecifiedMatching	gall bladder carcinoma in situ	in situ carcinoma
+MONDO:0000376	rdfs:subClassOf	MONDO:0004992	semapv:UnspecifiedMatching	respiratory system cancer	cancer
+MONDO:0000376	rdfs:subClassOf	MONDO:0005087	semapv:UnspecifiedMatching	respiratory system cancer	respiratory system disorder
+MONDO:0000377	rdfs:subClassOf	MONDO:0006266	semapv:UnspecifiedMatching	malignant Leydig cell tumor	Leydig cell tumor
+MONDO:0000378	rdfs:subClassOf	MONDO:0002696	semapv:UnspecifiedMatching	malignant Sertoli cell tumor	Sertoli cell tumor
+MONDO:0000379	rdfs:subClassOf	MONDO:0002479	semapv:UnspecifiedMatching	malignant Sertoli-Leydig cell tumor	Sertoli-Leydig cell tumor
+MONDO:0000380	rdfs:subClassOf	MONDO:0020669	semapv:UnspecifiedMatching	paranasal sinus carcinoma	paranasal sinus cancer
+MONDO:0000380	rdfs:subClassOf	MONDO:0056819	semapv:UnspecifiedMatching	paranasal sinus carcinoma	nasal cavity and paranasal sinus carcinoma
+MONDO:0000381	skos:exactMatch	doid:0050620	semapv:UnspecifiedMatching	infiltrating renal pelvis transitional cell carcinoma	
+MONDO:0000381	rdfs:subClassOf	MONDO:0005221	semapv:UnspecifiedMatching	infiltrating renal pelvis transitional cell carcinoma	renal pelvis urothelial carcinoma
+MONDO:0000382	rdfs:subClassOf	MONDO:0005087	semapv:UnspecifiedMatching	respiratory system benign neoplasm	respiratory system disorder
+MONDO:0000382	rdfs:subClassOf	MONDO:0005165	semapv:UnspecifiedMatching	respiratory system benign neoplasm	benign neoplasm
+MONDO:0000383	rdfs:subClassOf	MONDO:0005165	semapv:UnspecifiedMatching	benign reproductive system neoplasm	benign neoplasm
+MONDO:0000383	rdfs:subClassOf	MONDO:0006054	semapv:UnspecifiedMatching	benign reproductive system neoplasm	reproductive system neoplasm
+MONDO:0000384	rdfs:subClassOf	MONDO:0004180	semapv:UnspecifiedMatching	bladder benign neoplasm	benign urinary system neoplasm
+MONDO:0000384	rdfs:subClassOf	MONDO:0004987	semapv:UnspecifiedMatching	bladder benign neoplasm	urinary bladder neoplasm
+MONDO:0000385	rdfs:subClassOf	MONDO:0004335	semapv:UnspecifiedMatching	benign digestive system neoplasm	digestive system disorder
+MONDO:0000385	rdfs:subClassOf	MONDO:0005165	semapv:UnspecifiedMatching	benign digestive system neoplasm	benign neoplasm
+MONDO:0000385	rdfs:subClassOf	MONDO:0021223	semapv:UnspecifiedMatching	benign digestive system neoplasm	digestive system neoplasm
+MONDO:0000386	rdfs:subClassOf	MONDO:0024503	semapv:UnspecifiedMatching	digestive system neuroendocrine tumor, grade 1/2	digestive system neuroendocrine neoplasm
+MONDO:0000387	rdfs:subClassOf	MONDO:0001245	semapv:UnspecifiedMatching	hypochromic microcytic anemia	microcytic anemia
+MONDO:0000387	rdfs:subClassOf	MONDO:0001357	semapv:UnspecifiedMatching	hypochromic microcytic anemia	hypochromic anemia
+MONDO:0000389	rdfs:subClassOf	MONDO:0005516	semapv:UnspecifiedMatching	atelosteogenesis	osteochondrodysplasia
+MONDO:0000390	rdfs:subClassOf	MONDO:0003004	semapv:UnspecifiedMatching	vitelliform macular dystrophy	macular degeneration
+MONDO:0000390	rdfs:subClassOf	MONDO:0020242	semapv:UnspecifiedMatching	vitelliform macular dystrophy	hereditary macular dystrophy
+MONDO:0000393	rdfs:subClassOf	MONDO:0000408	semapv:UnspecifiedMatching	partial fetal alcohol syndrome	fetal alcohol spectrum disorder
+MONDO:0000395	rdfs:subClassOf	MONDO:0000408	semapv:UnspecifiedMatching	alcohol-related birth defect	fetal alcohol spectrum disorder
+MONDO:0000396	rdfs:subClassOf	MONDO:0006497	semapv:UnspecifiedMatching	spastic cerebral palsy	cerebral palsy
+MONDO:0000397	rdfs:subClassOf	MONDO:0006497	semapv:UnspecifiedMatching	ataxic cerebral palsy	cerebral palsy
+MONDO:0000400	rdfs:subClassOf	MONDO:0006497	semapv:UnspecifiedMatching	mixed cerebral palsy	cerebral palsy
+MONDO:0000402	skos:relatedMatch	ncit:C4099	semapv:UnspecifiedMatching	small cell carcinoma	
+MONDO:0000402	rdfs:subClassOf	MONDO:0002120	semapv:UnspecifiedMatching	small cell carcinoma	neuroendocrine carcinoma
+MONDO:0000407	rdfs:subClassOf	MONDO:0006294	semapv:UnspecifiedMatching	malignant pleural solitary fibrous tumor	pleural cancer
+MONDO:0000407	rdfs:subClassOf	MONDO:0021041	semapv:UnspecifiedMatching	malignant pleural solitary fibrous tumor	pleural solitary fibrous tumor
+MONDO:0000408	rdfs:subClassOf	MONDO:0000592	semapv:UnspecifiedMatching	fetal alcohol spectrum disorder	specific developmental disorder
+MONDO:0000408	rdfs:subClassOf	MONDO:0021699	semapv:UnspecifiedMatching	fetal alcohol spectrum disorder	alcohol-induced disorders
+MONDO:0000409	rdfs:subClassOf	MONDO:0005113	semapv:UnspecifiedMatching	chorioamnionitis	bacterial infectious disease
+MONDO:0000409	rdfs:subClassOf	MONDO:0021166	semapv:UnspecifiedMatching	chorioamnionitis	inflammatory disease
+MONDO:0000410	rdfs:subClassOf	MONDO:0024575	semapv:UnspecifiedMatching	funisitis	pregnancy disorder
+MONDO:0000415	skos:exactMatch	doid:0050705	semapv:UnspecifiedMatching	adolescence-adult electroclinical syndrome	
+MONDO:0000415	rdfs:subClassOf	MONDO:0015650	semapv:UnspecifiedMatching	adolescence-adult electroclinical syndrome	epilepsy syndrome
+MONDO:0000421	skos:exactMatch	doid:0050721	semapv:UnspecifiedMatching	inborn serine deficiency	
+MONDO:0000425	rdfs:subClassOf	MONDO:0003847	semapv:UnspecifiedMatching	X-linked disease	hereditary disease
+MONDO:0000426	rdfs:subClassOf	MONDO:0000429	semapv:UnspecifiedMatching	autosomal dominant disease	autosomal genetic disease
+MONDO:0000428	rdfs:subClassOf	MONDO:0003847	semapv:UnspecifiedMatching	Y-linked disease	hereditary disease
+MONDO:0000429	rdfs:subClassOf	MONDO:0003847	semapv:UnspecifiedMatching	autosomal genetic disease	hereditary disease
+MONDO:0000430	rdfs:subClassOf	MONDO:0005169	semapv:UnspecifiedMatching	mature T-cell and NK-cell non-Hodgkin lymphoma	neoplasm of mature T-cells or NK-cells
+MONDO:0000430	rdfs:subClassOf	MONDO:0015760	semapv:UnspecifiedMatching	mature T-cell and NK-cell non-Hodgkin lymphoma	T-cell non-Hodgkin lymphoma
+MONDO:0000432	rdfs:subClassOf	MONDO:0004095	semapv:UnspecifiedMatching	lymphoplasmacytic lymphoma	B-cell neoplasm
+MONDO:0000437	rdfs:subClassOf	MONDO:0005395	semapv:UnspecifiedMatching	cerebellar ataxia	movement disorder
+MONDO:0000437	rdfs:subClassOf	MONDO:0100308	semapv:UnspecifiedMatching	cerebellar ataxia	atactic disorder
+MONDO:0000440	rdfs:subClassOf	MONDO:0006022	semapv:UnspecifiedMatching	metabolic acidosis	acidosis disorder
+MONDO:0000446	skos:exactMatch	doid:0050767	semapv:UnspecifiedMatching	midface dysplasia	
+MONDO:0000446	rdfs:subClassOf	MONDO:0005516	semapv:UnspecifiedMatching	midface dysplasia	osteochondrodysplasia
+MONDO:0000447	rdfs:subClassOf	MONDO:0000426	semapv:UnspecifiedMatching	autosomal dominant polycystic liver disease	autosomal dominant disease
+MONDO:0000447	rdfs:subClassOf	MONDO:0005154	semapv:UnspecifiedMatching	autosomal dominant polycystic liver disease	liver disorder
+MONDO:0000448	rdfs:subClassOf	MONDO:0002366	semapv:UnspecifiedMatching	paraganglioma	autonomic nervous system neoplasm
+MONDO:0000448	rdfs:subClassOf	MONDO:0019496	semapv:UnspecifiedMatching	paraganglioma	neuroendocrine neoplasm
+MONDO:0000448	rdfs:subClassOf	MONDO:0021635	semapv:UnspecifiedMatching	paraganglioma	neurocristopathy
+MONDO:0000450	rdfs:subClassOf	MONDO:0005284	semapv:UnspecifiedMatching	secondary progressive multiple sclerosis	chronic progressive multiple sclerosis
+MONDO:0000451	rdfs:subClassOf	MONDO:0005284	semapv:UnspecifiedMatching	primary progressive multiple sclerosis	chronic progressive multiple sclerosis
+MONDO:0000452	rdfs:subClassOf	MONDO:0005284	semapv:UnspecifiedMatching	progressive relapsing multiple sclerosis	chronic progressive multiple sclerosis
+MONDO:0000453	rdfs:subClassOf	MONDO:0000992	semapv:UnspecifiedMatching	short QT syndrome	heart conduction disease
+MONDO:0000453	rdfs:subClassOf	MONDO:1010180	semapv:UnspecifiedMatching	short QT syndrome	cardiogenetic rhythm disorder
+MONDO:0000455	rdfs:subClassOf	MONDO:0020242	semapv:UnspecifiedMatching	cone dystrophy	hereditary macular dystrophy
+MONDO:0000456	rdfs:subClassOf	MONDO:0004736	semapv:UnspecifiedMatching	cerebral creatine deficiency syndrome	inborn disorder of amino acid metabolism
+MONDO:0000456	rdfs:subClassOf	MONDO:0019243	semapv:UnspecifiedMatching	cerebral creatine deficiency syndrome	inborn disorder of energy metabolism
+MONDO:0000457	rdfs:subClassOf	MONDO:0018177	semapv:UnspecifiedMatching	classical glioblastoma	glioblastoma
+MONDO:0000458	rdfs:subClassOf	MONDO:0018177	semapv:UnspecifiedMatching	proneural glioblastoma	glioblastoma
+MONDO:0000459	rdfs:subClassOf	MONDO:0018177	semapv:UnspecifiedMatching	mesenchymal glioblastoma	glioblastoma
+MONDO:0000460	rdfs:subClassOf	MONDO:0018177	semapv:UnspecifiedMatching	neural glioblastoma	glioblastoma
+MONDO:0000461	rdfs:subClassOf	MONDO:0024298	semapv:UnspecifiedMatching	nutritional biotin deficiency	vitamin deficiency disorder
+MONDO:0000462	rdfs:subClassOf	MONDO:0002022	semapv:UnspecifiedMatching	eye adnexa disorder	disorder of orbital region
+MONDO:0000463	rdfs:subClassOf	MONDO:0006025	semapv:UnspecifiedMatching	Ochoa syndrome	autosomal recessive disease
+MONDO:0000465	rdfs:subClassOf	MONDO:0000992	semapv:UnspecifiedMatching	atrioventricular block	heart conduction disease
+MONDO:0000465	rdfs:subClassOf	MONDO:0008848	semapv:UnspecifiedMatching	atrioventricular block	atrioventricular dissociation
+MONDO:0000466	rdfs:subClassOf	MONDO:0000465	semapv:UnspecifiedMatching	first-degree atrioventricular block	atrioventricular block
+MONDO:0000467	rdfs:subClassOf	MONDO:0000465	semapv:UnspecifiedMatching	second-degree atrioventricular block	atrioventricular block
+MONDO:0000468	rdfs:subClassOf	MONDO:0000465	semapv:UnspecifiedMatching	third-degree atrioventricular block	atrioventricular block
+MONDO:0000469	rdfs:subClassOf	MONDO:0000992	semapv:UnspecifiedMatching	sinoatrial node disorder	heart conduction disease
+MONDO:0000470	rdfs:subClassOf	MONDO:0005267	semapv:UnspecifiedMatching	endocardium disorder	heart disorder
+MONDO:0000471	rdfs:subClassOf	MONDO:0002869	semapv:UnspecifiedMatching	tricuspid valve disorder	heart valve disorder
+MONDO:0000473	rdfs:subClassOf	MONDO:0005385	semapv:UnspecifiedMatching	arterial disorder	vascular disorder
+MONDO:0000476	rdfs:subClassOf	MONDO:0015494	semapv:UnspecifiedMatching	generalized dystonia	isolated dystonia
+MONDO:0000477	rdfs:subClassOf	MONDO:0003441	semapv:UnspecifiedMatching	focal dystonia	dystonic disorder
+MONDO:0000478	skos:exactMatch	doid:0050837	semapv:UnspecifiedMatching	multifocal dystonia	
+MONDO:0000478	rdfs:subClassOf	MONDO:0003441	semapv:UnspecifiedMatching	multifocal dystonia	dystonic disorder
+MONDO:0000479	rdfs:subClassOf	MONDO:0003441	semapv:UnspecifiedMatching	segmental dystonia	dystonic disorder
+MONDO:0000480	rdfs:subClassOf	MONDO:0000477	semapv:UnspecifiedMatching	anismus	focal dystonia
+MONDO:0000481	rdfs:subClassOf	MONDO:0000477	semapv:UnspecifiedMatching	cervical dystonia	focal dystonia
+MONDO:0000482	rdfs:subClassOf	MONDO:0000477	semapv:UnspecifiedMatching	focal hand dystonia	focal dystonia
+MONDO:0000483	rdfs:subClassOf	MONDO:0000477	semapv:UnspecifiedMatching	oculogyric crisis	focal dystonia
+MONDO:0000485	rdfs:subClassOf	MONDO:0000477	semapv:UnspecifiedMatching	spasmodic dystonia	focal dystonia
+MONDO:0000486	rdfs:subClassOf	MONDO:0000477	semapv:UnspecifiedMatching	craniofacial dystonia	focal dystonia
+MONDO:0000487	rdfs:subClassOf	MONDO:0000478	semapv:UnspecifiedMatching	hemidystonia	multifocal dystonia
+MONDO:0000488	skos:exactMatch	doid:0050849	semapv:UnspecifiedMatching	periampullary adenoma	
+MONDO:0000489	rdfs:subClassOf	MONDO:0005560	semapv:UnspecifiedMatching	diabetic encephalopathy	brain disorder
+MONDO:0000490	rdfs:subClassOf	MONDO:0019722	semapv:UnspecifiedMatching	glomerulosclerosis	glomerular disorder
+MONDO:0000491	rdfs:subClassOf	MONDO:0005053	semapv:UnspecifiedMatching	limb ischemia	ischemic disease
+MONDO:0000492	rdfs:subClassOf	MONDO:0000945	semapv:UnspecifiedMatching	chronic venous insufficiency	venous insufficiency
+MONDO:0000494	rdfs:subClassOf	MONDO:0000490	semapv:UnspecifiedMatching	renal fibrosis	glomerulosclerosis
+MONDO:0000495	rdfs:subClassOf	MONDO:0000592	semapv:UnspecifiedMatching	oppositional defiant disorder	specific developmental disorder
+MONDO:0000496	rdfs:subClassOf	MONDO:0006032	semapv:UnspecifiedMatching	hemorrhagic cystitis	cystitis
+MONDO:0000497	rdfs:subClassOf	MONDO:0002654	semapv:UnspecifiedMatching	pyometritis	uterine disorder
+MONDO:0000497	rdfs:subClassOf	MONDO:0021166	semapv:UnspecifiedMatching	pyometritis	inflammatory disease
+MONDO:0000498	rdfs:subClassOf	MONDO:0006649	semapv:UnspecifiedMatching	arteritic anterior ischemic optic neuropathy	anterior ischemic optic neuropathy
+MONDO:0000498	rdfs:subClassOf	MONDO:0008538	semapv:UnspecifiedMatching	arteritic anterior ischemic optic neuropathy	temporal arteritis
+MONDO:0000499	rdfs:subClassOf	MONDO:0006649	semapv:UnspecifiedMatching	non-arteritic anterior ischemic optic neuropathy	anterior ischemic optic neuropathy
+MONDO:0000500	rdfs:subClassOf	MONDO:0004631	semapv:UnspecifiedMatching	tongue squamous cell carcinoma	tongue cancer
+MONDO:0000500	rdfs:subClassOf	MONDO:0004958	semapv:UnspecifiedMatching	tongue squamous cell carcinoma	oral cavity squamous cell carcinoma
+MONDO:0000502	rdfs:subClassOf	MONDO:0004972	semapv:UnspecifiedMatching	villous adenoma	adenoma
+MONDO:0000502	rdfs:subClassOf	MONDO:0024276	semapv:UnspecifiedMatching	villous adenoma	glandular cell neoplasm
+MONDO:0000503	skos:relatedMatch	ncit:C8748	semapv:UnspecifiedMatching	lung adenocarcinoma in situ	
+MONDO:0000503	rdfs:subClassOf	MONDO:0003218	semapv:UnspecifiedMatching	lung adenocarcinoma in situ	adenocarcinoma in situ
+MONDO:0000503	rdfs:subClassOf	MONDO:0004660	semapv:UnspecifiedMatching	lung adenocarcinoma in situ	lung carcinoma in situ
+MONDO:0000503	rdfs:subClassOf	MONDO:0005061	semapv:UnspecifiedMatching	lung adenocarcinoma in situ	lung adenocarcinoma
+MONDO:0000507	rdfs:subClassOf	MONDO:0002254	semapv:UnspecifiedMatching	inclusion body myopathy with Paget disease of bone and frontotemporal dementia	syndromic disease
+MONDO:0000507	rdfs:subClassOf	MONDO:0016112	semapv:UnspecifiedMatching	inclusion body myopathy with Paget disease of bone and frontotemporal dementia	hereditary inclusion-body myopathy
+MONDO:0000507	rdfs:subClassOf	MONDO:0017276	semapv:UnspecifiedMatching	inclusion body myopathy with Paget disease of bone and frontotemporal dementia	frontotemporal dementia
+MONDO:0000508	rdfs:subClassOf	MONDO:0001071	semapv:UnspecifiedMatching	syndromic intellectual disability	intellectual disability
+MONDO:0000509	skos:exactMatch	doid:0050889	semapv:UnspecifiedMatching	non-syndromic intellectual disability	
+MONDO:0000509	rdfs:subClassOf	MONDO:0001071	semapv:UnspecifiedMatching	non-syndromic intellectual disability	intellectual disability
+MONDO:0000510	rdfs:subClassOf	MONDO:0005559	semapv:UnspecifiedMatching	synucleinopathy	neurodegenerative disease
+MONDO:0000510	rdfs:subClassOf	MONDO:0021179	semapv:UnspecifiedMatching	synucleinopathy	proteostasis deficiencies
+MONDO:0000513	skos:exactMatch	doid:0050895	semapv:UnspecifiedMatching	bone ameloblastoma	
+MONDO:0000513	rdfs:subClassOf	MONDO:0000631	semapv:UnspecifiedMatching	bone ameloblastoma	bone benign neoplasm
+MONDO:0000514	skos:exactMatch	doid:0050896	semapv:UnspecifiedMatching	bone squamous cell carcinoma	
+MONDO:0000514	rdfs:subClassOf	MONDO:0002415	semapv:UnspecifiedMatching	bone squamous cell carcinoma	bone carcinoma
+MONDO:0000514	rdfs:subClassOf	MONDO:0005096	semapv:UnspecifiedMatching	bone squamous cell carcinoma	squamous cell carcinoma
+MONDO:0000515	rdfs:subClassOf	MONDO:0008977	semapv:UnspecifiedMatching	bone chondrosarcoma	chondrosarcoma
+MONDO:0000516	skos:exactMatch	doid:0050898	semapv:UnspecifiedMatching	phalanx chondroma	
+MONDO:0000516	rdfs:subClassOf	MONDO:0000631	semapv:UnspecifiedMatching	phalanx chondroma	bone benign neoplasm
+MONDO:0000516	rdfs:subClassOf	MONDO:0002360	semapv:UnspecifiedMatching	phalanx chondroma	chondroma
+MONDO:0000517	skos:exactMatch	doid:0050899	semapv:UnspecifiedMatching	brain stem medulloblastoma	
+MONDO:0000517	rdfs:subClassOf	MONDO:0007959	semapv:UnspecifiedMatching	brain stem medulloblastoma	medulloblastoma
+MONDO:0000518	rdfs:subClassOf	MONDO:0002894	semapv:UnspecifiedMatching	sacrum chordoma	spinal chordoma
+MONDO:0000519	skos:exactMatch	doid:0050901	semapv:UnspecifiedMatching	corpus callosum oligodendroglioma	
+MONDO:0000519	rdfs:subClassOf	MONDO:0002544	semapv:UnspecifiedMatching	corpus callosum oligodendroglioma	brain oligodendroglioma
+MONDO:0000520	rdfs:subClassOf	MONDO:0001952	semapv:UnspecifiedMatching	parietal lobe ependymal tumor	parietal lobe cancer
+MONDO:0000520	rdfs:subClassOf	MONDO:0004245	semapv:UnspecifiedMatching	parietal lobe ependymal tumor	ependymal tumor of brain
+MONDO:0000524	skos:exactMatch	doid:0050907	semapv:UnspecifiedMatching	mixed extragonadal germ cell cancer	
+MONDO:0000531	skos:exactMatch	doid:0050916	semapv:UnspecifiedMatching	bronchus mucoepidermoid carcinoma	
+MONDO:0000539	skos:exactMatch	doid:0050924	semapv:UnspecifiedMatching	striated muscle rhabdoid tumor	
+MONDO:0000545	skos:exactMatch	doid:0050930	semapv:UnspecifiedMatching	sublingual gland adenoid cystic carcinoma	
+MONDO:0000553	skos:exactMatch	doid:0050939	semapv:UnspecifiedMatching	uterine corpus endometrial carcinoma	
+MONDO:0000563	skos:exactMatch	doid:0050988	semapv:UnspecifiedMatching	GRID2-related autosomal dominant spinocerebellar ataxia	
+MONDO:0000572	skos:exactMatch	doid:0060011	semapv:UnspecifiedMatching	recombinase activating gene 1 deficiency	
+MONDO:0000573	skos:exactMatch	doid:0060012	semapv:UnspecifiedMatching	recombinase activating gene 2 deficiency	
+MONDO:0000586	skos:exactMatch	doid:0060029	semapv:UnspecifiedMatching	autoimmune disorder of exocrine system	
+MONDO:0000587	skos:exactMatch	doid:0060030	semapv:UnspecifiedMatching	autoimmune disease of ear, nose and throat	
+MONDO:0000588	skos:exactMatch	doid:0060031	semapv:UnspecifiedMatching	autoimmune disorder of gastrointestinal tract	
+MONDO:0000589	skos:exactMatch	doid:0060032	semapv:UnspecifiedMatching	autoimmune disorder of musculoskeletal system	
+MONDO:0000590	skos:exactMatch	doid:0060033	semapv:UnspecifiedMatching	autoimmune disorder of peripheral nervous system	
+MONDO:0000591	skos:exactMatch	doid:0060036	semapv:UnspecifiedMatching	intrinsic cardiomyopathy	
+MONDO:0000602	skos:exactMatch	doid:0060050	semapv:UnspecifiedMatching	autoimmune disorder of blood	
+MONDO:0000603	skos:exactMatch	doid:0060051	semapv:UnspecifiedMatching	autoimmune disorder of cardiovascular system	
+MONDO:0000612	skos:exactMatch	doid:0060073	semapv:UnspecifiedMatching	lymphatic system cancer	
+MONDO:0000616	skos:exactMatch	doid:0060078	semapv:UnspecifiedMatching	progesterone-receptor negative breast cancer	
+MONDO:0000621	skos:exactMatch	doid:0060083	semapv:UnspecifiedMatching	immune system cancer	
+MONDO:0000626	skos:exactMatch	doid:0060088	semapv:UnspecifiedMatching	vestibular gland benign neoplasm	
+MONDO:0000630	skos:exactMatch	doid:0060092	semapv:UnspecifiedMatching	immune system organ benign neoplasm	
+MONDO:0000633	skos:exactMatch	doid:0060096	semapv:UnspecifiedMatching	sensory organ benign neoplasm	
+MONDO:0000649	skos:exactMatch	doid:0060116	semapv:UnspecifiedMatching	sensory system cancer	
+MONDO:0000652	skos:exactMatch	doid:0060121	semapv:UnspecifiedMatching	integumentary system benign neoplasm	
+MONDO:0000653	skos:exactMatch	doid:0060122	semapv:UnspecifiedMatching	integumentary system cancer	
+MONDO:0000660	skos:exactMatch	doid:0060130	semapv:UnspecifiedMatching	akinetopsia	
+MONDO:0000664	skos:exactMatch	doid:0060134	semapv:UnspecifiedMatching	apperceptive agnosia	
+MONDO:0000666	skos:exactMatch	doid:0060136	semapv:UnspecifiedMatching	associative visual agnosia	
+MONDO:0000669	skos:exactMatch	doid:0060139	semapv:UnspecifiedMatching	color agnosia	
+MONDO:0000673	skos:exactMatch	doid:0060143	semapv:UnspecifiedMatching	integrative agnosia	
+MONDO:0000674	skos:exactMatch	doid:0060144	semapv:UnspecifiedMatching	mirror agnosia	
+MONDO:0000676	skos:exactMatch	doid:0060146	semapv:UnspecifiedMatching	phonagnosia	
+MONDO:0000677	skos:exactMatch	doid:0060147	semapv:UnspecifiedMatching	semantic agnosia	
+MONDO:0000679	skos:exactMatch	doid:0060149	semapv:UnspecifiedMatching	social emotional agnosia	
+MONDO:0000681	skos:exactMatch	doid:0060151	semapv:UnspecifiedMatching	tactile agnosia	
+MONDO:0000684	skos:exactMatch	doid:0060154	semapv:UnspecifiedMatching	verbal auditory agnosia	
+MONDO:0000715	skos:exactMatch	doid:0060219	semapv:UnspecifiedMatching	lymph node adenoid cystic carcinoma	
+MONDO:0000722	skos:exactMatch	doid:0060242	semapv:UnspecifiedMatching	non-syndromic synpolydactyly	
+MONDO:0000734	skos:exactMatch	doid:0060289	semapv:UnspecifiedMatching	Ohdo syndrome and variants	
+MONDO:0000756	skos:exactMatch	doid:0060338	semapv:UnspecifiedMatching	parameningeal embryonal rhabdomyosarcoma	
+MONDO:0000757	skos:exactMatch	doid:0060343	semapv:UnspecifiedMatching	glucocorticoid-induced osteoporosis	
+MONDO:0000761	skos:exactMatch	doid:0060388	semapv:UnspecifiedMatching	syndrome caused by partial chromosomal deletion	
+MONDO:0000762	skos:exactMatch	doid:0060429	semapv:UnspecifiedMatching	syndrome caused by partial chromosomal duplication	
+MONDO:0000763	skos:exactMatch	doid:0060440	semapv:UnspecifiedMatching	epithelial and subepithelial corneal dystrophy	
+MONDO:0000764	skos:exactMatch	doid:0060441	semapv:UnspecifiedMatching	epithelial-stromal TGFBI dystrophy	
+MONDO:0000815	skos:exactMatch	doid:0060606	semapv:UnspecifiedMatching	fetal nicotine spectrum disorder	
+MONDO:0000833	skos:exactMatch	doid:0080005	semapv:UnspecifiedMatching	bone remodeling disease	
+MONDO:0000849	skos:exactMatch	doid:0080040	semapv:UnspecifiedMatching	fibrogenesis imperfecta ossium	
+MONDO:0000891	skos:exactMatch	doid:0080182	semapv:UnspecifiedMatching	mixed fibrolamellar hepatocellular carcinoma	
+MONDO:0001279	skos:exactMatch	doid:1140	semapv:UnspecifiedMatching	intraspinal meningioma	
+MONDO:0001365	skos:exactMatch	doid:11783	semapv:UnspecifiedMatching	necrosis of ear ossicle	
+MONDO:0001733	skos:exactMatch	doid:13514	semapv:UnspecifiedMatching	occlusion of tributary of retinal vein	
+MONDO:0002130	skos:exactMatch	doid:1844	semapv:UnspecifiedMatching	upper limb mononeuronitis	
+MONDO:0002415	skos:exactMatch	doid:2762	semapv:UnspecifiedMatching	bone carcinoma	
+MONDO:0002438	skos:exactMatch	doid:2834	semapv:UnspecifiedMatching	acquired polycythemia	
+MONDO:0002655	skos:exactMatch	doid:3450	semapv:UnspecifiedMatching	cutaneous Paget disease	
+MONDO:0002749	skos:exactMatch	doid:371	semapv:UnspecifiedMatching	extracranial neuroblastoma	
+MONDO:0002862	skos:exactMatch	doid:4064	semapv:UnspecifiedMatching	bile duct sarcoma	
+MONDO:0002924	skos:exactMatch	doid:4230	semapv:UnspecifiedMatching	smooth muscle cancer	
+MONDO:0003017	skos:exactMatch	doid:4490	semapv:UnspecifiedMatching	malignant peritoneal solitary fibrous tumor	
+MONDO:0003059	skos:exactMatch	doid:4606	semapv:UnspecifiedMatching	bile duct cancer	
+MONDO:0003195	skos:exactMatch	doid:4901	semapv:UnspecifiedMatching	peritoneal serous adenocarcinoma	
+MONDO:0003272	skos:exactMatch	doid:5088	semapv:UnspecifiedMatching	mixed epithelial stromal tumor	
+MONDO:0003278	skos:exactMatch	doid:5102	semapv:UnspecifiedMatching	inner ear cancer	
+MONDO:0003290	skos:exactMatch	doid:5129	semapv:UnspecifiedMatching	simple partial epilepsy	
+MONDO:0003333	skos:exactMatch	doid:5209	semapv:UnspecifiedMatching	benign struma ovarii	
+MONDO:0003927	skos:exactMatch	doid:6566	semapv:UnspecifiedMatching	posterior uveal melanoma	
+MONDO:0004141	skos:exactMatch	doid:7206	semapv:UnspecifiedMatching	melanomatosis	
+MONDO:0004149	skos:exactMatch	doid:7222	semapv:UnspecifiedMatching	gallbladder pleomorphic giant cell adenocarcinoma	
+MONDO:0004172	skos:exactMatch	doid:7281	semapv:UnspecifiedMatching	uterine corpus adenocarcinofibroma	
+MONDO:0004202	skos:exactMatch	doid:7379	semapv:UnspecifiedMatching	adrenal medulla carcinoma	
+MONDO:0004212	skos:exactMatch	doid:7408	semapv:UnspecifiedMatching	vulvar keratoacanthoma-like carcinoma	
+MONDO:0004242	skos:exactMatch	doid:749	semapv:UnspecifiedMatching	active peptic ulcer disease	
+MONDO:0004269	skos:exactMatch	doid:7537	semapv:UnspecifiedMatching	breast cystic hypersecretory carcinoma	
+MONDO:0004338	skos:exactMatch	doid:771	semapv:UnspecifiedMatching	retinal cell cancer	
+MONDO:0004419	skos:exactMatch	doid:7972	semapv:UnspecifiedMatching	lymphoma-like variant infiltrating bladder urothelial carcinoma	
+MONDO:0004439	skos:exactMatch	doid:8030	semapv:UnspecifiedMatching	periocular meningioma	
+MONDO:0004532	skos:exactMatch	doid:833	semapv:UnspecifiedMatching	auditory system cancer	
+MONDO:0004538	skos:exactMatch	doid:8340	semapv:UnspecifiedMatching	endocervical type cervical mucinous adenocarcinoma	
+MONDO:0004621	skos:exactMatch	doid:8630	semapv:UnspecifiedMatching	upper lip cancer	
+MONDO:0004724	skos:narrowMatch	ncit:C8396	semapv:UnspecifiedMatching	submandibular gland cancer	
+MONDO:0004951	skos:relatedMatch	ncit:C14220	semapv:UnspecifiedMatching	susceptibility to HIV infection	
+MONDO:0005117	skos:exactMatch	efo:0000776	semapv:UnspecifiedMatching	Aeromonas hydrophila infectious disease	
+MONDO:0005120	skos:exactMatch	efo:0000779	semapv:UnspecifiedMatching	Drosophila C virus infection	
+MONDO:0005122	skos:exactMatch	efo:0000781	semapv:UnspecifiedMatching	Pectobacterium carotovorum infection	
+MONDO:0005143	skos:exactMatch	efo:0001078	semapv:UnspecifiedMatching	Pseudomonas aeruginosa PA14 infection	
+MONDO:0005163	skos:exactMatch	efo:0001675	semapv:UnspecifiedMatching	simian immunodeficiency virus infection	
+MONDO:0005182	skos:exactMatch	efo:0002510	semapv:UnspecifiedMatching	serous cystadenofibroma	
+MONDO:0005254	skos:exactMatch	efo:0003146	semapv:UnspecifiedMatching	symptomatic heart failure	
+MONDO:0005255	skos:exactMatch	efo:0003147	semapv:UnspecifiedMatching	mild heart failure	
+MONDO:0005256	skos:exactMatch	efo:0003148	semapv:UnspecifiedMatching	moderate heart failure	
+MONDO:0005257	skos:exactMatch	efo:0003149	semapv:UnspecifiedMatching	advanced heart failure	
+MONDO:0005430	skos:exactMatch	efo:0004772	semapv:UnspecifiedMatching	early onset hypertension	
+MONDO:0005435	skos:exactMatch	efo:0004826	semapv:UnspecifiedMatching	anti-neutrophil antibody associated vasculitis	
+MONDO:0005465	skos:exactMatch	efo:0005242	semapv:UnspecifiedMatching	methamphetamine-induced psychosis	
+MONDO:0005490	skos:exactMatch	efo:0005524	semapv:UnspecifiedMatching	large artery stroke	
+MONDO:0005589	skos:exactMatch	efo:0006315	semapv:UnspecifiedMatching	thiopurine immunosuppressant-induced pancreatitis	
+MONDO:0005597	skos:exactMatch	efo:0006388	semapv:UnspecifiedMatching	cystic renal cell carcinoma	
+MONDO:0005598	skos:exactMatch	efo:0006391	semapv:UnspecifiedMatching	dopaminergic neuroblastoma	
+MONDO:0005641	skos:exactMatch	efo:0007139	semapv:UnspecifiedMatching	aleutian mink disease	
+MONDO:0005676	skos:exactMatch	efo:0007178	semapv:UnspecifiedMatching	borna disease	
+MONDO:0005677	skos:exactMatch	efo:0007179	semapv:UnspecifiedMatching	Rickettsia conorii infectious disease	
+MONDO:0005799	skos:exactMatch	efo:0007314	semapv:UnspecifiedMatching	hookworm infectious disease	
+MONDO:0006528	skos:exactMatch	doid:0050487	semapv:UnspecifiedMatching	bacterial exanthem	
+MONDO:0007670	skos:exactMatch	orphanet.ordo:69735	semapv:UnspecifiedMatching	hypotrichosis-lymphedema-telangiectasia syndrome (grouping)	
+MONDO:0013025	skos:relatedMatch	ncit:C36470	semapv:UnspecifiedMatching	chromosome 6q24-q25 deletion syndrome	
+MONDO:0013424	skos:relatedMatch	ncit:C41377	semapv:UnspecifiedMatching	3p- syndrome	
+MONDO:0014500	skos:exactMatch	efo:0005304	semapv:UnspecifiedMatching	atrial conduction disease	
+MONDO:0015042	skos:exactMatch	orphanet.ordo:100021	semapv:UnspecifiedMatching	primary plasmacytoma of the bone	
+MONDO:0015140	skos:exactMatch	orphanet.ordo:1020	semapv:UnspecifiedMatching	early-onset autosomal dominant Alzheimer disease	
+MONDO:0015344	skos:exactMatch	orphanet.ordo:139423	semapv:UnspecifiedMatching	idiopathic acute transverse myelitis	
+MONDO:0015430	skos:relatedMatch	ncit:C36474	semapv:UnspecifiedMatching	ring chromosome 1	
+MONDO:0015568	skos:exactMatch	orphanet.ordo:162516	semapv:UnspecifiedMatching	isolated congenital nasal pyriform aperture stenosis	
+MONDO:0015730	skos:relatedMatch	ncit:C37865	semapv:UnspecifiedMatching	mosaic trisomy 17	
+MONDO:0015772	skos:relatedMatch	ncit:C36428	semapv:UnspecifiedMatching	trisomy 8q	
+MONDO:0015812	skos:exactMatch	orphanet.ordo:178533	semapv:UnspecifiedMatching	primary cutaneous gamma/delta-positive T-cell lymphoma	
+MONDO:0016541	skos:exactMatch	orphanet.ordo:238547	semapv:UnspecifiedMatching	acquired secondary polycythemia	
+MONDO:0016598	skos:exactMatch	orphanet.ordo:247378	semapv:UnspecifiedMatching	autosomal recessive secondary polycythemia not associated with VHL gene	
+MONDO:0016663	skos:exactMatch	orphanet.ordo:251312	semapv:UnspecifiedMatching	overlapping connective tissue disease	
+MONDO:0016883	skos:relatedMatch	ncit:C36501	semapv:UnspecifiedMatching	partial deletion of the short arm of chromosome 1	
+MONDO:0016906	skos:relatedMatch	ncit:C36408	semapv:UnspecifiedMatching	partial deletion of the long arm of chromosome 7	
+MONDO:0016910	skos:relatedMatch	ncit:C37312	semapv:UnspecifiedMatching	partial deletion of the long arm of chromosome 11	
+MONDO:0016911	skos:relatedMatch	ncit:C36497	semapv:UnspecifiedMatching	partial deletion of the long arm of chromosome 13	
+MONDO:0016952	skos:relatedMatch	ncit:C36521	semapv:UnspecifiedMatching	partial duplication of the long arm of chromosome 1	
+MONDO:0017269	skos:exactMatch	orphanet.ordo:281210	semapv:UnspecifiedMatching	X-linked ichthyosis syndrome	
+MONDO:0017348	skos:exactMatch	orphanet.ordo:289682	semapv:UnspecifiedMatching	lymphoepithelial-like carcinoma	
+MONDO:0017860	skos:exactMatch	orphanet.ordo:31825	semapv:UnspecifiedMatching	methanol poisoning	
+MONDO:0017862	skos:exactMatch	orphanet.ordo:31827	semapv:UnspecifiedMatching	paraquat poisoning	
+MONDO:0017997	skos:exactMatch	orphanet.ordo:3293	semapv:UnspecifiedMatching	telecanthus-hypertelorism-strabismus-pes cavus syndrome	
+MONDO:0017998	skos:exactMatch	orphanet.ordo:329303	semapv:UnspecifiedMatching	PLA2G6-associated neurodegeneration	
+MONDO:0018068	skos:relatedMatch	ncit:C36529	semapv:UnspecifiedMatching	trisomy 13	
+MONDO:0018071	skos:relatedMatch	ncit:C36626	semapv:UnspecifiedMatching	trisomy 18	
+MONDO:0018202	skos:exactMatch	orphanet.ordo:363582	semapv:UnspecifiedMatching	gonadal germ cell tumor	
+MONDO:0018247	skos:exactMatch	orphanet.ordo:369942	semapv:UnspecifiedMatching	CADDS	
+MONDO:0018548	skos:exactMatch	orphanet.ordo:43119	semapv:UnspecifiedMatching	acute poisoning by drugs with membrane-stabilizing effect	
+MONDO:0018603	skos:exactMatch	orphanet.ordo:440392	semapv:UnspecifiedMatching	SFTPC-related interstitial lung disease	
+MONDO:0018636	skos:exactMatch	orphanet.ordo:444463	semapv:UnspecifiedMatching	autoimmune hemolytic anemia-autoimmune thrombocytopenia-primary immunodeficiency syndrome	
+MONDO:0018681	skos:exactMatch	orphanet.ordo:453499	semapv:UnspecifiedMatching	neurodevelopmental disorder-craniofacial dysmorphism-cardiac defect-hip dysplasia syndrome	
+MONDO:0018708	skos:exactMatch	ncit:C8169	semapv:UnspecifiedMatching	squamous cell carcinoma of the oral tongue	
+MONDO:0018890	skos:exactMatch	orphanet.ordo:537	semapv:UnspecifiedMatching	Lyell syndrome	
+MONDO:0018904	skos:exactMatch	orphanet.ordo:54370	semapv:UnspecifiedMatching	primary membranoproliferative glomerulonephritis	
+MONDO:0018926	skos:exactMatch	orphanet.ordo:56970	semapv:UnspecifiedMatching	human prion disease	
+MONDO:0018930	skos:relatedMatch	ncit:C36469	semapv:UnspecifiedMatching	monosomy 21	
+MONDO:0018967	skos:exactMatch	orphanet.ordo:632	semapv:UnspecifiedMatching	short stature due to isolated growth hormone deficiency with X-linked hypogammaglobulinemia	
+MONDO:0019016	skos:exactMatch	orphanet.ordo:663	semapv:UnspecifiedMatching	maternally-inherited progressive external ophthalmoplegia	
+MONDO:0019054	skos:exactMatch	orphanet.ordo:68378	semapv:UnspecifiedMatching	congenital limb malformation	
+MONDO:0019067	skos:exactMatch	orphanet.ordo:69061	semapv:UnspecifiedMatching	idiopathic steroid-sensitive nephrotic syndrome	
+MONDO:0019101	skos:exactMatch	orphanet.ordo:71213	semapv:UnspecifiedMatching	retinal capillary malformation	
+MONDO:0019263	skos:exactMatch	orphanet.ordo:79278	semapv:UnspecifiedMatching	autosomal erythropoietic protoporphyria	
+MONDO:0019351	skos:exactMatch	orphanet.ordo:823	semapv:UnspecifiedMatching	isolated spina bifida	
+MONDO:0019528	skos:exactMatch	orphanet.ordo:90003	semapv:UnspecifiedMatching	inflammatory pseudotumor of the liver	
+MONDO:0019545	skos:exactMatch	orphanet.ordo:90069	semapv:UnspecifiedMatching	systemic monochloroacetate poisoning	
+MONDO:0019891	skos:relatedMatch	ncit:C36461	semapv:UnspecifiedMatching	monosomy 22	
+MONDO:0019896	skos:exactMatch	orphanet.ordo:96147	semapv:UnspecifiedMatching	Kleefstra syndrome due to 9q34 microdeletion	
+MONDO:0019963	skos:exactMatch	orphanet.ordo:97287	semapv:UnspecifiedMatching	bronchial endocrine tumor	
+MONDO:0019971	skos:exactMatch	orphanet.ordo:97338	semapv:UnspecifiedMatching	melanoma of soft tissue	
+MONDO:0020113	skos:exactMatch	orphanet.ordo:98421	semapv:UnspecifiedMatching	primary acquired red cell aplasia	
+MONDO:0020246	skos:exactMatch	orphanet.ordo:98668	semapv:UnspecifiedMatching	inherited vitreoretinopathy	
+MONDO:0020372	skos:exactMatch	orphanet.ordo:98985	semapv:UnspecifiedMatching	early-onset sutural cataract	
+MONDO:0020395	skos:exactMatch	orphanet.ordo:99054	semapv:UnspecifiedMatching	valvar pulmonary stenosis	
+MONDO:0020466	skos:relatedMatch	ncit:C36630	semapv:UnspecifiedMatching	monosomy X	
+MONDO:0020538	skos:exactMatch	orphanet.ordo:99912	semapv:UnspecifiedMatching	malignant dysgerminomatous germ cell tumor of ovary	
+MONDO:0020583	skos:relatedMatch	ncit:C129438	semapv:UnspecifiedMatching	chromosome 17 disorder	
+MONDO:0020639	skos:relatedMatch	ncit:C3239	semapv:UnspecifiedMatching	monosomy	
+MONDO:0020658	skos:exactMatch	doid:6845	semapv:UnspecifiedMatching	infiltrating ureter transitional cell carcinoma	
+MONDO:0020693	skos:exactMatch	orphanet.ordo:264580	semapv:UnspecifiedMatching	glycogen storage disease due to liver phosphorylase kinase deficiency	
+MONDO:0021125	skos:exactMatch	ncit:C41009	semapv:UnspecifiedMatching	disease characteristic	
+MONDO:0021141	skos:exactMatch	orphanet.ordo:409941	semapv:UnspecifiedMatching	acquired	
+MONDO:0021638	skos:exactMatch	ncit:C116342	semapv:UnspecifiedMatching	low grade astrocytic tumor	
+MONDO:0021651	skos:relatedMatch	ncit:C125597	semapv:UnspecifiedMatching	synpolydactyly	
+MONDO:0022174	skos:relatedMatch	ncit:C36410	semapv:UnspecifiedMatching	chromosome 12p deletion	
+MONDO:0022180	skos:relatedMatch	ncit:C37866	semapv:UnspecifiedMatching	chromosome 16 trisomy	
+MONDO:0022754	skos:relatedMatch	ncit:C36499	semapv:UnspecifiedMatching	chromosome 17p deletion	
+MONDO:0022757	skos:relatedMatch	ncit:C36397	semapv:UnspecifiedMatching	chromosome 20 trisomy	
+MONDO:0024301	skos:exactMatch	doid:0050032	semapv:UnspecifiedMatching	acquired mineral metabolism disease	
+MONDO:0024305	skos:exactMatch	doid:12700	semapv:UnspecifiedMatching	acquired hyperprolactinemia	
+MONDO:0024306	skos:exactMatch	doid:3650	semapv:UnspecifiedMatching	acquired lactic acidosis	
+MONDO:0024489	skos:exactMatch	ncit:C28076	semapv:UnspecifiedMatching	general tumor grading characteristic	
+MONDO:0024492	skos:exactMatch	ncit:C28078	semapv:UnspecifiedMatching	tumor grade 2, general grading system	
+MONDO:0024494	skos:exactMatch	ncit:C28082	semapv:UnspecifiedMatching	tumor grade 4, general grading system	
+MONDO:0024496	skos:exactMatch	ncit:C94678	semapv:UnspecifiedMatching	tumor grade 2 or 3, general grading system	
+MONDO:0024497	skos:exactMatch	ncit:C14158	semapv:UnspecifiedMatching	tumor grade 3 or 4, general grading system	
+MONDO:0024890	skos:exactMatch	ncit:C6965	semapv:UnspecifiedMatching	pineal parenchymal cell neoplasm	
+MONDO:0024988	skos:exactMatch	doid:0080368	semapv:UnspecifiedMatching	sex cord-stromal benign neoplasm	
+MONDO:0027652	skos:exactMatch	orphanet.ordo:240839	semapv:UnspecifiedMatching	5-fluorouracil toxicity	
+MONDO:0027653	skos:exactMatch	orphanet.ordo:240841	semapv:UnspecifiedMatching	abacavir toxicity	
+MONDO:0027655	skos:exactMatch	orphanet.ordo:240845	semapv:UnspecifiedMatching	allopurinol toxicity	
+MONDO:0027664	skos:exactMatch	orphanet.ordo:240863	semapv:UnspecifiedMatching	cisplatin toxicity	
+MONDO:0027666	skos:exactMatch	orphanet.ordo:240867	semapv:UnspecifiedMatching	codeine toxicity	
+MONDO:0027667	skos:exactMatch	orphanet.ordo:240869	semapv:UnspecifiedMatching	efavirenz toxicity	
+MONDO:0027668	skos:exactMatch	orphanet.ordo:240871	semapv:UnspecifiedMatching	flucloxacilline toxicity	
+MONDO:0027675	skos:exactMatch	orphanet.ordo:240885	semapv:UnspecifiedMatching	irinotecan toxicity	
+MONDO:0027677	skos:exactMatch	orphanet.ordo:240887	semapv:UnspecifiedMatching	isoniazid toxicity	
+MONDO:0027687	skos:exactMatch	orphanet.ordo:240905	semapv:UnspecifiedMatching	raltegravir toxicity	
+MONDO:0027696	skos:exactMatch	orphanet.ordo:240921	semapv:UnspecifiedMatching	voriconazole toxicity	
+MONDO:0030502	skos:relatedMatch	ncit:C36601	semapv:UnspecifiedMatching	tetrasomy	
+MONDO:0030701	skos:exactMatch	doid:0040095	semapv:UnspecifiedMatching	autoimmune cardiomyopathy	
+MONDO:0030702	skos:exactMatch	doid:0040096	semapv:UnspecifiedMatching	autoimmune atherosclerosis	
+MONDO:0030906	skos:exactMatch	doid:0050270	semapv:UnspecifiedMatching	Trichomonas tenax infectious disease	
+MONDO:0031013	skos:exactMatch	doid:0040089	semapv:UnspecifiedMatching	autoimmune optic neuritis	
+MONDO:0033169	skos:exactMatch	orphanet.ordo:413693	semapv:UnspecifiedMatching	curariform drugs toxicity	
+MONDO:0033170	skos:exactMatch	orphanet.ordo:413696	semapv:UnspecifiedMatching	statin toxicity	
+MONDO:0033181	skos:exactMatch	orphanet.ordo:414750	semapv:UnspecifiedMatching	phenytoin or carbamazepine toxicity	
+MONDO:0034143	skos:exactMatch	orphanet.ordo:556985	semapv:UnspecifiedMatching	early-onset calcifying leukoencephalopathy-skeletal dysplasia	
+MONDO:0035136	skos:exactMatch	orphanet.ordo:590539	semapv:UnspecifiedMatching	isolated melanotic schwannoma	
+MONDO:0035511	skos:exactMatch	orphanet.ordo:570470	semapv:UnspecifiedMatching	ricin poisoning	
+MONDO:0035646	skos:exactMatch	orphanet.ordo:589821	semapv:UnspecifiedMatching	congenital-onset Steinert myotonic dystrophy	
+MONDO:0035875	skos:exactMatch	orphanet.ordo:574637	semapv:UnspecifiedMatching	ivermectin toxicity	
+MONDO:0035876	skos:exactMatch	orphanet.ordo:574671	semapv:UnspecifiedMatching	belinostat toxicity or dose selection	
+MONDO:0036025	skos:exactMatch	orphanet.ordo:596744	semapv:UnspecifiedMatching	toxicity to dolutegravir	
+MONDO:0042982	skos:exactMatch	ncit:C126349	semapv:UnspecifiedMatching	GATA2 deficiency with susceptibility to MDS/AML	
+MONDO:0043277	skos:relatedMatch	ncit:C36475	semapv:UnspecifiedMatching	mosaic trisomy 6	
+MONDO:0043452	skos:relatedMatch	ncit:C36396	semapv:UnspecifiedMatching	chromosome 8, trisomy	
+MONDO:0043678	skos:relatedMatch	ncit:C6827	semapv:UnspecifiedMatching	chromosome inversion disorder	
+MONDO:0044649	skos:exactMatch	orphanet.ordo:496693	semapv:UnspecifiedMatching	omphalocele-diaphragmatic hernia-cardiovascular anomalies-radial ray defect syndrome	
+MONDO:0044699	skos:exactMatch	orphanet.ordo:500163	semapv:UnspecifiedMatching	SIN3A-related intellectual disability syndrome	
+MONDO:0044762	skos:exactMatch	doid:0050131	semapv:UnspecifiedMatching	diarrheal disease secondary to increased bowel motility	
+MONDO:0044788	skos:exactMatch	ncit:C96804	semapv:UnspecifiedMatching	perihilar intrahepatic cholangiocarcinoma	
+MONDO:0044880	skos:exactMatch	ncit:C200227	semapv:UnspecifiedMatching	cystic tumor of the pancreas	
+MONDO:0100022	skos:exactMatch	orphanet.ordo:693802	semapv:UnspecifiedMatching	neonatal/infantile epilepsy syndrome	
+MONDO:0100042	skos:narrowMatch	ncit:C78245	semapv:UnspecifiedMatching	cardiac conduction defect	
+MONDO:0100147	skos:exactMatch	orphanet.ordo:576278	semapv:UnspecifiedMatching	SATB2 associated disorder	
+MONDO:0100150	skos:exactMatch	orphanet.ordo:98742	semapv:UnspecifiedMatching	RYR1-related myopathy	
+MONDO:0100153	skos:exactMatch	doid:0112227	semapv:UnspecifiedMatching	tubulinopathy	
+MONDO:0100159	skos:exactMatch	ncit:C4732	semapv:UnspecifiedMatching	pulmonary hypertension, neonatal	
+MONDO:0100185	skos:relatedMatch	ncit:C125712	semapv:UnspecifiedMatching	immune reconstitution inflammatory syndrome	
+MONDO:0100190	skos:relatedMatch	ncit:C8360	semapv:UnspecifiedMatching	gastric intestinal metaplasia	
+MONDO:0100373	skos:exactMatch	ncit:C9018	semapv:UnspecifiedMatching	acute myeloid leukemia, inv(16)(p13.1;q22)	
+MONDO:0100374	skos:exactMatch	ncit:C9019	semapv:UnspecifiedMatching	acute myeloid leukemia, t(16;16)(p13.1;q22)	
+MONDO:0100375	skos:exactMatch	ncit:C36055	semapv:UnspecifiedMatching	acute myeloid leukemia, t(15;17)(q24;q21)	
+MONDO:0100377	skos:exactMatch	ncit:C132101	semapv:UnspecifiedMatching	acute myeloid leukemia, t(10;11)(p12;q23)	
+MONDO:0100381	skos:exactMatch	ncit:C132105	semapv:UnspecifiedMatching	acute myeloid leukemia, t(6;11)(q27;q23)	
+MONDO:0100389	skos:exactMatch	ncit:C162775	semapv:UnspecifiedMatching	acute myeloid leukemia, Trisomy 8	
+MONDO:0100395	skos:exactMatch	ncit:C131502	semapv:UnspecifiedMatching	acute myeloid leukemia, t(5;11)(q35;p15)	
+MONDO:0100396	skos:exactMatch	ncit:C122690	semapv:UnspecifiedMatching	acute myeloid leukemia, t(7;12)(q36;p13)	
+MONDO:0100398	skos:exactMatch	ncit:C122716	semapv:UnspecifiedMatching	acute myeloid leukemia, inv(3)(q21.3;q26.2)	
+MONDO:0100399	skos:exactMatch	ncit:C122717	semapv:UnspecifiedMatching	acute myeloid leukemia, t(3;3)(q21.3;q26.2)	
+MONDO:0100407	skos:exactMatch	ncit:C131504	semapv:UnspecifiedMatching	acute myeloid leukemia, t(11;15)(p15;q35)	
+MONDO:0100414	skos:exactMatch	ncit:C151898	semapv:UnspecifiedMatching	acute myeloid leukemia, CEBPA gene mutation	
+MONDO:0100415	skos:exactMatch	ncit:C126748	semapv:UnspecifiedMatching	acute myeloid leukemia, FLT3 internal tandem duplication	
+MONDO:0100444	skos:exactMatch	doid:0061127	semapv:UnspecifiedMatching	RLBP1-related retinopathy	
+MONDO:0100452	skos:exactMatch	doid:0112144	semapv:UnspecifiedMatching	RPE65-related dominant retinopathy	
+MONDO:0100505	skos:exactMatch	ncit:C34534	semapv:UnspecifiedMatching	food dermatitis	
+MONDO:0100619	skos:exactMatch	orphanet.ordo:699645	semapv:UnspecifiedMatching	variable age epilepsy syndrome	
+MONDO:0200000	skos:exactMatch	ncit:C102570	semapv:UnspecifiedMatching	uterine ligament adenosarcoma	
+MONDO:0600002	skos:exactMatch	ncit:C36169	semapv:UnspecifiedMatching	hemorrhagic fever	
+MONDO:0700035	skos:relatedMatch	ncit:C36535	semapv:UnspecifiedMatching	monosomy chromosome 8	
+MONDO:0700065	skos:relatedMatch	ncit:C3421	semapv:UnspecifiedMatching	trisomy	
+MONDO:0700079	skos:broadMatch	ncit:C157056	semapv:UnspecifiedMatching	hormone receptor-positive breast cancer	
+MONDO:0700117	skos:exactMatch	doid:0070487	semapv:UnspecifiedMatching	SLC6A3-related dopamine transporter deficiency syndrome	
+MONDO:0700134	skos:exactMatch	ncit:C134527	semapv:UnspecifiedMatching	bovine neoplasm	
+MONDO:0700135	skos:exactMatch	ncit:C131469	semapv:UnspecifiedMatching	bovine leukemia	
+MONDO:0700136	skos:exactMatch	ncit:C131472	semapv:UnspecifiedMatching	bovine protoporphyria	
+MONDO:0700137	skos:exactMatch	ncit:C134767	semapv:UnspecifiedMatching	bovine lymphosarcoma	
+MONDO:0700138	skos:exactMatch	ncit:C134768	semapv:UnspecifiedMatching	bovine rectal myxoma	
+MONDO:0700139	skos:exactMatch	ncit:C134526	semapv:UnspecifiedMatching	canine neoplasm	
+MONDO:0700140	skos:exactMatch	ncit:C120045	semapv:UnspecifiedMatching	canine osteosarcoma	
+MONDO:0700141	skos:exactMatch	ncit:C120298	semapv:UnspecifiedMatching	canine melanoma	
+MONDO:0700142	skos:exactMatch	ncit:C122783	semapv:UnspecifiedMatching	canine hemangiosarcoma	
+MONDO:0700143	skos:exactMatch	ncit:C124249	semapv:UnspecifiedMatching	canine mammary carcinoma	
+MONDO:0700144	skos:exactMatch	ncit:C128120	semapv:UnspecifiedMatching	canine leukemia	
+MONDO:0700145	skos:exactMatch	ncit:C128121	semapv:UnspecifiedMatching	canine lymphoma	
+MONDO:0700146	skos:exactMatch	ncit:C128122	semapv:UnspecifiedMatching	canine prostate carcinoma	
+MONDO:0700147	skos:exactMatch	ncit:C128125	semapv:UnspecifiedMatching	canine histiocytic sarcoma	
+MONDO:0700148	skos:exactMatch	ncit:C128126	semapv:UnspecifiedMatching	canine transitional cell carcinoma	
+MONDO:0700149	skos:exactMatch	ncit:C128195	semapv:UnspecifiedMatching	canine sarcoma	
+MONDO:0700150	skos:exactMatch	ncit:C129077	semapv:UnspecifiedMatching	canine mastocytoma	
+MONDO:0700151	skos:exactMatch	ncit:C129297	semapv:UnspecifiedMatching	canine glioma	
+MONDO:0700152	skos:exactMatch	ncit:C129298	semapv:UnspecifiedMatching	canine hepatocellular carcinoma	
+MONDO:0700153	skos:exactMatch	ncit:C129299	semapv:UnspecifiedMatching	canine lung adenocarcinoma	
+MONDO:0700154	skos:exactMatch	ncit:C129300	semapv:UnspecifiedMatching	canine rhabdomyosarcoma	
+MONDO:0700155	skos:exactMatch	ncit:C132275	semapv:UnspecifiedMatching	canine thyroid adenocarcinoma	
+MONDO:0700156	skos:exactMatch	ncit:C132276	semapv:UnspecifiedMatching	canine soft tissue sarcoma	
+MONDO:0700157	skos:exactMatch	ncit:C132823	semapv:UnspecifiedMatching	canine oral squamous cell carcinoma	
+MONDO:0700158	skos:exactMatch	ncit:C134944	semapv:UnspecifiedMatching	canine pancreatic carcinoma	
+MONDO:0700159	skos:exactMatch	ncit:C134956	semapv:UnspecifiedMatching	canine acanthomatous epulis	
+MONDO:0700160	skos:exactMatch	ncit:C147073	semapv:UnspecifiedMatching	canine mammary adenoma	
+MONDO:0700161	skos:exactMatch	ncit:C158783	semapv:UnspecifiedMatching	canine gastrointestinal stromal tumor, KIT-related, dog	
+MONDO:0700162	skos:exactMatch	ncit:C158784	semapv:UnspecifiedMatching	canine granular cell tumor	
+MONDO:0700163	skos:exactMatch	ncit:C158785	semapv:UnspecifiedMatching	canine Langerhans cell histiocytosis	
+MONDO:0700164	skos:exactMatch	ncit:C158786	semapv:UnspecifiedMatching	canine nephroblastoma	
+MONDO:0700165	skos:exactMatch	ncit:C161006	semapv:UnspecifiedMatching	canine thyroid gland medullary carcinoma	
+MONDO:0700166	skos:exactMatch	ncit:C162473	semapv:UnspecifiedMatching	canine transmissible venereal tumor	
+MONDO:0700167	skos:exactMatch	ncit:C176701	semapv:UnspecifiedMatching	canine sebaceous gland epithelioma	
+MONDO:0700168	skos:exactMatch	ncit:C185639	semapv:UnspecifiedMatching	canine oral melanoma	
+MONDO:0700169	skos:exactMatch	ncit:C186279	semapv:UnspecifiedMatching	canine cutaneous t-cell lymphoma	
+MONDO:0700171	skos:exactMatch	ncit:C134569	semapv:UnspecifiedMatching	horse melanoma	
+MONDO:0700172	skos:exactMatch	ncit:C134778	semapv:UnspecifiedMatching	horse lymphoma	
+MONDO:0700173	skos:exactMatch	ncit:C134995	semapv:UnspecifiedMatching	horse sarcoid	
+MONDO:0700174	skos:exactMatch	ncit:C173624	semapv:UnspecifiedMatching	horse transitional cell carcinoma	
+MONDO:0700176	skos:exactMatch	ncit:C132193	semapv:UnspecifiedMatching	feline lymphoma	
+MONDO:0700177	skos:exactMatch	ncit:C132274	semapv:UnspecifiedMatching	feline mammary carcinoma	
+MONDO:0700178	skos:exactMatch	ncit:C132824	semapv:UnspecifiedMatching	feline oral squamous cell carcinoma	
+MONDO:0700179	skos:exactMatch	ncit:C132825	semapv:UnspecifiedMatching	feline osteosarcoma	
+MONDO:0700180	skos:exactMatch	ncit:C134559	semapv:UnspecifiedMatching	feline bronchioloalveolar lung carcinoma	
+MONDO:0700181	skos:exactMatch	ncit:C134560	semapv:UnspecifiedMatching	feline fibrosarcoma	
+MONDO:0700182	skos:exactMatch	ncit:C134770	semapv:UnspecifiedMatching	feline erythroleukemia	
+MONDO:0700183	skos:exactMatch	ncit:C135008	semapv:UnspecifiedMatching	feline reticulum cell sarcoma	
+MONDO:0700184	skos:exactMatch	ncit:C135724	semapv:UnspecifiedMatching	feline large granular lymphocyte lymphoma	
+MONDO:0700185	skos:exactMatch	ncit:C156362	semapv:UnspecifiedMatching	feline melanoma	
+MONDO:0700186	skos:exactMatch	ncit:C157503	semapv:UnspecifiedMatching	feline histiocytic sarcoma	
+MONDO:0700187	skos:exactMatch	ncit:C176702	semapv:UnspecifiedMatching	feline progressive histiocytosis	
+MONDO:0700188	skos:exactMatch	ncit:C181658	semapv:UnspecifiedMatching	feline synovial cell sarcoma	
+MONDO:0700189	skos:exactMatch	ncit:C135005	semapv:UnspecifiedMatching	chicken neoplasm	
+MONDO:0700190	skos:exactMatch	ncit:C134556	semapv:UnspecifiedMatching	chicken bursal lymphoma	
+MONDO:0700191	skos:exactMatch	ncit:C134557	semapv:UnspecifiedMatching	chicken fibrosarcoma	
+MONDO:0700192	skos:exactMatch	ncit:C134558	semapv:UnspecifiedMatching	chicken hepatoma	
+MONDO:0700193	skos:exactMatch	ncit:C134945	semapv:UnspecifiedMatching	chicken monocytic leukemia	
+MONDO:0700194	skos:exactMatch	ncit:C135004	semapv:UnspecifiedMatching	chicken lymphoma	
+MONDO:0700195	skos:exactMatch	ncit:C17466	semapv:UnspecifiedMatching	rous sarcoma	
+MONDO:0700196	skos:exactMatch	ncit:C135006	semapv:UnspecifiedMatching	fish melanoma	
+MONDO:0700197	skos:exactMatch	ncit:C141365	semapv:UnspecifiedMatching	porcine leukemia	
+MONDO:0700198	skos:exactMatch	ncit:C134786	semapv:UnspecifiedMatching	porcine lymphoma	
+MONDO:0700199	skos:exactMatch	ncit:C147532	semapv:UnspecifiedMatching	sheep lung adenocarcinoma	
+MONDO:0700200	skos:exactMatch	doid:0070488	semapv:UnspecifiedMatching	atypical dopamine transporter deficiency syndrome	
+MONDO:0700325	skos:exactMatch	orphanet.ordo:90307	semapv:UnspecifiedMatching	Parkes Weber syndrome	
+MONDO:0700393	skos:exactMatch	orphanet.ordo:692296	semapv:UnspecifiedMatching	idiopathic triglyceride deposit cardiomyovasculopathy	
+MONDO:0700478	skos:exactMatch	orphanet.ordo:566243	semapv:UnspecifiedMatching	resistance to thyroid hormone due to a mutation in thyroid hormone receptor beta	
+MONDO:0800139	skos:exactMatch	orphanet.ordo:697389	semapv:UnspecifiedMatching	HELIOS deficiency	
+MONDO:0800493	skos:exactMatch	orphanet.ordo:163717	semapv:UnspecifiedMatching	familial mesial temporal lobe epilepsy	
+MONDO:0850048	skos:exactMatch	orphanet.ordo:617408	semapv:UnspecifiedMatching	classic eosinophilic pustular folliculitis	
+MONDO:0850059	skos:exactMatch	orphanet.ordo:619233	semapv:UnspecifiedMatching	hereditary persistence of fetal hemoglobin-intellectual disability syndrome	
+MONDO:0850094	skos:exactMatch	doid:0070310	semapv:UnspecifiedMatching	drug-induced hearing loss	
+MONDO:0850095	skos:exactMatch	orphanet.ordo:622925	semapv:UnspecifiedMatching	X-linked severe syndromic thoracic aortic aneurysm and dissection	
+MONDO:0850098	skos:exactMatch	doid:0070311	semapv:UnspecifiedMatching	oligoasthenoteratozoospermia	
+MONDO:0850115	skos:exactMatch	orphanet.ordo:99704	semapv:UnspecifiedMatching	early-onset obesity-hyperphagia-severe developmental delay syndrome	
+MONDO:0850122	skos:exactMatch	doid:0080306	semapv:UnspecifiedMatching	solid adenocarcinoma with mucin production	
+MONDO:0850123	skos:exactMatch	doid:0080321	semapv:UnspecifiedMatching	autonomic nervous system benign neoplasm	
+MONDO:0850125	skos:exactMatch	doid:0080364	semapv:UnspecifiedMatching	malignant adenoma	
+MONDO:0850126	skos:exactMatch	doid:0080371	semapv:UnspecifiedMatching	testicular sex cord-stromal benign neoplasm	
+MONDO:0850128	skos:exactMatch	doid:0080373	semapv:UnspecifiedMatching	epididymis disease	
+MONDO:0850130	skos:exactMatch	doid:0080375	semapv:UnspecifiedMatching	gastroesophageal adenocarcinoma	
+MONDO:0850149	skos:exactMatch	doid:0080615	semapv:UnspecifiedMatching	nephroma	
+MONDO:0850150	skos:exactMatch	doid:0080616	semapv:UnspecifiedMatching	kidney cortex disease	
+MONDO:0850151	skos:exactMatch	doid:0080618	semapv:UnspecifiedMatching	lymph node carcinoma	
+MONDO:0850152	skos:exactMatch	doid:0080619	semapv:UnspecifiedMatching	auditory system benign neoplasm	
+MONDO:0850156	skos:exactMatch	doid:0080644	semapv:UnspecifiedMatching	B-lymphoblastic leukemia/lymphoma MLL rearranged	
+MONDO:0850157	skos:exactMatch	doid:0080645	semapv:UnspecifiedMatching	B-lymphoblastic leukemia/lymphoma with ETV6-RUNX1	
+MONDO:0850160	skos:exactMatch	doid:0080648	semapv:UnspecifiedMatching	B-lymphoblastic leukemia/lymphoma with IL3-IGH	
+MONDO:0850200	skos:exactMatch	doid:0080710	semapv:UnspecifiedMatching	T cell and NK cell immunodeficiency	
+MONDO:0850257	skos:exactMatch	doid:0080782	semapv:UnspecifiedMatching	mucinous pancreas adenocarcinoma	
+MONDO:0850284	skos:exactMatch	doid:0080811	semapv:UnspecifiedMatching	extrinsic asthma	
+MONDO:0850285	skos:exactMatch	doid:0080819	semapv:UnspecifiedMatching	environmental induced asthma	
+MONDO:0850287	skos:exactMatch	doid:0080822	semapv:UnspecifiedMatching	aspirin-induced respiratory disease	
+MONDO:0850289	skos:exactMatch	doid:0080827	semapv:UnspecifiedMatching	human betaherpesvirus 5 infectious disease	
+MONDO:0850292	skos:exactMatch	doid:0080831	semapv:UnspecifiedMatching	subjective cognitive decline	
+MONDO:0850332	skos:exactMatch	doid:0080875	semapv:UnspecifiedMatching	IDH-mutant anaplastic astrocytoma	
+MONDO:0850346	skos:exactMatch	doid:0080900	semapv:UnspecifiedMatching	oral rhabdomyosarcoma	
+MONDO:0850347	skos:exactMatch	doid:0080901	semapv:UnspecifiedMatching	bladder sarcomatoid transitional cell carcinoma	
+MONDO:0850348	skos:exactMatch	doid:0080902	semapv:UnspecifiedMatching	bladder small cell carcinoma	
+MONDO:0850349	skos:exactMatch	doid:0080904	semapv:UnspecifiedMatching	astroblastoma, MN1-altered	
+MONDO:0850368	skos:exactMatch	doid:0080935	semapv:UnspecifiedMatching	immunoglobulin heavy-and-light chain	
+MONDO:0850371	skos:exactMatch	doid:0080938	semapv:UnspecifiedMatching	nonobstructive coronary artery disease	
+MONDO:0850415	skos:exactMatch	doid:0080992	semapv:UnspecifiedMatching	rhabdomyolysis-myalgia syndrome	
+MONDO:0850416	skos:exactMatch	doid:0080994	semapv:UnspecifiedMatching	autoimmune epilepsy	
+MONDO:0850417	skos:exactMatch	doid:0080995	semapv:UnspecifiedMatching	tuberculous encephalopathy	
+MONDO:0850426	skos:exactMatch	doid:0081004	semapv:UnspecifiedMatching	high-grade B-cell lymphoma double-hit/triple-hit	
+MONDO:0850445	skos:exactMatch	doid:0081026	semapv:UnspecifiedMatching	benign peritoneal solitary fibrous tumor	
+MONDO:0850449	skos:exactMatch	doid:0081036	semapv:UnspecifiedMatching	mixed phenotype acute leukemia with BCR-ABL1	
+MONDO:0850450	skos:exactMatch	doid:0081037	semapv:UnspecifiedMatching	mixed phenotype acute leukemia with MLL rearranged	
+MONDO:0850461	skos:exactMatch	doid:0081052	semapv:UnspecifiedMatching	neurobehavioral disorder with prenatal alcohol exposure	
+MONDO:0850492	skos:exactMatch	doid:0081093	semapv:UnspecifiedMatching	acute myeloid leukemia, t(8;21)(q22; q22.1)	
+MONDO:0850495	skos:exactMatch	doid:0081096	semapv:UnspecifiedMatching	acute myeloid leukemia, t(1;22)(p13;q13)	
+MONDO:0850519	skos:exactMatch	doid:0081132	semapv:UnspecifiedMatching	tetrahydrobiopterin (BH4)-deficient hyperphenylalaninemia	
+MONDO:0850618	skos:exactMatch	doid:0081239	semapv:UnspecifiedMatching	injection anthrax	
+MONDO:0851102	skos:exactMatch	doid:60001	semapv:UnspecifiedMatching	pulmonary artery disease	
+MONDO:0851105	skos:exactMatch	doid:60007	semapv:UnspecifiedMatching	cerebrovascular benign neoplasm	
+MONDO:0858926	skos:exactMatch	doid:0081264	semapv:UnspecifiedMatching	developmental delay, hypotrophy, and dysmorphic features without moebius syndrome	
+MONDO:0858950	skos:exactMatch	doid:0081292	semapv:UnspecifiedMatching	traumatic brain injury	
+MONDO:0858974	skos:exactMatch	doid:0081323	semapv:UnspecifiedMatching	breast implant illness	
+MONDO:0858999	skos:exactMatch	orphanet.ordo:633004	semapv:UnspecifiedMatching	KDM3B-related intellectual disability-facial dysmorphism-short stature syndrome	
+MONDO:0859002	skos:exactMatch	orphanet.ordo:633035	semapv:UnspecifiedMatching	intellectual disability-early-onset cataract-microcephaly syndrome	
+MONDO:0859588	skos:exactMatch	doid:0080752	semapv:UnspecifiedMatching	keratosis pilaris atrophicans faciei	
+MONDO:0859615	skos:exactMatch	doid:0081279	semapv:UnspecifiedMatching	diffuse astrocytoma, MYB- or MYBL1-altered	
+MONDO:0859689	skos:exactMatch	doid:3117	semapv:UnspecifiedMatching	hepatobiliary benign neoplasm	
+MONDO:0859690	skos:exactMatch	doid:60004	semapv:UnspecifiedMatching	malignant cystadenoma	
+MONDO:0956975	skos:exactMatch	doid:0080817	semapv:UnspecifiedMatching	T2-high asthma	
+MONDO:0956976	skos:exactMatch	doid:0080818	semapv:UnspecifiedMatching	T2-low asthma	
+MONDO:0956983	skos:exactMatch	doid:0080881	semapv:UnspecifiedMatching	pleomorphic xanthoastrocytoma BRAF mutant	
+MONDO:0956985	skos:exactMatch	doid:0080894	semapv:UnspecifiedMatching	lipofibromatosis-like neural tumor	
+MONDO:0956986	skos:exactMatch	doid:0080897	semapv:UnspecifiedMatching	solitary fibrous tumor/hemangiopericytoma	
+MONDO:0956987	skos:exactMatch	doid:0081070	semapv:UnspecifiedMatching	EZB-MYC+ diffuse large B-cell lymphoma	
+MONDO:0956988	skos:exactMatch	doid:0081071	semapv:UnspecifiedMatching	EZB-MYC- diffuse large B-cell lymphoma	
+MONDO:0956996	skos:exactMatch	doid:0081281	semapv:UnspecifiedMatching	oligodendroglioma, IDH-mutant and 1p/19q-codeleted grade 2	
+MONDO:0956997	skos:exactMatch	doid:0081282	semapv:UnspecifiedMatching	oligodendroglioma, IDH-mutant and 1p/19q-codeleted, grade 3	
+MONDO:0957197	skos:exactMatch	doid:0080880	semapv:UnspecifiedMatching	diffuse glioma, H3 G34 mutant	
+MONDO:0957467	skos:exactMatch	orphanet.ordo:645874	semapv:UnspecifiedMatching	primary genito-urinary tuberculosis	
+MONDO:0957519	skos:exactMatch	doid:0080763	semapv:UnspecifiedMatching	diffuse gastric cancer	
+MONDO:0957524	skos:exactMatch	doid:0081377	semapv:UnspecifiedMatching	COX deficiency, benign infantile mitochondrial myopathy	
+MONDO:0957912	skos:exactMatch	doid:0081393	semapv:UnspecifiedMatching	organophosphate-induced delayed polyneuropathy	
+MONDO:0958101	skos:exactMatch	orphanet.ordo:653698	semapv:UnspecifiedMatching	lymphocytic mastitis	
+MONDO:0958110	skos:exactMatch	orphanet.ordo:656071	semapv:UnspecifiedMatching	atrophic papulosis	
+MONDO:0958123	skos:exactMatch	orphanet.ordo:658574	semapv:UnspecifiedMatching	isolated pulmonary artery sling	
+MONDO:0958150	skos:exactMatch	doid:0070527	semapv:UnspecifiedMatching	Borrelia miyamotoi disease	
+MONDO:0958151	skos:exactMatch	doid:0070528	semapv:UnspecifiedMatching	cepacia syndrome	
+MONDO:0958184	skos:exactMatch	doid:0081359	semapv:UnspecifiedMatching	epidermolytic hyperkeratosis 2	
+MONDO:0958344	skos:exactMatch	orphanet.ordo:645188	semapv:UnspecifiedMatching	spinal dermal sinus	
+MONDO:0971032	skos:exactMatch	doid:0081456	semapv:UnspecifiedMatching	bladder fermentation syndrome	
+MONDO:0971068	skos:exactMatch	orphanet.ordo:662169	semapv:UnspecifiedMatching	Phelan-McDermid syndrome due to 22q13.3 deletion	
+MONDO:0971092	skos:exactMatch	orphanet.ordo:664372	semapv:UnspecifiedMatching	soft and hard cleft palate	
+MONDO:0971118	skos:exactMatch	orphanet.ordo:673585	semapv:UnspecifiedMatching	pilocytic astrocytoma with histological features of anaplasia	
+MONDO:0971154	skos:exactMatch	orphanet.ordo:659698	semapv:UnspecifiedMatching	hepatic cutaneous porphyria	
+MONDO:0975708	skos:exactMatch	doid:0070564	semapv:UnspecifiedMatching	dialysis disequilibrium syndrome	
+MONDO:0975752	skos:exactMatch	orphanet.ordo:673538	semapv:UnspecifiedMatching	littoral cell hemangioma of the spleen	
+MONDO:0975862	skos:exactMatch	doid:0070623	semapv:UnspecifiedMatching	B-lymphoblastic leukemia with MEF2D rearrangement	
+MONDO:0975863	skos:exactMatch	doid:0070624	semapv:UnspecifiedMatching	B-lymphoblastic leukemia with MYC rearrangement	
+MONDO:0975864	skos:exactMatch	doid:0070625	semapv:UnspecifiedMatching	B-lymphoblastic leukemia with NUTM1 rearrangement	
+MONDO:0975865	skos:exactMatch	doid:0070626	semapv:UnspecifiedMatching	B-lymphoblastic leukemia with PAX5alt	
+MONDO:0975866	skos:exactMatch	doid:0070627	semapv:UnspecifiedMatching	B-lymphoblastic leukemia with TCF3-HLF fusion	
+MONDO:0975867	skos:exactMatch	doid:0070628	semapv:UnspecifiedMatching	B-lymphoblastic leukemia with ZNF384 rearrangement	
+MONDO:0975868	skos:exactMatch	doid:0070629	semapv:UnspecifiedMatching	acute myeloid leukemia with CBFA2T3-GLIS2 fusion	
+MONDO:0975871	skos:exactMatch	doid:0070632	semapv:UnspecifiedMatching	acute myeloid leukemia with MNX1-ETV6 fusion	
+MONDO:0975882	skos:exactMatch	orphanet.ordo:684232	semapv:UnspecifiedMatching	intellectual disability-epilepsy-dental anomalies-facial dysmorphism syndrome	
+MONDO:0975902	skos:exactMatch	orphanet.ordo:686556	semapv:UnspecifiedMatching	isolated congenital cholesteatoma of the middle ear	
+MONDO:0976294	skos:exactMatch	doid:0061140	semapv:UnspecifiedMatching	ragopathy	
+MONDO:0976301	skos:exactMatch	doid:0070635	semapv:UnspecifiedMatching	cardiovascular-kidney-metabolic syndrome	
+MONDO:0978306	skos:exactMatch	orphanet.ordo:662473	semapv:UnspecifiedMatching	isolated duodenal duplication	
+MONDO:0978307	skos:exactMatch	orphanet.ordo:662480	semapv:UnspecifiedMatching	isolated jejuno-ileal duplication	
+MONDO:0978310	skos:exactMatch	orphanet.ordo:675976	semapv:UnspecifiedMatching	adenomatoid tumour of the peritoneum	
+MONDO:0978312	skos:exactMatch	orphanet.ordo:684752	semapv:UnspecifiedMatching	isolated anal canal duplication	
+MONDO:0979257	skos:exactMatch	orphanet.ordo:692256	semapv:UnspecifiedMatching	isolated anogenital granulomatosis	
+MONDO:0979258	skos:exactMatch	orphanet.ordo:692271	semapv:UnspecifiedMatching	cerebral proliferative angiopathy	
+MONDO:0979259	skos:exactMatch	orphanet.ordo:692305	semapv:UnspecifiedMatching	triglyceride deposit cardiomyovasculopathy	
+MONDO:0979261	skos:exactMatch	orphanet.ordo:692812	semapv:UnspecifiedMatching	RAC2-related combined immunodeficiency-bronchiectasis-cancer-predisposing syndrome	
+MONDO:0979271	skos:exactMatch	orphanet.ordo:694228	semapv:UnspecifiedMatching	congenital intrahepatic arterioportal fistula	
+MONDO:0979273	skos:exactMatch	orphanet.ordo:694356	semapv:UnspecifiedMatching	ADAR-related hereditary spastic paraplegia	
+MONDO:0979280	skos:exactMatch	orphanet.ordo:695023	semapv:UnspecifiedMatching	pure squamous carcinoma of the urothelial tract	
+MONDO:0979281	skos:exactMatch	orphanet.ordo:695032	semapv:UnspecifiedMatching	giant omphalocele	
+MONDO:0979282	skos:exactMatch	orphanet.ordo:695038	semapv:UnspecifiedMatching	small omphalocele	
+MONDO:0979287	skos:exactMatch	orphanet.ordo:695147	semapv:UnspecifiedMatching	sickle cell-beta plus-thalassemia	
+MONDO:0979288	skos:exactMatch	orphanet.ordo:695172	semapv:UnspecifiedMatching	combined immunodeficiency due to dimerization defective IKAROS mutation	
+MONDO:0979290	skos:exactMatch	orphanet.ordo:695191	semapv:UnspecifiedMatching	late-onset combined immunodeficiency due to ICOSL deficiency	
+MONDO:0979292	skos:exactMatch	orphanet.ordo:695631	semapv:UnspecifiedMatching	primary vitreoretinal large b-cell lymphoma	
+MONDO:0979300	skos:exactMatch	orphanet.ordo:696242	semapv:UnspecifiedMatching	PPARG-associated congenital generalized lipodystrophy	
+MONDO:0979310	skos:exactMatch	orphanet.ordo:697132	semapv:UnspecifiedMatching	lymphoepithelial cyst of the pancreas	
+MONDO:0979315	skos:exactMatch	orphanet.ordo:697403	semapv:UnspecifiedMatching	combined immunodeficiency-hypogammaglobulinemia-skeletal anomalies syndrome due to IKBKA deficiency	
+MONDO:0979316	skos:exactMatch	orphanet.ordo:697414	semapv:UnspecifiedMatching	early-onset combined immunodeficiency with low ig due to dominant negative IKAROS mutation	
+MONDO:0979317	skos:exactMatch	orphanet.ordo:697734	semapv:UnspecifiedMatching	ST3GAL3-congenital disorder of glycosylation	
+MONDO:0979319	skos:exactMatch	orphanet.ordo:697986	semapv:UnspecifiedMatching	congenital peritoneal encapsulation	
+MONDO:0979323	skos:exactMatch	orphanet.ordo:698260	semapv:UnspecifiedMatching	carotid web	
+MONDO:0979325	skos:exactMatch	orphanet.ordo:699057	semapv:UnspecifiedMatching	annular erythema of infancy	
+MONDO:0979327	skos:exactMatch	orphanet.ordo:699578	semapv:UnspecifiedMatching	combined immunodeficiency with low Ig due to BCL10 deficiency	
+MONDO:0979328	skos:exactMatch	orphanet.ordo:699590	semapv:UnspecifiedMatching	immune dysregulation with immunodeficiency due to AIOLOS haploinsufficiency	
+MONDO:0979335	skos:exactMatch	orphanet.ordo:699683	semapv:UnspecifiedMatching	fibro-adipose vascular anomaly	
+MONDO:0979339	skos:exactMatch	orphanet.ordo:699718	semapv:UnspecifiedMatching	infantile neuronal ceroid lipofuscinosis 1	
+MONDO:0979340	skos:exactMatch	orphanet.ordo:699734	semapv:UnspecifiedMatching	late infantile neuronal ceroid lipofuscinosis 1	
+MONDO:0979341	skos:exactMatch	orphanet.ordo:699739	semapv:UnspecifiedMatching	juvenile neuronal ceroid lipofuscinosis 1	
+MONDO:0979342	skos:exactMatch	orphanet.ordo:699745	semapv:UnspecifiedMatching	adult neuronal ceroid lipofuscinosis 1	
+MONDO:0979343	skos:exactMatch	orphanet.ordo:699751	semapv:UnspecifiedMatching	infantile neuronal ceroid lipofuscinosis 2	
+MONDO:0979344	skos:exactMatch	orphanet.ordo:699761	semapv:UnspecifiedMatching	late infantile neuronal ceroid lipofuscinosis 2	
+MONDO:0979345	skos:exactMatch	orphanet.ordo:699769	semapv:UnspecifiedMatching	juvenile neuronal ceroid lipofuscinosis 2	
+MONDO:0979346	skos:exactMatch	orphanet.ordo:699780	semapv:UnspecifiedMatching	juvenile neuronal ceroid lipofuscinosis 3	
+MONDO:0979347	skos:exactMatch	orphanet.ordo:699796	semapv:UnspecifiedMatching	protracted juvenile neuronal ceroid lipofuscinosis 3	
+MONDO:0979348	skos:exactMatch	orphanet.ordo:699802	semapv:UnspecifiedMatching	late infantile neuronal ceroid lipofuscinosis 5	
+MONDO:0979349	skos:exactMatch	orphanet.ordo:699807	semapv:UnspecifiedMatching	juvenile neuronal ceroid lipofuscinosis 5	
+MONDO:0979350	skos:exactMatch	orphanet.ordo:699812	semapv:UnspecifiedMatching	adult neuronal ceroid lipofuscinosis 5	
+MONDO:0979353	skos:exactMatch	orphanet.ordo:699850	semapv:UnspecifiedMatching	2p25.3 microduplication syndrome	
+MONDO:0979354	skos:exactMatch	orphanet.ordo:700085	semapv:UnspecifiedMatching	sickle cell disease due to hemoglobin S and a non-S/non-C hemoglobin variant	
+MONDO:0979355	skos:exactMatch	orphanet.ordo:700111	semapv:UnspecifiedMatching	homozygous hemoglobin O Arab disease	
+MONDO:0979356	skos:exactMatch	orphanet.ordo:700124	semapv:UnspecifiedMatching	autosomal recessive hereditary chronic pancreatitis	
+MONDO:0979359	skos:exactMatch	orphanet.ordo:700154	semapv:UnspecifiedMatching	TARDBP-related predominantly upper-limb distal myopathy	
+MONDO:0979360	skos:exactMatch	orphanet.ordo:700160	semapv:UnspecifiedMatching	ADNP-related blepharophimosis-intellectual disability syndrome	
+MONDO:0979361	skos:exactMatch	orphanet.ordo:700170	semapv:UnspecifiedMatching	asymetric thumb-handgrip weakness-distal myopathy	
+MONDO:0979362	skos:exactMatch	orphanet.ordo:700188	semapv:UnspecifiedMatching	calf-predominant weakness-gastrocnemius medialis atrophy-distal myopathy	
+MONDO:0979367	skos:exactMatch	orphanet.ordo:700467	semapv:UnspecifiedMatching	late infantile neuronal ceroid lipofuscinosis 6	
+MONDO:0979368	skos:exactMatch	orphanet.ordo:700472	semapv:UnspecifiedMatching	juvenile neuronal ceroid lipofuscinosis 6	
+MONDO:0979370	skos:exactMatch	orphanet.ordo:700484	semapv:UnspecifiedMatching	late infantile neuronal ceroid lipofuscinosis 8	
+MONDO:0979371	skos:exactMatch	orphanet.ordo:700487	semapv:UnspecifiedMatching	congenital neuronal ceroid lipofuscinosis 10	
+MONDO:0979372	skos:exactMatch	orphanet.ordo:700492	semapv:UnspecifiedMatching	late infantile neuronal ceroid lipofuscinosis 10	
+MONDO:0979373	skos:exactMatch	orphanet.ordo:700497	semapv:UnspecifiedMatching	juvenile neuronal ceroid lipofuscinosis 10	
+MONDO:0979885	skos:exactMatch	doid:0051058	semapv:UnspecifiedMatching	acute calcific periarthritis	
+MONDO:0980735	skos:exactMatch	doid:0051064	semapv:UnspecifiedMatching	left ventricular failure	
+MONDO:0980737	skos:exactMatch	doid:0051066	semapv:UnspecifiedMatching	arterionephrosclerosis	
+MONDO:0980739	skos:exactMatch	doid:0070661	semapv:UnspecifiedMatching	muscle dysmorphic disorder	
+MONDO:0980767	skos:exactMatch	doid:0070665	semapv:UnspecifiedMatching	lipofibromatosis	
+MONDO:0980997	skos:exactMatch	orphanet.ordo:698036	semapv:UnspecifiedMatching	fibromuscular dysplasia of the cervical and intracranial arteries	
+MONDO:0980998	skos:exactMatch	orphanet.ordo:698043	semapv:UnspecifiedMatching	fibromuscular dysplasia of the renal arteries	
+MONDO:0980999	skos:exactMatch	orphanet.ordo:698059	semapv:UnspecifiedMatching	fibromuscular dysplasia of the coronary arteries	
+MONDO:0981000	skos:exactMatch	orphanet.ordo:698063	semapv:UnspecifiedMatching	fibromuscular dysplasia of the visceral arteries	
+MONDO:0981001	skos:exactMatch	orphanet.ordo:698069	semapv:UnspecifiedMatching	fibromuscular dysplasia of the arteries of the extremities	
+MONDO:0981004	skos:exactMatch	orphanet.ordo:699822	semapv:UnspecifiedMatching	sickle cell S-Lepore disease	
+MONDO:0981005	skos:exactMatch	orphanet.ordo:700090	semapv:UnspecifiedMatching	sickle cell S-O Arab disease	
+MONDO:0981007	skos:exactMatch	orphanet.ordo:700136	semapv:UnspecifiedMatching	early-onset idiopathic chronic pancreatitis	
+MONDO:0981008	skos:exactMatch	orphanet.ordo:700139	semapv:UnspecifiedMatching	late-onset idiopathic chronic pancreatitis	
+MONDO:1060134	skos:exactMatch	ncit:C35771	semapv:UnspecifiedMatching	atherosclerotic cardiovascular disease	
+MONDO:1060220	skos:exactMatch	orphanet.ordo:1671	semapv:UnspecifiedMatching	split cord malformation type I	
+MONDO:1060221	skos:exactMatch	orphanet.ordo:573253	semapv:UnspecifiedMatching	split cord malformation type II	
+MONDO:1060222	skos:exactMatch	orphanet.ordo:633076	semapv:UnspecifiedMatching	split cord malformation, composite type	
+MONDO:8000000	skos:exactMatch	efo:1000900	semapv:UnspecifiedMatching	infectious discitis	
+MONDO:0100332	rdfs:subPropertyOf	RO:0014001	semapv:UnspecifiedMatching	disease has primary infectious agent	disease has infectious agent
+MONDO:0100333	rdfs:subPropertyOf	RO:0014001	semapv:UnspecifiedMatching	disease caused by reactivation of latent infectious agent	disease has infectious agent

@@ -107,6 +107,7 @@ public class EntitySuggestQueryBuilder {
     public static SolrQuery buildEntitySuggestQuery(String query, EntitySide side,
                                                     List<String> prefixes,
                                                     List<WeakPredicate> includeWeakPredicates,
+                                                    boolean includeObsolete,
                                                     int size) {
         String escaped = ClientUtils.escapeQueryChars(query.strip());
 
@@ -136,6 +137,13 @@ public class EntitySuggestQueryBuilder {
         String prefixFilter = prefixFilter(prefixes);
         if (prefixFilter != null) {
             solrQuery.addFilterQuery(prefixFilter);
+        }
+
+        // ADR-0041: hide obsolete entities unless the caller opts in, so a suggestion is never a term the
+        // default search would then hide. The leading *:* is required because Solr matches nothing for an
+        // only-negative filter; an absent flag (a pre-reindex doc) reads not-obsolete.
+        if (!includeObsolete) {
+            solrQuery.addFilterQuery("*:* -" + EntityConstants.OBSOLETE + ":true");
         }
 
         solrQuery.setFields(EntityConstants.ID, EntityConstants.LABEL, EntityConstants.IRI,

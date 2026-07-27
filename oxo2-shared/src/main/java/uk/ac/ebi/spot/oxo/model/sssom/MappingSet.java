@@ -99,7 +99,13 @@ public record MappingSet (
         // The OxO curation category this set was tagged with in the config (ADR-0027). Absent on the
         // synthetic `oxo2/inferences` set, which has no single source category.
         @JsonProperty(MAPPING_SET_CATEGORY)
-        Optional<MappingSetCategory> mappingSetCategory) {
+        Optional<MappingSetCategory> mappingSetCategory,
+        // ADR-0041: true iff this registry was config-flagged obsolete (all its subjects are obsolete
+        // terms). Lets the mapping-set picker hide and label obsolete ontology sets. Default false;
+        // omitted from the JSON when false so a load with no obsolete registry is byte-for-byte unchanged.
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        @JsonProperty(OBSOLETE)
+        boolean obsolete) {
 
     public static MappingSet.Builder builder() {
         return new MappingSet.Builder();
@@ -157,6 +163,8 @@ public record MappingSet (
         private Optional<String> mappingToolVersion = Optional.empty();
         private InferenceType inferenceType = InferenceType.ASSERTED;
         private Optional<MappingSetCategory> mappingSetCategory = Optional.empty();
+        // ADR-0041: stamped true by the SSSOM-to-JSON stage for a config-flagged obsolete registry.
+        private boolean obsolete = false;
         private Optional<Date> mappingDate = Optional.empty();
         private Optional<Date> publicationDate = Optional.empty();
         private SortedSet<EntityReference> subjectMatchField = new TreeSet<>();
@@ -441,6 +449,13 @@ public record MappingSet (
             return this;
         }
 
+        // ADR-0041: absent in the JSON leaves the default false.
+        @JsonProperty(OBSOLETE)
+        public Builder obsolete(boolean obsolete) {
+            this.obsolete = obsolete;
+            return this;
+        }
+
         @JsonProperty(MAPPING_DATE)
         public Builder mappingDate(String mappingDate) {
             this.mappingDate = Optional.of(new Date(mappingDate));
@@ -596,7 +611,8 @@ public record MappingSet (
                     subjectSourceVersion,
                     subjectType,
                     inferenceType,
-                    mappingSetCategory
+                    mappingSetCategory,
+                    obsolete
             );
         }
     }

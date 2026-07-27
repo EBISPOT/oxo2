@@ -65,6 +65,13 @@ public class MappingConstants {
     // a term belongs to). Derived at serialization time, not deserialised.
     public static final String SUBJECT_PREFIX = "subject_prefix";
     public static final String OBJECT_PREFIX = "object_prefix";
+    // Endpoint obsolescence (ADR-0041): true iff the subject / object of this mapping is an obsolete term
+    // (its IRI is a subject of an obsolete-flagged registry). Stamped by the dataload from the global
+    // obsolete-entity set, not an SSSOM property. Drives the default hide of obsolete terms in search.
+    // OBSOLETE is the set-level / entity-level twin (oxo2-mappingsets and oxo2-entities cores).
+    public static final String SUBJECT_OBSOLETE = "subject_obsolete";
+    public static final String OBJECT_OBSOLETE = "object_obsolete";
+    public static final String OBSOLETE = "obsolete";
     public static final String CHAIN_RULE = "chain_rule";
     public static final String CHAIN_RULE_APPLICATIONS = "chain_rule_applications";
     public static final String DISTANCE = "distance";
