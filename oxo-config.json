@@ -18,8 +18,14 @@
     },
     {
       "id": "ols_mappings",
-      "url": "https://ftp.ebi.ac.uk/pub/databases/spot/ols/latest/sssom.tgz",
+      "url": "https://ftp.ebi.ac.uk/pub/databases/spot/ols/2026_07_17__18_17_28/sssom.tgz",
       "category": "ontology"
+    },
+    {
+      "id": "ols_obsolete_mappings",
+      "url": "https://ftp.ebi.ac.uk/pub/databases/spot/ols/2026_07_17__18_17_28/sssom-obsolete.tgz",
+      "category": "ontology",
+      "obsolete": true
     }
   ]
 }
