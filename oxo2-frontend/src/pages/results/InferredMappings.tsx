@@ -12,8 +12,10 @@ import {fetchConfidenceByMappingIds} from "./MappingResultsSlice";
 import {InferredMapping, Mapping} from "../../model/Mapping.ts";
 import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
 import {EntityRefCell} from "../../components/mapping/EntityRefCell";
+import {ColumnFilterPopover, type FilterFieldDef} from "../../components/mapping/ColumnFilterPopover";
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
 import {SortingContext} from "../../components/mapping/sortingContext";
+import type {ValueSuggestion} from "./SuggestSlice";
 
 // Per-column sort choices (id / label / iri). Unlike the Normal search results these
 // fields are the InferredMapping property names rather than Solr field names, because
@@ -34,6 +36,53 @@ const OBJECT_SORT_FIELDS: SortFieldDef[] = [
     {field: "objectIri", label: "IRI"},
 ];
 
+// Per-column filter inputs, mirroring the Normal search results table. As with the sort fields
+// above, `field` is the InferredMapping property name rather than a Solr field name: the rows are
+// local data, so the filters are applied client-side (see rowsMatchingTextFilters).
+//
+// Each carries `suggest: "contextual"`, so it is a typeahead rather than a plain box. The results
+// table's typeahead facets a backend search this table does not have; here the component counts the
+// distinct values over the on-screen rows itself and passes them as `localOptions` (see
+// textFilterOptions), which ValueSuggest narrows client-side. Note this DOES give Subject a typeahead,
+// where the results table deliberately does not: there, subject-side search (ADR-0030) means every
+// row's subject is what the user just searched, so there is nothing to narrow — but an inferred
+// mapping's asserted premises carry genuinely varied subjects, so the suggestion earns its place.
+const SUBJECT_FILTER_FIELDS: FilterFieldDef[] = [
+    {field: "subjectId", label: "Subject ID", suggest: "contextual"},
+    {field: "subjectLabel", label: "Subject label", suggest: "contextual"},
+    {field: "subjectIri", label: "Subject IRI", suggest: "contextual"},
+];
+const PREDICATE_FILTER_FIELDS: FilterFieldDef[] = [
+    {field: "predicateId", label: "Predicate ID", suggest: "contextual"},
+    {field: "predicateIri", label: "Predicate IRI", suggest: "contextual"},
+];
+const OBJECT_FILTER_FIELDS: FilterFieldDef[] = [
+    {field: "objectId", label: "Object ID", suggest: "contextual"},
+    {field: "objectLabel", label: "Object label", suggest: "contextual"},
+    {field: "objectIri", label: "Object IRI", suggest: "contextual"},
+];
+// The property names the text filters (and their typeaheads) act on — everything except the pick-only
+// justification. Drives the per-field option counts in textFilterOptions.
+const TEXT_FILTER_PROPERTIES = [
+    "subjectId", "subjectLabel", "subjectIri",
+    "predicateId", "predicateIri",
+    "objectId", "objectLabel", "objectIri",
+] as const;
+
+// One active filter's predicate against one row. The justification is an exact match on the raw SEMAPV
+// CURIE (pick-only); every other field is a case-insensitive "contains" on the string value. A blank
+// value matches everything (the filter is inactive).
+const rowMatchesFilter = (row: InferredMapping, field: string, value: string): boolean => {
+    const needle = value.trim();
+    if (needle === "") {
+        return true;
+    }
+    if (field === "mappingJustification") {
+        return row.mappingJustification === needle;
+    }
+    return String(row[field as keyof InferredMapping] ?? "").toLowerCase().includes(needle.toLowerCase());
+};
+
 // Locale-aware comparison; numeric:true keeps embedded numbers (e.g. ids) in natural order.
 const compareValues = (left: unknown, right: unknown, descending?: boolean): number => {
     const comparison = String(left ?? "").localeCompare(String(right ?? ""), undefined, {
@@ -46,9 +95,9 @@ const compareValues = (left: unknown, right: unknown, descending?: boolean): num
 /**
  * The "Asserted Mappings" table on the Mapping Details page. Mirrors the Normal search
  * results layout — Subject / Predicate / Object each rendered as a stacked id › label ›
- * IRI cell with per-column sort popovers — but operates on the local
- * mapping.assertedMappings array (so sorting is client-side) and shows every row without
- * paging.
+ * IRI cell with per-column filter and sort popovers — but operates on the local
+ * mapping.assertedMappings array (so filtering and sorting are client-side) and shows
+ * every row without paging.
  */
 function InferredMappings({ mapping }: { mapping: Mapping }) {
     const [sorting, setSorting] = useState<MRT_SortingState>([]);
@@ -75,8 +124,97 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
         setSorting(next);
     }, []);
 
-    const sortedAssertedMappings = useMemo<InferredMapping[]>(() => {
+    // The applied column filters, keyed by InferredMapping property name. Text fields are
+    // AND-combined case-insensitive "contains" — the same semantics the results table's typed
+    // fragments get from the backend; the justification is a pick-only vocab value (a raw SEMAPV
+    // CURIE) and matches exactly. No debounce layer: there is no backend round-trip to spare, so
+    // each keystroke filters the local rows directly.
+    const [filters, setFilters] = useState<Record<string, string>>({});
+
+    const handleFilterChange = useCallback((field: string, value: string) => {
+        setFilters((previous) => ({ ...previous, [field]: value }));
+    }, []);
+
+    // Rows surviving the text filters (subject/predicate/object), before the justification pick is
+    // applied. The justification dropdown's options are counted over THIS set — the client-side
+    // equivalent of the backend stripping the field's own filter before faceting (see VocabSelect) —
+    // so the other values stay on offer after one is picked, and a pick can never empty the table.
+    const rowsMatchingTextFilters = useMemo<InferredMapping[]>(() => {
         const rows = mapping.assertedMappings ?? [];
+        const activeTextFilters = Object.entries(filters).filter(([field, value]) =>
+            field !== "mappingJustification" && value.trim() !== "");
+        if (activeTextFilters.length === 0) {
+            return rows;
+        }
+        return rows.filter((row) =>
+            activeTextFilters.every(([field, value]) => rowMatchesFilter(row, field, value)));
+    }, [mapping.assertedMappings, filters]);
+
+    // The typeahead options for each text column: the distinct values present in the rows, counted,
+    // most common first. Each column is scoped to the rows matching every OTHER active filter (not its
+    // own) — the local analog of the backend stripping a field's own filter before faceting — so the
+    // suggestions reflect what a pick would leave and a pick can never empty the table.
+    const textFilterOptions = useMemo<Record<string, ValueSuggestion[]>>(() => {
+        const rows = mapping.assertedMappings ?? [];
+        const activeFilters = Object.entries(filters).filter(([, value]) => value.trim() !== "");
+        const optionsByField: Record<string, ValueSuggestion[]> = {};
+        for (const field of TEXT_FILTER_PROPERTIES) {
+            const scoped = rows.filter((row) => activeFilters.every(([otherField, value]) =>
+                otherField === field || rowMatchesFilter(row, otherField, value)));
+            const counts = new Map<string, number>();
+            for (const row of scoped) {
+                const value = String(row[field as keyof InferredMapping] ?? "");
+                if (value !== "") {
+                    counts.set(value, (counts.get(value) ?? 0) + 1);
+                }
+            }
+            optionsByField[field] = [...counts.entries()]
+                .sort((left, right) => right[1] - left[1])
+                .map(([value, count]) => ({ value, count }));
+        }
+        return optionsByField;
+    }, [mapping.assertedMappings, filters]);
+
+    const subjectFilterFields = useMemo<FilterFieldDef[]>(() =>
+        SUBJECT_FILTER_FIELDS.map((fieldDef) =>
+            ({ ...fieldDef, localOptions: textFilterOptions[fieldDef.field] })), [textFilterOptions]);
+    const predicateFilterFields = useMemo<FilterFieldDef[]>(() =>
+        PREDICATE_FILTER_FIELDS.map((fieldDef) =>
+            ({ ...fieldDef, localOptions: textFilterOptions[fieldDef.field] })), [textFilterOptions]);
+    const objectFilterFields = useMemo<FilterFieldDef[]>(() =>
+        OBJECT_FILTER_FIELDS.map((fieldDef) =>
+            ({ ...fieldDef, localOptions: textFilterOptions[fieldDef.field] })), [textFilterOptions]);
+
+    // Distinct justification values present in the (text-filtered) rows, most common first — the
+    // local stand-in for the results table's live-search facet.
+    const justificationOptions = useMemo<ValueSuggestion[]>(() => {
+        const counts = new Map<string, number>();
+        for (const row of rowsMatchingTextFilters) {
+            if (row.mappingJustification) {
+                counts.set(row.mappingJustification, (counts.get(row.mappingJustification) ?? 0) + 1);
+            }
+        }
+        return [...counts.entries()]
+            .sort((left, right) => right[1] - left[1])
+            .map(([value, count]) => ({ value, count }));
+    }, [rowsMatchingTextFilters]);
+
+    const justificationFilterFields = useMemo<FilterFieldDef[]>(() => [
+        {field: "mappingJustification", label: "Mapping justification", suggest: "vocab",
+            formatOption: mappingJustificationShortName, formatOptionTitle: mappingJustificationLabel,
+            localOptions: justificationOptions},
+    ], [justificationOptions]);
+
+    const filteredAssertedMappings = useMemo<InferredMapping[]>(() => {
+        const justification = (filters.mappingJustification ?? "").trim();
+        if (justification === "") {
+            return rowsMatchingTextFilters;
+        }
+        return rowsMatchingTextFilters.filter((row) => row.mappingJustification === justification);
+    }, [rowsMatchingTextFilters, filters.mappingJustification]);
+
+    const sortedAssertedMappings = useMemo<InferredMapping[]>(() => {
+        const rows = filteredAssertedMappings;
         if (sorting.length === 0) {
             return rows;
         }
@@ -90,7 +228,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
             }
             return 0;
         });
-    }, [mapping.assertedMappings, sorting]);
+    }, [filteredAssertedMappings, sorting]);
 
     const assertedMappingColumns = useMemo<MRT_ColumnDef<InferredMapping>[]>(
         () => [
@@ -102,6 +240,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Subject</span>
+                        <ColumnFilterPopover title="Subject" fields={subjectFilterFields} onChange={handleFilterChange} />
                         <ColumnSortPopover title="Subject" fields={SUBJECT_SORT_FIELDS} onApply={handleSortChange} />
                     </span>
                 ),
@@ -122,6 +261,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Predicate</span>
+                        <ColumnFilterPopover title="Predicate" fields={predicateFilterFields} onChange={handleFilterChange} />
                         <ColumnSortPopover title="Predicate" fields={PREDICATE_SORT_FIELDS} onApply={handleSortChange} />
                     </span>
                 ),
@@ -140,6 +280,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <span>Object</span>
+                        <ColumnFilterPopover title="Object" fields={objectFilterFields} onChange={handleFilterChange} />
                         <ColumnSortPopover title="Object" fields={OBJECT_SORT_FIELDS} onApply={handleSortChange} />
                     </span>
                 ),
@@ -173,6 +314,16 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 accessorFn: (row) => row.mappingJustification,
                 header: "Mapping justification",
                 size: 200,
+                Header: () => (
+                    <span className="flex items-center gap-1">
+                        <span>Mapping justification</span>
+                        <ColumnFilterPopover
+                            title="Mapping justification"
+                            fields={justificationFilterFields}
+                            onChange={handleFilterChange}
+                        />
+                    </span>
+                ),
                 Cell: ({ row }) => (
                     <span className="break-all" title={mappingJustificationLabel(row.original.mappingJustification)}>
                         {mappingJustificationShortName(row.original.mappingJustification)}
@@ -204,7 +355,8 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 },
             },
         ],
-        [handleSortChange, confidenceById]
+        [handleSortChange, handleFilterChange, subjectFilterFields, predicateFilterFields,
+            objectFilterFields, justificationFilterFields, confidenceById]
     );
 
     const assertedMappingsTable = useMaterialReactTable({
