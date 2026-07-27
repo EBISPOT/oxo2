@@ -51,7 +51,8 @@ The field exists to serve two consumers:
   predicate is. Four multiplicative tiers: (1) provenance — ontology-asserted, then
   curator-asserted, then inferred with nearer inferences first; (2) predicate strength, reusing
   ADR-0016's split of strict logical identity (`owl:equivalentClass`/`equivalentProperty`/`sameAs`)
-  above `skos:exactMatch`, then `skos:closeMatch`, then broad/narrow, then everything else;
+  above `skos:exactMatch`, then `semapv:crossSpeciesExactMatch` (an exact match across a species
+  boundary), then `skos:closeMatch`, then broad/narrow, then everything else;
   (3) curation — hand-curated above everything else; (4) the mapping's own confidence.
 
 The tiers are lexicographic rather than a blend: adjacent provenance values are separated by more
