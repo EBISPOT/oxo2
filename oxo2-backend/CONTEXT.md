@@ -206,18 +206,40 @@ any constant is checked against it.
 Recency is deliberately not a boost factor: `mapping_date` is sparsely populated, and a date function in the
 boost would silently reorder results on every query. It is available as an explicit sort instead.
 
-#### Same-SPO grouping
+#### Same-SPO collapse
 
 When the request sets `groupBySpo` (the normal/inferences result tables do),
-`SolrQueryBuilder` adds Solr result grouping on the `spo_key` field — `group=true`, `group.ngroups=true`,
-`group.limit`, `group.sort=score desc` (the representative is the highest inference-tier member, via the
-boost above), and `spo_key` is appended as the final sort key so paging is a stable total order. The page
-total becomes the **group count** (`getNGroups`), so a page is N triples not N documents. `OxOSolrClient`
-turns each group's top document into the representative row and attaches its members + true size as a
-`group_members` JSON string (`{"total":N,"members":[...]}`), serialised with the app `ObjectMapper`, leaving
-the `MappingSearchResponse` / `Page<Mapping>` shape unchanged. Grouping sits on top of the filters, so a
-group's members reflect only what passed the inference-type filter. See
-[ADR-0013](../docs/adr/0013-group-same-spo-mappings-in-result-views.md).
+`SolrQueryBuilder.applySpoGrouping(...)` collapses same-SPO documents into one representative row
+per `spo_key` with the **CollapsingQParserPlugin + ExpandComponent** —
+`fq={!collapse field=spo_key sort='score desc'}` plus `expand=true`, `expand.field=spo_key`,
+`expand.sort=score desc`, `expand.rows=20`. The collapse `sort='score desc'` reuses the provenance
+boost above, so the representative is the highest inference-tier member. `spo_key` is
+`docValues`-only (`stored=false`), so it is added to `fl` — each representative has to carry the key
+its expanded members are keyed by — and appended as the final sort key so paging is a stable total
+order.
+
+The page total is the **collapsed `numFound`**, which *is* the exact group count, so a page is N
+triples not N documents. `OxOSolrClient.buildCollapsedPage` assembles each row's `group_members`
+JSON string (`{"total":N,"members":[...]}`) by leading with the representative itself and appending
+`response.getExpandedResults()` for that key; true size is `1 + expanded.getNumFound()`, so the
+"+N more" total stays accurate past the inlined cap (the detail view inlines ≤ 21 rows: the
+representative plus up to `expand.rows` members). It is serialised with the app `ObjectMapper`,
+leaving the `MappingSearchResponse` / `Page<Mapping>` shape unchanged. Collapse ANDs with the
+existing filter queries, so a group's members reflect only what passed the inference-type filter.
+
+This replaces the Solr **result grouping** (`group=true`, `group.ngroups=true`, `group.limit`) the
+feature originally shipped with: `group.ngroups` computes the exact distinct-group count by
+enumerating every group across the whole match set, measured at ~19 s for a high-frequency term
+against the full index, while the collapsed `numFound` gives the same number for free. Collapse
+builds its per-segment structures on the first query after a searcher opens (~3 s) and is ~1 ms
+thereafter; there is deliberately no `newSearcher` warming query, because it would re-run a
+full-index collapse after every dataload commit.
+
+The user-facing behaviour and the `spo_key` design are
+[ADR-0013](../docs/adr/0013-group-same-spo-mappings-in-result-views.md); the Solr mechanism is
+[ADR-0023](../docs/adr/0023-collapse-for-same-spo.md), which supersedes ADR-0013's grouping
+mechanism only. The `groupBySpo` / `applySpoGrouping` / `group_members` names predate the switch and
+are kept for API and frontend compatibility — they denote collapse, not Solr result grouping.
 
 #### Cross-ontology mapping
 
