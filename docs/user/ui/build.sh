@@ -39,3 +39,17 @@ fi
     "file://${source_html}"
 
 echo "Wrote ${output_pdf}"
+
+# The in-app Documentation tab (/docs) serves the guide from the frontend's public/ directory. The
+# frontend image builds with context ./oxo2-frontend and so cannot reach this directory at image
+# build time — the served copy has to live inside the frontend and be committed. Refreshing it here
+# makes "regenerate the PDF" and "update what /docs serves" the same action, so the copy cannot
+# silently fall behind the source.
+public_dir="$(cd -- "${script_dir}/../../.." && pwd)/oxo2-frontend/public"
+
+if [ -d "${public_dir}" ]; then
+    cp "${source_html}" "${output_pdf}" "${public_dir}/"
+    echo "Refreshed the /docs copies in ${public_dir}"
+else
+    echo "warning: ${public_dir} not found; the /docs copies were NOT refreshed." >&2
+fi
