@@ -201,6 +201,13 @@ public record Mapping (
         @JsonProperty(SUBJECT_IRI)
         Optional<Uri> subjectIRI) implements Comparable<Mapping> {
 
+    /**
+     * Marks a literal subject's label where {@link #spoKey()} would otherwise put a subject_id
+     * (ADR-0042). A record separator, so it cannot occur inside a CURIE and a literal reading
+     * "MONDO:0004992" can never collapse into the group of the term of that CURIE.
+     */
+    private static final char LITERAL_SUBJECT_MARKER = '\u001e';
+
     public static Builder builder() {
         return new Builder();
     }
@@ -212,16 +219,28 @@ public record Mapping (
 
     /**
      * Same-SPO grouping key (ADR-0013): a UUID hash of subject_id + predicate_id + predicate_modifier
-     * + object_id (IDs only — labels/IRIs vary across sets for the same entity; mapping set,
+     * + object_id (IDs, not labels/IRIs — those vary across sets for the same entity; mapping set,
      * justification and inference_type are the axes we collapse). predicate_modifier is included so a
      * relation and its negation never share a key. Unit separators between components prevent
      * ("ab","c") and ("a","bc") from colliding. Derived, not stored: emitted as the Solr
      * {@code spo_key} field at dataload and present in API responses as a stable per-triple row key.
+     *
+     * <p>A <b>literal mapping</b> ({@code subject_type: rdfs literal}) carries no subject_id: its
+     * subject is a string of text that has no CURIE assigned yet, and that string — held in
+     * subject_label — <em>is</em> the subject's identity. Such a subject therefore contributes its
+     * label rather than nothing (ADR-0042), marked with {@link #LITERAL_SUBJECT_MARKER} so a literal
+     * can never share a key with a CURIE spelled the same way. Without the fallback every literal
+     * mapping sharing a predicate and object hashed identically, conflating thousands of unrelated
+     * mappings into one collapsed row. The object side needs no equivalent: an object is always
+     * identified.
      */
     @JsonProperty(SPO_KEY)
     public String spoKey() {
         StringBuilder keyAsString = new StringBuilder();
-        subjectId.ifPresent(reference -> keyAsString.append(reference.getDataAsString()));
+        if (subjectId.isPresent())
+            keyAsString.append(subjectId.get().getDataAsString());
+        else
+            subjectLabel.ifPresent(label -> keyAsString.append(LITERAL_SUBJECT_MARKER).append(label));
         keyAsString.append('\u001f');
         predicateId.ifPresent(reference -> keyAsString.append(reference.getDataAsString()));
         keyAsString.append('\u001f');

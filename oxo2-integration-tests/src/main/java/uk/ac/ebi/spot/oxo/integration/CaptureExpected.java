@@ -62,6 +62,10 @@ public final class CaptureExpected {
                             + "baseline that.");
                 }
                 numFoundRoot.put(SolrCheck.ENTITIES_COLLECTION, entityCount);
+                // How many rows the collapsed result views render (ADR-0013 / ADR-0023). Pinned
+                // alongside the document counts because a grouping key that conflates unrelated
+                // mappings moves this number and nothing else (ADR-0042).
+                numFoundRoot.put(SolrCheck.SPO_GROUPS_KEY, SolrCheck.distinctSpoKeys());
                 Path numFoundPath = ArtifactPaths.expectedNumFound(fixture.name);
                 Files.createDirectories(numFoundPath.getParent());
                 Files.writeString(numFoundPath, mapper.writeValueAsString(numFoundRoot) + "\n", StandardCharsets.UTF_8);

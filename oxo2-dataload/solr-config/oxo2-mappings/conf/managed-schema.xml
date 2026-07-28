@@ -550,8 +550,10 @@
   <field name="subject_label_ngram" type="text_ngram" multiValued="false" indexed="true" stored="false"/>
   <field name="subject_label_ci" type="string_ci" multiValued="false" indexed="true" stored="false"/>
   <!-- Grouping key for collapsing same-SPO mappings into one result-view row (ADR-0013): a hash of
-       subject_id + predicate_id + predicate_modifier + object_id. Derived at serialization time by
-       Mapping.spoKey(); docValues for grouping, not stored (never retrieved). -->
+       subject_id + predicate_id + predicate_modifier + object_id. A literal mapping has no subject_id,
+       so its subject slot carries subject_label instead (ADR-0042) — the text is the subject's
+       identity. Derived at serialization time by Mapping.spoKey(); docValues for grouping, not stored
+       (never retrieved). -->
   <field name="spo_key" type="string" multiValued="false" indexed="true" stored="false" docValues="true"/>
   <!-- Cross-ontology mapping (ADR-0024): the CURIE prefix of subject_id / object_id (the "ontology"),
        derived at serialization time by Mapping.subjectPrefix() / objectPrefix(). indexed for prefix

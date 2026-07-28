@@ -288,5 +288,17 @@ public class ChainRulesIntegrationTest {
         assertEquals(expectedEntities.asInt(), SolrCheck.numFound(SolrCheck.ENTITIES_COLLECTION),
                 "Distinct-entity count differs for fixture " + fixture.name
                 + " — the mappings2entities fold derived a different number of entities.");
+
+        // How many rows the collapsed views render (ADR-0013 / ADR-0023). Pinned separately from the
+        // document counts because a grouping key that conflates unrelated mappings moves this number
+        // and leaves every other count untouched — which is how literal subjects all shared one key
+        // until ADR-0042.
+        JsonNode expectedSpoGroups = root.path(SolrCheck.SPO_GROUPS_KEY);
+        assertTrue(expectedSpoGroups.isNumber(),
+                "numFound.json for " + fixture.name + " carries no " + SolrCheck.SPO_GROUPS_KEY
+                + " count.\nRun `mvn -pl oxo2-integration-tests exec:java@captureExpected` to baseline.");
+        assertEquals(expectedSpoGroups.asInt(), SolrCheck.distinctSpoKeys(),
+                "Distinct spo_key count differs for fixture " + fixture.name
+                + " — mappings are collapsing into a different number of rows (ADR-0042).");
     }
 }

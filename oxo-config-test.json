@@ -23,6 +23,11 @@
       "obsolete": true
     },
     {
+      "id": "hca",
+      "url": "testcases/worktree/hca.sssom.tsv",
+      "category": "curated"
+    },
+    {
       "id": "uniprot",
       "url": "https://raw.githubusercontent.com/mapping-commons/ebi-text-mappings/main/mappings/uniprot.sssom.tsv",
       "category": "curated"

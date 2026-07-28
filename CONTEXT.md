@@ -54,7 +54,15 @@ sources. It carries `inference_type`; its IRI resolves to an OxO2 mapping-set vi
 - **Mapping group** — the set of mappings that share the same `subject_id`, `predicate_id`, `predicate_modifier`, and `object_id`: one 
 asserted *meaning* of a triple, collapsed into a single row in the Search and Inferences result views (see § Cross-cutting constraints). 
 Identified by the denormalised `spo_key` field. A relation and its negation (`predicate_modifier = Not`) form **different** groups. 
+A **literal mapping** has no `subject_id`, so its group is keyed on the subject text instead
+([ADR-0042](docs/adr/0042-literal-subject-identity-in-spo-key.md)). 
 _Avoid_: collapsed row, duplicate mappings, SPO group.
+- **Literal mapping** — a mapping whose subject is a string of free text that has no CURIE assigned yet
+(`subject_type: rdfs literal`): it records that *this text* means the term in `object_id`. The text lives in
+`subject_label` and `subject_id` is empty, so the text is the subject's identity — for grouping
+([ADR-0042](docs/adr/0042-literal-subject-identity-in-spo-key.md)) and for display. Such a mapping is always
+asserted: it derives no **entity** (the typeahead cannot suggest it) and enters no inference, because it has no
+resolvable subject IRI to reason over. _Avoid_: text mapping, unmapped subject, anonymous subject.
 - **Representative mapping** — the member of a **mapping group** shown as its parent row: the highest inference-tier member (`ASSERTED` over `SSSOM_INFERENCE`; the "shorter chains first" tie-break remains dropped as a grouping rule, though `explanation_length` and `distance` are both precomputed again — [ADR-0028](docs/adr/0028-component-sharded-explanation-precompute.md), [ADR-0031](docs/adr/0031-inferred-mapping-distance-as-ontology-span.md)). Its subject/predicate/object are the ones displayed; the remaining 
 members are reached by expanding the row.
 - **Ontology prefix** — the CURIE prefix of a `subject_id` / `object_id` (`DOID:0001816` → `DOID`).
@@ -167,9 +175,12 @@ expansion), `oxo2-sssom2json` (detector), and `oxo2-json2inferences` (folded-cyc
 (`subject_id`, `predicate_id`, `predicate_modifier`, `object_id`) into one *mapping group* row, via the denormalised Solr `spo_key` 
 field and the Solr CollapsingQParserPlugin + ExpandComponent (ADR-0023, replacing the original result grouping whose 
 `group.ngroups` count cost ~19s on high-frequency terms). Collapse is presentation-layer, layered on top of the inference-type 
-filter, and a page counts groups not documents (the collapsed `numFound`). See 
-[ADR-0013](docs/adr/0013-group-same-spo-mappings-in-result-views.md) and 
-[ADR-0023](docs/adr/0023-collapse-for-same-spo.md). Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` 
+filter, and a page counts groups not documents (the collapsed `numFound`). A **literal mapping** has no `subject_id`, so 
+its subject slot carries the subject text instead — without which every literal mapping sharing a predicate and object 
+collapsed into one row (ADR-0042). See 
+[ADR-0013](docs/adr/0013-group-same-spo-mappings-in-result-views.md), 
+[ADR-0023](docs/adr/0023-collapse-for-same-spo.md) and 
+[ADR-0042](docs/adr/0042-literal-subject-identity-in-spo-key.md). Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` 
 (collapse query path + `group_members` transport), and `oxo2-frontend` (expandable rows, paging over groups).
 - **Cross-ontology mapping is a prefix filter over the precomputed closure** — mapping a source
 ontology to target ontologies is a directional filter on denormalised `subject_prefix` / `object_prefix`
