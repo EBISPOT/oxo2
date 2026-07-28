@@ -411,6 +411,12 @@ between fixtures with a `delete *:*` (see `oxo2-integration-tests/CONTEXT.md` §
 > carries automatically, so a normal `loadData.nextflow` run populates it. `stored="false"`, so it is never
 > returned in query results.
 
+> **Reindex required (ADR-0042):** `spo_key` changed for **literal mappings** — a subject with no
+> `subject_id` now contributes its `subject_label` instead of nothing, so free-text subjects no longer
+> all hash together. No schema change and no pipeline code change: `Mapping.spoKey()` is a derived
+> accessor, so a normal `loadData.nextflow` run repopulates it. Keys for subjects that have an id are
+> byte-identical to before, so only the literal sets move.
+
 > **Reindex required (ADR-0028):** explanations are precomputed again, so every inferred mapping doc
 > now carries `explanation`, `asserted_mappings` and a computed `explanation_length`. `asserted_mappings`
 > also changes to `indexed="false"` (it is retrieve-only, like `explanation`): nothing queries, facets or

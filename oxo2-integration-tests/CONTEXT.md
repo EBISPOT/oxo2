@@ -20,9 +20,16 @@ Scope: one minimal single-set fixture per active `ChainRulesEnum` rule under `te
   whose mappings only chain when reasoned over together, proving cross-set inference. The inferred set's
   `mapping_set_source` union is populated again, recovered from the per-leaf `mapping_id` provenance in
   each explanation chain ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)).
+  The shape also carries anything that needs two sets to show at all: `literal-subject` uses it to prove
+  that the same free-text subject asserted in both sets collapses into one row while different texts do
+  not ([ADR-0042](../docs/adr/0042-literal-subject-identity-in-spo-key.md)).
 - **Expected output layer** — an assertion target for a fixture: the cross-set inferred TTL / the
   explained mapping JSON / the mappingSet JSON / the derived entity documents, and the Solr `numFound`
   counts. All mirrored per fixture under `testcases_expected_output/minimal/<fixture>/`.
+  `numFound.json` also pins `oxo2-mappings-spo-groups`, the distinct `spo_key` count — how many rows the
+  collapsed views render. It is not a collection count, and it is the only golden that moves when a
+  grouping key starts conflating unrelated mappings, since document counts stay put
+  ([ADR-0042](../docs/adr/0042-literal-subject-identity-in-spo-key.md)).
   `ArtifactPaths.artifactsFor(fixture)` is the single source of truth for the path list.
   The explained-mapping layer is a **set** of files — `inferences-explained-NNNNN.json`, one per
   explanation bundle ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)) — so its

@@ -1,0 +1,11 @@
+# mapping_set_id: https://w3id.org/oxo2/test/minimal/crossset/literal-subject/setB
+# mapping_set_title: Literal-subject fixture set B
+# license: https://creativecommons.org/publicdomain/zero/1.0/
+# curie_map:
+#   ex: https://w3id.org/oxo2/test/ex/
+#   owl: http://www.w3.org/2002/07/owl#
+#   rdfs: http://www.w3.org/2000/01/rdf-schema#
+#   skos: http://www.w3.org/2004/02/skos/core#
+subject_id	subject_label	subject_type	predicate_id	object_id	object_label
+	lung	rdfs literal	skos:closeMatch	ex:B	Entity B
+ex:B	Entity B	owl class	skos:exactMatch	ex:C	Entity C

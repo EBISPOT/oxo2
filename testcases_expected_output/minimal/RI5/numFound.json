@@ -7,5 +7,6 @@
     "ASSERTED" : 1,
     "SSSOM_INFERENCE" : 1
   },
-  "oxo2-entities" : 2
+  "oxo2-entities" : 2,
+  "oxo2-mappings-spo-groups" : 2
 }
