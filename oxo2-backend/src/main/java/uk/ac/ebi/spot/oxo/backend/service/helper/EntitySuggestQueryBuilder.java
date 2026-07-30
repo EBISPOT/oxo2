@@ -25,6 +25,19 @@ import java.util.stream.Collectors;
  * both run over the count buckets the user's checkboxes currently make visible — never over the
  * totals, which count mappings the search will not show.
  *
+ * <p><b>The obsolete switch is honoured on the MAPPING, not just the entity</b> (ADR-0045). The
+ * {@code obsolete} field says whether a term is itself obsolete; the search hides a row when EITHER of
+ * its endpoints is. So each count bucket has a {@code _live} twin counting only mappings with no
+ * obsolete endpoint, and a default suggest reads those. Without them a live entity whose every mapping
+ * points at an obsolete term is offered and returns nothing — 73% of subject-side suggestions on the
+ * worktree corpus.
+ *
+ * <p><b>A mapping-set restriction is honoured the same way, and for the same reason</b> (ADR-0044).
+ * It cannot be a separate {@code mapping_set_id} clause: side and predicate have to hold WITHIN the
+ * chosen set, so all three travel together in one {@link EntityConstants#SET_SCOPE} token. The price is
+ * that the displayed count is suppressed under a restriction — the counts are corpus-wide, and
+ * reporting one for a set the user has narrowed to would overstate what they get.
+ *
  * <p>Deliberately a plain edismax query rather than a Solr {@code SuggestComponent}: a suggester
  * takes no filter query, so it could honour neither the subject-side restriction (ADR-0030) nor the
  * ontology-prefix filter nor these predicate buckets — and it would need a dictionary build step in
@@ -102,12 +115,16 @@ public class EntitySuggestQueryBuilder {
      * @param includeWeakPredicates the weak predicates the user has ticked; empty — the default —
      *                              means suggest only entities with at least one mapping a default
      *                              search would show (ADR-0035)
+     * @param mappingSetIds         restrict to entities findable in these mapping sets, on the
+     *                              requested side and under a visible predicate (ADR-0044); empty —
+     *                              the default — searches every set
      * @param size                  rows wanted, capped at {@link #MAX_SUGGEST_ROWS}
      */
     public static SolrQuery buildEntitySuggestQuery(String query, EntitySide side,
                                                     List<String> prefixes,
                                                     List<WeakPredicate> includeWeakPredicates,
                                                     boolean includeObsolete,
+                                                    List<String> mappingSetIds,
                                                     int size) {
         String escaped = ClientUtils.escapeQueryChars(query.strip());
 
@@ -123,10 +140,12 @@ public class EntitySuggestQueryBuilder {
                 + " OR " + EntityConstants.LABEL_NGRAM + ":\"" + escaped + "\"^" + TOKEN_PREFIX_BOOST
                 + ")";
 
-        // The one list that drives all three of the filter, the boost and the displayed count, so they
-        // cannot drift apart: an entity is suggestable exactly when one of these is non-zero, is
+        // The one list that drives the filter, the boost, the displayed count AND the mapping-set
+        // filter, so none of them can drift apart: an entity is suggestable exactly when one of these
+        // buckets is non-zero (and, under a set restriction, non-zero IN one of the chosen sets), is
         // ranked by their sum, and shows that sum as its mapping count.
-        List<String> visibleCountFields = visibleCountFields(side, includeWeakPredicates);
+        List<VisibleBucket> visibleBuckets = visibleBuckets(side, includeWeakPredicates, includeObsolete);
+        List<String> visibleCountFields = visibleBuckets.stream().map(VisibleBucket::countField).toList();
 
         SolrQuery solrQuery = new SolrQuery();
         solrQuery.setQuery(disjunction);
@@ -139,45 +158,106 @@ public class EntitySuggestQueryBuilder {
             solrQuery.addFilterQuery(prefixFilter);
         }
 
+        // ADR-0044: the mapping-set restriction. Kept as its own filter query even though it subsumes
+        // the visible-bucket filter above, because the two are cached independently by Solr and the
+        // unrestricted case — the overwhelming majority of queries — must keep hitting the cheap one.
+        String setScopeFilter = setScopeFilter(visibleBuckets, mappingSetIds);
+        if (setScopeFilter != null) {
+            solrQuery.addFilterQuery(setScopeFilter);
+        }
+
         // ADR-0041: hide obsolete entities unless the caller opts in, so a suggestion is never a term the
         // default search would then hide. The leading *:* is required because Solr matches nothing for an
         // only-negative filter; an absent flag (a pre-reindex doc) reads not-obsolete.
+        //
+        // Kept even though ADR-0045's live buckets now subsume it — an obsolete term is an obsolete
+        // endpoint of its every mapping, so all its live buckets are zero and the bucket filter already
+        // excludes it. It states a different rule ("do not offer obsolete terms") from the buckets ("only
+        // count rows the search shows"), and it is the one that still holds if the dataload ever stamps
+        // the two inconsistently. One cached filter query is a cheap guard against that.
         if (!includeObsolete) {
             solrQuery.addFilterQuery("*:* -" + EntityConstants.OBSOLETE + ":true");
         }
 
-        solrQuery.setFields(EntityConstants.ID, EntityConstants.LABEL, EntityConstants.IRI,
-                EntityConstants.PREFIX,
-                VISIBLE_MAPPING_COUNT + ":sum(" + String.join(",", visibleCountFields) + ")");
+        // The count is asked for only when it would be true (ADR-0044). The buckets are corpus-wide, so
+        // under a mapping-set restriction their sum counts mappings from sets the user has excluded —
+        // it would be the same broken promise as ADR-0035's, one level down: the rows exist, but not as
+        // many as the number claims. Omitting the pseudo-field leaves mapping_count absent on the
+        // response, and the suggestion row then shows no count rather than a wrong one.
+        if (setScopeFilter == null) {
+            solrQuery.setFields(EntityConstants.ID, EntityConstants.LABEL, EntityConstants.IRI,
+                    EntityConstants.PREFIX,
+                    VISIBLE_MAPPING_COUNT + ":sum(" + String.join(",", visibleCountFields) + ")");
+        } else {
+            solrQuery.setFields(EntityConstants.ID, EntityConstants.LABEL, EntityConstants.IRI,
+                    EntityConstants.PREFIX);
+        }
         solrQuery.setRows(Math.min(Math.max(size, 1), MAX_SUGGEST_ROWS));
         return solrQuery;
     }
 
     /**
-     * The count fields a search would currently draw rows from: the strong bucket on the side being
-     * searched, plus a bucket for each weak predicate the user has ticked.
+     * One way an entity can currently be found: a side, a predicate bucket, and the count field that
+     * counts it. The three are carried together so the count filter and the {@code set_scope} filter
+     * are built from the same list and cannot come to disagree about what "visible" means.
      *
-     * <p>Both halves of this matter. Restricting to the SIDE is what stops the main box offering an
+     * @param countField the {@code oxo2-entities} count field, e.g. {@code subject_count_hasdbxref}
+     * @param asSubject  true for the subject side of a mapping, false for the object side
+     * @param bucket     the predicate bucket, e.g. {@code strong} or {@code hasdbxref}
+     */
+    private record VisibleBucket(String countField, boolean asSubject, String bucket) {
+
+        /** This bucket's {@code set_scope} term for one mapping set, escaped for the query parser. */
+        String scopeClause(String mappingSetId) {
+            return EntityConstants.SET_SCOPE + ":\"" + ClientUtils.escapeQueryChars(
+                    EntityConstants.setScopeToken(mappingSetId, asSubject, bucket)) + "\"";
+        }
+    }
+
+    /**
+     * The ways a search would currently draw rows: the strong bucket on the side being searched, plus a
+     * bucket for each weak predicate the user has ticked, each in its live or unrestricted variant
+     * depending on whether obsolete rows are being shown.
+     *
+     * <p>All three halves of this matter. Restricting to the SIDE is what stops the main box offering an
      * entity that only ever appears as an object — under ADR-0030's subject-side search that
      * completes to no rows. Restricting to the visible PREDICATES is what stops it offering an entity
-     * whose every mapping is one the search hides (ADR-0035). Same failure, same fix.
+     * whose every mapping is one the search hides (ADR-0035). Reading the LIVE buckets is what stops it
+     * offering an entity whose every mapping points at an obsolete term (ADR-0045) — that entity is not
+     * obsolete itself, so the {@code obsolete} filter lets it through, and its rows are hidden anyway.
+     * Same failure three times, same fix three times.
      */
-    private static List<String> visibleCountFields(EntitySide side,
-                                                   List<WeakPredicate> includeWeakPredicates) {
+    private static List<VisibleBucket> visibleBuckets(EntitySide side,
+                                                      List<WeakPredicate> includeWeakPredicates,
+                                                      boolean includeObsolete) {
         EntitySide effective = side == null ? EntitySide.DEFAULT : side;
         List<WeakPredicate> included =
                 includeWeakPredicates == null ? List.of() : includeWeakPredicates;
 
-        List<String> fields = new ArrayList<>();
+        List<VisibleBucket> buckets = new ArrayList<>();
         if (effective != EntitySide.OBJECT) {
-            fields.add(EntityConstants.SUBJECT_COUNT_STRONG);
-            included.forEach(predicate -> fields.add(EntityConstants.subjectCountField(predicate)));
+            addBuckets(buckets, true, included, includeObsolete);
         }
         if (effective != EntitySide.SUBJECT) {
-            fields.add(EntityConstants.OBJECT_COUNT_STRONG);
-            included.forEach(predicate -> fields.add(EntityConstants.objectCountField(predicate)));
+            addBuckets(buckets, false, included, includeObsolete);
         }
-        return fields;
+        return buckets;
+    }
+
+    /** One side's buckets: strong first, then one per ticked weak predicate. */
+    private static void addBuckets(List<VisibleBucket> buckets, boolean asSubject,
+                                   List<WeakPredicate> included, boolean includeObsolete) {
+        List<String> bucketNames = new ArrayList<>();
+        bucketNames.add(EntityConstants.STRONG_BUCKET);
+        included.forEach(predicate -> bucketNames.add(predicate.bucket()));
+
+        for (String baseBucket : bucketNames) {
+            String bucket = EntityConstants.bucketFor(baseBucket, includeObsolete);
+            String countField = asSubject
+                    ? EntityConstants.subjectCountField(bucket)
+                    : EntityConstants.objectCountField(bucket);
+            buckets.add(new VisibleBucket(countField, asSubject, bucket));
+        }
     }
 
     /** Suggestable iff at least one visible bucket is non-empty — i.e. iff the search returns a row. */
@@ -185,6 +265,28 @@ public class EntitySuggestQueryBuilder {
         return visibleCountFields.stream()
                 .map(field -> field + ":[1 TO *]")
                 .collect(Collectors.joining(" OR "));
+    }
+
+    /**
+     * Restricts the suggest to entities findable in one of {@code mappingSetIds} (ADR-0044), or null
+     * when no set was chosen — the usual case, and the one that must add no filter at all.
+     *
+     * <p>An OR over the cross product of the chosen sets and the currently visible buckets, as exact
+     * {@code set_scope} terms. Spelling out the product is what makes side and predicate hold WITHIN a
+     * chosen set: {@code mapping_set_id:B AND subject_count_strong:[1 TO *]} is satisfied by an entity
+     * that is a subject somewhere else and merely an object in B, and completes to no rows. The product
+     * stays small — a handful of buckets times the sets the user actually ticked.
+     */
+    private static String setScopeFilter(List<VisibleBucket> visibleBuckets,
+                                         List<String> mappingSetIds) {
+        if (mappingSetIds == null || mappingSetIds.isEmpty()) {
+            return null;
+        }
+        String clause = mappingSetIds.stream()
+                .filter(id -> id != null && !id.isBlank())
+                .flatMap(id -> visibleBuckets.stream().map(bucket -> bucket.scopeClause(id.strip())))
+                .collect(Collectors.joining(" OR "));
+        return clause.isBlank() ? null : clause;
     }
 
     /** Mirrors {@code SolrQueryBuilder.addPrefixFilter}: an OR of escaped prefix terms. */

@@ -312,7 +312,10 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
                     // Typeahead over entities (ADR-0034). Subject-side, because the default
                     // search matches the subject side only (ADR-0030) — an object-only entity
                     // would complete to zero rows. Restricted to the chosen source ontologies,
-                    // so the "From" selector narrows the suggestions for free.
+                    // so the "From" selector narrows the suggestions for free. Every option that
+                    // narrows the search has to be passed down, not just the ontologies: the
+                    // predicate checkboxes, the obsolete switch and the mapping-set selection all
+                    // decide what a suggestion can complete to.
                     <EntitySuggest
                         inputId="home-search"
                         value={searchState.userSearchInput}
@@ -327,6 +330,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
                         prefixes={subjectPrefixes}
                         includeWeakPredicates={weakPredicates}
                         includeObsolete={includeObsolete}
+                        mappingSetIds={selectedIds}
                         placeholder="A label, CURIE or IRI — e.g. cataract, MP:0001289"
                     />
                 ) : (

@@ -79,7 +79,11 @@ public class SuggestController {
                     + "returns an empty list without querying Solr.\n\n"
                     + "Only entities a search would actually return are suggested: an entity whose "
                     + "every mapping uses a hidden predicate is offered only once "
-                    + "`includeWeakPredicates` asks for that predicate (ADR-0035).")
+                    + "`includeWeakPredicates` asks for that predicate (ADR-0035), and with "
+                    + "`mappingSetId` set, only entities findable in those sets on the requested side "
+                    + "under a visible predicate (ADR-0044). Under a `mappingSetId` restriction "
+                    + "`mapping_count` is absent: the stored counts are corpus-wide, so any number "
+                    + "reported for a narrowed set would overstate what the search returns.")
     @ApiResponse(responseCode = "200", description = "Matching entities, most relevant first")
     @ApiResponse(responseCode = "400", description = "Unknown value in includeWeakPredicates")
     @GetMapping("/entities")
@@ -107,6 +111,13 @@ public class SuggestController {
             @RequestParam(name = "includeObsolete", required = false, defaultValue = "false")
             boolean includeObsolete,
 
+            @Parameter(description = "Restrict to entities findable in these mapping sets (full IRIs), "
+                    + "on the requested side and under a visible predicate (ADR-0044). Must match the "
+                    + "mapping-set selection of the search this completes into, or a suggestion could "
+                    + "return no rows. Suppresses `mapping_count`.",
+                    example = "https://www.ebi.ac.uk/oxo2/inferences")
+            @RequestParam(name = "mappingSetId", required = false) List<String> mappingSetIds,
+
             @Parameter(description = "Maximum suggestions to return.")
             @RequestParam(name = "size", required = false, defaultValue = "" + DEFAULT_SIZE) int size) {
 
@@ -123,12 +134,12 @@ public class SuggestController {
 
         try {
             SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                    query, side, prefixes, weakPredicates, includeObsolete, size);
+                    query, side, prefixes, weakPredicates, includeObsolete, mappingSetIds, size);
             QueryResponse response = solrClient.queryEntities(solrQuery);
             return ResponseEntity.ok(toSuggestions(response));
         } catch (Exception queryFailure) {
-            logger.error("Error suggesting entities (q={}, side={}, prefixes={}, weak={})",
-                    query, side, prefixes, includeWeakPredicates, queryFailure);
+            logger.error("Error suggesting entities (q={}, side={}, prefixes={}, weak={}, sets={})",
+                    query, side, prefixes, includeWeakPredicates, mappingSetIds, queryFailure);
             return ResponseEntity.status(500).build();
         }
     }
@@ -162,7 +173,9 @@ public class SuggestController {
                     string(document, EntityConstants.IRI),
                     string(document, EntityConstants.PREFIX),
                     // The count under the caller's checkbox state, computed by Solr as an fl function
-                    // — not the stored mapping_count, which counts predicates the search hides.
+                    // — not the stored mapping_count, which counts predicates the search hides. Null
+                    // when the query suppressed it under a mapping-set restriction (ADR-0044), and left
+                    // off the response rather than sent as a zero the row would have to special-case.
                     number(document, EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT)));
         }
         return suggestions;
@@ -173,9 +186,9 @@ public class SuggestController {
         return value == null ? null : value.toString();
     }
 
-    private static long number(SolrDocument document, String field) {
+    private static Long number(SolrDocument document, String field) {
         Object value = document.getFirstValue(field);
-        return value instanceof Number ? ((Number) value).longValue() : 0L;
+        return value instanceof Number number ? number.longValue() : null;
     }
 
     // ---------------------------------------------------------------------------------------------

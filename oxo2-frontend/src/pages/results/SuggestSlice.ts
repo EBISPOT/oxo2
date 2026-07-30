@@ -18,9 +18,13 @@ export interface EntitySuggestion {
     /**
      * How many mappings picking this suggestion will actually return — the entity's mappings on the
      * side being searched, counting only the predicates currently ticked (ADR-0035). Not the entity's
-     * total: showing that would promise rows the search then hides. Always ≥ 1.
+     * total: showing that would promise rows the search then hides. ≥ 1 when present.
+     *
+     * Undefined under a mapping-set restriction (ADR-0044): the backend's counts are corpus-wide, so
+     * there is no honest number to show for a narrowed selection. The suggestions are still exactly the
+     * ones that return rows — only the count is withheld, and the row omits it.
      */
-    mappingCount: number;
+    mappingCount?: number;
 }
 
 /** Which side of a mapping a suggested entity must appear on. */
@@ -32,7 +36,8 @@ interface EntitySuggestionResponse {
     label?: string;
     iri?: string;
     prefix?: string;
-    mapping_count: number;
+    /** Absent under a mapping-set restriction (ADR-0044). */
+    mapping_count?: number;
 }
 
 function fromEntitySuggestionResponse(response: EntitySuggestionResponse): EntitySuggestion {
@@ -62,6 +67,9 @@ export const MIN_SUGGEST_LENGTH = 2;
  * (ADR-0035). It is not a display preference: it decides which entities are suggestable at all. Pass
  * the wrong set and the dropdown offers entities whose every mapping the search then hides — you pick
  * one, and the table comes back empty.
+ *
+ * `mappingSetIds` carries the same obligation (ADR-0044): pass the search's mapping-set selection, or
+ * the dropdown offers entities that exist only in the sets the user has excluded.
  */
 export function fetchEntitySuggestions(
     query: string,
@@ -70,6 +78,7 @@ export function fetchEntitySuggestions(
     includeWeakPredicates: WeakPredicate[] = [],
     size = 10,
     includeObsolete = false,
+    mappingSetIds: string[] = [],
 ): Promise<EntitySuggestion[]> {
     const params = new URLSearchParams();
     params.set('q', query);
@@ -85,6 +94,10 @@ export function fetchEntitySuggestions(
     // as the search it completes into, or a picked suggestion could land on an empty table.
     if (includeObsolete) {
         params.set('includeObsolete', 'true');
+    }
+    // Same rule again (ADR-0044): a suggestion has to be findable in the sets the search is scoped to.
+    for (const mappingSetId of mappingSetIds) {
+        params.append('mappingSetId', mappingSetId);
     }
     return get<EntitySuggestionResponse[]>(`/api/v2/suggest/entities?${params.toString()}`)
         .then((response) => response.map(fromEntitySuggestionResponse));

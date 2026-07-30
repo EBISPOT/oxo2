@@ -1,6 +1,8 @@
 # ADR-0034: A per-entity Solr collection for typeahead
 
-- **Status**: Accepted
+- **Status**: Accepted — amended by [ADR-0044](0044-set-scoped-typeahead.md) (the entity document
+  gains `set_scope`, so the suggest can honour the mapping-set restriction this ADR claimed as a
+  reason to reject `SuggestComponent`)
 - **Date**: 2026-07-14
 
 ## Context
@@ -65,6 +67,9 @@ It is the obvious tool and it is the wrong one here:
 - **It cannot take an `fq`.** Suggester lookups are not queries (`contextField` covers one field, and
   only on `AnalyzingInfix`). So it could not honour ADR-0030's subject-side restriction, nor the
   ontology / corpus / inference / mapping-set filters that every other read path in OxO2 respects.
+  (The entity tier as first built could not honour the *mapping-set* one either — the document
+  carried no set field at all. Fixed by [ADR-0044](0044-set-scoped-typeahead.md); the argument
+  against `SuggestComponent` stands, since a suggester could not apply `set_scope` either.)
 - **Over a denormalised index it suggests the wrong unit.** A `DocumentDictionary` iterates
   *documents*, so a high-degree entity would be emitted once per mapping, and its "weight" would be an
   artefact of the schema rather than a property of the entity.

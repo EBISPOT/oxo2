@@ -1,6 +1,8 @@
 # ADR-0035: Weak predicates become a user-visible control, and the typeahead honours it
 
-- **Status**: Accepted
+- **Status**: Accepted — extended by [ADR-0044](0044-set-scoped-typeahead.md) (mapping-set
+  dimension) and [ADR-0045](0045-live-buckets-for-obsolete-endpoints.md) (obsolete-endpoint
+  dimension), both applying this ADR's rule that a suggestion is a promise the search returns rows
 - **Date**: 2026-07-14
 
 ## Context

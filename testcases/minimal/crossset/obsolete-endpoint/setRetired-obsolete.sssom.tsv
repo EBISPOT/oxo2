@@ -1,0 +1,11 @@
+# mapping_set_id: https://w3id.org/oxo2/test/minimal/crossset/obsolete-endpoint/setRetired-obsolete
+# mapping_set_title: Obsolete-endpoint fixture, retired set (every subject is an obsolete term)
+# license: https://creativecommons.org/publicdomain/zero/1.0/
+# curie_map:
+#   ex: https://w3id.org/oxo2/test/ex/
+#   oboInOwl: http://www.geneontology.org/formats/oboInOwl#
+#   owl: http://www.w3.org/2002/07/owl#
+#   rdfs: http://www.w3.org/2000/01/rdf-schema#
+#   skos: http://www.w3.org/2004/02/skos/core#
+subject_id	subject_label	subject_type	predicate_id	object_id	object_label
+ex:DEAD	Entity DEAD	owl class	oboInOwl:hasDbXref	ex:R	Entity R

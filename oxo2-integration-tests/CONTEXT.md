@@ -22,7 +22,11 @@ Scope: one minimal single-set fixture per active `ChainRulesEnum` rule under `te
   each explanation chain ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)).
   The shape also carries anything that needs two sets to show at all: `literal-subject` uses it to prove
   that the same free-text subject asserted in both sets collapses into one row while different texts do
-  not ([ADR-0042](../docs/adr/0042-literal-subject-identity-in-spo-key.md)).
+  not ([ADR-0042](../docs/adr/0042-literal-subject-identity-in-spo-key.md)). And anything that needs
+  a per-**registry** config flag, which a SSSOM TSV cannot express: a set whose base name ends
+  `-obsolete` is declared `"obsolete": true` in the generated config
+  (`ConfigGenerator.OBSOLETE_SET_SUFFIX`), which is how `obsolete-endpoint` gets an obsolete term to
+  point at ([ADR-0045](../docs/adr/0045-live-buckets-for-obsolete-endpoints.md)).
 - **Expected output layer** — an assertion target for a fixture: the cross-set inferred TTL / the
   explained mapping JSON / the mappingSet JSON / the derived entity documents, and the Solr `numFound`
   counts. All mirrored per fixture under `testcases_expected_output/minimal/<fixture>/`.
@@ -191,6 +195,20 @@ bug in miniature: the subject of one `subClassOf` and one `hasDbXref` and nothin
 suggestable by default. And the **"entity buckets sum to totals"** assertion holds for every entity of
 every fixture (`strong + subclassof + hasdbxref == subject_count`, and likewise object-side), catching
 a double-count or a dropped sighting even where the golden has nothing to say.
+
+The **`obsolete-endpoint` fixture** closes the identical hole one dimension over, for ADR-0045's `_live`
+count buckets. Without an obsolete registry anywhere in the fixture set, every `_live` bucket in every
+golden equals its base bucket, so a fold that wrongly credited an obsolete-endpoint sighting to the live
+twin would leave all 22 other goldens byte-identical and pass. It is a cross-set fixture because the flag
+lives on the *registry*, not in the TSV: `ConfigGenerator` writes `"obsolete": true` for any set whose base
+name ends `-obsolete` (`ConfigGenerator.OBSOLETE_SET_SUFFIX`), which is the only way a fixture can ask for
+operator knowledge it cannot express in SSSOM. Its `ex:A` is the reported bug in miniature — a **live**
+entity whose one mapping points at the obsolete `ex:DEAD`, so `subject_count_strong` is 1 while
+`subject_count_strong_live` is **0**, and its `set_scope` carries `setLive|S|strong` with no `strong_live`
+twin: present in the collection, correctly *not* suggestable by default. `ex:P`/`ex:Q` are the live control
+at 1 and 1, `ex:DEAD` shows an obsolete term with every live bucket zero (which is why the entity-level
+`obsolete` filter is now redundant, though kept), and `ex:R` covers the weak×obsolete cross —
+`object_count_hasdbxref` 1, its live twin 0.
 
 The **`UNSAFE_PREFIX_SHARD` fixture** guards the shard-naming layer, which no unit test can reach: its
 `ex/x:1` subject has the CURIE prefix `EX/X`, a valid Solr facet value but an unsafe *filename*. A

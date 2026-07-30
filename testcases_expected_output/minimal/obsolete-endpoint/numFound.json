@@ -1,0 +1,12 @@
+{
+  "oxo2-mappings" : {
+    "ASSERTED" : 3,
+    "SSSOM_INFERENCE" : 2
+  },
+  "oxo2-mappingsets" : {
+    "ASSERTED" : 2,
+    "SSSOM_INFERENCE" : 1
+  },
+  "oxo2-entities" : 5,
+  "oxo2-mappings-spo-groups" : 5
+}

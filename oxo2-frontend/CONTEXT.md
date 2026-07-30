@@ -162,7 +162,18 @@ entity labels and a suggester over the handful of values of a vocabulary field a
   because picking it would land on an empty table. The checkboxes live on the search page (behind
   More options) *and* in the Predicate column header, and travel in the URL as `wp` so the box and
   the table below it are always filtered by the same selection. `includeWeakPredicates` is therefore not a display preference on the
-  suggest call — pass the wrong set and the dropdown offers entities the search then hides.
+  suggest call — pass the wrong set and the dropdown offers entities the search then hides. The same
+  holds for the **obsolete switch** (ADR-0041) and the **mapping-set selection**
+  ([ADR-0044](../docs/adr/0044-set-scoped-typeahead.md)): `Search.tsx` passes `selectedIds` down as
+  `mappingSetIds`, and every one of these goes in the react-query key, because ticking any of them
+  changes *which* entities are suggestable — a cached list from another state is wrong, not stale.
+  The rule generalises: **any search option that narrows the result set must be handed to the box.**
+  With a mapping set ticked the rows show **no count**, because the backend's counts are corpus-wide
+  and would overstate the narrowed search; `mappingCount` is then `undefined` rather than `0`. The
+  obsolete switch needed no frontend change but changed what it means
+  ([ADR-0045](../docs/adr/0045-live-buckets-for-obsolete-endpoints.md)): it now also picks which
+  count buckets the backend reads, so with obsolete terms hidden the box offers only entities with a
+  mapping between two live terms — far fewer suggestions, all of which return rows.
 - **The result-table column filters** (`ValueSuggest`, in `ColumnFilterPopover`) — **contextual**: the
   values are faceted over the *live search*, so a suggestion can never yield zero rows, and each arrives
   with the count of mappings behind it. It sends the very request `fetchMappings` sends, built by the

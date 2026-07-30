@@ -22,6 +22,19 @@ public final class ConfigGenerator {
 
     public static final String GENERATED_CONFIG_FILENAME = "oxo-config-minimal-rules.generated.json";
 
+    /**
+     * A fixture set whose base name ends with this is declared {@code "obsolete": true} in the generated
+     * config, so every subject of it is an obsolete term (ADR-0041). The naming convention is the whole
+     * mechanism: `mapping_registries` flags are operator knowledge and cannot be expressed inside a SSSOM
+     * TSV, so a fixture that needs the flag has to say so through its filename.
+     *
+     * <p>Exists for ADR-0045: without an obsolete registry, every {@code _live} count bucket in every
+     * golden equals its base bucket, so a fold that wrongly credited an obsolete-endpoint sighting to the
+     * live bucket would leave all 22 goldens byte-identical and pass. Exactly the hole
+     * {@code HIDDEN_PREDICATES} was added to close for the weak-predicate buckets.
+     */
+    public static final String OBSOLETE_SET_SUFFIX = "-obsolete";
+
     private ConfigGenerator() {}
 
     /** Per-fixture config: only this fixture's set(s). */
@@ -47,6 +60,9 @@ public final class ConfigGenerator {
                 ObjectNode entry = registries.addObject();
                 entry.put("id", id);
                 entry.put("url", tsv.toUri().toString());
+                if (id.endsWith(OBSOLETE_SET_SUFFIX)) {
+                    entry.put("obsolete", true);
+                }
             }
         }
 

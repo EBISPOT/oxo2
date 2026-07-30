@@ -333,6 +333,44 @@ asserted mapping sets split curated/ontologies. Reads `null` until the next full
 constants), `oxo2-dataload` (`loadData.lib.sh`, both orchestrators, `sssom2json.nf`, the SSSOM2JSON JAR,
 the `oxo2-mappingsets` schema), `oxo2-backend` (`DataContentController`) and `oxo2-frontend` (`DataContent`
 in the home grid's fourth column).
+- **The typeahead honours a mapping-set restriction, and withholds its count when it does** —
+checking specific mapping sets narrowed the search but not the suggest, which went on offering the
+whole corpus, because `oxo2-entities` had no mapping-set field at all. It now carries a multi-valued
+`set_scope` of one token per **(mapping set, side, predicate bucket)** the entity participates in
+(`<set_id>|S|strong`), written by the fold in the same branch that increments the count. The three
+dimensions share one token deliberately: as separate `fq` clauses, an entity that is a subject in
+set A and merely an object in set B satisfies `mapping_set_id:B` **and** `subject_count_strong:[1 TO
+*]` independently and still completes to no rows — only a single term makes the conjunction
+structural. The suggest's filter is the cross product of the ticked sets and the currently visible
+buckets, so `EntitySuggestQueryBuilder` derives all four of the bucket filter, the boost, the
+displayed count and the set filter from one `VisibleBucket` list. Under a restriction
+`mapping_count` is **absent**, not estimated: the stored counts are corpus-wide, so any number would
+overstate the narrowed result — the filtering stays exact, only the count is withheld. Extends
+ADR-0035's rule (a suggestion is a promise the search returns rows) to the set dimension; needs a
+`START_STAGE=mappings2entities` rebuild to take effect, and until then a restricted suggest returns
+nothing rather than too much. See [ADR-0044](docs/adr/0044-set-scoped-typeahead.md). Affects
+`oxo2-shared` (`EntityConstants`), `oxo2-dataload` (`EntityDoc`, `Mappings2Entities`, the
+`oxo2-entities` schema), `oxo2-backend` (`EntitySuggestQueryBuilder`, `SuggestController`,
+`EntitySuggestion`) and `oxo2-frontend` (`EntitySuggest`, `SuggestSlice`, `Search`). - **The
+typeahead counts only mappings a default search can reach** — ADR-0041 hides a mapping when EITHER
+endpoint is obsolete, but the entity tier only knew whether the entity was *itself* obsolete. The
+gap is a live entity whose every mapping points AT an obsolete term: not obsolete, so suggested, yet
+every row hidden. That was **2,704 of 3,710 subject-side suggestions (73%)** on the worktree corpus
+— `EFO:0006471` was offered with `mapping_count: 1` while its one mapping, to obsolete
+`MONDO:0005603`, was hidden. So every count bucket gains a `_live` twin counting only sightings
+whose mapping has no obsolete endpoint (12 count fields, and the same variants in `set_scope`),
+which means the fold must read BOTH endpoints' flags per mapping, not just the side it is folding.
+The suggest reads the live twins by default and the unrestricted ones when `includeObsolete` is
+ticked; because one `VisibleBucket` list drives the filter, the boost, the displayed count and the
+set filter, all four switch together and the displayed count becomes true. Both bucket sets are
+kept: with obsolete rows shown the search returns them, so the suggest must be able to offer the
+entities behind them. Third instance of ADR-0035's rule, after ADR-0044; needs a
+`START_STAGE=mappings2entities` rebuild, and until it runs a default suggest returns nothing (an
+absent numeric field makes the `sum()` unusable). See
+[ADR-0045](docs/adr/0045-live-buckets-for-obsolete-endpoints.md). Affects `oxo2-shared`
+(`EntityConstants`), `oxo2-dataload` (`EntityDoc` now keyed by bucket name, `Mappings2Entities`, the
+`oxo2-entities` schema) and `oxo2-backend` (`EntitySuggestQueryBuilder`); no frontend change — the
+suggest already sent `includeObsolete`.
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **A config `url` may be a repo-relative path or a single `.tsv.gz`** — a relative local `url` resolves

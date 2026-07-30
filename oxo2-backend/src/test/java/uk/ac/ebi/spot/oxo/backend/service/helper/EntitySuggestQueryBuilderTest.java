@@ -22,23 +22,33 @@ class EntitySuggestQueryBuilderTest {
 
     private static final String INJECTION_PAYLOAD = "a\" OR *:* OR x";
 
-    private static final String SUBJECT_STRONG = EntityConstants.SUBJECT_COUNT_STRONG;
-    private static final String OBJECT_STRONG = EntityConstants.OBJECT_COUNT_STRONG;
-    private static final String SUBJECT_XREF =
-            EntityConstants.subjectCountField(WeakPredicate.HAS_DB_XREF);
-    private static final String SUBJECT_SUBCLASS =
-            EntityConstants.subjectCountField(WeakPredicate.SUB_CLASS_OF);
-    private static final String OBJECT_XREF =
-            EntityConstants.objectCountField(WeakPredicate.HAS_DB_XREF);
+    /**
+     * Bucket NAMES. The default suggest reads the live twins (ADR-0045) — only mappings with no obsolete
+     * endpoint — and the unrestricted buckets only when includeObsolete is set.
+     */
+    private static final String STRONG = EntityConstants.STRONG_BUCKET;
+    private static final String STRONG_LIVE = EntityConstants.bucketFor(STRONG, false);
+    private static final String XREF = WeakPredicate.HAS_DB_XREF.bucket();
+    private static final String XREF_LIVE = EntityConstants.bucketFor(XREF, false);
+    private static final String SUBCLASS_LIVE =
+            EntityConstants.bucketFor(WeakPredicate.SUB_CLASS_OF.bucket(), false);
+
+    // Count FIELDS the default (live) path uses.
+    private static final String SUBJECT_STRONG_LIVE = EntityConstants.subjectCountField(STRONG_LIVE);
+    private static final String OBJECT_STRONG_LIVE = EntityConstants.objectCountField(STRONG_LIVE);
+    private static final String SUBJECT_XREF_LIVE = EntityConstants.subjectCountField(XREF_LIVE);
+    private static final String SUBJECT_SUBCLASS_LIVE =
+            EntityConstants.subjectCountField(SUBCLASS_LIVE);
+    private static final String OBJECT_XREF_LIVE = EntityConstants.objectCountField(XREF_LIVE);
 
     private static SolrQuery suggest(String query) {
         return EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                query, EntitySide.SUBJECT, List.of(), List.of(), false, 10);
+                query, EntitySide.SUBJECT, List.of(), List.of(), false, List.of(), 10);
     }
 
     private static SolrQuery suggest(EntitySide side, List<WeakPredicate> includeWeakPredicates) {
         return EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", side, List.of(), includeWeakPredicates, false, 10);
+                "mel", side, List.of(), includeWeakPredicates, false, List.of(), 10);
     }
 
     @Test
@@ -75,7 +85,7 @@ class EntitySuggestQueryBuilderTest {
 
         assertThat(solrQuery.get(SolrConstants.DEF_TYPE)).isEqualTo(SolrConstants.EDISMAX);
         assertThat(solrQuery.get(SolrConstants.BOOST))
-                .isEqualTo(EntitySuggestQueryBuilder.popularityBoost(List.of(SUBJECT_STRONG)));
+                .isEqualTo(EntitySuggestQueryBuilder.popularityBoost(List.of(SUBJECT_STRONG_LIVE)));
     }
 
     /**
@@ -120,10 +130,10 @@ class EntitySuggestQueryBuilderTest {
     void byDefaultSuggestsOnlyEntitiesWithAMappingTheSearchWouldShow() {
         SolrQuery solrQuery = suggest(EntitySide.SUBJECT, List.of());
 
-        assertThat(solrQuery.getFilterQueries()).contains(SUBJECT_STRONG + ":[1 TO *]");
+        assertThat(solrQuery.getFilterQueries()).contains(SUBJECT_STRONG_LIVE + ":[1 TO *]");
         assertThat(String.join(" ", solrQuery.getFilterQueries()))
-                .doesNotContain(SUBJECT_XREF)
-                .doesNotContain(SUBJECT_SUBCLASS)
+                .doesNotContain(SUBJECT_XREF_LIVE)
+                .doesNotContain(SUBJECT_SUBCLASS_LIVE)
                 .doesNotContain(EntityConstants.IS_SUBJECT);
     }
 
@@ -133,8 +143,8 @@ class EntitySuggestQueryBuilderTest {
         SolrQuery solrQuery = suggest(EntitySide.SUBJECT, List.of(WeakPredicate.HAS_DB_XREF));
 
         assertThat(solrQuery.getFilterQueries())
-                .contains(SUBJECT_STRONG + ":[1 TO *] OR " + SUBJECT_XREF + ":[1 TO *]");
-        assertThat(String.join(" ", solrQuery.getFilterQueries())).doesNotContain(SUBJECT_SUBCLASS);
+                .contains(SUBJECT_STRONG_LIVE + ":[1 TO *] OR " + SUBJECT_XREF_LIVE + ":[1 TO *]");
+        assertThat(String.join(" ", solrQuery.getFilterQueries())).doesNotContain(SUBJECT_SUBCLASS_LIVE);
     }
 
     /** The two checkboxes are independent: subClassOf on, hasDbXref off must not smuggle in xrefs. */
@@ -143,8 +153,8 @@ class EntitySuggestQueryBuilderTest {
         SolrQuery solrQuery = suggest(EntitySide.SUBJECT, List.of(WeakPredicate.SUB_CLASS_OF));
 
         assertThat(solrQuery.getFilterQueries())
-                .contains(SUBJECT_STRONG + ":[1 TO *] OR " + SUBJECT_SUBCLASS + ":[1 TO *]");
-        assertThat(String.join(" ", solrQuery.getFilterQueries())).doesNotContain(SUBJECT_XREF);
+                .contains(SUBJECT_STRONG_LIVE + ":[1 TO *] OR " + SUBJECT_SUBCLASS_LIVE + ":[1 TO *]");
+        assertThat(String.join(" ", solrQuery.getFilterQueries())).doesNotContain(SUBJECT_XREF_LIVE);
     }
 
     /**
@@ -158,10 +168,10 @@ class EntitySuggestQueryBuilderTest {
         String boost = suggest(EntitySide.SUBJECT, List.of(WeakPredicate.HAS_DB_XREF))
                 .get(SolrConstants.BOOST);
 
-        assertThat(boost).contains(SUBJECT_STRONG).contains(SUBJECT_XREF);
+        assertThat(boost).contains(SUBJECT_STRONG_LIVE).contains(SUBJECT_XREF_LIVE);
         assertThat(boost)
-                .doesNotContain(OBJECT_STRONG)
-                .doesNotContain(OBJECT_XREF)
+                .doesNotContain(OBJECT_STRONG_LIVE)
+                .doesNotContain(OBJECT_XREF_LIVE)
                 .doesNotContain(EntityConstants.MAPPING_COUNT);
     }
 
@@ -169,10 +179,10 @@ class EntitySuggestQueryBuilderTest {
     void objectSideRestrictsAndRanksOnObjectCounts() {
         SolrQuery solrQuery = suggest(EntitySide.OBJECT, List.of());
 
-        assertThat(solrQuery.getFilterQueries()).contains(OBJECT_STRONG + ":[1 TO *]");
+        assertThat(solrQuery.getFilterQueries()).contains(OBJECT_STRONG_LIVE + ":[1 TO *]");
         assertThat(solrQuery.get(SolrConstants.BOOST))
-                .contains(OBJECT_STRONG)
-                .doesNotContain(SUBJECT_STRONG);
+                .contains(OBJECT_STRONG_LIVE)
+                .doesNotContain(SUBJECT_STRONG_LIVE);
     }
 
     /** ANY side is still restricted — to entities visible on EITHER side, not to every entity. */
@@ -181,7 +191,7 @@ class EntitySuggestQueryBuilderTest {
         SolrQuery solrQuery = suggest(EntitySide.ANY, List.of());
 
         assertThat(solrQuery.getFilterQueries())
-                .contains(SUBJECT_STRONG + ":[1 TO *] OR " + OBJECT_STRONG + ":[1 TO *]");
+                .contains(SUBJECT_STRONG_LIVE + ":[1 TO *] OR " + OBJECT_STRONG_LIVE + ":[1 TO *]");
     }
 
     /** A null side must not mean "no restriction" — the default is the subject side (ADR-0030). */
@@ -189,7 +199,7 @@ class EntitySuggestQueryBuilderTest {
     void nullSideDefaultsToSubject() {
         SolrQuery solrQuery = suggest(null, List.of());
 
-        assertThat(solrQuery.getFilterQueries()).contains(SUBJECT_STRONG + ":[1 TO *]");
+        assertThat(solrQuery.getFilterQueries()).contains(SUBJECT_STRONG_LIVE + ":[1 TO *]");
     }
 
     /**
@@ -202,18 +212,18 @@ class EntitySuggestQueryBuilderTest {
         SolrQuery solrQuery = suggest(EntitySide.SUBJECT, List.of(WeakPredicate.HAS_DB_XREF));
 
         assertThat(solrQuery.getFilterQueries())
-                .contains(SUBJECT_STRONG + ":[1 TO *] OR " + SUBJECT_XREF + ":[1 TO *]");
+                .contains(SUBJECT_STRONG_LIVE + ":[1 TO *] OR " + SUBJECT_XREF_LIVE + ":[1 TO *]");
         assertThat(solrQuery.get(SolrConstants.BOOST)).isEqualTo(
-                EntitySuggestQueryBuilder.popularityBoost(List.of(SUBJECT_STRONG, SUBJECT_XREF)));
+                EntitySuggestQueryBuilder.popularityBoost(List.of(SUBJECT_STRONG_LIVE, SUBJECT_XREF_LIVE)));
         assertThat(solrQuery.getFields()).contains(
                 EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT
-                        + ":sum(" + SUBJECT_STRONG + "," + SUBJECT_XREF + ")");
+                        + ":sum(" + SUBJECT_STRONG_LIVE + "," + SUBJECT_XREF_LIVE + ")");
     }
 
     @Test
     void prefixFilterIsAnOrOfEscapedPrefixes() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of("MONDO", "EFO"), List.of(), false, 10);
+                "mel", EntitySide.SUBJECT, List.of("MONDO", "EFO"), List.of(), false, List.of(), 10);
 
         assertThat(solrQuery.getFilterQueries())
                 .contains(EntityConstants.PREFIX + ":" + ClientUtils.escapeQueryChars("MONDO")
@@ -223,7 +233,7 @@ class EntitySuggestQueryBuilderTest {
     @Test
     void blankPrefixesAddNoPrefixFilter() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.ANY, List.of("  ", ""), List.of(), false, 10);
+                "mel", EntitySide.ANY, List.of("  ", ""), List.of(), false, List.of(), 10);
 
         assertThat(String.join(" ", solrQuery.getFilterQueries()))
                 .doesNotContain(EntityConstants.PREFIX + ":");
@@ -247,7 +257,7 @@ class EntitySuggestQueryBuilderTest {
     @Test
     void rowsAreCappedAtTheMaximum() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of(), List.of(), false, 10_000);
+                "mel", EntitySide.SUBJECT, List.of(), List.of(), false, List.of(), 10_000);
 
         assertThat(solrQuery.getRows()).isEqualTo(EntitySuggestQueryBuilder.MAX_SUGGEST_ROWS);
     }
@@ -255,7 +265,7 @@ class EntitySuggestQueryBuilderTest {
     @Test
     void rowsAreAtLeastOne() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of(), List.of(), false, 0);
+                "mel", EntitySide.SUBJECT, List.of(), List.of(), false, List.of(), 0);
 
         assertThat(solrQuery.getRows()).isEqualTo(1);
     }
@@ -263,7 +273,7 @@ class EntitySuggestQueryBuilderTest {
     @Test
     void obsoleteEntitiesAreHiddenByDefault() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of(), List.of(), false, 10);
+                "mel", EntitySide.SUBJECT, List.of(), List.of(), false, List.of(), 10);
 
         assertThat(solrQuery.getFilterQueries())
                 .contains("*:* -" + EntityConstants.OBSOLETE + ":true");
@@ -272,7 +282,7 @@ class EntitySuggestQueryBuilderTest {
     @Test
     void includeObsoleteAddsNoObsoleteFilter() {
         SolrQuery solrQuery = EntitySuggestQueryBuilder.buildEntitySuggestQuery(
-                "mel", EntitySide.SUBJECT, List.of(), List.of(), true, 10);
+                "mel", EntitySide.SUBJECT, List.of(), List.of(), true, List.of(), 10);
 
         assertThat(String.join(" ", solrQuery.getFilterQueries()))
                 .doesNotContain(EntityConstants.OBSOLETE);
@@ -293,6 +303,245 @@ class EntitySuggestQueryBuilderTest {
                 .contains(EntityConstants.IRI)
                 .contains(EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT + ":sum(");
         assertThat(fieldList).doesNotContain("," + EntityConstants.MAPPING_COUNT);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Mapping-set restriction (ADR-0044)
+    // ---------------------------------------------------------------------------------------------
+
+    private static final String INFERENCES = "https://www.ebi.ac.uk/oxo2/inferences";
+    private static final String CURATED = "https://w3id.org/oxo2/test/curated";
+
+    private static SolrQuery suggestInSets(EntitySide side, List<WeakPredicate> weakPredicates,
+                                           List<String> mappingSetIds) {
+        return EntitySuggestQueryBuilder.buildEntitySuggestQuery(
+                "mel", side, List.of(), weakPredicates, false, mappingSetIds, 10);
+    }
+
+    private static String scope(String mappingSetId, boolean asSubject, String bucket) {
+        return EntityConstants.SET_SCOPE + ":\"" + ClientUtils.escapeQueryChars(
+                EntityConstants.setScopeToken(mappingSetId, asSubject, bucket)) + "\"";
+    }
+
+    private static String setScopeFilterOf(SolrQuery solrQuery) {
+        return java.util.Arrays.stream(solrQuery.getFilterQueries())
+                .filter(filterQuery -> filterQuery.contains(EntityConstants.SET_SCOPE + ":"))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /** No selection is the common case, and it must leave the query byte-for-byte as it was. */
+    @Test
+    void noMappingSetSelectionAddsNoSetFilter() {
+        assertThat(String.join(" ", suggest("mel").getFilterQueries()))
+                .doesNotContain(EntityConstants.SET_SCOPE);
+        assertThat(setScopeFilterOf(suggestInSets(EntitySide.SUBJECT, List.of(), List.of()))).isNull();
+    }
+
+    @Test
+    void oneMappingSetRestrictsToThatSetOnTheSearchedSide() {
+        SolrQuery solrQuery = suggestInSets(EntitySide.SUBJECT, List.of(), List.of(INFERENCES));
+
+        assertThat(setScopeFilterOf(solrQuery))
+                .isEqualTo(scope(INFERENCES, true, STRONG_LIVE));
+    }
+
+    /**
+     * The heart of ADR-0044. A bare {@code mapping_set_id} clause would be satisfied by an entity that
+     * is merely the OBJECT of a mapping in the chosen set while being a subject somewhere else — and a
+     * subject-side search of that set then returns nothing. Because the set, the side and the bucket
+     * live in ONE token, the conjunction is structural: no object-side token can appear here.
+     */
+    @Test
+    void setFilterCarriesTheSideSoAnObjectOnlyMemberIsNotSuggested() {
+        SolrQuery solrQuery = suggestInSets(EntitySide.SUBJECT, List.of(), List.of(INFERENCES));
+
+        assertThat(setScopeFilterOf(solrQuery))
+                .doesNotContain(EntityConstants.SET_SCOPE_DELIMITER + EntityConstants.OBJECT_SIDE
+                        + EntityConstants.SET_SCOPE_DELIMITER);
+        assertThat(setScopeFilterOf(solrQuery))
+                .isNotEqualTo(scope(INFERENCES, false, STRONG_LIVE));
+    }
+
+    /**
+     * Same argument one dimension over: an entity whose only mappings in the chosen set are hidden
+     * ones must not be suggested until that predicate is ticked (ADR-0035 inside ADR-0044's scope).
+     */
+    @Test
+    void setFilterCarriesThePredicateBucket() {
+        SolrQuery unticked = suggestInSets(EntitySide.SUBJECT, List.of(), List.of(INFERENCES));
+        assertThat(setScopeFilterOf(unticked))
+                .doesNotContain(XREF_LIVE);
+
+        SolrQuery ticked = suggestInSets(EntitySide.SUBJECT, List.of(WeakPredicate.HAS_DB_XREF),
+                List.of(INFERENCES));
+        assertThat(setScopeFilterOf(ticked)).isEqualTo(
+                scope(INFERENCES, true, STRONG_LIVE)
+                        + " OR " + scope(INFERENCES, true, XREF_LIVE));
+    }
+
+    /** Several sets, several buckets: the full cross product, OR-ed, so any one combination suffices. */
+    @Test
+    void severalSetsAndBucketsExpandToTheCrossProduct() {
+        SolrQuery solrQuery = suggestInSets(EntitySide.ANY, List.of(WeakPredicate.SUB_CLASS_OF),
+                List.of(INFERENCES, CURATED));
+
+        assertThat(setScopeFilterOf(solrQuery)).isEqualTo(String.join(" OR ",
+                scope(INFERENCES, true, STRONG_LIVE),
+                scope(INFERENCES, true, SUBCLASS_LIVE),
+                scope(INFERENCES, false, STRONG_LIVE),
+                scope(INFERENCES, false, SUBCLASS_LIVE),
+                scope(CURATED, true, STRONG_LIVE),
+                scope(CURATED, true, SUBCLASS_LIVE),
+                scope(CURATED, false, STRONG_LIVE),
+                scope(CURATED, false, SUBCLASS_LIVE)));
+    }
+
+    @Test
+    void blankMappingSetIdsAddNoSetFilter() {
+        SolrQuery solrQuery = suggestInSets(EntitySide.SUBJECT, List.of(), java.util.Arrays.asList(
+                "  ", "", null));
+
+        assertThat(setScopeFilterOf(solrQuery)).isNull();
+        assertThat(solrQuery.getFields())
+                .contains(EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT + ":sum(");
+    }
+
+    /** A set id is a full IRI, so the token is escaped whole — its ':' and '/' cannot parse as syntax. */
+    @Test
+    void mappingSetIdIsEscapedAndTrimmed() {
+        SolrQuery solrQuery = suggestInSets(EntitySide.SUBJECT, List.of(),
+                List.of("  " + INJECTION_PAYLOAD + "  "));
+
+        String filterQuery = setScopeFilterOf(solrQuery);
+        assertThat(filterQuery).isEqualTo(
+                scope(INJECTION_PAYLOAD, true, STRONG_LIVE));
+        assertThat(filterQuery).doesNotContain(INJECTION_PAYLOAD);
+        assertThat(filterQuery.replace(ClientUtils.escapeQueryChars(
+                EntityConstants.setScopeToken(INJECTION_PAYLOAD, true, STRONG_LIVE)),
+                "")).doesNotContain("*:*");
+    }
+
+    /**
+     * The counts in the index are corpus-wide, so under a restriction there is no honest number to
+     * report — the field is left off entirely rather than filled with one that overstates the rows.
+     */
+    @Test
+    void restrictedSuggestAsksForNoVisibleCount() {
+        SolrQuery solrQuery = suggestInSets(EntitySide.SUBJECT, List.of(), List.of(INFERENCES));
+
+        assertThat(solrQuery.getFields())
+                .doesNotContain(EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT)
+                .contains(EntityConstants.ID)
+                .contains(EntityConstants.LABEL)
+                .contains(EntityConstants.IRI)
+                .contains(EntityConstants.PREFIX);
+    }
+
+    /** Suppressing the count must not cost the ranking: popularity still orders the restricted list. */
+    @Test
+    void restrictedSuggestStillRanksByPopularity()  {
+        SolrQuery solrQuery = suggestInSets(EntitySide.SUBJECT, List.of(), List.of(INFERENCES));
+
+        assertThat(solrQuery.get(SolrConstants.BOOST))
+                .isEqualTo(EntitySuggestQueryBuilder.popularityBoost(List.of(SUBJECT_STRONG_LIVE)));
+    }
+
+    /** The cheap bucket filter stays a separate fq so the unrestricted case keeps its own cache entry. */
+    @Test
+    void setFilterIsAddedAlongsideNotInsteadOfTheVisibleBucketFilter() {
+        SolrQuery solrQuery = suggestInSets(EntitySide.SUBJECT, List.of(), List.of(INFERENCES));
+
+        assertThat(solrQuery.getFilterQueries())
+                .contains(SUBJECT_STRONG_LIVE + ":[1 TO *]")
+                .contains(scope(INFERENCES, true, STRONG_LIVE));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Obsolete endpoints: the live buckets (ADR-0045)
+    // ---------------------------------------------------------------------------------------------
+
+    private static SolrQuery suggestObsolete(EntitySide side, List<WeakPredicate> weakPredicates,
+                                             boolean includeObsolete, List<String> mappingSetIds) {
+        return EntitySuggestQueryBuilder.buildEntitySuggestQuery(
+                "mel", side, List.of(), weakPredicates, includeObsolete, mappingSetIds, 10);
+    }
+
+    /**
+     * The point of ADR-0045. The default search hides a row when EITHER endpoint is obsolete, so a live
+     * entity whose every mapping points AT an obsolete term returns nothing — and the {@code obsolete}
+     * field cannot express that, because the entity is not obsolete. So the default suggest must filter
+     * on the live twin, never on the unrestricted bucket.
+     */
+    @Test
+    void defaultSuggestFiltersOnTheLiveBucket() {
+        SolrQuery solrQuery = suggestObsolete(EntitySide.SUBJECT, List.of(), false, List.of());
+
+        assertThat(solrQuery.getFilterQueries()).contains(SUBJECT_STRONG_LIVE + ":[1 TO *]");
+        assertThat(String.join(" ", solrQuery.getFilterQueries()))
+                .doesNotContain(EntityConstants.SUBJECT_COUNT_STRONG + ":[1 TO *]");
+    }
+
+    /** With obsolete rows shown, the search returns them, so the suggest reads the unrestricted bucket. */
+    @Test
+    void includeObsoleteSuggestFiltersOnTheUnrestrictedBucket() {
+        SolrQuery solrQuery = suggestObsolete(EntitySide.SUBJECT, List.of(), true, List.of());
+
+        assertThat(solrQuery.getFilterQueries())
+                .contains(EntityConstants.SUBJECT_COUNT_STRONG + ":[1 TO *]");
+        assertThat(String.join(" ", solrQuery.getFilterQueries()))
+                .doesNotContain(EntityConstants.LIVE_BUCKET_SUFFIX);
+    }
+
+    /**
+     * The count and the ranking have to move with the filter, or the row shows a number bigger than the
+     * table it opens — the ADR-0035 defect in miniature. This is what was wrong before ADR-0045:
+     * EFO:0006471 was offered with mapping_count 1 while its only mapping was hidden.
+     */
+    @Test
+    void liveBucketsDriveTheCountAndTheBoostToo() {
+        SolrQuery solrQuery = suggestObsolete(EntitySide.SUBJECT, List.of(WeakPredicate.HAS_DB_XREF),
+                false, List.of());
+
+        assertThat(solrQuery.get(SolrConstants.BOOST)).isEqualTo(
+                EntitySuggestQueryBuilder.popularityBoost(
+                        List.of(SUBJECT_STRONG_LIVE, SUBJECT_XREF_LIVE)));
+        assertThat(solrQuery.getFields()).contains(EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT
+                + ":sum(" + SUBJECT_STRONG_LIVE + "," + SUBJECT_XREF_LIVE + ")");
+    }
+
+    /** Weak predicates and obsolescence are independent dimensions: ticking one keeps the other's twin. */
+    @Test
+    void weakPredicateBucketsAlsoComeInLiveVariants() {
+        SolrQuery solrQuery = suggestObsolete(EntitySide.SUBJECT, List.of(WeakPredicate.HAS_DB_XREF),
+                false, List.of());
+
+        assertThat(solrQuery.getFilterQueries()).contains(
+                SUBJECT_STRONG_LIVE + ":[1 TO *] OR " + SUBJECT_XREF_LIVE + ":[1 TO *]");
+    }
+
+    /** All three dimensions compose: the set token carries the live bucket when obsolete rows are hidden. */
+    @Test
+    void theSetScopeTokenCarriesTheLiveBucket() {
+        SolrQuery hidden = suggestObsolete(EntitySide.SUBJECT, List.of(), false, List.of(INFERENCES));
+        assertThat(setScopeFilterOf(hidden)).isEqualTo(scope(INFERENCES, true, STRONG_LIVE));
+
+        SolrQuery shown = suggestObsolete(EntitySide.SUBJECT, List.of(), true, List.of(INFERENCES));
+        assertThat(setScopeFilterOf(shown)).isEqualTo(scope(INFERENCES, true, STRONG));
+    }
+
+    /**
+     * The entity-level obsolete filter stays alongside the live buckets. It is now redundant — an
+     * obsolete term is an obsolete endpoint of its every mapping, so its live buckets are all zero — but
+     * it states a different rule and is the one that survives an inconsistently-stamped reindex.
+     */
+    @Test
+    void theEntityObsoleteFilterIsKeptAlongsideTheLiveBuckets() {
+        SolrQuery solrQuery = suggestObsolete(EntitySide.SUBJECT, List.of(), false, List.of());
+
+        assertThat(solrQuery.getFilterQueries())
+                .contains("*:* -" + EntityConstants.OBSOLETE + ":true")
+                .contains(SUBJECT_STRONG_LIVE + ":[1 TO *]");
     }
 
     @Test

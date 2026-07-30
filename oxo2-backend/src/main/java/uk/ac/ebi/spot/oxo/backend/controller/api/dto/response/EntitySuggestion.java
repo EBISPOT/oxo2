@@ -1,5 +1,6 @@
 package uk.ac.ebi.spot.oxo.backend.controller.api.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -26,9 +27,14 @@ public record EntitySuggestion(
 
         @Schema(description = "How many mappings picking this suggestion will actually return: the "
                 + "entity's mappings on the side being searched, counting only the predicates the "
-                + "caller's `includeWeakPredicates` makes visible (ADR-0035). Always non-zero — an "
+                + "caller's `includeWeakPredicates` makes visible (ADR-0035). Non-zero when present — an "
                 + "entity with nothing to show is not suggested. Deliberately NOT the entity's total "
                 + "mapping count, which would promise rows the search then hides. Drives the "
-                + "popularity ranking, and is shown alongside the suggestion.")
-        @JsonProperty("mapping_count") long mappingCount
+                + "popularity ranking, and is shown alongside the suggestion.\n\n"
+                + "ABSENT under a `mappingSetId` restriction (ADR-0044): the counts behind it are "
+                + "corpus-wide, so reporting one for a narrowed set would overstate the rows. The "
+                + "filtering is still exact — the suggestion does return rows — only the number is "
+                + "withheld, and the suggestion row then shows none.")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonProperty("mapping_count") Long mappingCount
 ) {}

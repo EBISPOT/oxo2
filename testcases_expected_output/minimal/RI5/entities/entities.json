@@ -7,13 +7,20 @@
   "mapping_count" : 2,
   "object_count" : 1,
   "object_count_hasdbxref" : 0,
+  "object_count_hasdbxref_live" : 0,
   "object_count_strong" : 1,
+  "object_count_strong_live" : 1,
   "object_count_subclassof" : 0,
+  "object_count_subclassof_live" : 0,
   "prefix" : "EX",
+  "set_scope" : [ "https://w3id.org/oxo2/test/minimal/rules/RI5|S|strong", "https://w3id.org/oxo2/test/minimal/rules/RI5|S|strong_live", "https://www.ebi.ac.uk/oxo2/inferences|O|strong", "https://www.ebi.ac.uk/oxo2/inferences|O|strong_live" ],
   "subject_count" : 1,
   "subject_count_hasdbxref" : 0,
+  "subject_count_hasdbxref_live" : 0,
   "subject_count_strong" : 1,
-  "subject_count_subclassof" : 0
+  "subject_count_strong_live" : 1,
+  "subject_count_subclassof" : 0,
+  "subject_count_subclassof_live" : 0
 }, {
   "id" : "EX:B",
   "iri" : "https://w3id.org/oxo2/test/ex/B",
@@ -23,11 +30,18 @@
   "mapping_count" : 2,
   "object_count" : 1,
   "object_count_hasdbxref" : 0,
+  "object_count_hasdbxref_live" : 0,
   "object_count_strong" : 1,
+  "object_count_strong_live" : 1,
   "object_count_subclassof" : 0,
+  "object_count_subclassof_live" : 0,
   "prefix" : "EX",
+  "set_scope" : [ "https://w3id.org/oxo2/test/minimal/rules/RI5|O|strong", "https://w3id.org/oxo2/test/minimal/rules/RI5|O|strong_live", "https://www.ebi.ac.uk/oxo2/inferences|S|strong", "https://www.ebi.ac.uk/oxo2/inferences|S|strong_live" ],
   "subject_count" : 1,
   "subject_count_hasdbxref" : 0,
+  "subject_count_hasdbxref_live" : 0,
   "subject_count_strong" : 1,
-  "subject_count_subclassof" : 0
+  "subject_count_strong_live" : 1,
+  "subject_count_subclassof" : 0,
+  "subject_count_subclassof_live" : 0
 } ]

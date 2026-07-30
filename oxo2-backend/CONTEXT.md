@@ -53,14 +53,18 @@ for `total`. `releaseDate` is `null` until the first dataload that stamps the fi
 no `unique()` aggregation — that is what makes `/api/sssom/stats` expensive — so `mappings.total` counts
 documents, not distinct triples. `mappingSets.ontologies` is the ONTOLOGY-category set count, *not*
 `/api/v2/ontologies`' prefix count; the two answer different questions and will not agree.
-- **`GET /api/v2/suggest/entities?q=&side=&prefix=&size=`** — the entity typeahead
+- **`GET /api/v2/suggest/entities?q=&side=&prefix=&mappingSetId=&size=`** — the entity typeahead
 ([ADR-0034](../docs/adr/0034-entity-collection-for-typeahead.md)). Reads `oxo2-entities` (one document
 per DISTINCT entity), not `oxo2-mappings`, which is denormalised and would suggest an entity once per
 mapping. Prefix-of-any-token on the label (so `mel` reaches "malignant melanoma"), whole-string prefix
 on the CURIE (so `MONDO:00` is a prefix of `MONDO:0000001`); a leading-edge match outranks a mid-label
 token match, and popularity (`mapping_count`) breaks ties. `side` defaults to SUBJECT, because the
 default search matches the subject side only (ADR-0030) — suggesting an object-only entity would
-complete to zero rows. A query under two characters returns `[]` without touching Solr.
+complete to zero rows. A query under two characters returns `[]` without touching Solr. Repeatable
+`mappingSetId` restricts to entities findable in those sets **on the requested side under a visible
+predicate**, filtering on the composite `set_scope` tokens
+([ADR-0044](../docs/adr/0044-set-scoped-typeahead.md)); it also suppresses `mapping_count`, because
+the stored counts are corpus-wide and would overstate a narrowed selection.
 - **`GET /api/v2/suggest/values?field=&size=`** — every distinct value of one controlled-vocabulary
 field, most common first. Meant to be fetched once and filtered client-side. Only low-cardinality fields
 are permitted (400 otherwise): a global facet on an entity field would enumerate millions of terms, and
@@ -321,9 +325,9 @@ Solr's `filterCache` makes a repeated filter ~1 ms, but each distinct value a us
 cold query. This is the cost of preserving partial-word (substring) matching; a phrase query
 on the plain `text_general` field would be ~50× faster but match whole words only.
 
-### Suggest queries (ADR-0034, ADR-0035)
+### Suggest queries (ADR-0034, ADR-0035, ADR-0044, ADR-0045)
 
-Three invariants worth stating, because all three are easy to break and none fails loudly.
+Five invariants worth stating, because all five are easy to break and none fails loudly.
 
 **A suggestion must be a promise that the search returns something.** The entity typeahead is filtered
 by the SAME predicate checkboxes the search is
@@ -335,6 +339,28 @@ currently makes visible — never on the entity's stored `mapping_count`, which 
 search will not show, and never on `is_subject`, which means "subject of *some* mapping" rather than
 "subject of some mapping the user can see". Getting this wrong is not hypothetical: it shipped, and made
 92% of suggestions return no rows.
+
+**Every narrowing of the search must narrow the suggest, and set/side/predicate must hold TOGETHER.**
+The same rule one dimension over ([ADR-0044](../docs/adr/0044-set-scoped-typeahead.md)). A mapping-set
+restriction cannot be a `mapping_set_id`-style clause of its own: side and predicate are separate `fq`
+clauses, so an entity that is a subject in set A and merely an object in set B would satisfy both
+independently and still return nothing. So the entity fold writes one `set_scope` token per **(set,
+side, bucket)** and the suggest ORs over the cross product of the ticked sets and the visible buckets —
+the conjunction is structural, not assembled per query. One `VisibleBucket` list drives the bucket
+filter, the boost, the displayed count *and* the set filter, so they cannot drift. And under a
+restriction the count is **omitted**, never estimated: the buckets are corpus-wide, so a number derived
+from them promises more rows than the narrowed search returns. Absent, not zero — a zero would read as
+"this suggestion finds nothing".
+
+**An entity-level flag cannot answer a mapping-level question.** The obsolete case
+([ADR-0045](../docs/adr/0045-live-buckets-for-obsolete-endpoints.md)). The search hides a row when
+EITHER endpoint is obsolete; the entity's `obsolete` field only says whether the entity is itself
+obsolete. A live entity mapped exclusively to obsolete terms satisfies every entity-level check and
+returns nothing — 73% of subject-side suggestions on the worktree corpus. So each count bucket has a
+`_live` twin (mappings with no obsolete endpoint), the suggest reads those by default and the
+unrestricted ones under `includeObsolete`, and `set_scope` carries both bucket names. The generalisation:
+whenever the search filters on a property of the MAPPING, the entity document needs a bucket for it — a
+flag about the entity will not do.
 
 **The contextual value suggest must REUSE `buildSolrQuery`, never rebuild the filters.** Its
 suggestions have to be scoped by exactly what the visible result set is scoped by — the other column

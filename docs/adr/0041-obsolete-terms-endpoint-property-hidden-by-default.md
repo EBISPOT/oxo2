@@ -1,6 +1,8 @@
 # ADR-0041: Obsolete terms are an endpoint property, hidden by default, honoured across every surface
 
-- **Status**: Accepted
+- **Status**: Accepted — amended by [ADR-0045](0045-live-buckets-for-obsolete-endpoints.md), which
+  makes the typeahead honour this ADR's exclusion on the MAPPING (either endpoint) and not merely on
+  the entity's own `obsolete` flag
 - **Date**: 2026-07-27
 
 ## Context

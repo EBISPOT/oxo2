@@ -133,6 +133,31 @@
   <field name="subject_count_hasdbxref" type="plong" indexed="true" stored="true" docValues="true"/>
   <field name="object_count_hasdbxref" type="plong" indexed="true" stored="true" docValues="true"/>
 
+  <!-- The same six buckets, counting ONLY mappings a default search can reach: those where NEITHER
+       endpoint is an obsolete term (ADR-0045). The `obsolete` field above is a property of the ENTITY,
+       but the search's exclusion is a property of the MAPPING (subject_obsolete OR object_obsolete), and
+       the gap between the two is a live entity whose every mapping points AT an obsolete term — offered
+       by the suggest, every row hidden by the search. That was 2,704 of 3,710 subject-side suggestions
+       (73%) on the worktree corpus. The suggest reads THESE by default and the unrestricted six only
+       when includeObsolete is ticked, so its filter, boost and displayed count all mean "rows the search
+       will return". Both sets are kept because both questions are askable. -->
+  <field name="subject_count_strong_live" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="object_count_strong_live" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="subject_count_subclassof_live" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="object_count_subclassof_live" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="subject_count_hasdbxref_live" type="plong" indexed="true" stored="true" docValues="true"/>
+  <field name="object_count_hasdbxref_live" type="plong" indexed="true" stored="true" docValues="true"/>
+
+  <!-- Which (mapping set, side, predicate bucket) combinations the entity participates in (ADR-0044),
+       one token each: "<mapping_set_id>|S|strong". This is what lets the typeahead honour a
+       mapping-set restriction. A plain multi-valued mapping_set_id would not: the side and predicate
+       filters are separate clauses, so an entity that is a subject in set A and an object in set B
+       would match mapping_set_id:B AND subject_count_strong:[1 TO *] and still complete to no rows.
+       Folding the three into one token makes them a conjunction by construction. Not stored — it is a
+       filter target only; the count fields above remain what is displayed and ranked on. -->
+  <field name="set_scope" type="string" indexed="true" stored="false" multiValued="true"
+         docValues="false"/>
+
   <!-- Prefix-match targets. Never stored — they exist only to be searched. -->
   <field name="id_prefix_ngram" type="string_edge_ngram" indexed="true" stored="false"/>
   <field name="label_prefix_ngram" type="string_edge_ngram" indexed="true" stored="false"/>

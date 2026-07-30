@@ -2,6 +2,9 @@ package uk.ac.ebi.spot.oxo.model.entity;
 
 import uk.ac.ebi.spot.oxo.model.sssom.WeakPredicate;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Field-name constants for the {@code oxo2-entities} Solr collection: one document per DISTINCT
  * entity, backing the typeahead (ADR-0034).
@@ -66,12 +69,108 @@ public final class EntityConstants {
 
     /** This predicate's subject-side count field, e.g. {@code subject_count_hasdbxref}. */
     public static String subjectCountField(WeakPredicate predicate) {
-        return "subject_count_" + predicate.bucket();
+        return subjectCountField(predicate.bucket());
     }
 
     /** This predicate's object-side count field, e.g. {@code object_count_subclassof}. */
     public static String objectCountField(WeakPredicate predicate) {
-        return "object_count_" + predicate.bucket();
+        return objectCountField(predicate.bucket());
+    }
+
+    /** The subject-side count field for a bucket name, e.g. {@code subject_count_strong_live}. */
+    public static String subjectCountField(String bucket) {
+        return "subject_count_" + bucket;
+    }
+
+    /** The object-side count field for a bucket name, e.g. {@code object_count_hasdbxref_live}. */
+    public static String objectCountField(String bucket) {
+        return "object_count_" + bucket;
+    }
+
+    /**
+     * Which (mapping set, side, predicate bucket) combinations this entity actually participates in
+     * (ADR-0044). Multi-valued; one token per combination, built by {@link #setScopeToken}.
+     *
+     * <p>A bare {@code mapping_set_id} field would not do. The suggest already restricts by side and
+     * by predicate, and those restrictions have to hold WITHIN the chosen set, not merely somewhere in
+     * the corpus: an entity that is a subject in set A and an object in set B would satisfy
+     * {@code mapping_set_id:B} and {@code subject_count_strong:[1 TO *]} independently and still return
+     * no rows for a subject-side search of set B. Folding all three into one token makes the filter a
+     * conjunction by construction, so ADR-0035's rule — a suggestion is a promise the search returns
+     * rows — survives a mapping-set restriction.
+     *
+     * <p>The bucket component carries the {@link #LIVE_BUCKET_SUFFIX} variants too (ADR-0045), so the
+     * obsolete dimension composes with the set the same way side and predicate do — one field, more
+     * tokens, and the reader picks the bucket names it needs.
+     */
+    public static final String SET_SCOPE = "set_scope";
+
+    /**
+     * Separates the three parts of a {@link #SET_SCOPE} token. A {@code |} cannot appear unescaped in
+     * an IRI, so it can never occur inside a mapping-set id and the token stays unambiguous.
+     */
+    public static final String SET_SCOPE_DELIMITER = "|";
+
+    /** Side markers inside a {@link #SET_SCOPE} token. */
+    public static final String SUBJECT_SIDE = "S";
+
+    public static final String OBJECT_SIDE = "O";
+
+    /** The bucket name for every predicate that is not a {@link WeakPredicate}. */
+    public static final String STRONG_BUCKET = "strong";
+
+    /**
+     * Marks the variant of a bucket that counts only sightings a DEFAULT search can reach: mappings
+     * where NEITHER endpoint is an obsolete term (ADR-0045).
+     *
+     * <p>Why a whole parallel set of buckets. {@link #OBSOLETE} is a property of the ENTITY, but the
+     * search's obsolete exclusion is a property of the MAPPING — it hides a row when
+     * {@code subject_obsolete OR object_obsolete}. Those are not the same question, and the gap between
+     * them is a live entity whose every mapping points AT an obsolete term: not obsolete itself, so
+     * offered by the suggest, yet its every row hidden. Measured on the worktree corpus, 2,704 of 3,710
+     * subject-side suggestions (73%) were dead for exactly this reason — ADR-0035's failure again, one
+     * dimension over.
+     *
+     * <p>Both sets are needed, not just the live one: with {@code includeObsolete} ticked the search
+     * shows everything, so the suggest must then read the unrestricted buckets.
+     */
+    public static final String LIVE_BUCKET_SUFFIX = "_live";
+
+    /**
+     * The variant of {@code bucket} counting only mappings with no obsolete endpoint (ADR-0045), or
+     * {@code bucket} itself when obsolete rows are being shown. One helper so the fold and the suggest
+     * cannot spell the pair differently.
+     */
+    public static String bucketFor(String bucket, boolean includeObsolete) {
+        return includeObsolete ? bucket : bucket + LIVE_BUCKET_SUFFIX;
+    }
+
+    /**
+     * Every base bucket name in a stable order — strong first, then one per {@link WeakPredicate}. The
+     * fold walks this to emit each count field (and its {@link #LIVE_BUCKET_SUFFIX} twin), so adding a
+     * weak predicate adds its buckets everywhere at once.
+     */
+    public static List<String> baseBuckets() {
+        List<String> buckets = new ArrayList<>();
+        buckets.add(STRONG_BUCKET);
+        for (WeakPredicate predicate : WeakPredicate.values()) {
+            buckets.add(predicate.bucket());
+        }
+        return buckets;
+    }
+
+    /**
+     * The {@link #SET_SCOPE} token for one (set, side, bucket) combination, e.g.
+     * {@code https://www.ebi.ac.uk/oxo2/inferences|S|strong}. The single place either side of the
+     * writer/reader contract spells a token.
+     *
+     * @param asSubject true for the subject side of the mapping, false for the object side
+     * @param bucket    {@link #STRONG_BUCKET} or a {@link WeakPredicate#bucket()} — the same suffixes
+     *                  the count fields use, so the tokens and the counts cannot drift apart
+     */
+    public static String setScopeToken(String mappingSetId, boolean asSubject, String bucket) {
+        return mappingSetId + SET_SCOPE_DELIMITER + (asSubject ? SUBJECT_SIDE : OBJECT_SIDE)
+                + SET_SCOPE_DELIMITER + bucket;
     }
 
     /** Whole-string prefix over the CURIE: the ':' is not a token boundary. */

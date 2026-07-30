@@ -4,6 +4,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.junit.jupiter.api.Test;
@@ -101,7 +102,8 @@ class SuggestControllerTest {
                 .andExpect(status().isOk());
 
         assertThat(captureEntityQuery().getFilterQueries())
-                .contains(EntityConstants.SUBJECT_COUNT_STRONG + ":[1 TO *]");
+                .contains(EntityConstants.subjectCountField(
+                        EntityConstants.bucketFor(EntityConstants.STRONG_BUCKET, false)) + ":[1 TO *]");
     }
 
     /** The checkbox state reaches the suggest, so the dropdown matches the table it completes into. */
@@ -115,7 +117,8 @@ class SuggestControllerTest {
                 .andExpect(status().isOk());
 
         assertThat(String.join(" ", captureEntityQuery().getFilterQueries()))
-                .contains(EntityConstants.subjectCountField(WeakPredicate.HAS_DB_XREF) + ":[1 TO *]");
+                .contains(EntityConstants.subjectCountField(EntityConstants.bucketFor(
+                        WeakPredicate.HAS_DB_XREF.bucket(), false)) + ":[1 TO *]");
     }
 
     /**
@@ -156,7 +159,8 @@ class SuggestControllerTest {
                 .andExpect(status().isOk());
 
         assertThat(captureEntityQuery().getFilterQueries())
-                .contains(EntityConstants.OBJECT_COUNT_STRONG + ":[1 TO *]");
+                .contains(EntityConstants.objectCountField(
+                        EntityConstants.bucketFor(EntityConstants.STRONG_BUCKET, false)) + ":[1 TO *]");
     }
 
     /** A one-character prefix matches a large fraction of the collection; it must never reach Solr. */
@@ -203,6 +207,123 @@ class SuggestControllerTest {
                 .andExpect(jsonPath("$[0].id").value("MONDO:0005148"))
                 .andExpect(jsonPath("$[0].label").doesNotExist())
                 .andExpect(jsonPath("$[0].mapping_count").value(3));
+    }
+
+    /**
+     * The reported bug (ADR-0044): with a mapping set checked, the typeahead used to ignore it entirely
+     * and go on offering entities from the whole corpus. The restriction has to reach Solr, and it has
+     * to carry the side with it — an entity that is merely an object in the chosen set completes to no
+     * rows under the subject-side default search.
+     */
+    @Test
+    void mappingSetRestrictionReachesSolrCarryingTheSide() throws Exception {
+        when(solrClient.queryEntities(any())).thenReturn(entityResponse());
+
+        mockMvc.perform(get("/api/v2/suggest/entities")
+                        .param("q", "mel")
+                        .param("mappingSetId", "https://www.ebi.ac.uk/oxo2/inferences"))
+                .andExpect(status().isOk());
+
+        assertThat(String.join(" ", captureEntityQuery().getFilterQueries()))
+                .contains(EntityConstants.SET_SCOPE + ":")
+                .contains(ClientUtils.escapeQueryChars(EntityConstants.setScopeToken("https://www.ebi.ac.uk/oxo2/inferences", true,
+                        EntityConstants.bucketFor(EntityConstants.STRONG_BUCKET, false))));
+    }
+
+    @Test
+    void severalMappingSetsAreAllPassedThrough() throws Exception {
+        when(solrClient.queryEntities(any())).thenReturn(entityResponse());
+
+        mockMvc.perform(get("/api/v2/suggest/entities")
+                        .param("q", "mel")
+                        .param("mappingSetId", "https://example.org/setA")
+                        .param("mappingSetId", "https://example.org/setB"))
+                .andExpect(status().isOk());
+
+        String filterQueries = String.join(" ", captureEntityQuery().getFilterQueries());
+        assertThat(filterQueries)
+                .contains(ClientUtils.escapeQueryChars(EntityConstants.setScopeToken("https://example.org/setA", true,
+                        EntityConstants.bucketFor(EntityConstants.STRONG_BUCKET, false))))
+                .contains(ClientUtils.escapeQueryChars(EntityConstants.setScopeToken("https://example.org/setB", true,
+                        EntityConstants.bucketFor(EntityConstants.STRONG_BUCKET, false))));
+    }
+
+    /**
+     * Under a restriction the count is withheld rather than reported wrong: the buckets behind it are
+     * corpus-wide, so a number computed from them would overstate what the narrowed search returns.
+     * Solr sends no pseudo-field, and the response must omit the property rather than say zero — a zero
+     * would read as "this suggestion returns nothing", which is exactly what it does not mean.
+     */
+    @Test
+    void restrictedSuggestOmitsTheMappingCount() throws Exception {
+        SolrDocument noCount = new SolrDocument();
+        noCount.addField(EntityConstants.ID, "MONDO:0005148");
+        noCount.addField(EntityConstants.LABEL, "type 2 diabetes mellitus");
+        when(solrClient.queryEntities(any())).thenReturn(entityResponse(noCount));
+
+        mockMvc.perform(get("/api/v2/suggest/entities")
+                        .param("q", "type 2")
+                        .param("mappingSetId", "https://www.ebi.ac.uk/oxo2/inferences"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("MONDO:0005148"))
+                .andExpect(jsonPath("$[0].label").value("type 2 diabetes mellitus"))
+                .andExpect(jsonPath("$[0].mapping_count").doesNotExist());
+    }
+
+    /** No selection is the common case: it must add no set filter and still report the count. */
+    @Test
+    void noMappingSetRestrictionLeavesTheQueryAndTheCountAlone() throws Exception {
+        when(solrClient.queryEntities(any())).thenReturn(entityResponse(
+                entity("MONDO:0005148", "type 2 diabetes mellitus", null, "MONDO", 42L)));
+
+        mockMvc.perform(get("/api/v2/suggest/entities").param("q", "type 2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].mapping_count").value(42));
+
+        assertThat(String.join(" ", captureEntityQuery().getFilterQueries()))
+                .doesNotContain(EntityConstants.SET_SCOPE);
+    }
+
+    /**
+     * The EFO:0006471 report (ADR-0045). Its one mapping was
+     * {@code EFO:0006471 SKOS:exactMatch MONDO:0005603} with {@code object_obsolete:true} — so the
+     * default search returned nothing while the suggest offered the term with {@code mapping_count: 1},
+     * because EFO:0006471 is not itself obsolete. The default suggest must therefore filter on the live
+     * bucket, and must never fall back to the unrestricted one.
+     */
+    @Test
+    void defaultSuggestNeverReadsTheUnrestrictedBuckets() throws Exception {
+        when(solrClient.queryEntities(any())).thenReturn(entityResponse());
+
+        mockMvc.perform(get("/api/v2/suggest/entities").param("q", "EFO:00064"))
+                .andExpect(status().isOk());
+
+        SolrQuery solrQuery = captureEntityQuery();
+        String live = EntityConstants.subjectCountField(
+                EntityConstants.bucketFor(EntityConstants.STRONG_BUCKET, false));
+        assertThat(solrQuery.getFilterQueries()).contains(live + ":[1 TO *]");
+        assertThat(String.join(" ", solrQuery.getFilterQueries()))
+                .doesNotContain(EntityConstants.SUBJECT_COUNT_STRONG + ":[1 TO *]");
+        // The displayed count has to come off the same bucket, or the row promises rows the table lacks.
+        assertThat(solrQuery.getFields())
+                .contains(EntitySuggestQueryBuilder.VISIBLE_MAPPING_COUNT + ":sum(" + live + ")");
+    }
+
+    /** Ticking "show obsolete terms" widens both the filter and the count back to every mapping. */
+    @Test
+    void includeObsoleteReadsTheUnrestrictedBuckets() throws Exception {
+        when(solrClient.queryEntities(any())).thenReturn(entityResponse());
+
+        mockMvc.perform(get("/api/v2/suggest/entities")
+                        .param("q", "EFO:00064")
+                        .param("includeObsolete", "true"))
+                .andExpect(status().isOk());
+
+        SolrQuery solrQuery = captureEntityQuery();
+        assertThat(solrQuery.getFilterQueries())
+                .contains(EntityConstants.SUBJECT_COUNT_STRONG + ":[1 TO *]");
+        assertThat(String.join(" ", solrQuery.getFilterQueries()))
+                .doesNotContain(EntityConstants.LIVE_BUCKET_SUFFIX);
     }
 
     @Test

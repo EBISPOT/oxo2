@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
@@ -90,7 +91,13 @@ public class Mappings2Entities {
      */
     private static final String PREDICATE_IRI = "predicate_iri";
 
-    /** Rows per cursorMark page. Seven small stored fields per doc, so a large page is cheap. */
+    /**
+     * Read so each sighting records which mapping set it came from (ADR-0044), letting the typeahead
+     * honour a mapping-set restriction instead of ignoring it.
+     */
+    private static final String MAPPING_SET_ID = "mapping_set_id";
+
+    /** Rows per cursorMark page. A handful of small stored fields per doc, so a large page is cheap. */
     private static final int PAGE_SIZE = 20_000;
 
     public static void main(String[] args) throws Exception {
@@ -194,7 +201,8 @@ public class Mappings2Entities {
         SolrQuery query = new SolrQuery("*:*");
         query.addFilterQuery(shardFilter(prefix));
         query.setFields(SUBJECT_ID, SUBJECT_LABEL, SUBJECT_IRI, SUBJECT_OBSOLETE,
-                OBJECT_ID, OBJECT_LABEL, OBJECT_IRI, OBJECT_OBSOLETE, PREDICATE_IRI);
+                OBJECT_ID, OBJECT_LABEL, OBJECT_IRI, OBJECT_OBSOLETE, PREDICATE_IRI,
+                MAPPING_SET_ID);
         query.setRows(PAGE_SIZE);
         // cursorMark requires a total ordering, so the sort must end in the uniqueKey.
         query.setSort(SolrQuery.SortClause.asc("id"));
@@ -266,10 +274,16 @@ public class Mappings2Entities {
         // ADR-0041: this endpoint's obsolescence, denormalised onto every mapping by the dataload.
         boolean obsolete = bool(document, asSubject ? SUBJECT_OBSOLETE : OBJECT_OBSOLETE);
 
+        // ADR-0045: whether a DEFAULT search would show this row at all. Read from BOTH endpoints,
+        // because that is what SolrQueryBuilder's exclusion tests — a mapping is hidden when either end
+        // is obsolete, so a live entity mapped to an obsolete term has a sighting that yields no row.
+        boolean mappingLive = !bool(document, SUBJECT_OBSOLETE) && !bool(document, OBJECT_OBSOLETE);
+
         entities.computeIfAbsent(id, key -> new EntityDoc(key, curiePrefix.orElse(null)))
                 .observe(string(document, asSubject ? SUBJECT_LABEL : OBJECT_LABEL),
                         string(document, asSubject ? SUBJECT_IRI : OBJECT_IRI),
-                        asSubject, weakPredicate, obsolete);
+                        asSubject, weakPredicate, obsolete, mappingLive,
+                        string(document, MAPPING_SET_ID));
     }
 
     /** The weak predicate this IRI names, or null when it names any other (i.e. a strong) predicate. */
@@ -324,16 +338,30 @@ public class Mappings2Entities {
                     json.writeBooleanField(EntityConstants.OBSOLETE, true);
                 }
 
-                // The buckets the typeahead filters and ranks on (ADR-0035). Written unconditionally,
-                // zeros included: the suggest sums the enabled buckets as a function query, and a
-                // missing docValue would make the whole sum unusable rather than merely zero.
-                json.writeNumberField(EntityConstants.SUBJECT_COUNT_STRONG, entity.subjectCountStrong());
-                json.writeNumberField(EntityConstants.OBJECT_COUNT_STRONG, entity.objectCountStrong());
-                for (WeakPredicate weakPredicate : WeakPredicate.values()) {
-                    json.writeNumberField(EntityConstants.subjectCountField(weakPredicate),
-                            entity.subjectCount(weakPredicate));
-                    json.writeNumberField(EntityConstants.objectCountField(weakPredicate),
-                            entity.objectCount(weakPredicate));
+                // The buckets the typeahead filters and ranks on (ADR-0035), each with its live twin
+                // (ADR-0045). Written unconditionally, zeros included: the suggest sums the enabled
+                // buckets as a function query, and a missing docValue would make the whole sum unusable
+                // rather than merely zero.
+                for (String baseBucket : EntityConstants.baseBuckets()) {
+                    for (String bucket : List.of(baseBucket,
+                            EntityConstants.bucketFor(baseBucket, false))) {
+                        json.writeNumberField(EntityConstants.subjectCountField(bucket),
+                                entity.subjectCount(bucket));
+                        json.writeNumberField(EntityConstants.objectCountField(bucket),
+                                entity.objectCount(bucket));
+                    }
+                }
+
+                // ADR-0044: which (set, side, bucket) combinations this entity is findable in. Written
+                // only when non-empty, so a corpus whose mappings carry no set id folds to the same
+                // documents as before. An absent field matches no set restriction, which is the honest
+                // answer: without a set id there is no evidence the entity is in the chosen set.
+                if (!entity.setScopes().isEmpty()) {
+                    json.writeArrayFieldStart(EntityConstants.SET_SCOPE);
+                    for (String setScope : entity.setScopes()) {
+                        json.writeString(setScope);
+                    }
+                    json.writeEndArray();
                 }
                 json.writeEndObject();
             }

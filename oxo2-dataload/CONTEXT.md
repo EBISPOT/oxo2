@@ -219,6 +219,25 @@ buckets gives the count the search will actually produce, which is what the sugg
 on. If you add a weak predicate, add it to `WeakPredicate` in `oxo2-shared` — the fold and
 `SolrQueryBuilder`'s exclusion both derive from it, and they must not drift apart.
 
+Each bucket also has a **live twin** — `{subject,object}_count_<bucket>_live` — counting only sightings
+whose mapping has NO obsolete endpoint ([ADR-0045](../docs/adr/0045-live-buckets-for-obsolete-endpoints.md)).
+This is why the fold reads `subject_obsolete` **and** `object_obsolete` on every mapping and not just the
+side it is folding: the search hides a row when either end is obsolete, so a live entity mapped only to
+obsolete terms has sightings that yield no rows. A sighting credits its base bucket always and its live
+twin only when the mapping is live, so live is a subset — which is why the display totals sum the base
+buckets alone (`EntityConstants.baseBuckets()`), never every key. `EntityDoc` therefore keys its counters
+by bucket NAME rather than by `WeakPredicate`, since the twins are not enum values.
+
+Set membership is kept too, but as tokens rather than counts: the fold reads `mapping_set_id` and writes
+a multi-valued `set_scope` of one `<set_id>|S|strong`-style token per **(mapping set, side, predicate
+bucket)** it has seen the entity in ([ADR-0044](../docs/adr/0044-set-scoped-typeahead.md)). The token is
+added in the same branch that increments the count, so the two can never disagree about how an entity is
+findable, and `EntityConstants.setScopeToken` is the only place either side of the contract spells one.
+Deliberately no count *per set*: that would be a number per (set × side × bucket) on every document and a
+request-dependent `sum()` over an unbounded field list, so a set-restricted suggest filters exactly and
+reports no count at all. `set_scope` is written only when non-empty, so a corpus whose mappings carry no
+set id folds to byte-identical documents.
+
 > **Rebuilding the read model:** `START_STAGE=mappings2entities` re-derives the whole collection from
 > the already-indexed mappings, with no re-inference and no re-explanation. It calls
 > `copySolrConfig.sh entities-only`, which **wipes and re-lays the `oxo2-entities` core** (leaving

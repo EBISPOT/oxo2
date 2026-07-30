@@ -1,0 +1,6 @@
+<https://w3id.org/oxo2/test/ex/A> <http://www.w3.org/2004/02/skos/core#exactMatch> <https://w3id.org/oxo2/test/ex/A> .
+<https://w3id.org/oxo2/test/ex/DEAD> <http://www.w3.org/2004/02/skos/core#exactMatch> <https://w3id.org/oxo2/test/ex/A> .
+<https://w3id.org/oxo2/test/ex/DEAD> <http://www.w3.org/2004/02/skos/core#exactMatch> <https://w3id.org/oxo2/test/ex/DEAD> .
+<https://w3id.org/oxo2/test/ex/P> <http://www.w3.org/2004/02/skos/core#exactMatch> <https://w3id.org/oxo2/test/ex/P> .
+<https://w3id.org/oxo2/test/ex/Q> <http://www.w3.org/2004/02/skos/core#exactMatch> <https://w3id.org/oxo2/test/ex/P> .
+<https://w3id.org/oxo2/test/ex/Q> <http://www.w3.org/2004/02/skos/core#exactMatch> <https://w3id.org/oxo2/test/ex/Q> .

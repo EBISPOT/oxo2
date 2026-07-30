@@ -36,6 +36,7 @@ export function EntitySuggest({
     prefixes = [],
     includeWeakPredicates = [],
     includeObsolete = false,
+    mappingSetIds = [],
     label,
     placeholder,
     inputId,
@@ -59,6 +60,13 @@ export function EntitySuggest({
      * predicates it decides suggestability, so it must match the search or a pick lands on empty rows.
      */
     includeObsolete?: boolean;
+    /**
+     * The mapping sets the search this box feeds is restricted to (ADR-0044). Empty — the default —
+     * means every set. Like the two above it decides suggestability, not presentation: without it the
+     * box offers entities that exist only in the sets the user has excluded. Suppresses the count on
+     * each row, because the backend's counts are corpus-wide and would overstate a narrowed selection.
+     */
+    mappingSetIds?: string[];
     label?: string;
     placeholder?: string;
     inputId?: string;
@@ -70,14 +78,16 @@ export function EntitySuggest({
     // keyboard even though the network does.
     const enabled = open && debouncedValue.trim().length >= MIN_SUGGEST_LENGTH;
     const weakPredicateKey = includeWeakPredicates.join(",");
+    const mappingSetKey = mappingSetIds.join(",");
     const { data: suggestions, isFetching } = useQuery({
-        // weakPredicateKey is part of the key: ticking a box changes WHICH entities are suggestable,
-        // so a cached list from the other state would be wrong, not merely stale.
+        // weakPredicateKey and mappingSetKey are part of the key: ticking a predicate box or a mapping
+        // set changes WHICH entities are suggestable, so a cached list from the other state would be
+        // wrong, not merely stale.
         queryKey: ["suggestEntities", debouncedValue.trim(), side, prefixes.join(","), weakPredicateKey,
-            includeObsolete],
+            includeObsolete, mappingSetKey],
         queryFn: () =>
             fetchEntitySuggestions(debouncedValue.trim(), side, prefixes, includeWeakPredicates, 10,
-                includeObsolete),
+                includeObsolete, mappingSetIds),
         enabled,
         staleTime: 5 * 60_000,
     });
@@ -135,7 +145,9 @@ export function EntitySuggest({
                                 <span className="text-xs text-gray-500 break-all">{option.iri}</span>
                             )}
                         </div>
-                        {option.mappingCount > 0 && (
+                        {/* Absent under a mapping-set restriction (ADR-0044) — no count is shown at
+                            all there, rather than a corpus-wide one that overstates the rows. */}
+                        {option.mappingCount != null && option.mappingCount > 0 && (
                             <span className="ml-2 shrink-0 text-tertiary text-sm">
                                 · {option.mappingCount.toLocaleString()}
                             </span>
