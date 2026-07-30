@@ -147,7 +147,7 @@ export function fromChainRuleApplicationsResponse(chainRuleApplications?: ChainR
     }
 
     const premises: InferredMapping[] = Array.isArray(chainRuleApplications.premises)
-        ? chainRuleApplications.premises.map((item: any) => ({
+        ? chainRuleApplications.premises.map((item) => ({
             mappingJustification: item.mapping_justification,
             mappingTool: item.mapping_tool,
             mappingSetId: item.mapping_set_id,

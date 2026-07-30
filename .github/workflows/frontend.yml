@@ -1,0 +1,50 @@
+name: Frontend checks
+
+# The frontend image runs `npm run build` from entrypoint.dockersh at container start, so a
+# broken build or a type error surfaces in a running deployment rather than at image-build
+# time. These checks are the gate that catches it earlier.
+#
+# Deliberately not filtered on `paths`: a required status check that is skipped on
+# frontend-free PRs leaves those PRs waiting forever for a check that never reports.
+
+on:
+  push:
+    branches: [ "dev" ]
+  pull_request:
+    branches: [ "dev" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: oxo2-frontend
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          # Keep in step with the base image in oxo2-frontend/Dockerfile.frontend.
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: oxo2-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build

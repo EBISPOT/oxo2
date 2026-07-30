@@ -4,7 +4,7 @@ import { EyeIcon } from "@heroicons/react/24/solid";
 import olsLogo from "/public/logo.svg";
 import { buildOlsTermUrl } from "../../util/olsUrl";
 
-export async function copyToClipboard(text: string): Promise<void> {
+async function copyToClipboard(text: string): Promise<void> {
     if (!navigator.clipboard) {
         throw new Error('Clipboard API not available');
     }
