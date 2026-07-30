@@ -10,6 +10,19 @@ import tailwindcss from '@tailwindcss/vite'
 const publicUrl = process.env.OXO_PUBLIC_URL || '/';
 const baseUrl = publicUrl.endsWith('/') ? publicUrl : `${publicUrl}/`;
 
+// Vite 8 bundles with rolldown, whose `codeSplitting.groups` replaces rollup's `manualChunks`.
+// The two are not the same operation. A `manualChunks` name list force-includes the named
+// package whether or not anything imports it; a group `test` matches only modules already in
+// the graph. These patterns are therefore written against the resolved module id — the on-disk
+// path under node_modules — rather than the bare import specifier the name list took.
+//
+// The trailing separator is load-bearing: it keeps `react` off `react-router`, `react-is` and
+// `react-transition-group`. Packages reached only through a grouped one follow it into that
+// group, so `scheduler` lands beside `react-dom` without being named here.
+const reactTest = /node_modules[\\/](?:react|react-dom)[\\/]/
+const tablesTest = /node_modules[\\/]material-react-table[\\/]/
+const graphsTest = /node_modules[\\/](?:react-force-graph-2d|@xyflow[\\/]react)[\\/]/
+
 // https://vite.dev/config/
 export default defineConfig({
     base: baseUrl,
@@ -26,13 +39,15 @@ export default defineConfig({
     build: {
         rollupOptions: {
             output: {
-                manualChunks: {
-                    react: ['react', 'react-dom'],
-                    tables: ['material-react-table'],
-                    graphs: ['react-force-graph-2d', '@xyflow/react']
+                codeSplitting: {
+                    groups: [
+                        {name: 'react', test: reactTest},
+                        {name: 'tables', test: tablesTest},
+                        {name: 'graphs', test: graphsTest}
+                    ]
                 }
             }
         },
         chunkSizeWarningLimit: 1024 // optional once you confirm chunks are split
-    }    
+    }
 })
