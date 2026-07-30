@@ -267,7 +267,6 @@ if should_run index-asserted; then
     run_json2solr "$OXO2_DATA/sssom-as-json/mappingSet" "$SOLR_URL/oxo2-mappingsets"
     end_time=$(date +%s)
     echo "Writing to Solr took: $((end_time - start_time)) seconds"
-    sleep 20
     record_stage index-asserted
 fi
 
@@ -306,7 +305,6 @@ if should_run index-inferred; then
     run_json2solr "$OXO2_INFERENCES/solr/mapping" "$SOLR_URL/oxo2-mappings"
     echo  "###################"  json2solr inferred mappingSets ...
     run_json2solr "$OXO2_INFERENCES/solr/mappingSet" "$SOLR_URL/oxo2-mappingsets"
-    sleep 20
     record_stage index-inferred
 fi
 
@@ -340,7 +338,6 @@ fi
 if should_run index-entities; then
     echo  "###################"  json2solr entities ...
     run_json2solr "$OXO2_DATA/entities" "$SOLR_URL/oxo2-entities"
-    sleep 20
     record_stage index-entities
 fi
 
