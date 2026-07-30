@@ -81,7 +81,7 @@ export interface ChainRuleResponse {
 
 export interface ChainRuleApplicationsResponse {
     chain_rule: ChainRuleResponse;
-    premises?: string[];
+    premises?: InferredMappingResponse[];
 }
 
 export interface ChainRule {

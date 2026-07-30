@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite --logLevel debug",
     "build": "vite build --emptyOutDir",
-    "lint": "eslint . --config eslint.config.js",
-    "preview": "vite preview"
+    "lint": "eslint . --config eslint.config.js --max-warnings 0",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@dagrejs/dagre": "^3.0.0",

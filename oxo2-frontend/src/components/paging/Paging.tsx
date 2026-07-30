@@ -27,8 +27,8 @@ export function Paging({
             // Always show first, last, and pages around current
             const pages = [0]; // First page
 
-            let startPage = Math.max(1, currentPage - 1);
-            let endPage = Math.min(totalPages - 2, currentPage + 1);
+            const startPage = Math.max(1, currentPage - 1);
+            const endPage = Math.min(totalPages - 2, currentPage + 1);
 
             // Add ellipsis if there's a gap after first page
             if (startPage > 1) pages.push(-1); // Add ellipsis
