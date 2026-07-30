@@ -85,6 +85,39 @@ record_stage() {
     echo "=== STAGE COMPLETE: $1 (checkpoint -> $OXO2_CHECKPOINT_FILE) ==="
 }
 
+# Data release date (ADR-0043): the UTC instant identifying the corpus this run produces. Like the
+# checkpoint it lives outside every stage's owned paths, so stage-aware cleanup never removes it.
+OXO2_RELEASE_DATE_FILE="$OXO2_DATA/.oxo2-data-release-date"
+
+# oxo2_resolve_release_date: set and export OXO2_RELEASE_DATE, the single timestamp every mapping set
+# of this run is stamped with (ADR-0043). Called by both orchestrators after sourcing this file.
+#
+# The value is minted by the stage that writes it: sssom2json is what stamps the mapping-set JSON, so
+# a run that re-runs sssom2json mints a fresh timestamp and persists it, while a resume entering
+# LATER reuses the persisted one — the mapping-set JSON on disk already carries that value, and
+# minting a new one would claim a release date the indexed data does not have. An operator can pin
+# the value by exporting OXO2_RELEASE_DATE beforehand (a reproducible rebuild of a known release).
+oxo2_resolve_release_date() {
+    if [ -n "${OXO2_RELEASE_DATE:-}" ]; then
+        echo "Data release date pinned by the environment: $OXO2_RELEASE_DATE"
+    elif should_run sssom2json; then
+        OXO2_RELEASE_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        mkdir -p "$OXO2_DATA"
+        echo "$OXO2_RELEASE_DATE" > "$OXO2_RELEASE_DATE_FILE"
+        echo "Data release date minted for this run: $OXO2_RELEASE_DATE"
+    elif [ -s "$OXO2_RELEASE_DATE_FILE" ]; then
+        OXO2_RELEASE_DATE=$(cat "$OXO2_RELEASE_DATE_FILE")
+        echo "Data release date reused from $OXO2_RELEASE_DATE_FILE: $OXO2_RELEASE_DATE"
+    else
+        # A resume past sssom2json against data loaded before this file existed. The mapping-set JSON
+        # carries no timestamp and this run will not rewrite it, so leave the value empty rather than
+        # inventing one: an absent release date is honest, a fabricated one is not.
+        OXO2_RELEASE_DATE=""
+        echo "No data release date available (no $OXO2_RELEASE_DATE_FILE and sssom2json is not re-running)."
+    fi
+    export OXO2_RELEASE_DATE
+}
+
 # should_wipe_solr: true when the asserted load runs from scratch (START_STAGE at or before
 # index-asserted). Resuming after that preserves the already-indexed asserted data, which
 # explanations2json queries for entity details and asserted premises. Callers gate BOTH the on-disk

@@ -454,6 +454,12 @@
   <!-- docValues disabled: semra-assembled sets embed the full bioregistry CURIE map (~120KB),
        which exceeds the 32766-byte DocValues limit. Stored-only; never sorted/faceted. -->
   <field name="curie_map" type="string" multiValued="false" indexed="false" stored="true" docValues="false"/>
+  <!-- Data release date (ADR-0043): the UTC instant of the dataload run that indexed this set, stamped
+       from one run-level timestamp so every set of a run shares it. The newest value in the collection
+       is the corpus's current release date, served by /api/v2/data-content. Single-valued pdate (not
+       pdates) so it sorts; docValues carries the sort. Absent on any set indexed before this field
+       existed, so the landing page shows no release date until the next full dataload. -->
+  <field name="data_release_date" type="pdate" multiValued="false" indexed="true" stored="true"/>
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="issue_tracker" type="string" multiValued="false" indexed="false" stored="true"/>
   <field name="license" type="string" multiValued="false" indexed="true" stored="true"/>

@@ -156,17 +156,38 @@ public class SSSOM2JSON {
         boolean setObsolete = cmd.hasOption("obsolete");
         Set<String> obsoleteEntityIris = loadObsoleteEntities(cmd.getOptionValue("obsolete-entities"));
 
+        // ADR-0043: the run-level data release date, stamped verbatim onto every mapping set this run
+        // writes. Validated here so a malformed value fails the stage loudly rather than surfacing much
+        // later as a Solr "Invalid Date String" on the index-asserted POST.
+        String dataReleaseDate = cmd.getOptionValue("release-date");
+        if (dataReleaseDate != null && !dataReleaseDate.isBlank()) {
+            dataReleaseDate = dataReleaseDate.trim();
+            try {
+                java.time.Instant.parse(dataReleaseDate);
+            } catch (java.time.format.DateTimeParseException e) {
+                logger.error("Invalid --release-date '{}'. Expected an ISO-8601 UTC instant, "
+                        + "e.g. 2026-07-30T09:15:00Z.", dataReleaseDate);
+                System.exit(1);
+                return;
+            }
+        } else {
+            dataReleaseDate = null;
+        }
+
         logger.info("Output Directory: {}", outputDirectory);
         logger.info("Mapping Set Category: {}", mappingSetCategory.getCode());
         logger.info("Set obsolete: {}; obsolete-entity IRIs loaded: {}", setObsolete, obsoleteEntityIris.size());
+        logger.info("Data release date: {}", dataReleaseDate == null ? "(none supplied)" : dataReleaseDate);
 
         long startTime = System.currentTimeMillis();
         if (inputFile != null) {
             logger.info("Input File: {}", inputFile);
-            processSingleFile(inputFile, outputDirectory, mappingSetCategory, obsoleteEntityIris, setObsolete);
+            processSingleFile(inputFile, outputDirectory, mappingSetCategory, obsoleteEntityIris,
+                    setObsolete, dataReleaseDate);
         } else {
             logger.info("Input Directory: {}", inputDirectory);
-            processMappingSets(inputDirectory, outputDirectory, mappingSetCategory, obsoleteEntityIris, setObsolete);
+            processMappingSets(inputDirectory, outputDirectory, mappingSetCategory, obsoleteEntityIris,
+                    setObsolete, dataReleaseDate);
         }
         long endTime = System.currentTimeMillis();
 
@@ -175,7 +196,8 @@ public class SSSOM2JSON {
 
     private static void processSingleFile(String inputFile, String outputDirectory,
                                           MappingSetCategory mappingSetCategory,
-                                          Set<String> obsoleteEntityIris, boolean setObsolete) throws IOException {
+                                          Set<String> obsoleteEntityIris, boolean setObsolete,
+                                          String dataReleaseDate) throws IOException {
         File tsvFile = new File(inputFile);
         if (!tsvFile.exists() || !tsvFile.isFile()) {
             throw new IOException("Input file does not exist or is not a file: " + inputFile);
@@ -194,7 +216,7 @@ public class SSSOM2JSON {
 
         try {
             processFile(tsvFile, mappingSetDirectory, mappingDirectory, mappingSetCategory,
-                    obsoleteEntityIris, setObsolete);
+                    obsoleteEntityIris, setObsolete, dataReleaseDate);
         } catch (Throwable t) {
             logger.error("Error processing file {}", tsvFile, t);
         }
@@ -213,7 +235,8 @@ public class SSSOM2JSON {
      */
     private static void processMappingSets(String inputDirectory, String outputDirectory,
                                            MappingSetCategory mappingSetCategory,
-                                           Set<String> obsoleteEntityIris, boolean setObsolete) throws IOException {
+                                           Set<String> obsoleteEntityIris, boolean setObsolete,
+                                           String dataReleaseDate) throws IOException {
         Stream<Path> directoriesOfMappingSets = getDirectories(inputDirectory);
 
         String mappingSetDirectory = outputDirectory + File.separator + "mappingSet";
@@ -229,7 +252,7 @@ public class SSSOM2JSON {
 
         directoriesOfMappingSets.forEach(path ->
                 processDirectory(path.toString(), mappingSetDirectory, mappingDirectory, mappingSetCategory,
-                        obsoleteEntityIris, setObsolete));
+                        obsoleteEntityIris, setObsolete, dataReleaseDate));
 
         long usedMemoryBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         double usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0);
@@ -347,6 +370,15 @@ public class SSSOM2JSON {
                         + "<outputDir>/obsolete-entities.txt (one per line).");
         extractObsoleteEntities.setRequired(false);
         options.addOption(extractObsoleteEntities);
+
+        // ADR-0043: the run-level data release date. Supplied by the orchestrator, not derived here —
+        // one JVM runs per TSV, so a locally computed timestamp would differ per mapping set.
+        Option releaseDate = new Option("r", "release-date", true,
+                "Data release date to stamp on this run's mapping set(s), as an ISO-8601 UTC instant "
+                        + "(e.g. 2026-07-30T09:15:00Z). Supplied by the dataload orchestrator so every "
+                        + "set of a run shares one value. Omit to leave the field unset.");
+        releaseDate.setRequired(false);
+        options.addOption(releaseDate);
 
         return options;
     }

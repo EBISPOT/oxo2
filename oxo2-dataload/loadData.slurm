@@ -98,6 +98,10 @@ if [ -f "$OXO2_CHECKPOINT_FILE" ]; then
     echo "Previous run's last completed stage: $(cat "$OXO2_CHECKPOINT_FILE")"
 fi
 
+# Resolve the one timestamp every mapping set of this run is stamped with (ADR-0043). Exported so
+# sssom2json.nf can pass it to the SSSOM2JSON JAR.
+oxo2_resolve_release_date
+
 # ---------------------------------------------------------------------------
 # Stage-aware cleanup.
 # Transient Nextflow dirs are always wiped — resume reads PUBLISHED artifacts under $OXO2_DATA,

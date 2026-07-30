@@ -1,4 +1,5 @@
 import { InfoCard } from "../../components/infoCard/InfoCard";
+import { DataContent } from "./DataContent";
 import { Search } from "../../components/search/Search";
 import {
     ExclamationTriangleIcon,
@@ -56,6 +57,10 @@ export default function Home(): JSX.Element {
                         />
                     </div>
                 </div>
+                {/* The fourth grid column, alongside the search rather than below it (ADR-0043). */}
+                <aside className="lg:col-span-1 mt-8 lg:mt-0">
+                    <DataContent />
+                </aside>
             </div>
         </main>
     );

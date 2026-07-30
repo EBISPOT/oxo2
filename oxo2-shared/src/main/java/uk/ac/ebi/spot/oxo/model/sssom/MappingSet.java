@@ -105,7 +105,15 @@ public record MappingSet (
         // omitted from the JSON when false so a load with no obsolete registry is byte-for-byte unchanged.
         @JsonInclude(JsonInclude.Include.NON_DEFAULT)
         @JsonProperty(OBSOLETE)
-        boolean obsolete) {
+        boolean obsolete,
+        // ADR-0043: the UTC instant of the dataload run that produced this set, as an ISO-8601
+        // string ("2026-07-30T09:15:00Z"). Supplied by the orchestrator as one run-level value, not
+        // read from the SSSOM data. Kept a String rather than a Date deliberately: the dataload's
+        // plain ObjectMapper writes java.util.Date as epoch millis, which Solr's date field cannot
+        // parse, so the already-ISO string is passed through verbatim for Solr to parse itself.
+        // Empty when the orchestrator supplied none, and omitted from the JSON in that case.
+        @JsonProperty(DATA_RELEASE_DATE)
+        Optional<String> dataReleaseDate) {
 
     public static MappingSet.Builder builder() {
         return new MappingSet.Builder();
@@ -165,6 +173,8 @@ public record MappingSet (
         private Optional<MappingSetCategory> mappingSetCategory = Optional.empty();
         // ADR-0041: stamped true by the SSSOM-to-JSON stage for a config-flagged obsolete registry.
         private boolean obsolete = false;
+        // ADR-0043: stamped by the SSSOM-to-JSON stage from the orchestrator's run-level timestamp.
+        private Optional<String> dataReleaseDate = Optional.empty();
         private Optional<Date> mappingDate = Optional.empty();
         private Optional<Date> publicationDate = Optional.empty();
         private SortedSet<EntityReference> subjectMatchField = new TreeSet<>();
@@ -456,6 +466,16 @@ public record MappingSet (
             return this;
         }
 
+        // ADR-0043: an ISO-8601 UTC instant passed straight through for Solr to parse. A blank or
+        // absent value leaves it unset, so a load whose orchestrator supplied no timestamp simply
+        // omits the field rather than indexing an unparseable empty string.
+        @JsonProperty(DATA_RELEASE_DATE)
+        public Builder dataReleaseDate(String dataReleaseDate) {
+            if (dataReleaseDate != null && !dataReleaseDate.isBlank())
+                this.dataReleaseDate = Optional.of(dataReleaseDate.trim());
+            return this;
+        }
+
         @JsonProperty(MAPPING_DATE)
         public Builder mappingDate(String mappingDate) {
             this.mappingDate = Optional.of(new Date(mappingDate));
@@ -612,7 +632,8 @@ public record MappingSet (
                     subjectType,
                     inferenceType,
                     mappingSetCategory,
-                    obsolete
+                    obsolete,
+                    dataReleaseDate
             );
         }
     }

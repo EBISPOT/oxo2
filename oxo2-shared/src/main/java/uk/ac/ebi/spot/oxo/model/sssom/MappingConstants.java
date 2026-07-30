@@ -72,6 +72,11 @@ public class MappingConstants {
     public static final String SUBJECT_OBSOLETE = "subject_obsolete";
     public static final String OBJECT_OBSOLETE = "object_obsolete";
     public static final String OBSOLETE = "obsolete";
+    // Data release date (ADR-0043, oxo2-mappingsets core only): the UTC instant of the dataload run
+    // that indexed this mapping set, stamped by the SSSOM-to-JSON stage from one run-level timestamp.
+    // Not an SSSOM property. The newest value across the collection is the corpus's current release
+    // date; it is absent on any set indexed before this field existed.
+    public static final String DATA_RELEASE_DATE = "data_release_date";
     public static final String CHAIN_RULE = "chain_rule";
     public static final String CHAIN_RULE_APPLICATIONS = "chain_rule_applications";
     public static final String DISTANCE = "distance";

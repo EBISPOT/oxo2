@@ -78,6 +78,16 @@ precomputed SSSOM closure rather than walking a graph at query time. See
 / labels) rather than a whole source ontology; the only mode that can report **unmapped inputs** —
 supplied terms with no mapping into the targets. _Why only this mode:_ OxO2 ingests mapping sets, not
 ontologies, so it knows only *mapped* terms and cannot enumerate "all of DOID".
+- **Data release date** — the UTC instant of the dataload run that produced the corpus currently
+indexed, stamped as `data_release_date` on every mapping set by the SSSOM-to-JSON stage from one
+run-level value. Distinct from SSSOM's `publication_date` / `mapping_date`, which describe when a
+*source* set was published. There is no release *version*, only this date
+([ADR-0043](docs/adr/0043-data-content-summary-on-landing-page.md)).
+- **Data Content** — the landing page's summary of what OxO2 currently holds: the **data release
+date**, the mapping count split asserted/inferred, and the asserted mapping-set count split into
+**curated sets** and **ontologies** (one ONTOLOGY-category set per ontology loaded — *not* the
+`/api/v2/ontologies` prefix count, which includes prefixes no loaded set covers). Served by
+`GET /api/v2/data-content` ([ADR-0043](docs/adr/0043-data-content-summary-on-landing-page.md)).
 
 ## Module map
 
@@ -311,6 +321,18 @@ revealed), and hides obsolete entities from the typeahead (ADR-0035's rule). See
 (`Mapping`/`MappingSet` + constants), `oxo2-dataload` (the `obsolete` config flag, the obsolete-entity
 pre-pass, all three Solr schemas), `oxo2-backend` (`SolrQueryBuilder`, `MappingSearchRequest`,
 `MappingSetSummary`, suggest) and `oxo2-frontend` (the checkbox, its URL param, `MappingSetSelector`).
+- **The data release date is stamped by the dataload, not declared in config** — the orchestrator resolves
+one run-level UTC instant (`oxo2_resolve_release_date` in the shared `loadData.lib.sh`, persisted to
+`$OXO2_DATA/.oxo2-data-release-date` so a resume past `sssom2json` reuses it) and the SSSOM-to-JSON stage
+stamps it as `data_release_date` on every mapping set, carried as an ISO-8601 string because the dataload's
+plain `ObjectMapper` would write a `Date` as epoch millis. `GET /api/v2/data-content` serves the landing
+page's **Data Content** block from it plus two string-field facets: mappings split asserted/inferred, and
+asserted mapping sets split curated/ontologies. Reads `null` until the next full dataload; deliberately no
+`unique()` facet and no same-SPO collapse, so `mappings.total` counts documents, not distinct triples. See
+[ADR-0043](docs/adr/0043-data-content-summary-on-landing-page.md). Affects `oxo2-shared` (`MappingSet` +
+constants), `oxo2-dataload` (`loadData.lib.sh`, both orchestrators, `sssom2json.nf`, the SSSOM2JSON JAR,
+the `oxo2-mappingsets` schema), `oxo2-backend` (`DataContentController`) and `oxo2-frontend` (`DataContent`
+in the home grid's fourth column).
 - **Nextflow is the sole dataload execution path** — production dataload runs via `loadData.nextflow` only; per-stage `.sh` 
 scripts are debug-only. See [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md). Affects `oxo2-dataload`.
 - **A config `url` may be a repo-relative path or a single `.tsv.gz`** — a relative local `url` resolves

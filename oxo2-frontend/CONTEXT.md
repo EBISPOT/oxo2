@@ -31,7 +31,13 @@ The user interface, served on port 8080 (Vite dev server, Docker, and Kubernetes
 
 Routes (`App.tsx`):
 
-- **`/`** and **`/home`** → `Home` — landing page with search.
+- **`/`** and **`/home`** → `Home` — landing page with search, the three info cards, and the **Data
+Content** block in the grid's fourth column ([ADR-0043](../docs/adr/0043-data-content-summary-on-landing-page.md)).
+`DataContent` fetches `GET /api/v2/data-content` with `staleTime: Infinity` (the corpus only changes on a
+dataload) and renders nothing at all on error — a summary beside a working search box is decoration, so it
+fails silent rather than showing an error panel. The release-date row is omitted when `releaseDate` is null,
+which is the pre-reindex state rather than a fault. Sub-counts are indented under their total because they
+are a breakdown: asserted + inferred is the mapping total, curated + ontologies the mapping-set total.
 - **`/search/:curies`** → `MappingResults` — paged mapping results for the given CURIE(s). Page, sort, and filters are
 carried in the query string (see § State management), so a result view is shareable and restores on Back from a detail page.
 - **`/map`** → cross-ontology results for `?from=…&to=…` (source→target prefixes), bookmarkable; the

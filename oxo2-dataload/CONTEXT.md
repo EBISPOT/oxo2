@@ -132,6 +132,20 @@ asserted premises in `DataloadSolr`, no extra flag), and `mappings2entities` fol
 entity doc. All the flags are `@JsonInclude(NON_DEFAULT)`, so a load with no obsolete registry is
 byte-for-byte unchanged.
 
+This stage also stamps the **data release date**
+([ADR-0043](../docs/adr/0043-data-content-summary-on-landing-page.md)). The orchestrator resolves one
+UTC instant for the whole run — `oxo2_resolve_release_date` in the shared `loadData.lib.sh` — and
+exports it as `OXO2_RELEASE_DATE`; `sssom2json.nf` reads it once at workflow level and passes
+`--release-date` to the JAR, which stamps `data_release_date` on the mapping-set doc. It is resolved
+*outside* the JAR because one JVM runs per TSV: a per-task `date` would stamp every set seconds apart,
+and "the release date" would then depend on which set you asked. The value is minted only when the
+`sssom2json` stage actually runs and is persisted to `$OXO2_DATA/.oxo2-data-release-date`, so a resume
+entering a *later* stage reuses it rather than claiming a release the on-disk JSON does not carry;
+exporting `OXO2_RELEASE_DATE` beforehand pins it. It travels as an ISO-8601 string end to end, because
+the JAR's plain `ObjectMapper` writes a `java.util.Date` as epoch millis, which Solr's date field
+cannot parse; the JAR validates it with `Instant.parse` so a malformed value fails here rather than at
+the index POST. Omitting the flag leaves the field out entirely — never an empty string.
+
 `TSV2JSON` also **promotes `prefix` and `ontology`** onto each mapping-set doc
 ([ADR-0038](../docs/adr/0038-promote-ontology-prefix-from-other-block.md)). OLS extracts carry the
 ontology's CURIE prefix and display name inside the SSSOM `other` extension block; `MappingSet`'s

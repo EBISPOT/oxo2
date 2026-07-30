@@ -105,7 +105,8 @@ public class TSV2JSON {
     public static void processDirectory(String directory, String mappingSetOutputDirectory,
                                         String mappingsOutputDirectory,
                                         MappingSetCategory mappingSetCategory,
-                                        Set<String> obsoleteEntityIris, boolean setObsolete) {
+                                        Set<String> obsoleteEntityIris, boolean setObsolete,
+                                        String dataReleaseDate) {
 
         Map<String, MappingSet.Builder> filenameToExternalMetadataMap = readExternalMetadata(directory);
 
@@ -123,7 +124,7 @@ public class TSV2JSON {
                         }
                         processOneTSV(path.toFile(), externalMappingSetBuilderOptional,
                                 mappingSetOutputDirectory, mappingsOutputDirectory, mappingSetCategory,
-                                obsoleteEntityIris, setObsolete);
+                                obsoleteEntityIris, setObsolete, dataReleaseDate);
                     });
         } catch (Throwable t) {
             logger.error("Error while looking for .yml files in {}", directory, t);
@@ -142,11 +143,14 @@ public class TSV2JSON {
      *                           obsolete iff its expanded IRI is in this set. Empty on a normal load.
      * @param setObsolete        True iff this TSV's registry was config-flagged obsolete; stamped on the
      *                           mapping-set doc.
+     * @param dataReleaseDate    The run-level data release date as an ISO-8601 UTC instant (ADR-0043),
+     *                           stamped on the mapping-set doc. Null when the orchestrator supplied none.
      */
     public static void processFile(File tsvFile, String mappingSetOutputDirectory,
                                    String mappingsOutputDirectory,
                                    MappingSetCategory mappingSetCategory,
-                                   Set<String> obsoleteEntityIris, boolean setObsolete) {
+                                   Set<String> obsoleteEntityIris, boolean setObsolete,
+                                   String dataReleaseDate) {
         if (!tsvFile.exists() || !tsvFile.isFile()) {
             logger.error("TSV file does not exist or is not a file: {}", tsvFile);
             return;
@@ -174,7 +178,7 @@ public class TSV2JSON {
 
         processOneTSV(tsvFile, externalMappingSetBuilderOptional,
                 mappingSetOutputDirectory, mappingsOutputDirectory, mappingSetCategory,
-                obsoleteEntityIris, setObsolete);
+                obsoleteEntityIris, setObsolete, dataReleaseDate);
     }
 
 
@@ -193,7 +197,8 @@ public class TSV2JSON {
                                        String mappingSetOutputDirectory,
                                        String mappingsOutputDirectory,
                                        MappingSetCategory mappingSetCategory,
-                                       Set<String> obsoleteEntityIris, boolean setObsolete) {
+                                       Set<String> obsoleteEntityIris, boolean setObsolete,
+                                       String dataReleaseDate) {
         // Drop prior file's CURIE/URI caches before parsing this one. The caches
         // speed up repeated lookups within a single mapping set, but if left to
         // accumulate across files they retain every distinct entity string for
@@ -248,6 +253,10 @@ public class TSV2JSON {
         // Set-level obsolescence (ADR-0041): stamped from the registry's config `obsolete` flag, so the
         // mapping-set picker can hide and label obsolete ontology sets.
         mappingSetBuilder.obsolete(setObsolete);
+        // Data release date (ADR-0043): the orchestrator's run-level timestamp, identical across every
+        // set of this load, so the newest value in the collection identifies the current release. Like
+        // the category it is external to SSSOM — no TSV column or metadata slot carries it.
+        mappingSetBuilder.dataReleaseDate(dataReleaseDate);
         MappingSet mappingSetMetadata = mappingSetBuilder.build();
 
         String baseFilename = mappingSetMetadata.mappingSetId().extractFragmentOrLastPathSegment();

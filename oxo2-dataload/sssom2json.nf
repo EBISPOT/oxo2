@@ -5,6 +5,12 @@ params.input_dir = "${System.getenv('OXO2_DATA')}/sssom"
 params.output_dir = "${System.getenv('OXO2_DATA')}/sssom-as-json"
 params.script_dir = params.script_dir ?: "${projectDir}"
 params.config_file = "${System.getenv('OXO2_CONFIG') ?: ''}"
+// Data release date (ADR-0043): one UTC instant for the whole run, resolved by the orchestrator
+// (loadData.lib.sh oxo2_resolve_release_date) and read here rather than minted per task — one JVM per
+// TSV means a per-task `date` would stamp every mapping set a few seconds apart, and "the release
+// date" would then depend on which set you asked. Empty when the orchestrator supplied none, in which
+// case the flag is omitted and the field simply never reaches Solr.
+params.release_date = "${System.getenv('OXO2_RELEASE_DATE') ?: ''}"
 
 workflow {
     // Output filenames are derived from each input's path RELATIVE to the sssom root, flattened
@@ -126,6 +132,9 @@ process SSSOM2JSON {
     // ADR-0041: --obsolete marks this set's subjects obsolete; -b supplies the global obsolete-entity set
     // so both endpoints of every mapping (here and in other files) are stamped against it.
     def obsoleteFlag = obsolete ? '--obsolete' : ''
+    // ADR-0043: omitted entirely when the orchestrator supplied no timestamp, so the JAR leaves the
+    // field unset rather than writing an empty string Solr's date field could not parse.
+    def releaseDateFlag = params.release_date ? "--release-date \"${params.release_date}\"" : ''
     """
     java ${System.getenv('JAVA_OPTS') ?: ''} \
         -jar "${params.script_dir}/oxo2-sssom2json/target/oxo2-sssom2json-1.0.0-SNAPSHOT.jar" \
@@ -133,6 +142,7 @@ process SSSOM2JSON {
         -c "${category}" \
         -b "${obsolete_entities}" \
         ${obsoleteFlag} \
+        ${releaseDateFlag} \
         -o .
 
     # Rename the JAR's mappingSetId-derived output filenames to the input's

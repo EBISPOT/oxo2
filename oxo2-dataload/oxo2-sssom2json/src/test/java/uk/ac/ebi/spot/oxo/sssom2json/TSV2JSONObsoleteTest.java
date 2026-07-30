@@ -88,8 +88,9 @@ class TSV2JSONObsoleteTest {
 
         Path mappingSetDir = Files.createDirectory(tempDir.resolve("mappingSet"));
         Path mappingDir = Files.createDirectory(tempDir.resolve("mapping"));
+        // null release date: these tests exercise the obsolete flags, not the ADR-0043 stamp.
         TSV2JSON.processFile(obsoleteFile.toFile(), mappingSetDir.toString(), mappingDir.toString(),
-                MappingSetCategory.ONTOLOGY, obsoleteIris, true);
+                MappingSetCategory.ONTOLOGY, obsoleteIris, true, null);
 
         JsonNode mappings = readSingleJson(mappingDir);
         assertEquals(1, mappings.size());
@@ -113,7 +114,7 @@ class TSV2JSONObsoleteTest {
         Path mappingSetDir = Files.createDirectory(tempDir.resolve("mappingSet"));
         Path mappingDir = Files.createDirectory(tempDir.resolve("mapping"));
         TSV2JSON.processFile(liveFile.toFile(), mappingSetDir.toString(), mappingDir.toString(),
-                MappingSetCategory.ONTOLOGY, obsoleteIris, false);
+                MappingSetCategory.ONTOLOGY, obsoleteIris, false, null);
 
         JsonNode mappings = readSingleJson(mappingDir);
         assertEquals(2, mappings.size());
@@ -143,7 +144,7 @@ class TSV2JSONObsoleteTest {
         Path mappingDir = Files.createDirectory(tempDir.resolve("mapping"));
 
         TSV2JSON.processFile(liveFile.toFile(), mappingSetDir.toString(), mappingDir.toString(),
-                MappingSetCategory.ONTOLOGY, Set.of(), false);
+                MappingSetCategory.ONTOLOGY, Set.of(), false, null);
 
         JsonNode mappings = readSingleJson(mappingDir);
         for (JsonNode mapping : mappings) {

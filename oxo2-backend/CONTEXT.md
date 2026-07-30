@@ -43,6 +43,16 @@ mapping into the targets). Input is capped (default 1 000 terms).
 - **`GET /api/v2/ontologies`** — distinct CURIE prefixes with counts (drives the Search-tab from/to
 selectors); `?forSubject=<prefix>` facets `object_prefix` over that subject subset to return reachable
 targets with counts.
+- **`GET /api/v2/data-content`** — the landing page's Data Content summary
+([ADR-0043](../docs/adr/0043-data-content-summary-on-landing-page.md)):
+`{releaseDate, mappings:{total,asserted,inferred}, mappingSets:{total,curated,ontologies}}`. Three cheap
+queries — the newest `data_release_date` (existence-filtered and sorted, not `max()`, so the sort has no
+missing values to order), an `inference_type` facet, and a `mapping_set_category` facet filtered to
+`inference_type:ASSERTED` so the synthetic inferences set is excluded and `curated + ontologies` accounts
+for `total`. `releaseDate` is `null` until the first dataload that stamps the field. Deliberately carries
+no `unique()` aggregation — that is what makes `/api/sssom/stats` expensive — so `mappings.total` counts
+documents, not distinct triples. `mappingSets.ontologies` is the ONTOLOGY-category set count, *not*
+`/api/v2/ontologies`' prefix count; the two answer different questions and will not agree.
 - **`GET /api/v2/suggest/entities?q=&side=&prefix=&size=`** — the entity typeahead
 ([ADR-0034](../docs/adr/0034-entity-collection-for-typeahead.md)). Reads `oxo2-entities` (one document
 per DISTINCT entity), not `oxo2-mappings`, which is denormalised and would suggest an entity once per
