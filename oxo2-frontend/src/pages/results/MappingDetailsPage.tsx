@@ -1,4 +1,4 @@
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import MappingDetails from "./MappingDetails";
 import { fetchMappingById } from "./MappingResultsSlice";

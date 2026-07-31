@@ -20,7 +20,8 @@ External:
 - **React 19**, **TypeScript**, **Vite** — framework, type system, dev server / build.
 - **Tailwind CSS** — styling.
 - **TanStack React Query** (`@tanstack/react-query`) — server-state caching and request coalescing. Wired at the root in `App.tsx`.
-- **react-router / react-router-dom** — client-side routing.
+- **react-router** — client-side routing. v8 merged the former `react-router-dom` package into this
+  one, so every routing import comes from `react-router` alone.
 
 OxO2 modules:
 - `oxo2-backend` via HTTP only — the frontend talks to `/api/v2/...`. No build-time dependency.

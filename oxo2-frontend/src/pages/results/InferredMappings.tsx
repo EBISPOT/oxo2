@@ -6,7 +6,7 @@ import {
     useMaterialReactTable,
 } from "material-react-table";
 import {useQuery} from "@tanstack/react-query";
-import {Link} from "react-router-dom";
+import {Link} from "react-router";
 import {mappingSetHref} from "../../util/mappingSetUrl";
 import {fetchConfidenceByMappingIds} from "./MappingResultsSlice";
 import {InferredMapping, Mapping} from "../../model/Mapping.ts";

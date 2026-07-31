@@ -1,7 +1,7 @@
 import React, {ReactNode, useState} from "react";
 import {InferredMapping, Mapping, MappingFields} from "../../model/Mapping";
 import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
-import {Link, useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router";
 import {mappingSetHref} from "../../util/mappingSetUrl";
 import {MappingItem} from "../../components/mapping/MappingItem";
 import {ChevronDownIcon, ChevronUpIcon} from "@heroicons/react/24/solid";

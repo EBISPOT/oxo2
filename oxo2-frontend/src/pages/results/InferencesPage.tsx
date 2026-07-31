@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import MappingSetDetails from "./MappingSetDetails";
 
 const INFERENCES_BASE = "https://www.ebi.ac.uk/oxo2/inferences";
