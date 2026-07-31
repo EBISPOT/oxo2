@@ -1,7 +1,8 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,7 +11,6 @@ import java.io.InputStream;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -99,20 +99,18 @@ public final class PrefixIriOverrides {
                 aliasToCanonicalSorted = Collections.emptyList();
                 return;
             }
-            JsonNode root = new ObjectMapper().readTree(resourceStream);
-            Iterator<Map.Entry<String, JsonNode>> fields = root.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
+            JsonNode root = JsonMapper.builder().build().readTree(resourceStream);
+            for (Map.Entry<String, JsonNode> field : root.properties()) {
                 String prefix = field.getKey();
                 JsonNode entry = field.getValue();
                 // Skip documentation keys (e.g. "_comment") and any malformed entry.
-                if (prefix.startsWith("_") || !entry.isObject() || !entry.path("canonical").isTextual()) {
+                if (prefix.startsWith("_") || !entry.isObject() || !entry.path("canonical").isString()) {
                     continue;
                 }
-                String canonical = entry.get("canonical").asText();
+                String canonical = entry.get("canonical").asString();
                 byPrefix.put(prefix.toUpperCase(), canonical);
                 for (JsonNode aliasNode : entry.path("aliases")) {
-                    String alias = aliasNode.asText();
+                    String alias = aliasNode.asString();
                     if (!alias.isEmpty() && !alias.equals(canonical)) {
                         aliasEntries.add(new AbstractMap.SimpleImmutableEntry<>(alias, canonical));
                     }
@@ -121,7 +119,7 @@ public final class PrefixIriOverrides {
             aliasEntries.sort((a, b) -> Integer.compare(b.getKey().length(), a.getKey().length()));
             logger.info("Loaded {} IRI-prefix override(s) with {} alias stem(s).",
                     byPrefix.size(), aliasEntries.size());
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             logger.error("Failed to read bundled IRI override table {}", RESOURCE, e);
             canonicalByPrefix = Collections.emptySortedMap();
             aliasToCanonicalSorted = Collections.emptyList();

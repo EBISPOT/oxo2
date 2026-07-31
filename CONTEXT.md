@@ -413,6 +413,19 @@ input's sssom-root-relative path flattened, so same-basename sets across sub-dir
 [ADR-0015](docs/adr/0015-default-prefix-map-and-metadata-synthesis-for-bare-sssom.md). Affects `oxo2-shared`, `oxo2-dataload` 
 (sssom2json). NB: recovering the `priority` views feeds the ~569 MB gene view into the SSSOM cross-set pass **unguarded** — the component-size guard intended to bound its closure ([ADR-0017](docs/adr/0017-cross-set-inference-corpus-component-size-guard.md)) was scoped but never built, so the pass is safe only because the loaded priority views form no giant strong-predicate component.
 - **Explanation shard sizing** — the corpus is partitioned into per-component explanation shards, each capped at `max_shard_entities = 1200` entities (in `explainSssomCrossSet.nf`), and their traces are interpreted `explain_bundle_size = 100` shards per JVM (in `explanations2json.nf`). The entity cap bounds per-trace cost, which is linear in a shard's dictionary size; the bundle size amortises JVM and Solr-connection startup. Tactical sizing choices under [ADR-0028](docs/adr/0028-component-sharded-explanation-precompute.md), not separate decisions.
+- **JSON is Jackson 3 everywhere** — Spring Boot 4 auto-configures a `tools.jackson` mapper and
+offers no supported way back, so the whole repo is on Jackson 3. Databind moved to
+`tools.jackson.*`, but the *core* annotations (`@JsonProperty`, `@JsonValue`, `@JsonCreator`,
+`@JsonInclude`, `@JsonIgnore`, `@JsonFormat`) stayed at `com.fasterxml.jackson.annotation` and are
+shared by both lines — do not "tidy" those imports. The version is managed once, by the
+`tools.jackson:jackson-bom` imported in the root pom. Two Jackson 3 default flips are load-bearing:
+`FAIL_ON_UNKNOWN_PROPERTIES` now defaults **off** (so any mapper reading into a POJO must enable it
+explicitly, or a typo'd config key is silently ignored), and `FAIL_ON_TRAILING_TOKENS` now defaults
+**on** (so streamed array reads use `parser.readValueAsTree()`, not `mapper.readTree(parser)`).
+Spring Data `Page` is never serialized directly. See
+[ADR-0046](docs/adr/0046-spring-boot-4-and-jackson-3.md). Affects `oxo2-shared` (`SSSOMDataType`
+serializer, builder deserialization), all four `oxo2-dataload` modules, `oxo2-backend`
+(`MappingSearchResponse`, shade transformers) and `oxo2-integration-tests`.
 
 ## End-to-end flow
 

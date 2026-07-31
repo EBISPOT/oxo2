@@ -76,14 +76,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonEncoding;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import uk.ac.ebi.spot.oxo.model.sssom.BioregistryPrefixMap;
 import uk.ac.ebi.spot.oxo.model.sssom.CurieMap;
@@ -266,12 +266,15 @@ public class TSV2JSON {
 
         Optional<CurieMap> optionalCurieMap = mergeCurieMaps(externalMappingSetBuilderOptional, embeddedMappingSetBuilderOptional);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        // Jackson 3 mappers are immutable, so all configuration moves onto the builder. Optional
+        // (Jdk8Module) and java.time (JavaTimeModule) support are built into databind now, and
+        // WRITE_DATES_AS_TIMESTAMPS has moved from SerializationFeature to DateTimeFeature.
+        JsonMapper objectMapper = JsonMapper.builder()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+                .changeDefaultPropertyInclusion(inclusion ->
+                        inclusion.withValueInclusion(JsonInclude.Include.NON_NULL))
+                .build();
 
         long startReadTime = System.currentTimeMillis();
         long mappingsWritten = 0;
@@ -279,7 +282,7 @@ public class TSV2JSON {
 
         try (CSVParser parser = CSVParser.parse(file, java.nio.charset.StandardCharsets.UTF_8,
                     CSVFormat.TDF.builder().setCommentMarker('#').setHeader().build());
-             JsonGenerator gen = objectMapper.getFactory().createGenerator(mappingsFile, JsonEncoding.UTF8)) {
+             JsonGenerator gen = objectMapper.createGenerator(mappingsFile, JsonEncoding.UTF8)) {
 
             gen.writeStartArray();
             for (CSVRecord record : parser) {
@@ -382,7 +385,7 @@ public class TSV2JSON {
 
         try {
             objectMapper.writeValue(new File(mappingSetFilename), List.of(mappingSetMetadata));
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             logger.error("Error while writing JSON file for MappingSet {}",
                     mappingSetMetadata.mappingSetId(), e);
         }
@@ -653,14 +656,14 @@ public class TSV2JSON {
     }
 
     public static Optional<MappingSet.Builder> readYaml(File file) {
-        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        YAMLMapper objectMapper = YAMLMapper.builder()
+                .configure(SerializationFeature.INDENT_OUTPUT, true)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .build();
         Optional<MappingSet.Builder> mappingSetBuilderOptional = Optional.empty();
         try {
             mappingSetBuilderOptional = Optional.of(objectMapper.readValue(file, MappingSet.Builder.class));
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             logger.error("Error while reading YAML file {}", file, e);
         }
         return mappingSetBuilderOptional;
@@ -672,13 +675,13 @@ public class TSV2JSON {
             // .yml sidecar or to synthesising the set from the row columns.
             return Optional.empty();
         }
-        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        YAMLMapper objectMapper = YAMLMapper.builder()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .build();
         Optional<MappingSet.Builder> mappingSetBuilderOptional = Optional.empty();
         try {
             mappingSetBuilderOptional = Optional.of(objectMapper.readValue(yaml, MappingSet.Builder.class));
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             logger.error("Error while reading YAML String={}", yaml, e);
         }
         return mappingSetBuilderOptional;

@@ -98,12 +98,12 @@ public class V1MappingController {
             SolrQuery solrQuery =
                     SolrQueryBuilder.buildV1MappingsQuery(fromId, toId, hideWeakPredicates, pageable);
             MappingSearchResponse response = solrClient.query(solrQuery, pageable);
-            Page<Mapping> mappingPage = response.getMappings();
+            MappingSearchResponse.MappingPage mappingPage = response.getMappings();
 
-            List<V1Mapping> mappings = mappingPage.getContent().stream()
+            List<V1Mapping> mappings = mappingPage.content().stream()
                     .map(V1MappingController::toV1Mapping).toList();
             HalSearchResponse.PageMetadata pageMetadata = new HalSearchResponse.PageMetadata(
-                    size, mappingPage.getTotalElements(), mappingPage.getTotalPages(), page);
+                    size, mappingPage.totalElements(), mappingPage.totalPages(), page);
             V1PagedMappings body = new V1PagedMappings(
                     new V1PagedMappings.Embedded(mappings),
                     Map.of("self", new HalSearchResponse.Link("/api/mappings")),

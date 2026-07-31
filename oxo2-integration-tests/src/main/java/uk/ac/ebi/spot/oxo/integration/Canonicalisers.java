@@ -1,11 +1,11 @@
 package uk.ac.ebi.spot.oxo.integration;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -28,8 +27,9 @@ import java.util.regex.Pattern;
  */
 public final class Canonicalisers {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT);
+    private static final ObjectMapper MAPPER = JsonMapper.builder()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .build();
 
     private Canonicalisers() {}
 
@@ -152,9 +152,7 @@ public final class Canonicalisers {
             ObjectNode destination = MAPPER.createObjectNode();
             // Stable order: sort field names.
             Map<String, JsonNode> sorted = new TreeMap<>();
-            Iterator<Map.Entry<String, JsonNode>> fields = source.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> entry = fields.next();
+            for (Map.Entry<String, JsonNode> entry : source.properties()) {
                 sorted.put(entry.getKey(), canonicaliseNode(entry.getValue()));
             }
             for (Map.Entry<String, JsonNode> entry : sorted.entrySet()) {
@@ -166,13 +164,8 @@ public final class Canonicalisers {
             ArrayNode source = (ArrayNode) node;
             List<JsonNode> children = new ArrayList<>(source.size());
             for (JsonNode child : source) children.add(canonicaliseNode(child));
-            children.sort((left, right) -> {
-                try {
-                    return MAPPER.writeValueAsString(left).compareTo(MAPPER.writeValueAsString(right));
-                } catch (JsonProcessingException ex) {
-                    throw new RuntimeException(ex);
-                }
-            });
+            children.sort((left, right) ->
+                    MAPPER.writeValueAsString(left).compareTo(MAPPER.writeValueAsString(right)));
             ArrayNode destination = MAPPER.createArrayNode();
             for (JsonNode child : children) destination.add(child);
             return destination;
@@ -214,14 +207,12 @@ public final class Canonicalisers {
             ObjectNode objectNode = (ObjectNode) node.deepCopy();
             for (String field : new String[]{ASSERTED_MAPPINGS_FIELD, EXPLANATION_FIELD}) {
                 JsonNode fieldValue = objectNode.get(field);
-                if (fieldValue != null && fieldValue.isTextual()) {
-                    objectNode.set(field, MAPPER.readTree(fieldValue.asText()));
+                if (fieldValue != null && fieldValue.isString()) {
+                    objectNode.set(field, MAPPER.readTree(fieldValue.asString()));
                 }
             }
-            Iterator<Map.Entry<String, JsonNode>> fields = objectNode.fields();
             ObjectNode destination = MAPPER.createObjectNode();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> entry = fields.next();
+            for (Map.Entry<String, JsonNode> entry : objectNode.properties()) {
                 destination.set(entry.getKey(), unwrapEmbeddedJsonStrings(entry.getValue()));
             }
             return destination;

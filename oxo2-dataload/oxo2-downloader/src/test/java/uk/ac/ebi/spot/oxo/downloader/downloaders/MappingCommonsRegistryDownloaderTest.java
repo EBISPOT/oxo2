@@ -1,8 +1,8 @@
 package uk.ac.ebi.spot.oxo.downloader.downloaders;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 import org.junit.jupiter.api.Test;
 import uk.ac.ebi.spot.oxo.downloader.downloaders.MappingCommonsRegistryDownloader.RetryableDownloadException;
 import uk.ac.ebi.spot.oxo.downloader.downloaders.MappingCommonsRegistryDownloader.SelectedMapping;

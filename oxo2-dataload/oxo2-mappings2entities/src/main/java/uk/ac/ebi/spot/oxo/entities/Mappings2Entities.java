@@ -1,8 +1,8 @@
 package uk.ac.ebi.spot.oxo.entities;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonEncoding;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.JsonGenerator;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -317,25 +317,25 @@ public class Mappings2Entities {
             json.writeStartArray();
             for (EntityDoc entity : entities.values()) {
                 json.writeStartObject();
-                json.writeStringField(EntityConstants.ID, entity.id());
+                json.writeStringProperty(EntityConstants.ID, entity.id());
                 if (entity.label() != null) {
-                    json.writeStringField(EntityConstants.LABEL, entity.label());
+                    json.writeStringProperty(EntityConstants.LABEL, entity.label());
                 }
                 if (entity.iri() != null) {
-                    json.writeStringField(EntityConstants.IRI, entity.iri());
+                    json.writeStringProperty(EntityConstants.IRI, entity.iri());
                 }
                 if (entity.prefix() != null) {
-                    json.writeStringField(EntityConstants.PREFIX, entity.prefix());
+                    json.writeStringProperty(EntityConstants.PREFIX, entity.prefix());
                 }
-                json.writeNumberField(EntityConstants.SUBJECT_COUNT, entity.subjectCount());
-                json.writeNumberField(EntityConstants.OBJECT_COUNT, entity.objectCount());
-                json.writeNumberField(EntityConstants.MAPPING_COUNT, entity.mappingCount());
-                json.writeBooleanField(EntityConstants.IS_SUBJECT, entity.subjectCount() > 0);
-                json.writeBooleanField(EntityConstants.IS_OBJECT, entity.objectCount() > 0);
+                json.writeNumberProperty(EntityConstants.SUBJECT_COUNT, entity.subjectCount());
+                json.writeNumberProperty(EntityConstants.OBJECT_COUNT, entity.objectCount());
+                json.writeNumberProperty(EntityConstants.MAPPING_COUNT, entity.mappingCount());
+                json.writeBooleanProperty(EntityConstants.IS_SUBJECT, entity.subjectCount() > 0);
+                json.writeBooleanProperty(EntityConstants.IS_OBJECT, entity.objectCount() > 0);
                 // ADR-0041: written only when true, so an entity core folded from a corpus with no
                 // obsolete registry is byte-for-byte unchanged; absent reads false in the suggest filter.
                 if (entity.obsolete()) {
-                    json.writeBooleanField(EntityConstants.OBSOLETE, true);
+                    json.writeBooleanProperty(EntityConstants.OBSOLETE, true);
                 }
 
                 // The buckets the typeahead filters and ranks on (ADR-0035), each with its live twin
@@ -345,9 +345,9 @@ public class Mappings2Entities {
                 for (String baseBucket : EntityConstants.baseBuckets()) {
                     for (String bucket : List.of(baseBucket,
                             EntityConstants.bucketFor(baseBucket, false))) {
-                        json.writeNumberField(EntityConstants.subjectCountField(bucket),
+                        json.writeNumberProperty(EntityConstants.subjectCountField(bucket),
                                 entity.subjectCount(bucket));
-                        json.writeNumberField(EntityConstants.objectCountField(bucket),
+                        json.writeNumberProperty(EntityConstants.objectCountField(bucket),
                                 entity.objectCount(bucket));
                     }
                 }
@@ -357,7 +357,7 @@ public class Mappings2Entities {
                 // documents as before. An absent field matches no set restriction, which is the honest
                 // answer: without a set id there is no evidence the entity is in the chosen set.
                 if (!entity.setScopes().isEmpty()) {
-                    json.writeArrayFieldStart(EntityConstants.SET_SCOPE);
+                    json.writeArrayPropertyStart(EntityConstants.SET_SCOPE);
                     for (String setScope : entity.setScopes()) {
                         json.writeString(setScope);
                     }

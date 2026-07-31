@@ -17,7 +17,9 @@ the Java types in `oxo2-shared`.
 ## Depends on
 
 External:
-- **Spring Boot 3.4.1** — REST framework, dependency injection, auto-configured Solr client wiring.
+- **Spring Boot 4.1.0** — REST framework, dependency injection, auto-configured Solr client wiring.
+  Its auto-configured JSON mapper is Jackson 3 (`tools.jackson`), which is what forced the whole
+  repo onto Jackson 3 ([ADR-0046](../docs/adr/0046-spring-boot-4-and-jackson-3.md)).
 - **SolrJ** — Solr client library. Backend queries the same collections (`oxo2-mappings`, `oxo2-mappingsets`) that `oxo2-dataload` populates.
 
 OxO2 modules:
@@ -148,11 +150,29 @@ swagger-annotations dependency stays confined to this module; springdoc infers i
 reflection. `OpenApiDocsTest` boots the full context and asserts the spec is generated and lists
 every endpoint.
 
-Two packaging gotchas are handled in `pom.xml`: (1) the fat jar's shade config appends the
-`META-INF/spring/...AutoConfiguration.imports` resource so springdoc's and Spring Boot's
-auto-configuration both survive the merge; (2) `io.swagger.core.v3:swagger-annotations-jakarta` is
-pinned to match the swagger-core that springdoc pulls, overriding the older transitive version
-SolrJ brings (which lacks `@Schema.$dynamicRef()` and would otherwise fail spec generation).
+Packaging gotchas handled in `pom.xml`, all of the same shape — the fat jar is built by
+maven-shade-plugin, which keeps only ONE copy of any duplicated resource, so every Spring metadata
+file shipped by more than one jar needs an explicit transformer or it is silently truncated. Spring
+Boot 4 split autoconfigure into many small modules, which multiplied the collisions:
+
+1. `META-INF/spring/...AutoConfiguration.imports` — shipped by 11 jars; appended so springdoc's and
+   Spring Boot's auto-configuration both survive.
+2. `META-INF/spring/...ManagementContextConfiguration.imports` — shipped by 3 jars; appended.
+3. `META-INF/spring.factories` — shipped by **15** jars. Appending is not enough: several keys
+   (`BackgroundPreinitializer`, `ApplicationContextInitializer`, `FailureAnalyzer`) are defined by
+   multiple jars, and duplicate keys in one properties file resolve to the last value. It uses
+   Spring Boot's `PropertiesMergingResourceTransformer`, merging values per key. Getting this wrong
+   is silent at build time and fatal at run time: keeping one file dropped spring-boot's own
+   `PropertySourceLoader` / `ConfigDataLocationResolver` registrations, so the jar booted without
+   ever reading `application.properties` and died on an unresolved `${connectionTimeoutMillis}`.
+4. `io.swagger.core.v3:swagger-annotations-jakarta` is pinned to match the swagger-core that
+   springdoc pulls, overriding the older transitive version SolrJ brings (which lacks
+   `@Schema.$dynamicRef()` and would otherwise fail spec generation). springdoc 3.0.3 ships the same
+   swagger-core 2.2.47 as 2.8.17 did, so the pin carried across the upgrade unchanged.
+
+The unit tests do not cover any of 1–3 — they exercise the classes, not the shaded jar. Verify
+packaging changes by booting `oxo2-backend/target/oxo2-backend-1.0.0-SNAPSHOT.jar` and fetching
+`/v3/api-docs`. See [ADR-0046](../docs/adr/0046-spring-boot-4-and-jackson-3.md).
 
 ## Module notes
 

@@ -1,7 +1,8 @@
 package uk.ac.ebi.spot.oxo.sssom2json;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ import java.util.stream.Stream;
 public final class PrefixDivergenceDetector {
 
     private static final Logger logger = LoggerFactory.getLogger(PrefixDivergenceDetector.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder().build();
 
     private PrefixDivergenceDetector() {}
 
@@ -115,8 +116,8 @@ public final class PrefixDivergenceDetector {
             JsonNode root = OBJECT_MAPPER.readTree(file.toFile());
             JsonNode set = root.isArray() && !root.isEmpty() ? root.get(0) : root;
             JsonNode curieMap = set.path("curie_map");
-            return curieMap.isTextual() ? curieMap.asText() : null;
-        } catch (IOException e) {
+            return curieMap.isString() ? curieMap.asString() : null;
+        } catch (JacksonException e) {
             logger.warn("Skipping unreadable set file {}: {}", file, e.getMessage());
             return null;
         }

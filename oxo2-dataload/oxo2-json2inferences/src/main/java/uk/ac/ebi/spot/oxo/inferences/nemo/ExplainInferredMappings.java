@@ -1,15 +1,12 @@
 package uk.ac.ebi.spot.oxo.inferences.nemo;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SequenceWriter;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SequenceWriter;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +34,20 @@ import java.util.*;
 
 public class ExplainInferredMappings {
     private static final Logger logger = LoggerFactory.getLogger(ExplainInferredMappings.class);
+
+    /**
+     * Writes the inferred-mapping JSON. Jackson 3 mappers are immutable and thread-safe, so this
+     * single instance replaces the two identically-configured mappers this class used to build per
+     * call. Optional and java.time support are built into databind now, so the Jdk8Module and
+     * JavaTimeModule registrations are gone, and WRITE_DATES_AS_TIMESTAMPS has moved from
+     * SerializationFeature to DateTimeFeature.
+     */
+    private static final JsonMapper INFERRED_MAPPING_WRITER = JsonMapper.builder()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
+            .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+            .changeDefaultPropertyInclusion(inclusion ->
+                    inclusion.withValueInclusion(JsonInclude.Include.NON_NULL))
+            .build();
 
     public static void main(String[] args) {
         Options options = getOptions();
@@ -239,11 +250,15 @@ public class ExplainInferredMappings {
      */
     static long indexChainsFile(String inputFilePath, OnDiskChainStore.Builder builder,
             Set<String> assertedMappingIds, BufferedWriter finalConclusionWriter) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonFactory jsonFactory = objectMapper.getFactory();
+        // Strict, so an unrecognised key in an nmo trace file surfaces as a failure rather than
+        // being dropped. Jackson 2 enabled FAIL_ON_UNKNOWN_PROPERTIES by default; Jackson 3 does not.
+        JsonMapper objectMapper = JsonMapper.builder()
+                .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
         long finalConclusionCount = 0;
-        try (JsonParser parser = jsonFactory.createParser(new File(inputFilePath))) {
-            parser.setCodec(objectMapper);
+        // A parser created from the mapper can already bind values, so the Jackson 2
+        // JsonFactory + parser.setCodec(...) dance this replaced is no longer needed.
+        try (JsonParser parser = objectMapper.createParser(new File(inputFilePath))) {
             if (parser.nextToken() != JsonToken.START_OBJECT) {
                 throw new IOException("Expected a JSON object at the root of " + inputFilePath);
             }
@@ -391,15 +406,8 @@ public class ExplainInferredMappings {
                 .inferenceType(inferenceType)
                 .build();
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
-        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
         File file = new File(outputFilePath);
-        objectMapper.writeValue(file, List.of(mappingSet));
+        INFERRED_MAPPING_WRITER.writeValue(file, List.of(mappingSet));
         logger.info("Inferred MappingSet successfully written to {} ({} bytes)", outputFilePath, file.length());
     }
 
@@ -491,13 +499,6 @@ public class ExplainInferredMappings {
         IdentityHashMap<InferredMapping, List<InferredMapping>> assertedMemo = new IdentityHashMap<>();
         IdentityHashMap<InferredMapping, Integer> lengthMemo = new IdentityHashMap<>();
         IdentityHashMap<InferredMapping, Boolean> danglingMemo = new IdentityHashMap<>();
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
-        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         File outputFile = new File(outputFilePath);
         SequenceWriter seqWriter = null;
@@ -603,7 +604,7 @@ public class ExplainInferredMappings {
                     Mapping mapping = mappingBuilder.build();
 
                     if (seqWriter == null) {
-                        seqWriter = objectMapper.writer().writeValuesAsArray(outputFile);
+                        seqWriter = INFERRED_MAPPING_WRITER.writer().writeValuesAsArray(outputFile);
                     }
                     seqWriter.write(mapping);
                     written++;

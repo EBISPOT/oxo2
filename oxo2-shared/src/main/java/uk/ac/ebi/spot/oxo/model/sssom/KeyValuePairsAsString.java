@@ -1,12 +1,5 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -19,7 +12,6 @@ public class KeyValuePairsAsString extends SSSOMDataType<Map<String,String>> {
     public KeyValuePairsAsString(String keyValuePairsAsString) {
         super(keyValuePairsAsString);
     }
-    private static final Logger logger = LoggerFactory.getLogger(KeyValuePairsAsString.class);
 
     public KeyValuePairsAsString(Map<String, String> keyValuePairs) {
         super(convertMapToString(keyValuePairs));
@@ -54,19 +46,6 @@ public class KeyValuePairsAsString extends SSSOMDataType<Map<String,String>> {
         return keyValuePairs;
     }
 
-    private static Set<String> extractKeyValuePairsAsSet(String pipeDelimitedString) {
-        Set<String> keyValuePairsSet = new HashSet<>();
-        if (pipeDelimitedString == null || pipeDelimitedString.isEmpty()) {
-            return keyValuePairsSet;
-        }
-
-        String[] pairs = pipeDelimitedString.split("\\|");
-        for (String pair : pairs) {
-            keyValuePairsSet.add(pair.trim());
-        }
-        return keyValuePairsSet;
-    }
-
     private static String convertMapToString(Map<String, String> map) {
         if (map == null || map.isEmpty()) {
             return "";
@@ -80,20 +59,5 @@ public class KeyValuePairsAsString extends SSSOMDataType<Map<String,String>> {
             sb.append(entry.getKey()).append("=").append(entry.getValue());
         }
         return sb.toString();
-    }
-
-    public class KeyValueMapSerializer extends JsonSerializer<KeyValuePairsAsString> {
-
-        @Override
-        public void serialize(KeyValuePairsAsString value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            logger.trace("######## Serializing KeyValuePairsAsString: {}", value);
-            gen.writeStartObject();
-            for (Map.Entry<String, String> entry : value.getDataRepresentation().get().entrySet()) {
-                gen.writeArrayFieldStart(entry.getKey());
-                gen.writeString(entry.getValue());
-                gen.writeEndArray();
-            }
-            gen.writeEndObject();
-        }
     }
 }
