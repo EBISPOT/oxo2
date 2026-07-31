@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {Link, useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router";
 import {mappingSetHref} from "../../util/mappingSetUrl";
 import {emptyMappingPage, MappingPage, fetchMappings, exportMappings, fromJson, buildSearchRequest}
     from "./MappingResultsSlice";

@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { SearchInput, SearchMode, initialSearchState } from "../../model/Search";
 import { LabelMatchMode, LABEL_MATCH_LABELS, LABEL_MATCH_ORDER, DEFAULT_LABEL_MATCH } from "../../model/LabelMatchMode";
 import { CorpusMode, CORPUS_LABELS, DEFAULT_CORPUS, corpusToUrlParam } from "../../model/MappingSetCategory";

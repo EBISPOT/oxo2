@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import type { MRT_PaginationState, MRT_SortingState } from "material-react-table";
 import { INFERENCE_TYPE_LABELS, InferenceType } from "../model/InferenceType";
 import { WEAK_PREDICATE_ORDER, WeakPredicate } from "../model/WeakPredicate";

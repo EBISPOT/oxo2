@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { fetchMappingSetById } from "./MappingSetsSlice";
 import { NormalResultsTable } from "./NormalResultsTable";
 import { INFERENCE_TYPE_ORDER } from "../../model/InferenceType";
