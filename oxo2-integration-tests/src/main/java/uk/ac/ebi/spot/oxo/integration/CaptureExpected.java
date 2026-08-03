@@ -1,8 +1,9 @@
 package uk.ac.ebi.spot.oxo.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.node.ObjectNode;
 import uk.ac.ebi.spot.oxo.model.sssom.InferenceType;
 
 import java.io.IOException;
@@ -20,7 +21,7 @@ public final class CaptureExpected {
 
     public static void main(String[] args) throws Exception {
         Env.requireAll();
-        ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+        ObjectMapper mapper = JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).build();
 
         // One isolated test Solr for the whole capture run (cleared before each fixture), stopped at
         // the end unless -Doxo2.it.keepSolr=true. Mirrors the Failsafe IT lifecycle.

@@ -3,13 +3,12 @@ package uk.ac.ebi.spot.oxo.model.sssom;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
@@ -26,6 +25,18 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.*;
 public class InferredMapping {
 
     private static final Logger logger = LoggerFactory.getLogger(InferredMapping.class);
+
+    /**
+     * The mapper behind the four JSON round-trip helpers below. Jackson 3 mappers are immutable
+     * and thread-safe, so one shared instance replaces the four identical per-call mappers this
+     * class used to build. Optional support is built into Jackson 3, so there is no Jdk8Module
+     * left to register.
+     */
+    private static final JsonMapper JSON = JsonMapper.builder()
+            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .changeDefaultPropertyInclusion(inclusion ->
+                    inclusion.withValueInclusion(JsonInclude.Include.NON_NULL))
+            .build();
 
     @JsonProperty(MAPPING_JUSTIFICATION)
     private Optional<EntityReference> mappingJustification;
@@ -285,24 +296,18 @@ public class InferredMapping {
      * Serializes a list of InferredMapping objects to a JSON string.
      */
     public static Optional<String> asJSONString(List<InferredMapping> inferredMappings) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         try {
-            return Optional.of(objectMapper.writeValueAsString(inferredMappings));
-        } catch (JsonProcessingException jpe) {
+            return Optional.of(JSON.writeValueAsString(inferredMappings));
+        } catch (JacksonException jpe) {
             logger.error("Error writing to JSON: inferredMappings = {}.", inferredMappings, jpe);
             return Optional.empty();
         }
     }
 
     public static Optional<String> asJSONString(InferredMapping inferredMapping) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         try {
-            return Optional.of(objectMapper.writeValueAsString(inferredMapping));
-        } catch (JsonProcessingException jpe) {
+            return Optional.of(JSON.writeValueAsString(inferredMapping));
+        } catch (JacksonException jpe) {
             logger.error("Error writing to JSON: inferredMappings = {}.", inferredMapping, jpe);
             return Optional.empty();
         }
@@ -312,32 +317,25 @@ public class InferredMapping {
      * Deserializes a JSON string to a list of InferredMapping objects.
      */
     public static List<InferredMapping> fromStringAsList(String jsonString) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         try {
-            List<InferredMapping> mappings = objectMapper.readValue(
+            return JSON.readValue(
                 jsonString,
-                objectMapper.getTypeFactory().constructCollectionType(List.class, InferredMapping.class)
+                JSON.getTypeFactory().constructCollectionType(List.class, InferredMapping.class)
             );
-            return mappings;
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             logger.error("Error reading from JSON: jsonString = {}.", jsonString, e);
             return new ArrayList<>();
         }
     }
 
     public static Optional<InferredMapping> fromStringAsObject(String jsonString) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         try {
-            InferredMapping mapping = objectMapper.readValue(
+            InferredMapping mapping = JSON.readValue(
                     jsonString,
-                    objectMapper.getTypeFactory().constructType(InferredMapping.class)
+                    JSON.constructType(InferredMapping.class)
             );
             return Optional.of(mapping);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             logger.error("Error reading from JSON: jsonString = {}.", jsonString, e);
             return Optional.empty();
         }

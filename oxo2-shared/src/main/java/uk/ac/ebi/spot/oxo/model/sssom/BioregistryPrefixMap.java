@@ -1,14 +1,14 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -65,20 +65,18 @@ public final class BioregistryPrefixMap {
                         + "sets without a curie_map will not expand.", RESOURCE);
                 return Collections.emptySortedMap();
             }
-            JsonNode context = new ObjectMapper().readTree(resourceStream).path("@context");
-            Iterator<Map.Entry<String, JsonNode>> contextFields = context.fields();
-            while (contextFields.hasNext()) {
-                Map.Entry<String, JsonNode> contextField = contextFields.next();
+            JsonNode context = JsonMapper.builder().build().readTree(resourceStream).path("@context");
+            for (Map.Entry<String, JsonNode> contextField : context.properties()) {
                 String prefix = contextField.getKey();
                 JsonNode expansion = contextField.getValue();
                 // Skip JSON-LD keywords (@vocab, @base, ...) and any non-string expansion.
-                if (prefix.startsWith("@") || !expansion.isTextual()) {
+                if (prefix.startsWith("@") || !expansion.isString()) {
                     continue;
                 }
-                map.put(prefix, expansion.asText());
+                map.put(prefix, expansion.asString());
             }
             logger.info("Loaded {} prefixes from the bundled Bioregistry context.", map.size());
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             logger.error("Failed to read bundled Bioregistry context {}", RESOURCE, e);
             return Collections.emptySortedMap();
         }

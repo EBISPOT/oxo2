@@ -1,7 +1,7 @@
 package uk.ac.ebi.spot.oxo.integration;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DynamicContainer;
@@ -126,7 +126,7 @@ public class ChainRulesIntegrationTest {
                 + entity.path(side + "_count_subclassof").asLong()
                 + entity.path(side + "_count_hasdbxref").asLong();
         assertEquals(total, bucketed,
-                "Entity " + entity.path("id").asText() + " in fixture " + fixtureName + ": its "
+                "Entity " + entity.path("id").asString() + " in fixture " + fixtureName + ": its "
                 + side + "-side predicate buckets sum to " + bucketed + " but its " + side
                 + "_count is " + total + ". The mappings2entities fold has mis-bucketed a sighting "
                 + "(ADR-0035), which silently changes which entities the typeahead can suggest.");
@@ -203,7 +203,7 @@ public class ChainRulesIntegrationTest {
 
     private static String text(JsonNode node, String field) {
         JsonNode value = node.get(field);
-        return value == null || value.isNull() ? "?" : value.asText();
+        return value == null || value.isNull() ? "?" : value.asString();
     }
 
     private void compareLayer(ArtifactPaths.LayerArtifact artifact) throws IOException {

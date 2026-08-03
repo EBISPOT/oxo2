@@ -1,14 +1,13 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +27,13 @@ abstract public class SSSOMDataType<T> {
     protected final SSSOMDataTypesEnum type;
 
     private static final Logger logger = LoggerFactory.getLogger(SSSOMDataType.class);
+
+    /**
+     * Renders a KEY_VALUE_PAIRS map to the embedded JSON string the SSSOM output carries.
+     * Jackson 3 mappers are immutable and thread-safe, so one shared instance serves every
+     * serialization instead of the per-call allocation this replaced.
+     */
+    private static final JsonMapper KEY_VALUE_PAIR_WRITER = JsonMapper.builder().build();
 
     public SSSOMDataType(String data) {
         this.dataAsString = data;
@@ -88,20 +94,19 @@ abstract public class SSSOMDataType<T> {
 
     }
 
-    public static class Serializer<T extends SSSOMDataType> extends JsonSerializer<T> {
+    public static class Serializer<T extends SSSOMDataType> extends ValueSerializer<T> {
         @Override
-        public void serialize(T value, JsonGenerator jsonGenerator, SerializerProvider serializers)
-                throws IOException {
+        public void serialize(T value, JsonGenerator jsonGenerator, SerializationContext serializers) {
             logger.debug("Serializing S: {}", value);
             if (value.dataRepresentation.isPresent()) {
                 switch(value.type) {
                     case KEY_VALUE_PAIRS -> {
                         Map<String, String> map = (Map<String, String>) value.dataRepresentation.get();
-                        String jsonString = new ObjectMapper().writeValueAsString(map);
+                        String jsonString = KEY_VALUE_PAIR_WRITER.writeValueAsString(map);
                         jsonGenerator.writeString(jsonString);
                     }
                     case CURIE_MAP, DATE ->
-                        jsonGenerator.writeObject(value.dataAsString);
+                        jsonGenerator.writePOJO(value.dataAsString);
                     case DOUBLE ->
                         jsonGenerator.writeNumber((java.lang.Double) value.dataRepresentation.get());
                     case ENTITY_REFERENCE, URI ->

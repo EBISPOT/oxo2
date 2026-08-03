@@ -1,8 +1,8 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -20,9 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class MappingSetOtherPromotionTest {
 
-    // Mirror the writer in TSV2JSON: Jdk8Module so Optional fields serialize as their unwrapped value.
+    // Mirror the writer in TSV2JSON. Jackson 3 unwraps Optional fields natively, so unlike the
+    // Jackson 2 mapper this replaced there is no Jdk8Module to register.
     // The record's class-level @JsonInclude(NON_EMPTY) omits absent ones regardless of mapper defaults.
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new Jdk8Module());
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Test
     void promotesPrefixAndOntologyFromOther() throws Exception {
@@ -37,8 +38,8 @@ class MappingSetOtherPromotionTest {
 
         JsonNode doc = objectMapper.readTree(objectMapper.writeValueAsString(mappingSet));
 
-        assertEquals("ADDICTO", doc.path(MappingConstants.PREFIX).asText());
-        assertEquals("Addiction Ontology (ADDICTO)", doc.path(MappingConstants.ONTOLOGY).asText());
+        assertEquals("ADDICTO", doc.path(MappingConstants.PREFIX).asString());
+        assertEquals("Addiction Ontology (ADDICTO)", doc.path(MappingConstants.ONTOLOGY).asString());
         // The raw `other` block is kept alongside the promoted fields (it still carries local_id).
         assertTrue(doc.has(MappingConstants.OTHER));
     }

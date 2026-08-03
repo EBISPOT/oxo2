@@ -21,10 +21,10 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 import uk.ac.ebi.spot.oxo.inferences.ApplicablePredicatesEnum;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.OXOInferenceConstants;
@@ -134,21 +134,24 @@ public class JSON2NQuads {
     // Package-private for JSON2NQuadsConfidenceGateTest.
     static void generateNQuadsFromJSON(Path jsonFile, Path outputFile, double minConfidence)
             throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
+        JsonMapper objectMapper = JsonMapper.builder().build();
         boolean gateActive = minConfidence > 0;
         // Each row: {subjectIRI, predicateIRI, objectIRI, confidence, mappingId} for the sidecar.
         List<String[]> droppedByConfidence = new ArrayList<>();
 
         logger.info("Processing file: {}", jsonFile);
         try (BufferedWriter writer = Files.newBufferedWriter(outputFile);
-             JsonParser parser = objectMapper.getFactory().createParser(jsonFile.toFile())) {
+             JsonParser parser = objectMapper.createParser(jsonFile.toFile())) {
             JsonToken firstToken = parser.nextToken();
             if (firstToken != JsonToken.START_ARRAY) {
                 return;
             }
             long quadsWritten = 0;
             while (parser.nextToken() != JsonToken.END_ARRAY) {
-                JsonNode mappingNode = objectMapper.readTree(parser);
+                // Reads exactly one element at the parser's current position. mapper.readTree(parser)
+                // would instead check for trailing tokens — Jackson 3 enables FAIL_ON_TRAILING_TOKENS
+                // by default — and so rejects every element after the first of this streamed array.
+                JsonNode mappingNode = parser.readValueAsTree();
                 String predicateIRI = asTextOrEmpty(mappingNode, MappingEnum.PREDICATE_IRI.getField());
                 if (!isApplicablePredicate(predicateIRI)) {
                     continue;

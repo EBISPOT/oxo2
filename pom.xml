@@ -12,7 +12,23 @@
         <junit.version>6.1.2</junit.version>
         <maven.surefire.version>3.5.6</maven.surefire.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Jackson 3 (tools.jackson). Kept in step with the version Spring Boot 4 manages, so the
+             backend's auto-configured mapper and the mappers the dataload builds by hand are the
+             same implementation. See docs/adr/0046-spring-boot-4-and-jackson-3.md. -->
+        <jackson.version>3.1.4</jackson.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>tools.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <modules>
         <module>oxo2-shared</module>
         <module>oxo2-dataload</module>

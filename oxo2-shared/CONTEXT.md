@@ -20,7 +20,10 @@ derive a given `InferredMapping`). It is a code structure, not a new domain conc
 ## Depends on
 
 External:
-- Jackson (databind, jdk8) — JSON (de)serialization of SSSOM types.
+- Jackson 3 (`tools.jackson.core:jackson-databind`) — JSON (de)serialization of SSSOM types.
+  Optional and `java.time` support are built in, so there is no jdk8/jsr310 datatype module. Core
+  annotations still come from `com.fasterxml.jackson.annotation`, which Jackson 3 shares
+  ([ADR-0046](../docs/adr/0046-spring-boot-4-and-jackson-3.md)).
 - SolrJ — `@Field` annotations on `Mapping` allow direct binding from Solr documents.
 - SLF4J — logging.
 

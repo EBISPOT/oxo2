@@ -1,7 +1,7 @@
 package uk.ac.ebi.spot.oxo.model.sssom;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class MappingSpoKeyTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new Jdk8Module());
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     private static Mapping.Builder triple(String subjectId, String predicateId, String objectId) {
         return new Mapping.Builder()
