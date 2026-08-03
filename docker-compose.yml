@@ -16,7 +16,7 @@ services:
     build:
       context: .
       dockerfile: ./oxo2-dataload/Dockerfile.solr
-    image: oxo2-solr:9.9.0-slim-java25
+    image: oxo2-solr:10.0.0-slim-java25
     environment:
       - SOLR_HOME=/mnt/oxo/solr-data
       - SOLR_JETTY_HOST=0.0.0.0

@@ -103,7 +103,7 @@ file see the `oxo-config.json` in the root of the OxO2 source code directory. NO
 
 Here is an example script for setting environment variables:
 
-    export SOLR_SCRIPT=/home/myhome/solr-9.9.0/bin
+    export SOLR_SCRIPT=/home/myhome/solr-10.0.0/bin
     export SOLR_HOME=/home/myhome/oxo2-data/solr
     export PATH=$PATH:/home/myhome/nemo
     export OXO2_DATA=/home/myhome/oxo2-data/dataload

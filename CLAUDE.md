@@ -83,8 +83,8 @@ docker compose up
 
 - Java 25, Maven, Spring Boot 4.1.0, Jackson 3 (`tools.jackson` — see
   [ADR-0046](docs/adr/0046-spring-boot-4-and-jackson-3.md))
-- Apache Solr 9.9.0 (sole data store — see [ADR-0002](docs/adr/0002-solr-as-sole-data-store.md))
-- Nemo v0.9.1 rules engine (inference/explanation)
+- Apache Solr 10.0.0 (sole data store — see [ADR-0002](docs/adr/0002-solr-as-sole-data-store.md))
+- Nemo v0.10.1 rules engine (inference/explanation)
 - React 19, TypeScript, Vite, Tailwind CSS, TanStack React Query
 - Nextflow (required for local and HPC — see [ADR-0003](docs/adr/0003-nextflow-as-sole-dataload-path.md))
 
