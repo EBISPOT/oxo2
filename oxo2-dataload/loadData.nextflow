@@ -53,6 +53,10 @@ export SOLR_PORT
 OXO2_SOLR_UNMANAGED=${OXO2_SOLR_UNMANAGED:-false}
 export OXO2_SOLR_UNMANAGED
 
+# Solr's launcher ignores JAVA_OPTS and otherwise defaults to a 512 MB heap, which is too small for
+# the full-index same-SPO collapse used by result views (ADR-0023).
+export SOLR_HEAP="${SOLR_HEAP:-4g}"
+
 # Pin per-task heap to 4 GB. With per-file parallelism in sssom2json.nf, up to
 # ~5 SSSOM2JSON JVMs run concurrently on the local executor (cpus=6, executor
 # memory=22 GB), so an explicit -Xmx avoids the default JVM ergonomics letting
@@ -89,7 +93,15 @@ oxo2_resolve_release_date
 # NXF_WORK). Stage-aware cleanup then removes only the artifacts owned by START_STAGE and later,
 # preserving earlier stages' outputs as the resume inputs. On a full run (START_STAGE=download) this
 # wipes every owned path — the same clean slate the integration harness relies on per fixture.
-rm -rf "$NEXTFLOW_DIR"/* 2>/dev/null || true
+#
+# NXF_HOME is deliberately NOT wiped: it is Nextflow's own cache of the framework jar and plugins
+# (upstream defaults it to ~/.nextflow and never clears it), not run state this pipeline produces.
+# Wiping it forced every run to re-download nextflow-<ver>-one.jar, so any run without internet died
+# in the first `nextflow` stage — and because the stages below only now check their exit status, it
+# died SILENTLY, checkpointing stages that had produced nothing.
+for transient_dir in NXF_WORK NXF_TEMP NXF_CACHE_DIR logs; do
+    rm -rf "${NEXTFLOW_DIR:?}/$transient_dir" 2>/dev/null || true
+done
 oxo2_clean_owned_artifacts
 
 # Solr's data is wiped only when the asserted load runs from scratch — locally copySolrConfig.sh is
@@ -158,7 +170,10 @@ run_json2solr() {
 if should_run download; then
     start_time=$(date +%s)
     echo "###################" downloadMappings...
-    $SCRIPT_DIR/downloadMappings.nextflow
+    if ! $SCRIPT_DIR/downloadMappings.nextflow; then
+        echo "Download stage failed; aborting the dataload." >&2
+        exit 1
+    fi
     end_time=$(date +%s)
     echo "Download took: $((end_time - start_time)) seconds"
     record_stage download
@@ -168,13 +183,16 @@ fi
 if should_run sssom2json; then
     start_time=$(date +%s)
     echo "Using Nextflow for parallel processing of SSSOM to JSON conversion"
-    (nextflow -log $NXF_LOGS/sssom2json.nextflow.log \
+    if ! (nextflow -log $NXF_LOGS/sssom2json.nextflow.log \
         -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
         run $SCRIPT_DIR/sssom2json.nf \
         -profile $NF_PROFILE \
         -with-trace    $NXF_LOGS/sssom2json-trace.txt \
         -with-report   $NXF_LOGS/sssom2json-report.html \
-        -with-timeline $NXF_LOGS/sssom2json-timeline.html)
+        -with-timeline $NXF_LOGS/sssom2json-timeline.html); then
+        echo "sssom2json stage failed; aborting the dataload." >&2
+        exit 1
+    fi
     end_time=$(date +%s)
     echo "Nextflow Parallel Processing: Writing JSON took: $((end_time - start_time)) seconds"
     record_stage sssom2json
@@ -188,7 +206,10 @@ fi
 if should_run infer; then
     start_time=$(date +%s)
     echo  "###################"  makeInferences...
-    $SCRIPT_DIR/determineInferences.nextflow
+    if ! $SCRIPT_DIR/determineInferences.nextflow; then
+        echo "Inference stage failed; aborting the dataload." >&2
+        exit 1
+    fi
     end_time=$(date +%s)
     echo "Total inference process took: $((end_time - start_time)) seconds"
     record_stage infer
@@ -219,6 +240,18 @@ if [ "$SOLR_NEEDED" = true ]; then
     if [ "$OXO2_SOLR_UNMANAGED" = true ]; then
         echo "OXO2_SOLR_UNMANAGED=true: Solr process + collection wipe owned by the caller (test harness); skipping copySolrConfig/start."
     else
+        # Both copySolrConfig.sh modes rm -rf core directories, and that is only safe with Solr DOWN.
+        # This script stops Solr just once, at the very END of a successful run — so any run that
+        # fails after the start below (a bad config, a failed stage, Ctrl-C) leaves Solr up, and the
+        # NEXT run then deletes the core dirs out from under the live process. The JVM keeps serving
+        # the deleted index from its open file handles, so `solr start` ("port already in use") and
+        # every readiness probe still pass; the run looks healthy right up to the first /update, which
+        # dies with a Lucene tragic exception on the vanished write.lock and takes the whole run with
+        # it. One failure would otherwise poison every subsequent run. Stopping a Solr that is not
+        # running is a harmless no-op, so do it unconditionally.
+        echo "Stopping any Solr already listening on port $SOLR_PORT (core dirs must be wiped with Solr down)..."
+        $SOLR_SCRIPT/solr stop -p "$SOLR_PORT" >/dev/null 2>&1 || true
+
         if [ "$WIPE_SOLR" = true ]; then
             echo  "###################"  copySolrConfig...
             if ! "$SCRIPT_DIR/copySolrConfig.sh"; then
@@ -288,7 +321,7 @@ if should_run explanations2json && [ -z "$(find "$SHARD_CHAINS_DIR" -maxdepth 1 
 elif should_run explanations2json; then
     start_time=$(date +%s)
     echo "Using Nextflow for explanations2json (SSSOM, cross-set, explained)"
-    (cd $NXF_LOGS && nextflow -log $NXF_LOGS/explanations2jsonCrossSet.nextflow.log \
+    if ! (cd $NXF_LOGS && nextflow -log $NXF_LOGS/explanations2jsonCrossSet.nextflow.log \
         -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
         run $SCRIPT_DIR/oxo2-json2inferences/explanations2json.nf \
         -profile $NF_PROFILE \
@@ -297,7 +330,10 @@ elif should_run explanations2json; then
         --solr_url "$SOLR_URL" \
         -with-trace    $NXF_LOGS/explanations2jsonCrossSet-trace.txt \
         -with-report   $NXF_LOGS/explanations2jsonCrossSet-report.html \
-        -with-timeline $NXF_LOGS/explanations2jsonCrossSet-timeline.html)
+        -with-timeline $NXF_LOGS/explanations2jsonCrossSet-timeline.html); then
+        echo "explanations2json failed; the inferred mappings would be missing entirely. See $NXF_LOGS/explanations2jsonCrossSet.nextflow.log" >&2
+        exit 1
+    fi
     end_time=$(date +%s)
     echo "Nextflow Processing: explanations2json (SSSOM cross-set, explained) took: $((end_time - start_time)) seconds"
     record_stage explanations2json
@@ -319,10 +355,10 @@ fi
 if should_run mappings2entities; then
     start_time=$(date +%s)
     echo  "###################"  mappings2entities ...
-    # Checked, unlike the older stages above: this stage's failure mode is SILENT. Nextflow exits
-    # non-zero (errorStrategy=terminate) but an unchecked stage would still record_stage and carry on,
-    # leaving an empty oxo2-entities collection — which looks to a user like "the typeahead finds
-    # nothing", not like a broken load. Fail here instead.
+    # This stage's failure mode is SILENT. Nextflow exits non-zero (errorStrategy=terminate) but an
+    # unchecked stage would still record_stage and carry on, leaving an empty oxo2-entities collection
+    # — which looks to a user like "the typeahead finds nothing", not like a broken load. Fail here
+    # instead. Every stage above is checked for the same reason.
     if ! (cd $NXF_LOGS && nextflow -log $NXF_LOGS/mappings2entities.nextflow.log \
         -c $SCRIPT_DIR/nextflow/nextflow.config $NF_EXTRA_CONFIG_ARG \
         run $SCRIPT_DIR/mappings2entities.nf \

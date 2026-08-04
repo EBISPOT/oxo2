@@ -48,6 +48,7 @@ export OXO2_DATA=/path/to/data
 export OXO2_CONFIG=/absolute/path/to/oxo-config.json
 export SOLR_SCRIPT=/path/to/solr/bin
 export SOLR_HOME=/path/to/solr/data
+export SOLR_HEAP=4g
 export OXO2_SOLR_HOST=http://localhost:8983/solr
 ```
 

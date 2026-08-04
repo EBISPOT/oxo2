@@ -98,16 +98,17 @@ Define the following environment variables:
 file see the `oxo-config.json` in the root of the OxO2 source code directory. NOTE: This must be the absolute path to the file.
 3. SOLR_SCRIPT - This should point to the `bin` directory of your Solr installation.
 4. SOLR_HOME - This should point to the root of your Solr data directory.
-5. OXO2_SOLR_HOST - This is the URL to your Solr installation.
-6. NEXTFLOW_DIR - If you want to parallelise the OxO2 dataload using Nextflow, you need to specify where it can write interm results. 
+5. SOLR_HEAP - The Solr JVM heap. Use at least `4g` for the full OxO2 index; Solr ignores `JAVA_OPTS` and otherwise defaults to `512m`.
+6. OXO2_SOLR_HOST - This is the URL to your Solr installation.
+7. NEXTFLOW_DIR - If you want to parallelise the OxO2 dataload using Nextflow, you need to specify where it can write interm results. 
 
 Here is an example script for setting environment variables:
 
     export SOLR_SCRIPT=/home/myhome/solr-10.0.0/bin
     export SOLR_HOME=/home/myhome/oxo2-data/solr
+    export SOLR_HEAP=4g
     export PATH=$PATH:/home/myhome/nemo
     export OXO2_DATA=/home/myhome/oxo2-data/dataload
-    export JAVA_OPTS="-Xmx16G"
     export OXO2_CONFIG=/home/myhome/oxo2/my_oxo2_config.json
     export OXO2_SOLR_HOST=http://localhost:8983/solr
     export NEXTFLOW_DIR=/home/myhome/nextflow

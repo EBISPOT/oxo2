@@ -106,10 +106,12 @@ oxo2_resolve_release_date
 # Stage-aware cleanup.
 # Transient Nextflow dirs are always wiped — resume reads PUBLISHED artifacts under $OXO2_DATA,
 # never NXF_WORK, so each run gets a clean work dir. The Singularity image cache is NOT wiped here
-# (only refreshed below when a newer image is available).
+# (only refreshed below when a newer image is available), and neither is NXF_HOME: like that cache it
+# holds Nextflow's own framework jar and plugins, so wiping it forces a re-download of
+# nextflow-<ver>-one.jar on every run and strands any compute node without outbound internet.
 # ---------------------------------------------------------------------------
 echo "Cleaning transient Nextflow working dirs..."
-rm -rf "$NXF_WORK"/* "$NXF_HOME"/* "$NXF_TEMP"/* "$NXF_CACHE_DIR"/* 2>/dev/null || true
+rm -rf "$NXF_WORK"/* "$NXF_TEMP"/* "$NXF_CACHE_DIR"/* 2>/dev/null || true
 rm -rf "$NXF_LOGS"/* "$NXF_LOGS"/.*[!.]* 2>/dev/null || true
 
 # Stage-aware cleanup (shared loadData.lib.sh): wipe only the artifacts owned by START_STAGE and
