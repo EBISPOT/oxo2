@@ -53,12 +53,20 @@ export OXO2_SOLR_HOST=http://localhost:8983/solr
 ```
 
 ```bash
-# Start Solr, load data, start backend
-cp ./oxo2-dataload/solr-config/* $SOLR_HOME
-$SOLR_SCRIPT/solr start --user-managed
+# Load data, then start Solr and the backend
 cd oxo2-dataload && ./loadData.nextflow && cd ..
+./startSolr.sh
 ./startBackend.sh
 ```
+
+`loadData.nextflow` owns Solr for the duration of the load (it lays down the config via
+`copySolrConfig.sh`, starts Solr itself, and **stops it again at the end of a successful run**), so
+Solr always has to be started separately before `startBackend.sh`. Use `./startSolr.sh` rather than
+calling the launcher by hand: Solr 10 flipped the default start mode, so a bare `solr start` now
+launches SolrCloud with an embedded ZooKeeper, in which OxO2's cores cannot load —
+`/admin/info/system` still answers 200 while every query 500s. `startSolr.sh` passes
+`--user-managed`, defaults `SOLR_HEAP` to 4g, and probes all three cores so a bad start fails
+immediately instead of silently handing the backend an empty index.
 
 All ports are overridable per checkout, so several stacks (e.g. git worktrees) can run side by
 side: the Vite dev server reads `OXO_FRONTEND_PORT` (default 8080), `startBackend.sh` forwards

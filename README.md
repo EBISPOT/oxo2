@@ -118,13 +118,14 @@ Here is an example script for setting environment variables:
 `git clone git@github.com:EBISPOT/oxo2.git`
 and change to OxO2 source directory.
 2. To build, run: `mvn clean install` 
-3. Copy solr config to solr: `cp ./oxo2-dataload/solr-config/* $SOLR_HOME`
-4. Change to dataload directory: `cd ./oxo2-dataload`
-5. Run OxO2 dataload: `./loadData.nextflow` (Nextflow is required).
-6. Return to OxO2 root dir: `cd ..`
-7. Start Solr: `$SOLR_SCRIPT/solr start --user-managed`
-8. Run OxO backend: `./startBackend.sh`
-9. To build and run frontend: 
+3. Change to dataload directory: `cd ./oxo2-dataload`
+4. Run OxO2 dataload: `./loadData.nextflow` (Nextflow is required). It lays down the Solr config
+   itself and stops Solr again when it finishes.
+5. Return to OxO2 root dir: `cd ..`
+6. Start Solr: `./startSolr.sh` — always use this rather than calling `solr start` directly, since
+   Solr 10 defaults to SolrCloud mode, in which OxO2's cores cannot load.
+7. Run OxO backend: `./startBackend.sh`
+8. To build and run frontend: 
    1. Change directory to frontend: `cd oxo2-frontend`
    2. Build frontend: `npm install`
    3. Start frontend: `npm run dev`
