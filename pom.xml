@@ -15,7 +15,7 @@
         <!-- Jackson 3 (tools.jackson). Kept in step with the version Spring Boot 4 manages, so the
              backend's auto-configured mapper and the mappers the dataload builds by hand are the
              same implementation. See docs/adr/0046-spring-boot-4-and-jackson-3.md. -->
-        <jackson.version>3.1.4</jackson.version>
+        <jackson.version>3.2.1</jackson.version>
     </properties>
 
     <dependencyManagement>
