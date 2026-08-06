@@ -70,7 +70,9 @@ control (ADR-0035, ADR-0036). Its URL param drives all three surfaces from one p
 - the **typeahead** — obsolete entities are excluded from suggestions until ticked.
 
 The Ontologies table additionally gains an **`Obsolete` column** so that, once revealed, obsolete sets
-are labelled and independently filterable (Material React Table gives the column filter for free).
+are labelled and independently filterable. Its Yes/No dropdown offers only the values the table
+currently holds, so with the box unticked "Yes" is absent rather than offered and empty — the rule of
+ADR-0035 applied to a column filter.
 
 **5. The typeahead honours it, by the rule of ADR-0035** — a suggestion must be a promise the search
 returns rows. `oxo2-entities` carries `obsolete`; with the box unticked the suggest hides obsolete

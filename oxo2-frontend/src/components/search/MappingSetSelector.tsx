@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
     MaterialReactTable,
@@ -129,6 +129,13 @@ function useMappingSetTable(
         // default (no top toolbar to toggle it). Filter state stays internal to MRT, so typing here
         // never re-renders the parent Search (see the React.memo note above).
         enableColumnFilters: true,
+        // Load-bearing for the Obsolete column's `filterVariant: "select"`. MRT builds a select
+        // filter's options from the column's faceted unique values, and faceting is off by default:
+        // without this the option list is an empty array and the dropdown opens with nothing in it.
+        // Faceting over the rows the table actually holds is also what keeps the options honest —
+        // with obsolete sets hidden, "Yes" is not offered at all, so the filter cannot promise rows
+        // that are not there.
+        enableFacetedValues: true,
         enableSorting: true,
         enablePagination: false,
         enableStickyHeader: true,
@@ -208,6 +215,19 @@ function MappingSetSelectorInner({
     const ontologyTable = useMappingSetTable(
         ontologySets, ONTOLOGY_COLUMNS, selectedIds, mappingSetsLoading, "ontology", onOntologySelection
     );
+
+    // Unticking the switch takes the obsolete rows away from under an "Obsolete = Yes" filter the
+    // user had already set. MRT keeps column-filter state internally, so it would survive the rows it
+    // selects and strand the table on "No results found" — under a filter box whose value is no
+    // longer one of its own options, which is not something the user can see to undo. Drop the
+    // filter as the rows it matches go away.
+    useEffect(() => {
+        if (includeObsolete) return;
+        const obsoleteColumn = ontologyTable.getColumn("obsolete");
+        if (obsoleteColumn?.getFilterValue() !== undefined) {
+            obsoleteColumn.setFilterValue(undefined);
+        }
+    }, [includeObsolete, ontologyTable]);
 
     return (
         <div className="space-y-4">
