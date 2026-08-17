@@ -8,4 +8,4 @@ spec:
     app: {{ .Release.Name }}-frontend
   ports:
     - port: {{ .Values.frontend.service.port }}
-      targetPort: {{ .Values.frontend.service.containerPort }}
+      targetPort: {{ .Values.frontend.service.targetPort }}
