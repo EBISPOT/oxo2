@@ -21,4 +21,9 @@ ENV PATH="${PATH}:/opt/solr/bin" \
 USER solr
 
 EXPOSE 8983
-CMD ["solr", "start", "-f"]
+# --user-managed is mandatory. Solr 10 flipped the default: `solr start` now means SolrCloud
+# (with an embedded ZooKeeper) where Solr 9 meant standalone. OxO2's cores are plain on-disk
+# cores with no collection state in ZooKeeper, so in cloud mode all three fail to load with
+# "No coreNodeName for CoreDescriptor" while /admin/info/system still answers 200 — the
+# container looks healthy and every query 500s. Matches ../startSolr.sh.
+CMD ["solr", "start", "-f", "--user-managed"]

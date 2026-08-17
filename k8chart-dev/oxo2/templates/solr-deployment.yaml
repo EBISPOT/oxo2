@@ -66,7 +66,13 @@ spec:
       containers:
         - name: solr
           image: ghcr.io/ebispot/oxo2-solr:{{ .Values.imageTag }}
-          imagePullPolicy: IfNotPresent
+          # Always, like the backend and frontend. imageTag is a MUTABLE tag ("dev"), and
+          # solr.xml does not ship in this image — it arrives in the solr-data tarball the
+          # initContainer extracts. IfNotPresent pinned the node to its cached pre-Solr-10
+          # image while the tarball moved to the Solr 10 config, and the two drifted apart:
+          # the Solr 9 binary died on the migrated solr.xml with "solrcloud section missing
+          # required entry 'hostContext'" (that entry was dropped in Solr 10, SOLR-17931).
+          imagePullPolicy: Always
           env:
             - name: SOLR_HOME
               value: /var/solr
@@ -76,6 +82,30 @@ spec:
               value: "false"
           ports:
             - containerPort: {{ .Values.solr.service.containerPort }}
+          # Gate Service traffic on all three cores actually answering queries, the same
+          # check docker-compose and startSolr.sh make. Probe /select per core and NOT
+          # /admin/info/system or /admin/cores?action=STATUS: both return 200 for a Solr
+          # whose cores failed to load, which is exactly how a wrong-mode or stale-binary
+          # Solr reaches users as 500s on every query instead of as a failed rollout.
+          #
+          # No livenessProbe on purpose: core load on the full index and large background
+          # merges are both slow, and a liveness timeout would restart the container into
+          # the same slow start, in a loop.
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - >-
+                  curl -fsS "http://localhost:{{ .Values.solr.service.containerPort }}/solr/oxo2-mappings/select?q=*:*&rows=0" > /dev/null &&
+                  curl -fsS "http://localhost:{{ .Values.solr.service.containerPort }}/solr/oxo2-mappingsets/select?q=*:*&rows=0" > /dev/null &&
+                  curl -fsS "http://localhost:{{ .Values.solr.service.containerPort }}/solr/oxo2-entities/select?q=*:*&rows=0" > /dev/null
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 10
+            # 60 x 10s = 10 min for the cores to open on a 200Gi index before the rollout
+            # is reported as failed.
+            failureThreshold: 60
           volumeMounts:
             - name: solr-data
               mountPath: /var/solr

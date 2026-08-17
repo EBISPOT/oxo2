@@ -20,7 +20,10 @@ spec:
       containers:
         - name: solr
           image: ghcr.io/ebispot/oxo2-solr:{{ .Values.imageTag }}
-          imagePullPolicy: IfNotPresent
+          # Always, like the backend and frontend — imageTag is a mutable tag, and
+          # IfNotPresent leaves the node serving a stale Solr binary against a solr.xml
+          # that arrives separately in the solr-data tarball. See k8chart-dev.
+          imagePullPolicy: Always
           env:
             - name: SOLR_HOME
               value: /var/solr
@@ -30,6 +33,22 @@ spec:
               value: "false"
           ports:
             - containerPort: {{ .Values.solr.service.containerPort }}
+          # Gate Service traffic on all three cores answering queries — /admin/info/system
+          # returns 200 for a Solr whose cores failed to load. See k8chart-dev for why there
+          # is no livenessProbe. Shorter threshold here: the local index is 5Gi, not 200Gi.
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - >-
+                  curl -fsS "http://localhost:{{ .Values.solr.service.containerPort }}/solr/oxo2-mappings/select?q=*:*&rows=0" > /dev/null &&
+                  curl -fsS "http://localhost:{{ .Values.solr.service.containerPort }}/solr/oxo2-mappingsets/select?q=*:*&rows=0" > /dev/null &&
+                  curl -fsS "http://localhost:{{ .Values.solr.service.containerPort }}/solr/oxo2-entities/select?q=*:*&rows=0" > /dev/null
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 18
           volumeMounts:
             - name: solr-data
               mountPath: /var/solr
