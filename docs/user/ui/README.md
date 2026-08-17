@@ -32,6 +32,11 @@ as much a consumer of that change as the code is. In particular:
   nothing checks them.
 - § 10, *Things that will surprise you*, records known rough edges. Fixing one means deleting its
   entry, not leaving a stale warning behind.
+- **No deployment-specific URLs.** The same file is served by every instance, so a hostname or port
+  written into it is wrong for all the others and goes stale as deployments are added. Describe
+  paths relative to the instance (`/swagger-ui.html`), and send the reader to the app's
+  Documentation tab for a link they can click — that page resolves the base URL from the container
+  configuration, which this document cannot.
 - The header carries the date it was last updated, so a reader can tell how stale it is. Update the
   stamp when you make a substantive revision. Deliberately a date and not a commit: the audience is
   people using OxO, and "how old is this?" is a question a date answers and a SHA does not.

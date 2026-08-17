@@ -150,13 +150,18 @@ swagger-annotations dependency stays confined to this module; springdoc infers i
 reflection. `OpenApiDocsTest` boots the full context and asserts the spec is generated and lists
 every endpoint.
 
-On the dev cluster the backend runs with `SERVER_SERVLET_CONTEXT_PATH=/oxo2`, so the same
-endpoints are `/oxo2/swagger-ui.html` and `/oxo2/v3/api-docs`. Both sit outside the `/oxo2/api`
-prefix that used to be the ingress' only backend route, so `k8chart-dev/oxo2/templates/ingress.yaml`
-carries three explicit rules for them — `pathType: Prefix` matches whole path segments, so
-`/oxo2/swagger-ui` does not cover `/oxo2/swagger-ui.html`, and springdoc redirects the latter to the
-UI bundle under the former, which then fetches the spec from `/oxo2/v3/api-docs`. Adding an endpoint
-outside those prefixes means adding another ingress rule.
+Deployed, the backend runs with `SERVER_SERVLET_CONTEXT_PATH` set to the chart's `basePath`, so
+these endpoints move with it: `<basePath>/swagger-ui.html` and `<basePath>/v3/api-docs`. Both sit
+outside the `<basePath>/api` prefix that used to be the ingress' only backend route, so
+`k8chart-dev/oxo2/templates/ingress.yaml` carries three explicit rules for them — `pathType: Prefix`
+matches whole path segments, so `.../swagger-ui` does not cover `.../swagger-ui.html`, and springdoc
+redirects the latter to the UI bundle under the former, which then fetches the spec from
+`.../v3/api-docs`. Adding an endpoint outside those prefixes means adding another ingress rule.
+
+`basePath` is the single source for the ingress routes, the frontend's `OXO_PUBLIC_URL` and this
+context path, because the three have to agree: the Documentation page builds its Swagger links from
+`OXO_PUBLIC_URL` (`pages/documentation/index.tsx` via `app/api.ts`), and the ingress has to route
+those same paths here. A deployment on a different path is that one key.
 
 Packaging gotchas handled in `pom.xml`, all of the same shape — the fat jar is built by
 maven-shade-plugin, which keeps only ONE copy of any duplicated resource, so every Spring metadata

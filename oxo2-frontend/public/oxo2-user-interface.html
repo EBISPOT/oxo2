@@ -222,7 +222,7 @@
     <h1>Using the OxO mapping service</h1>
     <p>Finding, reading, and trusting mappings between ontology terms.</p>
     <div class="stamp">
-      A guide to the OxO2 web interface &middot; last updated 2026-07-28.
+      A guide to the OxO2 web interface &middot; last updated 2026-08-17.
       If a control described here is missing from your instance, the instance is older than this document.
     </div>
   </div>
@@ -235,6 +235,29 @@
   You give it a term, it gives you the mappings other people have already published, tells you
   who published each one and how confident they were, and gets out of the way.
 </p>
+
+<h2 id="api">OxO API Documentation</h2>
+
+<p>
+  Everything this interface does, it does over a read-only REST API — and that API describes itself.
+  Relative to whatever URL your OxO instance is served from:
+</p>
+
+<ul>
+  <li><code>/swagger-ui.html</code> — Swagger UI: every endpoint with its parameters and responses,
+      and a form to call it against that instance.</li>
+  <li><code>/v3/api-docs</code> — the same thing as a raw OpenAPI 3 specification, for generating a
+      client.</li>
+</ul>
+
+<p>
+  The <strong>Documentation</strong> tab of the instance you are using links to both directly, so
+  follow them from there rather than typing a URL — every deployment sits at its own address, and
+  the tab always points at its own. There is no write API: mappings are loaded by an offline
+  pipeline, so every endpoint only reads.
+</p>
+
+<p>The rest of this document is about the web interface.</p>
 
 <nav class="toc">
   <h2>Contents</h2>

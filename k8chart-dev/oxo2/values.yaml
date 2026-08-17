@@ -1,5 +1,15 @@
 imageTag: "dev"
 
+# The path the whole stack is served under, without a trailing slash. Single source for the ingress
+# routes, the frontend's OXO_PUBLIC_URL and the backend's servlet context path, which have to agree:
+# the frontend builds its API and Swagger links from OXO_PUBLIC_URL, and the ingress has to route
+# those same paths to the backend. A deployment on a different path changes this one key.
+#
+# It must be a sub-path. Serving at the root would need the ingress prefix and OXO_PUBLIC_URL to
+# diverge — an empty prefix but a literal "/" for the frontend, which treats "" as "no public URL
+# set" and falls back to OXO_BACKEND_URL. k8chart-local is root-served and does not use this key.
+basePath: /oxo2
+
 solr:
   replicaCount: 1
   service:

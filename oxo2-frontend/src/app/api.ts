@@ -1,7 +1,9 @@
 // Resolve a backend path to a full request URL.
 // In production (OXO_PUBLIC_URL set) use relative URLs through the Caddy proxy; in local development
 // (OXO_BACKEND_URL set) hit the backend directly; otherwise fall back to a relative URL.
-function resolveUrl(path: string): string {
+// Exported because the same resolution is needed for backend URLs the user follows rather than
+// fetches — the Swagger UI and OpenAPI spec links on the Documentation page.
+export function resolveUrl(path: string): string {
     const backendUrl = import.meta.env.OXO_BACKEND_URL;
     const publicUrl = import.meta.env.OXO_PUBLIC_URL || '';
     if (publicUrl && publicUrl !== '/') {

@@ -1,50 +1,50 @@
+{{- $basePath := include "oxo2.basePath" . -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}-ingress
   annotations:
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      rewrite ^/oxo2$ /oxo2/ permanent;
+      rewrite ^{{ $basePath }}$ {{ $basePath }}/ permanent;
 spec:
   rules:
     - http:
         paths:
-          - path: /oxo2/api
+          - path: {{ $basePath }}/api
             pathType: Prefix
             backend:
               service:
                 name: {{ .Release.Name }}-backend
                 port:
                   number: 8080
-          # Swagger UI and the OpenAPI 3 spec. The backend runs with
-          # SERVER_SERVLET_CONTEXT_PATH=/oxo2, so springdoc serves these under /oxo2 but outside
-          # /oxo2/api, and the catch-all /oxo2 rule below would otherwise route them to the
-          # frontend. Three rules are needed, not one: pathType Prefix matches whole path
-          # segments, so /oxo2/swagger-ui does not cover /oxo2/swagger-ui.html, and springdoc
-          # redirects swagger-ui.html to the UI bundle under /oxo2/swagger-ui/ which then fetches
-          # the spec from /oxo2/v3/api-docs.
-          - path: /oxo2/swagger-ui.html
+          # Swagger UI and the OpenAPI 3 spec. The backend runs with its servlet context path set to
+          # the base path, so springdoc serves these under it but outside /api, and the catch-all
+          # rule below would otherwise route them to the frontend. Three rules are needed, not one:
+          # pathType Prefix matches whole path segments, so .../swagger-ui does not cover
+          # .../swagger-ui.html, and springdoc redirects swagger-ui.html to the UI bundle under
+          # .../swagger-ui/ which then fetches the spec from .../v3/api-docs.
+          - path: {{ $basePath }}/swagger-ui.html
             pathType: Prefix
             backend:
               service:
                 name: {{ .Release.Name }}-backend
                 port:
                   number: 8080
-          - path: /oxo2/swagger-ui
+          - path: {{ $basePath }}/swagger-ui
             pathType: Prefix
             backend:
               service:
                 name: {{ .Release.Name }}-backend
                 port:
                   number: 8080
-          - path: /oxo2/v3/api-docs
+          - path: {{ $basePath }}/v3/api-docs
             pathType: Prefix
             backend:
               service:
                 name: {{ .Release.Name }}-backend
                 port:
                   number: 8080
-          - path: /oxo2
+          - path: {{ $basePath }}
             pathType: Prefix
             backend:
               service:
