@@ -5,6 +5,7 @@ import tools.jackson.databind.node.ObjectNode;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.beans.DocumentObjectBinder;
 import org.apache.solr.client.solrj.impl.HttpJdkSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -81,6 +82,15 @@ public class OxOSolrClient {
      */
     public QueryResponse queryEntities(SolrParams params) throws Exception {
         return solrEntityClient.query(params);
+    }
+
+    /**
+     * As {@link #queryEntities(SolrParams)}, but with an explicit HTTP method. A batched
+     * {@code {!terms f=id}} label lookup carries hundreds of CURIEs in the query itself, which
+     * overruns the URI cap on a GET, so {@link EntityLabelResolver} sends those as POST.
+     */
+    public QueryResponse queryEntities(SolrParams params, SolrRequest.METHOD method) throws Exception {
+        return solrEntityClient.query(params, method);
     }
 
     /**

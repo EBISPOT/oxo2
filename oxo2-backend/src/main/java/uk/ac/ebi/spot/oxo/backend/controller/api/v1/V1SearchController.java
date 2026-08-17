@@ -22,6 +22,7 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.v1.dto.HalSearchResponse;
 import uk.ac.ebi.spot.oxo.backend.controller.api.v1.dto.V1MappingResponse;
 import uk.ac.ebi.spot.oxo.backend.controller.api.v1.dto.V1MappingSearchRequest;
 import uk.ac.ebi.spot.oxo.backend.controller.api.v1.dto.V1SearchResult;
+import uk.ac.ebi.spot.oxo.backend.service.EntityLabelResolver;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import uk.ac.ebi.spot.oxo.backend.service.export.ExportFormat;
 import uk.ac.ebi.spot.oxo.backend.service.export.MappingTsvExporter;
@@ -34,9 +35,13 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -74,6 +79,54 @@ public class V1SearchController {
 
     @Autowired
     private OxOSolrClient solrClient;
+
+    @Autowired
+    private EntityLabelResolver entityLabelResolver;
+
+    /**
+     * Per-request label memo. One v1 request fans out into a {@link #searchOne} call per input term
+     * (every input term, on the export path, which ignores paging), and the same object CURIE recurs
+     * across them — so each CURIE is resolved against {@code oxo2-entities} at most once per request.
+     * A CURIE that resolved to no label is remembered as such, so a miss is not re-queried.
+     */
+    private final class LabelMemo {
+
+        private final Map<String, String> labels = new HashMap<>();
+        private final Set<String> alreadyResolved = new HashSet<>();
+
+        void prefetch(Collection<String> curies) {
+            List<String> pending = curies.stream()
+                    .filter(curie -> curie != null && !curie.isBlank())
+                    .filter(curie -> !alreadyResolved.contains(curie))
+                    .distinct()
+                    .toList();
+            if (pending.isEmpty()) {
+                return;
+            }
+            labels.putAll(entityLabelResolver.resolveLabels(pending));
+            alreadyResolved.addAll(pending);
+        }
+
+        /**
+         * The v1 label for a term: the entity collection's harvested label, else the mapping row's own,
+         * else the CURIE itself. That last rung is the v1 contract — OxO v1 never emits a null label,
+         * falling back to the CURIE (606 of 2834 mapped terms on a sample of the live corpus), so a
+         * client reading {@code label} unconditionally keeps working.
+         */
+        String labelFor(String curie, String rowLabel) {
+            if (curie == null || curie.isBlank()) {
+                return null;
+            }
+            String entityLabel = labels.get(curie);
+            if (entityLabel != null && !entityLabel.isBlank()) {
+                return entityLabel;
+            }
+            if (rowLabel != null && !rowLabel.isBlank()) {
+                return rowLabel;
+            }
+            return curie;
+        }
+    }
 
     @Operation(summary = "OxO v1 batch search (form-encoded)",
             description = "Wire-compatible v1 /api/search; accepts a form-encoded MappingSearchRequest.")
@@ -130,8 +183,9 @@ public class V1SearchController {
         int from = Math.min(page * size, ids.size());
         int to = Math.min(from + size, ids.size());
         List<V1SearchResult> results = new ArrayList<>();
+        LabelMemo labelMemo = new LabelMemo();
         for (String id : ids.subList(from, to)) {
-            results.add(searchOne(id, inputSource, mappingTarget, distance));
+            results.add(searchOne(id, inputSource, mappingTarget, distance, labelMemo));
         }
         int totalPages = (int) Math.ceil((double) ids.size() / size);
         HalSearchResponse.PageMetadata pageMetadata =
@@ -143,9 +197,14 @@ public class V1SearchController {
         return ResponseEntity.ok(hal);
     }
 
-    /** Map one input term to its v1 SearchResult; an input with no mapping returns an empty result. */
+    /**
+     * Map one input term to its v1 SearchResult; an input with no mapping returns an empty result.
+     * An unmapped input keeps v1's null {@code curie}/{@code label} — the CURIE fallback in
+     * {@link LabelMemo#labelFor} applies only to terms that actually have mappings, so an input OxO2
+     * knows nothing about is still reported as such rather than being echoed back at the caller.
+     */
     private V1SearchResult searchOne(String id, String inputSource, List<String> mappingTarget,
-            int distance) {
+            int distance, LabelMemo labelMemo) {
         try {
             SolrQuery query = SolrQueryBuilder.buildV1TermQuery(
                     id, mappingTarget, distance, MAX_MAPPINGS_PER_TERM);
@@ -157,11 +216,18 @@ public class V1SearchController {
             }
             Mapping first = hits.get(0);
             String curie = first.subjectId().map(EntityReference::getDataAsString).orElse(id);
-            String label = first.subjectLabel().orElse(null);
+            // One entity lookup for this term and every term it maps to, before any label is read.
+            List<String> curiesToLabel = new ArrayList<>();
+            curiesToLabel.add(curie);
+            for (Mapping hit : hits) {
+                hit.objectId().map(EntityReference::getDataAsString).ifPresent(curiesToLabel::add);
+            }
+            labelMemo.prefetch(curiesToLabel);
+            String label = labelMemo.labelFor(curie, first.subjectLabel().orElse(null));
             String querySource = (inputSource != null && !inputSource.isBlank())
                     ? inputSource : first.subjectPrefix();
             List<V1MappingResponse> mappingResponses = hits.stream()
-                    .map(V1SearchController::toMappingResponse).toList();
+                    .map(hit -> toMappingResponse(hit, labelMemo)).toList();
             return new V1SearchResult(id, querySource, curie, label, mappingResponses);
         } catch (Exception e) {
             logger.error("v1 search failed for id {}", id, e);
@@ -169,9 +235,9 @@ public class V1SearchController {
         }
     }
 
-    private static V1MappingResponse toMappingResponse(Mapping mapping) {
+    private static V1MappingResponse toMappingResponse(Mapping mapping, LabelMemo labelMemo) {
         String curie = mapping.objectId().map(EntityReference::getDataAsString).orElse(null);
-        String label = mapping.objectLabel().orElse(null);
+        String label = labelMemo.labelFor(curie, mapping.objectLabel().orElse(null));
         String targetPrefix = mapping.objectPrefix();
         // v1's source-datasource provenance has no exact OxO2 equivalent; approximate with the source
         // (subject) ontology prefix (ADR-0024).
@@ -193,8 +259,9 @@ public class V1SearchController {
         Writer writer = response.getWriter();
         writer.write(String.join(String.valueOf(separator), V1_CSV_COLUMNS));
         writer.write("\n");
+        LabelMemo labelMemo = new LabelMemo();
         for (String id : ids) {
-            V1SearchResult result = searchOne(id, inputSource, mappingTarget, distance);
+            V1SearchResult result = searchOne(id, inputSource, mappingTarget, distance, labelMemo);
             for (V1MappingResponse mappingResponse : result.mappingResponseList()) {
                 String[] values = {
                         result.queryId(), nullToEmpty(result.label()),
