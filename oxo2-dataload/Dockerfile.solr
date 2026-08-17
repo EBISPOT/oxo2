@@ -6,7 +6,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt/solr \
-    && curl -L https://archive.apache.org/dist/solr/solr/10.0.0/solr-10.0.0-slim.tgz | tar --strip-components=1 -C /opt/solr -xzf -
+    && curl -fL https://archive.apache.org/dist/solr/solr/10.0.0/solr-10.0.0-slim.tgz | tar --strip-components=1 -C /opt/solr -xzf -
 
 RUN addgroup --system --gid 8389 solr \
     && adduser --system --uid 8389 --ingroup solr --home /var/solr solr \
