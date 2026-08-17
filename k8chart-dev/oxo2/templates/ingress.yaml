@@ -16,6 +16,34 @@ spec:
                 name: {{ .Release.Name }}-backend
                 port:
                   number: 8080
+          # Swagger UI and the OpenAPI 3 spec. The backend runs with
+          # SERVER_SERVLET_CONTEXT_PATH=/oxo2, so springdoc serves these under /oxo2 but outside
+          # /oxo2/api, and the catch-all /oxo2 rule below would otherwise route them to the
+          # frontend. Three rules are needed, not one: pathType Prefix matches whole path
+          # segments, so /oxo2/swagger-ui does not cover /oxo2/swagger-ui.html, and springdoc
+          # redirects swagger-ui.html to the UI bundle under /oxo2/swagger-ui/ which then fetches
+          # the spec from /oxo2/v3/api-docs.
+          - path: /oxo2/swagger-ui.html
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-backend
+                port:
+                  number: 8080
+          - path: /oxo2/swagger-ui
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-backend
+                port:
+                  number: 8080
+          - path: /oxo2/v3/api-docs
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-backend
+                port:
+                  number: 8080
           - path: /oxo2
             pathType: Prefix
             backend:
