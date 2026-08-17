@@ -29,11 +29,18 @@ fi
 
 # --virtual-time-budget lets layout and font shaping settle before the snapshot;
 # without it the first run occasionally captures a half-laid-out page.
+#
+# --generate-pdf-document-outline builds the PDF's bookmark tree from the heading structure, so
+# readers can jump between sections from the viewer's sidebar instead of scrolling back to the
+# in-page Contents. The in-page Contents stays: it is what the HTML version and any viewer without
+# a sidebar rely on. Chrome ignores the flag if it does not recognise it, so an older browser still
+# renders a correct PDF — just without bookmarks. Verify with: mutool show <pdf> outline
 "${browser}" \
     --headless \
     --disable-gpu \
     --no-sandbox \
     --no-pdf-header-footer \
+    --generate-pdf-document-outline \
     --virtual-time-budget=10000 \
     --print-to-pdf="${output_pdf}" \
     "file://${source_html}"

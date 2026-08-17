@@ -10,7 +10,10 @@ for someone using OxO, not for someone changing it.
   SSSOM specification and the issue tracker), so it reads fine offline.
 - **`oxo2-user-interface.pdf`** — a build artifact, regenerated from the HTML.
 - **`build.sh`** — regenerates the PDF *and* refreshes the copies the app serves. Needs Chrome or
-  Chromium on `PATH`.
+  Chromium on `PATH`. It passes `--generate-pdf-document-outline`, so the PDF carries a bookmark
+  tree and readers can jump between sections from the viewer's sidebar rather than scrolling back
+  to the in-page Contents. Check it with `mutool show oxo2-user-interface.pdf outline`; an empty
+  result means the browser did not honour the flag, and the PDF is still correct, just unbookmarked.
 
 ```bash
 ./docs/user/ui/build.sh

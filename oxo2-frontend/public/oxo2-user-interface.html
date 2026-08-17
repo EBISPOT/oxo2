@@ -199,7 +199,11 @@
     nav.toc { break-after: page; }
     /* Don't force a page per section — several are half a page and the paper adds up.
        Keep a heading welded to the text under it, and start the two longest sections clean. */
-    h2 { break-after: avoid; margin-top: 1.6rem; }
+    /* padding-top is load-bearing, not cruft. Chrome's PDF outline generator emits a heading's
+       text twice when the heading is the first box on a page — the margin above it collapses
+       away, and the bookmark reads "2The screensThe screens". 1px of padding does not collapse,
+       so the heading is never flush with the page top and each bookmark is emitted once. */
+    h2 { break-after: avoid; margin-top: 1.6rem; padding-top: 1px; }
     h2#s4, h2#s5 { break-before: page; margin-top: 0; }
     h3 { break-after: avoid; }
     p, li { orphans: 2; widows: 2; }
@@ -276,7 +280,7 @@
 </nav>
 
 
-<h2 id="s1"><span class="num">1</span>What OxO does</h2>
+<h2 id="s1"><span class="num">1</span>&#8202;What OxO does</h2>
 
 <p>
   A <strong>mapping</strong> is a statement that one term means (roughly) the same thing as another. OxO
@@ -332,7 +336,7 @@
 </p>
 
 
-<h2 id="s2"><span class="num">2</span>The screens</h2>
+<h2 id="s2"><span class="num">2</span>&#8202;The screens</h2>
 
 <div class="table-scroll">
 <table>
@@ -382,7 +386,7 @@
 </p>
 
 
-<h2 id="s3"><span class="num">3</span>Searching</h2>
+<h2 id="s3"><span class="num">3</span>&#8202;Searching</h2>
 
 <p>
   There is one search form and it asks one question, with everything else folded behind
@@ -616,7 +620,7 @@
 </p>
 
 
-<h2 id="s4"><span class="num">4</span>Reading the results</h2>
+<h2 id="s4"><span class="num">4</span>&#8202;Reading the results</h2>
 
 <h3>4.1 The toolbar</h3>
 
@@ -764,7 +768,7 @@
 </p>
 
 
-<h2 id="s5"><span class="num">5</span>How results are ordered</h2>
+<h2 id="s5"><span class="num">5</span>&#8202;How results are ordered</h2>
 
 <p>
   Unless you sort a column yourself, results come back in OxO’s own relevance order. There is no
@@ -879,7 +883,7 @@
 </div>
 
 
-<h2 id="s6"><span class="num">6</span>The mapping detail page</h2>
+<h2 id="s6"><span class="num">6</span>&#8202;The mapping detail page</h2>
 
 <p>
   Reached from the eye icon on any result row — or from its own URL: <code>/mapping/&lt;id&gt;</code> is a
@@ -906,7 +910,7 @@
 </p>
 
 
-<h2 id="s7"><span class="num">7</span>Explaining an inferred mapping</h2>
+<h2 id="s7"><span class="num">7</span>&#8202;Explaining an inferred mapping</h2>
 
 <p>
   When OxO derived a mapping rather than reading it somewhere, it can show you exactly how. The detail
@@ -1000,7 +1004,7 @@
 </p>
 
 
-<h2 id="s8"><span class="num">8</span>Mapping set pages</h2>
+<h2 id="s8"><span class="num">8</span>&#8202;Mapping set pages</h2>
 
 <p>
   Every mapping set name in the interface is a link to that set’s own page. It opens with the set’s
@@ -1024,7 +1028,7 @@
 </p>
 
 
-<h2 id="s9"><span class="num">9</span>Glossary</h2>
+<h2 id="s9"><span class="num">9</span>&#8202;Glossary</h2>
 
 <dl class="glossary">
   <dt>Asserted mapping</dt>
@@ -1062,7 +1066,7 @@
 </dl>
 
 
-<h2 id="s10"><span class="num">10</span>Things that will surprise you</h2>
+<h2 id="s10"><span class="num">10</span>&#8202;Things that will surprise you</h2>
 
 <ol>
   <li>
