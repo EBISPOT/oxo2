@@ -2,6 +2,42 @@ import { useQuery } from "@tanstack/react-query";
 import { CircleStackIcon } from "@heroicons/react/24/solid";
 import { JSX } from "react";
 import { fetchDataContent } from "./DataContentSlice";
+import { HelpTerm } from "../../components/common/HelpTerm";
+
+/**
+ * Plain-language explanations of the six counts, shown on hover (or keyboard focus) of the row label.
+ *
+ * This is the landing page — the reader is the visitor who knows least about OxO2, and six bare
+ * numbers labelled with domain terms tell them nothing. "Mappings" and "mapping sets" are not
+ * self-evident, and neither is why one number is split the way it is.
+ *
+ * Unlike COLUMN_HELP, there is no exported topic union: these keys are read by direct property access
+ * from the call sites a few lines below, where a typo is already a compile error. The union exists in
+ * ColumnHelp only because its key arrives as a prop from other files.
+ */
+const DATA_CONTENT_HELP = {
+    mappings:
+        "Every mapping OxO2 currently holds. Mappings are counted individually, so the same " +
+        "subject–predicate–object statement published by two different sets counts twice. Asserted " +
+        "and inferred below split this total exactly.",
+    asserted:
+        "Mappings taken directly from a loaded mapping set, exactly as its publisher stated them. " +
+        "OxO2 has added nothing to them.",
+    inferred:
+        "Mappings OxO2 worked out for itself, by chaining mappings from different sets together — if " +
+        "one set maps A to B and another maps B to C, OxO2 infers A to C. They appear in no input file.",
+    mappingSets:
+        "The published collections of mappings loaded into OxO2. Each set is one file or release from " +
+        "one provider. OxO2's own inferences are not a loaded set and are not counted here.",
+    curated:
+        "Mapping sets put together by people, and published as mappings in their own right — a " +
+        "Mapping Commons registry or a curated SSSOM file. A set OxO2 has not been told about is " +
+        "counted here rather than as an ontology, which claims less.",
+    ontologies:
+        "Mapping sets taken from an ontology's own cross-references, one per ontology loaded. This is " +
+        "smaller than the ontology list in the search filters, which counts every ontology named " +
+        "anywhere in a mapping, including ones OxO2 holds no set for.",
+} as const;
 
 /**
  * The landing page's Data Content block (ADR-0043): the release date of the loaded corpus, the mapping
@@ -56,13 +92,37 @@ export function DataContent(): JSX.Element | null {
                         </div>
                     )}
 
-                    <Total label="Mappings" value={data.mappings.total} />
-                    <SubCount label="Asserted" value={data.mappings.asserted} />
-                    <SubCount label="Inferred" value={data.mappings.inferred} />
+                    <Total
+                        label="Mappings"
+                        help={DATA_CONTENT_HELP.mappings}
+                        value={data.mappings.total}
+                    />
+                    <SubCount
+                        label="Asserted"
+                        help={DATA_CONTENT_HELP.asserted}
+                        value={data.mappings.asserted}
+                    />
+                    <SubCount
+                        label="Inferred"
+                        help={DATA_CONTENT_HELP.inferred}
+                        value={data.mappings.inferred}
+                    />
 
-                    <Total label="Mapping sets" value={data.mappingSets.total} />
-                    <SubCount label="Curated sets" value={data.mappingSets.curated} />
-                    <SubCount label="Ontologies" value={data.mappingSets.ontologies} />
+                    <Total
+                        label="Mapping sets"
+                        help={DATA_CONTENT_HELP.mappingSets}
+                        value={data.mappingSets.total}
+                    />
+                    <SubCount
+                        label="Curated sets"
+                        help={DATA_CONTENT_HELP.curated}
+                        value={data.mappingSets.curated}
+                    />
+                    <SubCount
+                        label="Ontologies"
+                        help={DATA_CONTENT_HELP.ontologies}
+                        value={data.mappingSets.ontologies}
+                    />
                 </dl>
             )}
         </div>
@@ -70,20 +130,40 @@ export function DataContent(): JSX.Element | null {
 }
 
 /** A headline count: the total its sub-counts break down. */
-function Total({ label, value }: { label: string; value: number }): JSX.Element {
+function Total({
+    label,
+    help,
+    value,
+}: {
+    label: string;
+    help: string;
+    value: number;
+}): JSX.Element {
     return (
         <div className="flex justify-between gap-2 pt-3 pb-1">
-            <dt className="font-semibold">{label}</dt>
+            <dt className="font-semibold">
+                <HelpTerm help={help} label={label} />
+            </dt>
             <dd className="font-semibold text-right">{formatCount(value)}</dd>
         </div>
     );
 }
 
 /** One part of the total above it, indented to show it is a breakdown rather than a separate figure. */
-function SubCount({ label, value }: { label: string; value: number }): JSX.Element {
+function SubCount({
+    label,
+    help,
+    value,
+}: {
+    label: string;
+    help: string;
+    value: number;
+}): JSX.Element {
     return (
         <div className="flex justify-between gap-2 py-0.5 pl-4 text-sm text-neutral-default">
-            <dt>{label}</dt>
+            <dt>
+                <HelpTerm help={help} label={label} />
+            </dt>
             <dd className="text-right">{formatCount(value)}</dd>
         </div>
     );

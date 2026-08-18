@@ -1,5 +1,5 @@
-import {Tooltip} from "@mui/material";
 import type {ReactNode} from "react";
+import {HelpTerm} from "../common/HelpTerm";
 
 // Plain-language explanations of what each mapping column means, shown as a tooltip when the user
 // hovers (or keyboard-focuses) the column header. One map serves every table that shows mappings —
@@ -40,25 +40,9 @@ const COLUMN_HELP = {
 
 export type ColumnHelpTopic = keyof typeof COLUMN_HELP;
 
-// A column header whose text carries its explanation. The dotted underline is the affordance —
-// it marks the label as a term with a definition behind it, and unlike an extra info icon it
-// costs no horizontal space, which the 110px Distance and 130px Type columns have none of.
-// tabIndex makes the tooltip reachable by keyboard, not just by hover.
+// A column header whose text carries its explanation, rendered as the shared defined-term treatment
+// (HelpTerm) so it looks and behaves the same as every other explained term in the UI. The dotted
+// underline costs no horizontal space, which the 110px Distance and 130px Type columns have none of.
 export function ColumnHeaderLabel({topic, label}: {topic: ColumnHelpTopic; label: ReactNode}) {
-    const help = COLUMN_HELP[topic];
-    return (
-        <Tooltip
-            title={help}
-            arrow
-            enterDelay={300}
-            slotProps={{tooltip: {sx: {fontSize: "0.8125rem", fontWeight: 400, maxWidth: 320}}}}
-        >
-            <span
-                tabIndex={0}
-                className="cursor-help underline decoration-dotted decoration-gray-400 underline-offset-4"
-            >
-                {label}
-            </span>
-        </Tooltip>
-    );
+    return <HelpTerm help={COLUMN_HELP[topic]} label={label} />;
 }
