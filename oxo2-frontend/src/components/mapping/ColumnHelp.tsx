@@ -1,14 +1,18 @@
 import {Tooltip} from "@mui/material";
 import type {ReactNode} from "react";
 
-// Plain-language explanations of what each results-table column means, shown as a tooltip when the
-// user hovers (or keyboard-focuses) the column header. Keyed by the column `id` used in
-// NormalResultsTable, so the main header row and the same-SPO detail panel — which repeats five of
-// these headers — cannot drift apart.
+// Plain-language explanations of what each mapping column means, shown as a tooltip when the user
+// hovers (or keyboard-focuses) the column header. One map serves every table that shows mappings —
+// the results table, its same-SPO detail panel, and the asserted-premises table — so headers naming
+// the same thing cannot drift apart.
+//
+// Keyed by what the column *means*, not by any table's column `id`: the same concept is `subject_label`
+// in NormalResultsTable and `subject` in InferredMappings. ColumnHelpTopic keeps that honest — a key
+// that is not in this map is a compile error, not a header that silently loses its tooltip.
 //
 // These are for a reader who does not know SSSOM. Keep them to a sentence or two of the domain
 // meaning; the mechanics of a column's filter belong on its filter popover, not here.
-const COLUMN_HELP: Record<string, string> = {
+const COLUMN_HELP = {
     subject_label:
         "The entity being mapped: the subject of the subject–predicate–object triple.",
     predicate_label:
@@ -32,17 +36,16 @@ const COLUMN_HELP: Record<string, string> = {
         "The source that provided the mapping, as recorded by the mapping set.",
     mapping_set:
         "The mapping set the mapping was published in. Follow the link for the set's own details.",
-};
+} as const;
+
+export type ColumnHelpTopic = keyof typeof COLUMN_HELP;
 
 // A column header whose text carries its explanation. The dotted underline is the affordance —
 // it marks the label as a term with a definition behind it, and unlike an extra info icon it
 // costs no horizontal space, which the 110px Distance and 130px Type columns have none of.
 // tabIndex makes the tooltip reachable by keyboard, not just by hover.
-export function ColumnHeaderLabel({column, label}: {column: string; label: ReactNode}) {
-    const help = COLUMN_HELP[column];
-    if (!help) {
-        return <span>{label}</span>;
-    }
+export function ColumnHeaderLabel({topic, label}: {topic: ColumnHelpTopic; label: ReactNode}) {
+    const help = COLUMN_HELP[topic];
     return (
         <Tooltip
             title={help}

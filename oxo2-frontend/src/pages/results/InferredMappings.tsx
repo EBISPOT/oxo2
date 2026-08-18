@@ -14,6 +14,7 @@ import {mappingJustificationShortName, mappingJustificationLabel} from "../../mo
 import {EntityRefCell} from "../../components/mapping/EntityRefCell";
 import {ColumnFilterPopover, type FilterFieldDef} from "../../components/mapping/ColumnFilterPopover";
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
+import {ColumnHeaderLabel} from "../../components/mapping/ColumnHelp";
 import {SortingContext} from "../../components/mapping/sortingContext";
 import type {ValueSuggestion} from "./SuggestSlice";
 
@@ -239,7 +240,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 size: 320,
                 Header: () => (
                     <span className="flex items-center gap-1">
-                        <span>Subject</span>
+                        <ColumnHeaderLabel topic="subject_label" label="Subject" />
                         <ColumnFilterPopover title="Subject" fields={subjectFilterFields} onChange={handleFilterChange} />
                         <ColumnSortPopover title="Subject" fields={SUBJECT_SORT_FIELDS} onApply={handleSortChange} />
                     </span>
@@ -260,7 +261,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 size: 240,
                 Header: () => (
                     <span className="flex items-center gap-1">
-                        <span>Predicate</span>
+                        <ColumnHeaderLabel topic="predicate_label" label="Predicate" />
                         <ColumnFilterPopover title="Predicate" fields={predicateFilterFields} onChange={handleFilterChange} />
                         <ColumnSortPopover title="Predicate" fields={PREDICATE_SORT_FIELDS} onApply={handleSortChange} />
                     </span>
@@ -279,7 +280,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 size: 320,
                 Header: () => (
                     <span className="flex items-center gap-1">
-                        <span>Object</span>
+                        <ColumnHeaderLabel topic="object_label" label="Object" />
                         <ColumnFilterPopover title="Object" fields={objectFilterFields} onChange={handleFilterChange} />
                         <ColumnSortPopover title="Object" fields={OBJECT_SORT_FIELDS} onApply={handleSortChange} />
                     </span>
@@ -300,6 +301,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 accessorFn: (row) => row.mappingId,
                 header: "Mapping confidence",
                 size: 150,
+                Header: () => <ColumnHeaderLabel topic="confidence" label="Mapping confidence" />,
                 Cell: ({ row }) => {
                     const mappingId = row.original.mappingId;
                     const confidence = mappingId ? confidenceById?.get(mappingId) : undefined;
@@ -316,7 +318,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 size: 200,
                 Header: () => (
                     <span className="flex items-center gap-1">
-                        <span>Mapping justification</span>
+                        <ColumnHeaderLabel topic="mapping_justification" label="Mapping justification" />
                         <ColumnFilterPopover
                             title="Mapping justification"
                             fields={justificationFilterFields}
@@ -338,6 +340,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 accessorFn: (row) => row.mappingSetId,
                 header: "Mapping set",
                 size: 260,
+                Header: () => <ColumnHeaderLabel topic="mapping_set" label="Mapping set" />,
                 Cell: ({ row }) => {
                     const setId = row.original.mappingSetId;
                     if (!setId) {
