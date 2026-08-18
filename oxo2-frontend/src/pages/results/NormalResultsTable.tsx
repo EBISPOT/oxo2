@@ -24,6 +24,7 @@ import {EyeIcon, ArrowDownTrayIcon} from "@heroicons/react/24/solid";
 import {EntityRefCell, CopyButton} from "../../components/mapping/EntityRefCell";
 import {ColumnFilterPopover, type FilterFieldDef} from "../../components/mapping/ColumnFilterPopover";
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
+import {ColumnHeaderLabel} from "../../components/mapping/ColumnHelp";
 import {SortingContext} from "../../components/mapping/sortingContext";
 
 // Per-column filter inputs. Each `field` is a canonical Solr field name resolved by
@@ -288,7 +289,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 size: 320,
                 Header: () => (
                     <span className="flex items-center gap-1">
-                        <span>Subject</span>
+                        <ColumnHeaderLabel column="subject_label" label="Subject" />
                         <ColumnFilterPopover title="Subject" fields={SUBJECT_FILTER_FIELDS} onChange={handleFilterChange} initialValues={initialFieldFilters} />
                         <ColumnSortPopover title="Subject" fields={SUBJECT_SORT_FIELDS} onApply={setSorting} />
                     </span>
@@ -309,7 +310,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 size: 240,
                 Header: () => (
                     <span className="flex items-center gap-1">
-                        <span>Predicate</span>
+                        <ColumnHeaderLabel column="predicate_label" label="Predicate" />
                         <ColumnFilterPopover title="Predicate" fields={PREDICATE_FILTER_FIELDS} onChange={handleFilterChange} onPick={handleFilterPick} suggestContext={suggestContext} initialValues={initialFieldFilters} />
                         <ColumnSortPopover title="Predicate" fields={PREDICATE_SORT_FIELDS} onApply={setSorting} />
                     </span>
@@ -330,7 +331,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 size: 320,
                 Header: () => (
                     <span className="flex items-center gap-1">
-                        <span>Object</span>
+                        <ColumnHeaderLabel column="object_label" label="Object" />
                         <ColumnFilterPopover title="Object" fields={OBJECT_FILTER_FIELDS} onChange={handleFilterChange} onPick={handleFilterPick} suggestContext={suggestContext} initialValues={initialFieldFilters} />
                         <ColumnSortPopover title="Object" fields={OBJECT_SORT_FIELDS} onApply={setSorting} />
                     </span>
@@ -352,7 +353,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 size: 200,
                 Header: () => (
                     <span className="flex items-center gap-1">
-                        <span>Mapping justification</span>
+                        <ColumnHeaderLabel column="mapping_justification" label="Mapping justification" />
                         <ColumnFilterPopover
                             title="Mapping justification"
                             fields={JUSTIFICATION_FILTER_FIELDS}
@@ -380,6 +381,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 header: "Mapping confidence",
                 enableSorting: false,
                 size: 150,
+                Header: () => <ColumnHeaderLabel column="confidence" label="Mapping confidence" />,
                 Cell: ({ row }) => {
                     const shared = sharedValue(row.original, (member) =>
                         typeof member.confidence === "number" ? String(member.confidence) : "");
@@ -410,7 +412,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 size: 110,
                 Header: () => (
                     <span className="flex items-center gap-1">
-                        <span>Distance</span>
+                        <ColumnHeaderLabel column="distance" label="Distance" />
                         <ColumnFilterPopover
                             title="Distance"
                             fields={[{ field: "distance", label: "Max distance", suggest: "range", rangeMax: 5 }]}
@@ -440,7 +442,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 size: 130,
                 Header: () => (
                     <span className="flex items-center gap-1">
-                        <span>Type</span>
+                        <ColumnHeaderLabel column="inference_type" label="Type" />
                         <InferenceTypeFilterPopover value={inferenceTypes} onChange={setInferenceTypes} />
                     </span>
                 ),
@@ -468,7 +470,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 size: 170,
                 Header: () => (
                     <span className="flex items-center gap-1">
-                        <span>Mapping provider</span>
+                        <ColumnHeaderLabel column="mapping_provider" label="Mapping provider" />
                         <ColumnFilterPopover
                             title="Mapping provider"
                             fields={[{ field: "mapping_provider", label: "Mapping provider" }]}
@@ -491,6 +493,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 header: "Mapping set",
                 enableSorting: false,
                 size: 220,
+                Header: () => <ColumnHeaderLabel column="mapping_set" label="Mapping set" />,
                 Cell: ({ row }: { row: { original: Mapping } }) => {
                     // One row can span several sets; show "Multiple sets" rather than a misleading single set.
                     if (sharedValue(row.original, (member) => member.mappingSetId) === null) {
@@ -558,11 +561,21 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-gray-500">
-                                <th className="py-1 pr-4 font-medium">Type</th>
-                                <th className="py-1 pr-4 font-medium">Mapping justification</th>
-                                <th className="py-1 pr-4 font-medium">Mapping confidence</th>
-                                <th className="py-1 pr-4 font-medium">Distance</th>
-                                <th className="py-1 pr-4 font-medium">Mapping set</th>
+                                <th className="py-1 pr-4 font-medium">
+                                    <ColumnHeaderLabel column="inference_type" label="Type" />
+                                </th>
+                                <th className="py-1 pr-4 font-medium">
+                                    <ColumnHeaderLabel column="mapping_justification" label="Mapping justification" />
+                                </th>
+                                <th className="py-1 pr-4 font-medium">
+                                    <ColumnHeaderLabel column="confidence" label="Mapping confidence" />
+                                </th>
+                                <th className="py-1 pr-4 font-medium">
+                                    <ColumnHeaderLabel column="distance" label="Distance" />
+                                </th>
+                                <th className="py-1 pr-4 font-medium">
+                                    <ColumnHeaderLabel column="mapping_set" label="Mapping set" />
+                                </th>
                                 <th className="py-1" />
                             </tr>
                         </thead>
