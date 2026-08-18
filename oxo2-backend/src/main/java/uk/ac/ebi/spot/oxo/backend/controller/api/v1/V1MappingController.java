@@ -25,12 +25,14 @@ import uk.ac.ebi.spot.oxo.backend.controller.api.v1.dto.V1Mapping;
 import uk.ac.ebi.spot.oxo.backend.controller.api.v1.dto.V1PagedMappings;
 import uk.ac.ebi.spot.oxo.backend.controller.api.v1.dto.V1Scope;
 import uk.ac.ebi.spot.oxo.backend.controller.api.v1.dto.V1Term;
+import uk.ac.ebi.spot.oxo.backend.service.EntityLabelResolver;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import uk.ac.ebi.spot.oxo.backend.service.helper.SolrQueryBuilder;
 import uk.ac.ebi.spot.oxo.model.sssom.EntityReference;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.Uri;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -58,6 +60,9 @@ public class V1MappingController {
 
     @Autowired
     private OxOSolrClient solrClient;
+
+    @Autowired
+    private EntityLabelResolver entityLabelResolver;
 
     @Operation(summary = "OxO v1 list mappings",
             description = "Wire-compatible v1 GET /api/mappings. Returns a HAL "
@@ -100,8 +105,11 @@ public class V1MappingController {
             MappingSearchResponse response = solrClient.query(solrQuery, pageable);
             MappingSearchResponse.MappingPage mappingPage = response.getMappings();
 
+            // One entity lookup for the whole page, before any label is read off a row.
+            Map<String, String> labels =
+                    entityLabelResolver.resolveLabels(termCuries(mappingPage.content()));
             List<V1Mapping> mappings = mappingPage.content().stream()
-                    .map(V1MappingController::toV1Mapping).toList();
+                    .map(mapping -> toV1Mapping(mapping, labels)).toList();
             HalSearchResponse.PageMetadata pageMetadata = new HalSearchResponse.PageMetadata(
                     size, mappingPage.totalElements(), mappingPage.totalPages(), page);
             V1PagedMappings body = new V1PagedMappings(
@@ -115,18 +123,41 @@ public class V1MappingController {
         }
     }
 
-    /** Adapt one SSSOM {@link Mapping} to the v1 {@link V1Mapping} wire shape (ADR-0025). */
-    static V1Mapping toV1Mapping(Mapping mapping) {
+    /** Every subject/object CURIE on a page, for one batched entity-label lookup. */
+    private static List<String> termCuries(List<Mapping> mappings) {
+        List<String> curies = new ArrayList<>();
+        for (Mapping mapping : mappings) {
+            mapping.subjectId().map(EntityReference::getDataAsString).ifPresent(curies::add);
+            mapping.objectId().map(EntityReference::getDataAsString).ifPresent(curies::add);
+        }
+        return curies;
+    }
+
+    /**
+     * Adapt one SSSOM {@link Mapping} to the v1 {@link V1Mapping} wire shape (ADR-0025).
+     *
+     * <p>Labels come from {@code resolvedLabels} first, not from the mapping row: a label in
+     * {@code oxo2-mappings} is a property of the ROW, so the same term was reported as
+     * "Cardiomyopathies" on rows from {@code mesh.ols.sssom.tsv} and {@code null} on rows from
+     * {@code mondo.sssom.tsv} — within a single response. See {@link EntityLabelResolver#labelFor}.
+     */
+    static V1Mapping toV1Mapping(Mapping mapping, Map<String, String> resolvedLabels) {
         String subjectPrefix = mapping.subjectPrefix();
         String objectPrefix = mapping.objectPrefix();
+        String subjectCurie = mapping.subjectId().map(EntityReference::getDataAsString).orElse(null);
+        String objectCurie = mapping.objectId().map(EntityReference::getDataAsString).orElse(null);
         V1Term fromTerm = new V1Term(
-                mapping.subjectId().map(EntityReference::getDataAsString).orElse(null),
+                subjectCurie,
                 null, mapping.subjectIRI().map(Uri::getDataAsString).orElse(null),
-                mapping.subjectLabel().orElse(null), V1Datasource.ofPrefix(subjectPrefix));
+                EntityLabelResolver.labelFor(
+                        subjectCurie, mapping.subjectLabel().orElse(null), resolvedLabels),
+                V1Datasource.ofPrefix(subjectPrefix));
         V1Term toTerm = new V1Term(
-                mapping.objectId().map(EntityReference::getDataAsString).orElse(null),
+                objectCurie,
                 null, mapping.objectIRI().map(Uri::getDataAsString).orElse(null),
-                mapping.objectLabel().orElse(null), V1Datasource.ofPrefix(objectPrefix));
+                EntityLabelResolver.labelFor(
+                        objectCurie, mapping.objectLabel().orElse(null), resolvedLabels),
+                V1Datasource.ofPrefix(objectPrefix));
         String scope = V1Scope.of(mapping.predicateIRI(), mapping.predicateId()).name();
         String date = mapping.mappingDate().map(mappingDate -> mappingDate.getDataAsString()).orElse(null);
         // The mapping-level datasource identifies the SSSOM mapping set this mapping came from (v1 left

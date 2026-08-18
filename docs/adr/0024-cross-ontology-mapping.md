@@ -88,6 +88,16 @@ predicates (`broad`/`narrowMatch`) are never silently misrepresented.
 - `sourcePrefixes` is populated from `mapping_set_source` / `mapping_provider`; CSV/TSV export keeps the
   v1 columns (`curie_id, label, mapped_curie, mapped_label, mapping_source_prefix,
   mapping_target_prefix, distance`).
+- **`label` is resolved from `oxo2-entities`, not from the mapping row.** A label in `oxo2-mappings` is
+  a property of the ROW: whole mapping sets (the SeMRA-assembled ones, `atlas`, `ukbiobank`,
+  `mondo.sssom.tsv`) ship without labels, so reading the label off whichever row ranked first returned
+  `null` for terms OxO2 can label from another row. Precedence is **entity label → row label → the
+  CURIE itself**; v1 never emits a null label, falling back to the CURIE, so a client reading `label`
+  unconditionally keeps working. The entity lookup deliberately does **not** apply ADR-0045's
+  `obsolete:false` default — v1 has no notion of obsolescence and labels obsolete terms
+  (`obsolete_carcinoma`), so inheriting the typeahead's default would leave exactly those unlabelled.
+  An input with no mappings at all keeps v1's `null` `curie`/`label`; the CURIE fallback applies only
+  to terms that were actually found.
 
 ### Frontend — extend the normal Search tab
 

@@ -57,6 +57,44 @@ class OpenApiDocsTest {
                 .andExpect(jsonPath("$.paths['/api/sssom/stats'].get").exists());
     }
 
+    /**
+     * The v1 GET must expose the request bean's fields as individual query parameters. Without
+     * {@code @ParameterObject} springdoc emits a single opaque parameter named "request", and Swagger
+     * UI's "Try it out" then builds {@code ?request=<json>} — a call Spring cannot bind, so the
+     * documented example silently returns nothing.
+     */
+    @Test
+    void v1SearchGetExposesItsRequestFieldsAsIndividualQueryParameters() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/search'].get").exists())
+                .andExpect(jsonPath(
+                        "$.paths['/api/search'].get.parameters[?(@.name=='ids')]").exists())
+                .andExpect(jsonPath(
+                        "$.paths['/api/search'].get.parameters[?(@.name=='mappingTarget')]").exists())
+                .andExpect(jsonPath(
+                        "$.paths['/api/search'].get.parameters[?(@.name=='distance')]").exists())
+                .andExpect(jsonPath(
+                        "$.paths['/api/search'].get.parameters[?(@.name=='request')]").doesNotExist());
+    }
+
+    /**
+     * Two @PostMapping methods share this path, and OpenAPI allows one operation per path+method. The
+     * form variant is hidden so the merge cannot drag its @ModelAttribute in as a bogus "request"
+     * query parameter; the form media type rides on the JSON operation's request body instead.
+     */
+    @Test
+    void v1SearchPostDocumentsBothMediaTypesAndNoStrayQueryObject() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(
+                        "$.paths['/api/search'].post.requestBody.content['application/json']").exists())
+                .andExpect(jsonPath("$.paths['/api/search'].post.requestBody"
+                        + ".content['application/x-www-form-urlencoded']").exists())
+                .andExpect(jsonPath(
+                        "$.paths['/api/search'].post.parameters[?(@.name=='request')]").doesNotExist());
+    }
+
     @Test
     void searchOperationDocumentsDefaultPredicateHiding() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))

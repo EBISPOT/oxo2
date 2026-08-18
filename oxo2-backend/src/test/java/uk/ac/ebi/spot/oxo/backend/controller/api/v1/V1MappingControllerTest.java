@@ -1,10 +1,17 @@
 package uk.ac.ebi.spot.oxo.backend.controller.api.v1;
 
+import org.apache.solr.client.solrj.SolrRequest;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.SolrParams;
+import org.apache.solr.common.util.NamedList;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -12,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.ac.ebi.spot.oxo.backend.controller.api.dto.response.MappingSearchResponse;
+import uk.ac.ebi.spot.oxo.backend.service.EntityLabelResolver;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 
@@ -23,7 +31,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+// The real EntityLabelResolver is imported rather than mocked, so the shared v1 label precedence is
+// exercised here exactly as it is on /api/search.
 @WebMvcTest(V1MappingController.class)
+@Import(EntityLabelResolver.class)
 class V1MappingControllerTest {
 
     @Autowired
@@ -31,6 +42,32 @@ class V1MappingControllerTest {
 
     @MockitoBean
     private OxOSolrClient solrClient;
+
+    private static QueryResponse entityResponse(SolrDocument... docs) {
+        SolrDocumentList list = new SolrDocumentList();
+        for (SolrDocument document : docs) {
+            list.add(document);
+        }
+        list.setNumFound(docs.length);
+        NamedList<Object> root = new NamedList<>();
+        root.add("response", list);
+        QueryResponse queryResponse = new QueryResponse();
+        queryResponse.setResponse(root);
+        return queryResponse;
+    }
+
+    private static SolrDocument entity(String id, String label) {
+        SolrDocument document = new SolrDocument();
+        document.setField("id", id);
+        document.setField("label", label);
+        return document;
+    }
+
+    @BeforeEach
+    void entityLookupReturnsNothingByDefault() throws Exception {
+        when(solrClient.queryEntities(any(SolrParams.class), any(SolrRequest.METHOD.class)))
+                .thenReturn(entityResponse());
+    }
 
     private static Mapping mapping(String subjectId, String subjectLabel, String predicateId,
                                    String objectId, String objectLabel) {
@@ -122,5 +159,71 @@ class V1MappingControllerTest {
     void rejectsPageSizeAboveMax() throws Exception {
         mockMvc.perform(get("/api/mappings").param("size", "1001"))
                 .andExpect(status().isBadRequest());
+    }
+
+    /**
+     * The observed defect: MESH:D009202 came back as "Cardiomyopathies" on rows from
+     * mesh.ols.sssom.tsv and null on rows from mondo.sssom.tsv — in one response. The label is a
+     * property of the term, so both rows must report it.
+     */
+    @Test
+    void unlabelledRowsTakeTheirLabelFromTheEntityCollection() throws Exception {
+        when(solrClient.query(any(SolrParams.class), any(Pageable.class)))
+                .thenReturn(pageOf(List.of(
+                        mapping("MONDO:0004994", null, "skos:exactMatch", "MESH:D009202", null),
+                        mapping("HP:0001638", "Cardiomyopathy", "skos:exactMatch",
+                                "MESH:D009202", "Cardiomyopathies"))));
+        when(solrClient.queryEntities(any(SolrParams.class), any(SolrRequest.METHOD.class)))
+                .thenReturn(entityResponse(
+                        entity("MESH:D009202", "Cardiomyopathies"),
+                        entity("MONDO:0004994", "cardiomyopathy")));
+
+        mockMvc.perform(get("/api/mappings").param("fromId", "MESH:D009202"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.mappings[0].fromTerm.label").value("cardiomyopathy"))
+                // Was null before: this row carries no object_label of its own.
+                .andExpect(jsonPath("$._embedded.mappings[0].toTerm.label").value("Cardiomyopathies"))
+                .andExpect(jsonPath("$._embedded.mappings[1].toTerm.label").value("Cardiomyopathies"));
+    }
+
+    @Test
+    void aTermWithNoLabelAnywhereFallsBackToItsCurie() throws Exception {
+        when(solrClient.query(any(SolrParams.class), any(Pageable.class)))
+                .thenReturn(pageOf(List.of(
+                        mapping("MONDO:0004994", null, "skos:exactMatch", "ICD10:J45.0", null))));
+
+        // v1 never emits a null label, so the CURIE stands in.
+        mockMvc.perform(get("/api/mappings"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.mappings[0].fromTerm.label").value("MONDO:0004994"))
+                .andExpect(jsonPath("$._embedded.mappings[0].toTerm.label").value("ICD10:J45.0"));
+    }
+
+    /**
+     * A literal subject (e.g. clinvar-xrefs.sssom.tsv's "Idiopathic cardiomyopathy") has a label but
+     * no CURIE. Its row label must survive, and with no CURIE there is nothing to fall back TO — the
+     * adapter must not invent an identifier the term does not have.
+     */
+    @Test
+    void aLiteralSubjectKeepsItsRowLabelAndGainsNoFabricatedCurie() throws Exception {
+        Mapping literalSubject = Mapping.builder()
+                .mappingSetId("https://example.org/clinvar-xrefs.sssom.tsv")
+                .subjectLabel("Idiopathic cardiomyopathy")
+                .predicateId("oboInOwl:hasDbXref")
+                .objectId("MESH:D009202")
+                .inferenceType("ASSERTED")
+                .build();
+        when(solrClient.query(any(SolrParams.class), any(Pageable.class)))
+                .thenReturn(pageOf(List.of(literalSubject)));
+        when(solrClient.queryEntities(any(SolrParams.class), any(SolrRequest.METHOD.class)))
+                .thenReturn(entityResponse(entity("MESH:D009202", "Cardiomyopathies")));
+
+        mockMvc.perform(get("/api/mappings"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.mappings[0].fromTerm.curie")
+                        .value(Matchers.nullValue()))
+                .andExpect(jsonPath("$._embedded.mappings[0].fromTerm.label")
+                        .value("Idiopathic cardiomyopathy"))
+                .andExpect(jsonPath("$._embedded.mappings[0].toTerm.label").value("Cardiomyopathies"));
     }
 }
