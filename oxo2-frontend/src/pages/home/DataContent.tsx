@@ -19,15 +19,11 @@ const DATA_CONTENT_HELP = {
     mappings:
         "Every mapping held; counted individually, so the same mapping appearing in 2 different sets " +
         "counts twice. Asserted + inferred mappings split it exactly.",
-    asserted:
-        "Mappings taken directly from a loaded mapping set, exactly as its publisher stated them. " +
-        "OxO2 has added nothing to them.",
+    asserted: "Mappings taken directly from a loaded mapping set.",
     inferred:
         "Derived by OxO2 chaining sets — A→B plus B→C gives A→C. Appears in no input file.",
-    mappingSets:
-        "The published collections of mappings loaded into OxO2. Each set is one file or release from " +
-        "one provider. OxO2's own inferences are not a loaded set and are not counted here.",
-    curated: "Assembled by people and published as mappings in their own right.",
+    mappingSets: "The published collections of mappings loaded into OxO2.",
+    curated: "Sets of mappings not extracted from ontologies.",
     ontologies: "Sets from an ontology's own cross-references, one per ontology.",
 } as const;
 
