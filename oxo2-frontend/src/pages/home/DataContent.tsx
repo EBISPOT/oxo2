@@ -23,7 +23,12 @@ const DATA_CONTENT_HELP = {
     inferred:
         "Derived by OxO2 chaining sets — A→B plus B→C gives A→C. Appears in no input file.",
     mappingSets: "The published collections of mappings loaded into OxO2.",
-    curated: "Sets of mappings not extracted from ontologies.",
+    // Deliberately says nothing about how the mappings were derived: the category is who *asserts*
+    // them (ADR-0027 tier 1), while hand-curation is a separate tier 3 that the results table's
+    // Mapping justification column already shows. A curated set may be entirely lexical matches.
+    curated:
+        "Mapping sets published in their own right — by a project or registry, rather than by an " +
+        "ontology.",
     ontologies: "Sets from an ontology's own cross-references, one per ontology.",
 } as const;
 
