@@ -1,12 +1,17 @@
 package uk.ac.ebi.spot.oxo.backend.controller.api.v1;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -128,8 +133,15 @@ public class V1SearchController {
         }
     }
 
-    @Operation(summary = "OxO v1 batch search (form-encoded)",
-            description = "Wire-compatible v1 /api/search; accepts a form-encoded MappingSearchRequest.")
+    /**
+     * Hidden from the OpenAPI document, not from callers. OpenAPI allows one operation per path+method,
+     * so this and {@link #searchJson} would otherwise be merged into a single {@code post} entry that
+     * inherits this method's {@code @ModelAttribute} as a bogus {@code request} QUERY parameter and
+     * loses the real form fields — leaving the documented form body with only page/size/format. The
+     * form media type is instead advertised on {@link #searchJson}'s request body, where it renders
+     * correctly; posting a form to this path keeps working exactly as before.
+     */
+    @Operation(hidden = true)
     @PostMapping(consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             produces = {MediaType.APPLICATION_JSON_VALUE, "text/csv", "text/tab-separated-values"})
     public ResponseEntity<?> searchForm(@ModelAttribute V1MappingSearchRequest request,
@@ -139,9 +151,25 @@ public class V1SearchController {
         return doSearch(request, page, size, format, response);
     }
 
-    @Operation(summary = "OxO v1 batch search (JSON)",
-            description = "Wire-compatible v1 /api/search; accepts a JSON MappingSearchRequest and "
-                    + "returns the v1 HAL SearchResult envelope. ?format=csv|tsv streams the v1 columns.")
+    @Operation(summary = "OxO v1 batch search (JSON or form-encoded)",
+            description = "Wire-compatible v1 /api/search; accepts a MappingSearchRequest as JSON or "
+                    + "as a URL-encoded form, and returns the v1 HAL SearchResult envelope. "
+                    + "?format=csv|tsv streams the v1 columns instead.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = {
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = V1MappingSearchRequest.class)),
+                            @Content(mediaType = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+                                    schema = @Schema(implementation = V1MappingSearchRequest.class))
+                    }))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "v1 HAL SearchResult envelope",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = HalSearchResponse.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "More than 1000 ids, or invalid paging", content = @Content)
+    })
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = {MediaType.APPLICATION_JSON_VALUE, "text/csv", "text/tab-separated-values"})
     public ResponseEntity<?> searchJson(@RequestBody V1MappingSearchRequest request,
@@ -152,9 +180,21 @@ public class V1SearchController {
     }
 
     @Operation(summary = "OxO v1 batch search (GET)",
-            description = "Wire-compatible v1 /api/search via query parameters.")
+            description = "Wire-compatible v1 /api/search via query parameters. Repeat a parameter or "
+                    + "comma-separate its values for the list-valued ones — "
+                    + "`?ids=MESH:D002277,OMIM:314580&mappingTarget=EFO&mappingTarget=HP`.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "v1 HAL SearchResult envelope",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = HalSearchResponse.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "More than 1000 ids, or invalid paging", content = @Content)
+    })
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, "text/csv", "text/tab-separated-values"})
-    public ResponseEntity<?> searchGet(@ModelAttribute V1MappingSearchRequest request,
+    // @ParameterObject expands the request bean into one query parameter per field. Without it
+    // springdoc emits a single opaque parameter named "request", and Swagger UI's "Try it out" then
+    // builds ?request=<json>, which Spring cannot bind — so the documented call returns nothing.
+    public ResponseEntity<?> searchGet(@ParameterObject @ModelAttribute V1MappingSearchRequest request,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String format,
             HttpServletResponse response) throws IOException {
