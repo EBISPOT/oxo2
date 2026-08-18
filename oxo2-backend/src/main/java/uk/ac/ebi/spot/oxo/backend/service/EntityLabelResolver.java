@@ -70,6 +70,35 @@ public class EntityLabelResolver {
     }
 
     /**
+     * The v1 label for one term: the entity collection's harvested label, else the mapping row's own,
+     * else the CURIE itself. That last rung is the v1 contract — OxO v1 never emits a null label,
+     * falling back to the CURIE (606 of 2834 mapped terms on a sample of the live corpus), so a client
+     * reading {@code label} unconditionally keeps working.
+     *
+     * <p>Shared by both v1 adapters on purpose: {@code /api/search} and {@code /api/mappings} describe
+     * the same terms, and a term that is "Cardiomyopathies" on one endpoint must not be {@code null} on
+     * the other.
+     *
+     * <p>A literal subject carries a label but no CURIE at all (a text mapping such as
+     * {@code clinvar-xrefs.sssom.tsv}'s "Idiopathic cardiomyopathy"). Its row label is kept, and with
+     * no CURIE to stand in there is nothing to fall back TO — so that case alone may still be null,
+     * rather than inventing an identifier the term does not have.
+     */
+    public static String labelFor(String curie, String rowLabel, Map<String, String> resolvedLabels) {
+        boolean hasCurie = curie != null && !curie.isBlank();
+        if (hasCurie) {
+            String entityLabel = resolvedLabels.get(curie);
+            if (entityLabel != null && !entityLabel.isBlank()) {
+                return entityLabel;
+            }
+        }
+        if (rowLabel != null && !rowLabel.isBlank()) {
+            return rowLabel;
+        }
+        return hasCurie ? curie : null;
+    }
+
+    /**
      * The {@code {!terms}} parser splits its value on commas, so a CURIE containing one cannot be
      * looked up this way — and would silently match the wrong terms if passed through. Such CURIEs are
      * dropped here and fall back to the caller's default; they are not expected in practice, since a

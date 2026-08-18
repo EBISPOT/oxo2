@@ -112,24 +112,9 @@ public class V1SearchController {
             alreadyResolved.addAll(pending);
         }
 
-        /**
-         * The v1 label for a term: the entity collection's harvested label, else the mapping row's own,
-         * else the CURIE itself. That last rung is the v1 contract — OxO v1 never emits a null label,
-         * falling back to the CURIE (606 of 2834 mapped terms on a sample of the live corpus), so a
-         * client reading {@code label} unconditionally keeps working.
-         */
+        /** The shared v1 precedence rule — see {@link EntityLabelResolver#labelFor}. */
         String labelFor(String curie, String rowLabel) {
-            if (curie == null || curie.isBlank()) {
-                return null;
-            }
-            String entityLabel = labels.get(curie);
-            if (entityLabel != null && !entityLabel.isBlank()) {
-                return entityLabel;
-            }
-            if (rowLabel != null && !rowLabel.isBlank()) {
-                return rowLabel;
-            }
-            return curie;
+            return EntityLabelResolver.labelFor(curie, rowLabel, labels);
         }
     }
 
