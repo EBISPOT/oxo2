@@ -38,7 +38,9 @@ Content** block in the grid's fourth column ([ADR-0043](../docs/adr/0043-data-co
 dataload) and renders nothing at all on error — a summary beside a working search box is decoration, so it
 fails silent rather than showing an error panel. The release-date row is omitted when `releaseDate` is null,
 which is the pre-reindex state rather than a fault. Sub-counts are indented under their total because they
-are a breakdown: asserted + inferred is the mapping total, curated + ontologies the mapping-set total.
+are a breakdown: asserted + inferred is the mapping total, curated + ontologies the mapping-set total. All
+six count labels are explained terms (see § Explained terms); the release-date row is not, its label being
+self-explanatory.
 - **`/search/:curies`** → `MappingResults` — paged mapping results for the given CURIE(s). Page, sort, and filters are
 carried in the query string (see § State management), so a result view is shareable and restores on Back from a detail page.
 - **`/map`** → cross-ontology results for `?from=…&to=…` (source→target prefixes), bookmarkable; the
@@ -65,7 +67,20 @@ via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/
 - `src/model/` — TypeScript shapes mirroring backend DTOs (`Mapping`, `MappingSet`, `Search`).
 - `src/pages/` — top-level views (`home/`, `results/`, `documentation/`, `about/`).
 - `src/components/` — reusable widgets: `search/Search.tsx`, `paging/Paging.tsx`, 
-`mapping/MappingItem.tsx`, `mapping/InferredMappingGraph.tsx`, `common/Header.tsx`, `common/Footer.tsx`, `infoCard/`, `error/`.
+`mapping/MappingItem.tsx`, `mapping/InferredMappingGraph.tsx`, `common/Header.tsx`, `common/Footer.tsx`,
+`common/HelpTerm.tsx`, `infoCard/`, `error/`.
+
+### Explained terms
+
+A UI label that names a domain concept the reader may not know carries its own definition, revealed on
+hover or keyboard focus. `common/HelpTerm.tsx` is the presentation — dotted underline, `tabIndex`, MUI
+`Tooltip` — and nothing else; it costs no horizontal space, which the narrow results-table columns have
+none of. The wording lives beside what it explains, not in one central glossary: `COLUMN_HELP` in
+`mapping/ColumnHelp.tsx` for mapping-table columns (keyed by what a column *means*, since the same concept
+is `subject_label` in one table and `subject` in another, and typed as `ColumnHelpTopic` so a wrong key is a
+compile error rather than a silently missing tooltip), `DATA_CONTENT_HELP` in `home/DataContent.tsx` for the
+landing-page counts. A plain `Tooltip` that only names a control — an icon button's "Download all results" —
+is not an explained term and uses MUI directly.
 
 ### Inference type (ADR-0011)
 

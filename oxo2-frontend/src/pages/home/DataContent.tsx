@@ -2,6 +2,35 @@ import { useQuery } from "@tanstack/react-query";
 import { CircleStackIcon } from "@heroicons/react/24/solid";
 import { JSX } from "react";
 import { fetchDataContent } from "./DataContentSlice";
+import { HelpTerm } from "../../components/common/HelpTerm";
+
+/**
+ * Plain-language explanations of the six counts, shown on hover (or keyboard focus) of the row label.
+ *
+ * This is the landing page — the reader is the visitor who knows least about OxO2, and six bare
+ * numbers labelled with domain terms tell them nothing. "Mappings" and "mapping sets" are not
+ * self-evident, and neither is why one number is split the way it is.
+ *
+ * Unlike COLUMN_HELP, there is no exported topic union: these keys are read by direct property access
+ * from the call sites a few lines below, where a typo is already a compile error. The union exists in
+ * ColumnHelp only because its key arrives as a prop from other files.
+ */
+const DATA_CONTENT_HELP = {
+    mappings:
+        "Every mapping held; counted individually, so the same mapping appearing in 2 different sets " +
+        "counts twice. Asserted + inferred mappings split it exactly.",
+    asserted: "Mappings taken directly from a loaded mapping set.",
+    inferred:
+        "Derived by OxO2 chaining sets — A→B plus B→C gives A→C. Appears in no input file.",
+    mappingSets: "The published collections of mappings loaded into OxO2.",
+    // Deliberately says nothing about how the mappings were derived: the category is who *asserts*
+    // them (ADR-0027 tier 1), while hand-curation is a separate tier 3 that the results table's
+    // Mapping justification column already shows. A curated set may be entirely lexical matches.
+    curated:
+        "Mapping sets published in their own right — by a project or registry, rather than by an " +
+        "ontology.",
+    ontologies: "Sets from an ontology's own cross-references, one per ontology.",
+} as const;
 
 /**
  * The landing page's Data Content block (ADR-0043): the release date of the loaded corpus, the mapping
@@ -56,13 +85,37 @@ export function DataContent(): JSX.Element | null {
                         </div>
                     )}
 
-                    <Total label="Mappings" value={data.mappings.total} />
-                    <SubCount label="Asserted" value={data.mappings.asserted} />
-                    <SubCount label="Inferred" value={data.mappings.inferred} />
+                    <Total
+                        label="Mappings"
+                        help={DATA_CONTENT_HELP.mappings}
+                        value={data.mappings.total}
+                    />
+                    <SubCount
+                        label="Asserted"
+                        help={DATA_CONTENT_HELP.asserted}
+                        value={data.mappings.asserted}
+                    />
+                    <SubCount
+                        label="Inferred"
+                        help={DATA_CONTENT_HELP.inferred}
+                        value={data.mappings.inferred}
+                    />
 
-                    <Total label="Mapping sets" value={data.mappingSets.total} />
-                    <SubCount label="Curated sets" value={data.mappingSets.curated} />
-                    <SubCount label="Ontologies" value={data.mappingSets.ontologies} />
+                    <Total
+                        label="Mapping sets"
+                        help={DATA_CONTENT_HELP.mappingSets}
+                        value={data.mappingSets.total}
+                    />
+                    <SubCount
+                        label="Curated sets"
+                        help={DATA_CONTENT_HELP.curated}
+                        value={data.mappingSets.curated}
+                    />
+                    <SubCount
+                        label="Ontologies"
+                        help={DATA_CONTENT_HELP.ontologies}
+                        value={data.mappingSets.ontologies}
+                    />
                 </dl>
             )}
         </div>
@@ -70,20 +123,40 @@ export function DataContent(): JSX.Element | null {
 }
 
 /** A headline count: the total its sub-counts break down. */
-function Total({ label, value }: { label: string; value: number }): JSX.Element {
+function Total({
+    label,
+    help,
+    value,
+}: {
+    label: string;
+    help: string;
+    value: number;
+}): JSX.Element {
     return (
         <div className="flex justify-between gap-2 pt-3 pb-1">
-            <dt className="font-semibold">{label}</dt>
+            <dt className="font-semibold">
+                <HelpTerm help={help} label={label} />
+            </dt>
             <dd className="font-semibold text-right">{formatCount(value)}</dd>
         </div>
     );
 }
 
 /** One part of the total above it, indented to show it is a breakdown rather than a separate figure. */
-function SubCount({ label, value }: { label: string; value: number }): JSX.Element {
+function SubCount({
+    label,
+    help,
+    value,
+}: {
+    label: string;
+    help: string;
+    value: number;
+}): JSX.Element {
     return (
         <div className="flex justify-between gap-2 py-0.5 pl-4 text-sm text-neutral-default">
-            <dt>{label}</dt>
+            <dt>
+                <HelpTerm help={help} label={label} />
+            </dt>
             <dd className="text-right">{formatCount(value)}</dd>
         </div>
     );
