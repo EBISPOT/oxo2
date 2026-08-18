@@ -17,26 +17,18 @@ import { HelpTerm } from "../../components/common/HelpTerm";
  */
 const DATA_CONTENT_HELP = {
     mappings:
-        "Every mapping OxO2 currently holds. Mappings are counted individually, so the same " +
-        "subject–predicate–object statement published by two different sets counts twice. Asserted " +
-        "and inferred below split this total exactly.",
+        "Every mapping held; counted individually, so the same mapping appearing in 2 different sets " +
+        "counts twice. Asserted + inferred mappings split it exactly.",
     asserted:
         "Mappings taken directly from a loaded mapping set, exactly as its publisher stated them. " +
         "OxO2 has added nothing to them.",
     inferred:
-        "Mappings OxO2 worked out for itself, by chaining mappings from different sets together — if " +
-        "one set maps A to B and another maps B to C, OxO2 infers A to C. They appear in no input file.",
+        "Derived by OxO2 chaining sets — A→B plus B→C gives A→C. Appears in no input file.",
     mappingSets:
         "The published collections of mappings loaded into OxO2. Each set is one file or release from " +
         "one provider. OxO2's own inferences are not a loaded set and are not counted here.",
-    curated:
-        "Mapping sets put together by people, and published as mappings in their own right — a " +
-        "Mapping Commons registry or a curated SSSOM file. A set OxO2 has not been told about is " +
-        "counted here rather than as an ontology, which claims less.",
-    ontologies:
-        "Mapping sets taken from an ontology's own cross-references, one per ontology loaded. This is " +
-        "smaller than the ontology list in the search filters, which counts every ontology named " +
-        "anywhere in a mapping, including ones OxO2 holds no set for.",
+    curated: "Assembled by people and published as mappings in their own right.",
+    ontologies: "Sets from an ontology's own cross-references, one per ontology.",
 } as const;
 
 /**
