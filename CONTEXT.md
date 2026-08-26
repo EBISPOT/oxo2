@@ -426,6 +426,22 @@ Spring Data `Page` is never serialized directly. See
 [ADR-0046](docs/adr/0046-spring-boot-4-and-jackson-3.md). Affects `oxo2-shared` (`SSSOMDataType`
 serializer, builder deserialization), all four `oxo2-dataload` modules, `oxo2-backend`
 (`MappingSearchResponse`, shade transformers) and `oxo2-integration-tests`.
+- **A prefix's namespace is read back from the index, not looked up** — `/api/v2/ontologies` entries
+carry a `namespace` (the IRI stem the prefix's CURIEs expand against) and, where an ontology backs the
+prefix, its `uri`. The namespace is derived per entity by `mappings2entities` as the entity's `iri`
+minus its CURIE's local part, stored on `oxo2-entities`, and resolved per prefix by one
+`prefix,namespace` pivot facet (most-used stem wins). It is deliberately NOT taken from the Bioregistry
+snapshot (33.5% of prefixes, and contradicts 8 of the 16 ADR-0029 stems) nor from the sets' declared
+`curie_map`s (92%, but carries producer corruption and loses to ADR-0029 at load time) — only the
+indexed IRI records what the dataload actually minted, so only it cannot disagree with what the API
+serves. `uri` is `ontology_iri`, promoted out of the OLS `other` bag exactly as ADR-0038 promotes
+`prefix`/`ontology`, and joined onto the listing **case-insensitively** (an exact join drops
+`NCBITaxon`, `HGNC`, `mesh` — 15.0% vs 33.9% of occurrences). Both are omitted when unknown, which
+makes `uri`'s presence the marker that an entry is a real ontology rather than a bare prefix. Needs a
+reindex. See [ADR-0047](docs/adr/0047-ontology-namespace-and-iri-on-the-ontologies-api.md). Affects
+`oxo2-shared` (`EntityConstants.namespaceOf`, `MappingSet.ontologyIri`), `oxo2-dataload`
+(`Mappings2Entities`, both schemas) and `oxo2-backend` (`OntologySummary`, `OntologyController`,
+`MappingSetSummary`).
 
 ## End-to-end flow
 

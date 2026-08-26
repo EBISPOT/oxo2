@@ -219,6 +219,14 @@ buckets gives the count the search will actually produce, which is what the sugg
 on. If you add a weak predicate, add it to `WeakPredicate` in `oxo2-shared` — the fold and
 `SolrQueryBuilder`'s exclusion both derive from it, and they must not drift apart.
 
+Each document also carries a `namespace`: the entity's IRI minus its CURIE's local part, e.g.
+`http://purl.obolibrary.org/obo/MONDO_` ([ADR-0047](../docs/adr/0047-ontology-namespace-and-iri-on-the-ontologies-api.md)).
+It is written only when derivable, and is what lets `/api/v2/ontologies` answer "what does this prefix
+expand to" from a single pivot facet. The value is deliberately the stem the dataload **actually
+minted** — after the ADR-0029 override, the set's own `curie_map`, and the Bioregistry fallback have
+all had their say — so it can never contradict the IRIs served elsewhere. Do not reimplement the
+derivation: `EntityConstants.namespaceOf` is the one place it lives.
+
 Each bucket also has a **live twin** — `{subject,object}_count_<bucket>_live` — counting only sightings
 whose mapping has NO obsolete endpoint ([ADR-0045](../docs/adr/0045-live-buckets-for-obsolete-endpoints.md)).
 This is why the fold reads `subject_obsolete` **and** `object_obsolete` on every mapping and not just the

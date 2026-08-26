@@ -141,6 +141,20 @@ public record MappingSet (
         return otherValue(ONTOLOGY);
     }
 
+    /**
+     * The IRI of the ontology this set was extracted from (e.g.
+     * {@code http://purl.obolibrary.org/obo/sepio.owl}), promoted out of the OLS {@code other} block.
+     * See {@link #prefix()} for the serialize-only, derived-from-{@code other} contract.
+     *
+     * <p>This is the ontology's own identity, NOT the namespace its terms expand against — for SEPIO
+     * those are {@code .../sepio.owl} and {@code .../SEPIO_} respectively, and neither is derivable
+     * from the other. The namespace is answered from the entity index instead (ADR-0047).
+     */
+    @JsonProperty(ONTOLOGY_IRI)
+    public Optional<String> ontologyIri() {
+        return otherValue(ONTOLOGY_IRI);
+    }
+
     /** Look up a single key in the {@code other} extension bag; empty when there is no block or key. */
     private Optional<String> otherValue(String key) {
         return other

@@ -10,6 +10,7 @@
 #   local_id: efo.ols.obsolete
 #   prefix: EFO
 #   ontology: Experimental Factor Ontology (EFO)
+#   ontology_iri: http://www.ebi.ac.uk/efo/efo.owl
 # local_name: efo.ols.obsolete.sssom.tsv
 # curie_map:
 #   semapv: https://w3id.org/semapv/vocab/

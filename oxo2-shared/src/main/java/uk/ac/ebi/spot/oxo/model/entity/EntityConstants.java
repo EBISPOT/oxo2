@@ -31,6 +31,43 @@ public final class EntityConstants {
     /** The entity's CURIE prefix, e.g. {@code MONDO} (ADR-0024). */
     public static final String PREFIX = "prefix";
 
+    /**
+     * The IRI stem this entity's CURIE expanded against, e.g.
+     * {@code http://purl.obolibrary.org/obo/MONDO_} for {@code MONDO:0005148} (ADR-0047). Derived from
+     * {@link #ID} and {@link #IRI} by {@link #namespaceOf}, so it records what the dataload ACTUALLY
+     * minted rather than what any registry says a prefix ought to expand to.
+     *
+     * <p>That distinction is the reason the field exists. The prefix was resolved at load time by
+     * {@code EntityReference.toUri} — an ADR-0029 override first, then the source set's own
+     * {@code curie_map}, then the Bioregistry fallback (ADR-0015) — and only the winner reaches the
+     * index. Answering "what does this prefix expand to" from any of those inputs instead can
+     * contradict the IRIs the API serves; answering it from here cannot.
+     */
+    public static final String NAMESPACE = "namespace";
+
+    /**
+     * The IRI stem {@code curie} expanded against, or {@code null} when it cannot be derived — a blank
+     * input, a {@code curie} with no colon, or an {@code iri} that does not end with the CURIE's local
+     * part (which happens when a source hands us a bare IRI that never round-tripped through a CURIE).
+     *
+     * <p>Stripping the local part rather than matching a known stem is deliberate: it needs no registry
+     * and therefore works for prefixes no registry knows.
+     */
+    public static String namespaceOf(String curie, String iri) {
+        if (curie == null || iri == null) {
+            return null;
+        }
+        int colon = curie.indexOf(':');
+        if (colon < 0) {
+            return null;
+        }
+        String localPart = curie.substring(colon + 1);
+        if (localPart.isEmpty() || !iri.endsWith(localPart)) {
+            return null;
+        }
+        return iri.substring(0, iri.length() - localPart.length());
+    }
+
     /** Totals over every predicate, weak ones included. For display, never for filtering — see below. */
     public static final String MAPPING_COUNT = "mapping_count";
     public static final String SUBJECT_COUNT = "subject_count";

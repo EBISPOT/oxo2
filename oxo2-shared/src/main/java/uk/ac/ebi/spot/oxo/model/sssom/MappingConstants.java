@@ -92,6 +92,11 @@ public class MappingConstants {
     // serialization time, not deserialised) so the frontend can list ontologies with their own columns.
     public static final String PREFIX = "prefix";
     public static final String ONTOLOGY = "ontology";
+    // The IRI of the ontology itself (e.g. http://purl.obolibrary.org/obo/sepio.owl), promoted out of
+    // the same `other` block. Distinct from the ontology's NAMESPACE, which is the IRI stem its terms
+    // expand against (http://purl.obolibrary.org/obo/SEPIO_) and is not derivable from this value —
+    // see EntityConstants.NAMESPACE. ADR-0047.
+    public static final String ONTOLOGY_IRI = "ontology_iri";
     public static final String MAPPING_ID = "mapping_id";
     public static final String OBJECT_IRI = "object_iri";
     public static final String PREDICATE_IRI = "predicate_iri";

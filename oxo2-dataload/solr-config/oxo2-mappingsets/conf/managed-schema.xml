@@ -486,6 +486,10 @@
   <!-- Ontology display name, promoted from the OLS `other` block (ADR-0038). Text so it is searchable;
        ontology_str backs sorting/faceting. Absent on curated and inferred sets. -->
   <field name="ontology" type="text_general" multiValued="false" indexed="true" stored="true"/>
+  <!-- The ontology's own IRI (e.g. http://purl.obolibrary.org/obo/sepio.owl), promoted from the OLS
+       `other` block (ADR-0047). String so it matches exactly. NOT the namespace its terms expand
+       against — see the `namespace` field on oxo2-entities. Absent on curated and inferred sets. -->
+  <field name="ontology_iri" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="other" type="text_general" multiValued="false" indexed="true" stored="true"/>
   <!-- Ontology CURIE prefix (e.g. ADDICTO), promoted from the OLS `other` block (ADR-0038). String so it
        matches and sorts exactly. Absent on curated and inferred sets. -->
