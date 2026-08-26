@@ -46,6 +46,12 @@ single **mapping group**, rendered as one expandable row whose members are reach
   members. The expansion lists the members (up to `group.limit`); the count uses the group's true
   `numFound`, and a **"+N more"** link deep-links to a flat Advanced view filtered to the triple when the cap
   is exceeded.
+- **The expand affordance appears only on a group of more than one.** A singleton group has nothing
+  behind it — expanding it only restated the row — so it carries no chevron at all rather than a
+  disabled one, and the header's expand-all control hides when no row on the page can expand. Where
+  the affordance *is* present, clicking anywhere on the row toggles it, so the target is the whole
+  row and not just the chevron; clicks that land on a link or button belong to that control, and a
+  click that merely ended a text selection does not toggle.
 - **A page is N groups.** `rows`/`start` page over groups and `totalElements = getNGroups()`. Members are
   transported on the representative as a `group_members` JSON string, mirroring the existing
   `asserted_mappings` / `explanation` fields, so `MappingSearchResponse` / `Page<Mapping>` keep their shape.

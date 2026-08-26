@@ -107,6 +107,13 @@ function groupMembersOf(mapping: Mapping): Mapping[] {
     return mapping.groupMembers && mapping.groupMembers.length > 0 ? mapping.groupMembers : [mapping];
 }
 
+// Whether a row stands for more than one mapping — the only case where expanding reveals anything
+// the collapsed row does not already show. A singleton group still carries group_members (total 1),
+// and an ungrouped view (set-detail) carries none at all, so both land on 1 here.
+function isMultiMapping(mapping: Mapping): boolean {
+    return (mapping.groupSize ?? 1) > 1;
+}
+
 // Distinct inference types present in the group, in display order — for the stacked Type badges.
 function groupInferenceTypes(mapping: Mapping): InferenceType[] {
     const members = groupMembersOf(mapping);
@@ -446,21 +453,18 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         <InferenceTypeFilterPopover value={inferenceTypes} onChange={setInferenceTypes} />
                     </span>
                 ),
-                Cell: ({ row }: { row: { original: Mapping } }) => {
-                    const groupSize = row.original.groupSize ?? 1;
-                    return (
-                        <div className="flex flex-col gap-0.5">
-                            <div className="flex flex-wrap gap-1">
-                                {groupInferenceTypes(row.original).map((type) => (
-                                    <InferenceTypeBadge key={type} value={type} />
-                                ))}
-                            </div>
-                            {groupSize > 1 && (
-                                <span className="text-xs text-gray-500">{groupSize} mappings</span>
-                            )}
+                Cell: ({ row }: { row: { original: Mapping } }) => (
+                    <div className="flex flex-col gap-0.5">
+                        <div className="flex flex-wrap gap-1">
+                            {groupInferenceTypes(row.original).map((type) => (
+                                <InferenceTypeBadge key={type} value={type} />
+                            ))}
                         </div>
-                    );
-                },
+                        {isMultiMapping(row.original) && (
+                            <span className="text-xs text-gray-500">{row.original.groupSize} mappings</span>
+                        )}
+                    </div>
+                ),
             } as MRT_ColumnDef<Mapping>]),
             {
                 id: "mapping_provider",
@@ -550,8 +554,16 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
         // Same-SPO grouping (ADR-0013): only rows backing more than one mapping can expand; the detail
         // panel lists the underlying members.
         enableExpanding: true,
-        getRowCanExpand: (row) => (row.original.groupSize ?? 1) > 1,
+        getRowCanExpand: (row) => isMultiMapping(row.original),
+        // MRT decides the expand button's state from whether renderDetailPanel RETURNS something, not
+        // from getRowCanExpand (MRT_ExpandButton: `disabled={!canExpand && !detailPanel}`). A panel
+        // that always returned markup therefore put a live chevron on every row, including
+        // single-mapping ones where opening it only restated the row. Returning undefined for those
+        // makes the two agree.
         renderDetailPanel: ({ row }) => {
+            if (!isMultiMapping(row.original)) {
+                return undefined;
+            }
             const members = groupMembersOf(row.original);
             const total = row.original.groupSize ?? members.length;
             const overflow = total - members.length;
@@ -633,6 +645,39 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                     )}
                 </div>
             );
+        },
+        // A single-mapping row keeps no chevron at all, not a greyed-out one: there is nothing behind
+        // it, so a disabled control would only invite the click it refuses. `visibility` rather than
+        // `display` so the expand column keeps its width and the Subject column stays aligned down
+        // the table.
+        muiExpandButtonProps: ({ row }) => ({
+            sx: { visibility: isMultiMapping(row.original) ? 'visible' : 'hidden' },
+        }),
+        // Likewise the header's expand-all control, when no row on the page can expand.
+        muiExpandAllButtonProps: ({ table: tableInstance }) => ({
+            sx: { visibility: tableInstance.getCanSomeRowsExpand() ? 'visible' : 'hidden' },
+        }),
+        // Clicking anywhere on a multi-mapping row toggles it, so the target is the whole row rather
+        // than just the chevron. Three things must not toggle: the detail panel itself (it receives
+        // these same props, and would collapse on any click inside it), a click that landed on a link
+        // or button (that control owns it — OLS links, copy buttons, the set link, the details eye),
+        // and a click that merely ended a text selection.
+        muiTableBodyRowProps: ({ row, isDetailPanel }) => {
+            if (isDetailPanel || !isMultiMapping(row.original)) {
+                return {};
+            }
+            return {
+                onClick: (event) => {
+                    if ((event.target as HTMLElement).closest('a, button, input, [role="button"]')) {
+                        return;
+                    }
+                    if (window.getSelection()?.toString()) {
+                        return;
+                    }
+                    row.toggleExpanded();
+                },
+                sx: { cursor: 'pointer' },
+            };
         },
         enableRowActions: true,
         positionActionsColumn: 'last',
