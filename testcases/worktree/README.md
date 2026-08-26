@@ -9,7 +9,9 @@ is the default `$OXO2_CONFIG` for every worktree (see `oxo2-env.sh`). Referenced
 The EFO and MONDO exports are each split into two mapping sets by **subject obsolescence** — one for
 live terms and one for obsolete terms — so a worktree can exercise how obsolete subjects are handled end
 to end. A fifth slice, `hca.sssom.tsv`, carries the opposite kind of subject: free text with no
-identifier at all (see below). Each obsolete set carries `"obsolete": true` in `oxo-config-test.json`, which drives the
+identifier at all (see below), and the two `duplicates.*` slices deliberately re-assert triples the
+other slices already carry, so that same-SPO groups of more than one member exist at all (see
+below). Each obsolete set carries `"obsolete": true` in `oxo-config-test.json`, which drives the
 obsolete-terms
 feature ([ADR-0041](../../docs/adr/0041-obsolete-terms-endpoint-property-hidden-by-default.md)): the
 dataload stamps `subject_obsolete`/`object_obsolete` on every mapping (so a live MONDO→EFO row whose EFO
@@ -25,6 +27,8 @@ them by default behind a "Show obsolete terms" switch.
 | `mondo.ols.sssom.tsv`          | MONDO (live)     | 1128 | Non-obsolete subjects. 528 strong (490 `skos:exactMatch` incl. 23 MONDO→EFO cross-set bridges + 33 `skos:relatedMatch` + 2 `skos:narrowMatch` + 1 `skos:broadMatch` + 2 `rdfs:subPropertyOf`) + 300 `rdfs:subClassOf` + 300 `oboInOwl:hasDbXref` sample. |
 | `mondo.ols.obsolete.sssom.tsv` | MONDO (obsolete) | 1587 | Obsolete subjects. 1287 strong (1286 `skos:exactMatch` incl. 9 MONDO→EFO cross-set bridges + 1 `skos:relatedMatch`) + 300 `oboInOwl:hasDbXref` sample. The export has no `rdfs:subClassOf`. |
 | `hca.sssom.tsv`                | — (literal subjects) | 209 | **Literal mappings**: free text with no `subject_id` at all, `skos:closeMatch` to CL / UBERON / EFO / MONDO. See below. |
+| `duplicates.sssom.tsv`         | — (synthetic)    | 10   | Re-asserts triples from the MONDO / EFO slices so same-SPO groups of 2, 3 and 4 form. See below. |
+| `duplicates.literal.sssom.tsv` | — (synthetic)    | 3    | Re-asserts literal-subject triples from `hca.sssom.tsv`, so the same free text collapses across two sets (ADR-0042). See below. |
 
 ### `hca.sssom.tsv` — the literal-subject fixture
 
@@ -57,6 +61,73 @@ Regenerate by re-running the same rule over the full file at
 `https://raw.githubusercontent.com/mapping-commons/ebi-text-mappings/main/mappings/hca.sssom.tsv`
 (1505 rows); it is not produced by `trim-fixtures.sh`, which is specific to the OLS exports and their
 obsolescence split.
+
+### `duplicates.sssom.tsv` / `duplicates.literal.sssom.tsv` — the same-SPO fixtures
+
+Without these two, the worktree corpus has **no same-SPO collisions at all**: every result row is a
+group of one, so the collapse-and-expand path
+([ADR-0013](../../docs/adr/0013-group-same-spo-mappings-in-result-views.md) /
+[ADR-0023](../../docs/adr/0023-collapse-for-same-spo.md)) never runs against real data — no row
+can expand, no parent row can show "Multiple", and the member table is unreachable. Both files
+exist only to create that overlap, by re-asserting triples the other fixtures already carry.
+
+Two hash rules govern what happens when a triple is asserted twice, and they pull in opposite
+directions:
+
+- **`spo_key`** (the group) hashes `subject_id` + `predicate_id` + `predicate_modifier` +
+  `object_id`. Mapping set and justification are excluded — they are the axes being collapsed.
+- **`mapping_id`** (the document) hashes the **mapping set**, the subject/predicate/object slots
+  *including labels and IRIs*, **and the `mapping_justification`**.
+
+So two rows form a group of two only when they share the triple but differ in set **or** in
+justification. Two rows in the same set with the same justification and the same triple are one
+document, not two, and would collapse into a group of one.
+
+One sharp edge: `spo_key` hashes the CURIE **exactly as written in the TSV**, not the normalised
+form that reaches the index (`Mapping.spoKey()` reads `getDataAsString()`, the raw string, while
+`subject_id` / `object_id` store the prefix-upper-cased `getDataRepresentation()`). A duplicate row
+must therefore copy the source row's prefix casing verbatim — `doid:0060078`, not `DOID:0060078` —
+or it indexes to the same triple but lands in a different group.
+
+`duplicates.sssom.tsv` (identified subjects) and `duplicates.literal.sssom.tsv` (literal subjects,
+shaped like `hca.sssom.tsv`: no `subject_id` column, `subject_type: rdfs literal` in the header)
+together add 13 documents forming these groups:
+
+| Group | Triple | Members | Composed of | What the parent row exercises |
+|-------|--------|---------|-------------|-------------------------------|
+| 1 | `MONDO:0000616 skos:exactMatch doid:0060078` | 2 | `mondo.ols` + 1 | "Multiple" justification, "Multiple" confidence, "Multiple sets" |
+| 2 | `MONDO:0000230 skos:exactMatch doid:0050043` | 3 | `mondo.ols` + 2 | a group larger than a pair |
+| 3 | `MONDO:0000236 skos:exactMatch doid:0050059` | 4 | `mondo.ols` + 3 | the largest group; one member has no confidence (em dash beside numbers) |
+| 4 | `EFO:1000466 skos:exactMatch ncit:C3316` | 2 | `efo.ols` + 1 | justification and confidence **shared** — the parent shows the value, not "Multiple", while the set is still "Multiple sets" |
+| 5 | `MONDO:0000234 skos:closeMatch doid:0050051` | 2 | `duplicates` only | a group inside **one** set: the Mapping set column shows that set, not "Multiple sets", and confidence is shared while justification differs |
+| 6 | `MONDO:0005117 skos:exactMatch efo:0000776` | 2 | `mondo.ols` + 1 | a group **hidden from a default search**: EFO:0000776 is an obsolete EFO term, so every member is stamped `object_obsolete` and the whole group appears only under "Show obsolete terms" (ADR-0041) |
+| L1–L3 | three literal texts `skos:closeMatch` an EFO term | 2 each | `hca` + 1 | the half of ADR-0042 the `hca` fixture alone cannot reach: the *same text* asserted in *two sets* collapsing into one row |
+
+Group 5 is the control: it is the only group whose members all come from one set, so it is what
+proves the parent row reports a genuinely shared value instead of defaulting to "Multiple". Its two
+`skos:closeMatch` rows are also the only triple here that is not already asserted somewhere else.
+
+Groups 1–5 are visible in a **default** search; group 6 is the only one that is not, and that is
+deliberate. Picking a duplicate off the MONDO→EFO bridges is a trap: most of the 23 live-MONDO
+bridges point at *obsolete* EFO terms, so the resulting group is stamped `object_obsolete` on every
+member and vanishes from a default search — which is why the largest group (3) deliberately uses a
+DOID object instead.
+
+The subject texts in `duplicates.literal.sssom.tsv` are copied byte for byte out of
+`hca.sssom.tsv`. A literal subject's identity *is* its text (ADR-0042), so re-typing or
+re-capitalising one splits the group rather than forming it — note that `hca` already contains both
+`Adult` and `adult` as separate subjects.
+
+**These fixtures do not change what is inferred.** The rules export
+`inferredMapping(?s,?p,?o) :- mapping(...), ~assertedTriple(?s,?p,?o)`, so a triple asserted in any
+set is never also emitted as an inference. Every triple here except group 5 was already asserted,
+and group 5's `skos:closeMatch` is a weak predicate that never chains
+([ADR-0016](../../docs/adr/0016-single-pass-sssom-reasoning.md)),
+so the inference corpus is untouched. That same rule is why **no fixture can produce a group mixing
+asserted and inferred members** — the two are mutually exclusive per triple, which makes ADR-0013's
+"stacked distinct inference-type badges" unreachable by construction. The 21-member display cap
+(`expand.rows`, the "+N more" line) is also not exercised here; that would need a triple asserted in
+22 sets.
 
 Each slice keeps the full SSSOM metadata header (needed for the `curie_map` / prefix expansion), the
 column header, **every** strong/semantic mapping row (`skos:*Match`, `owl:equivalentClass`,

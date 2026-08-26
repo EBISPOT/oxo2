@@ -31,6 +31,16 @@
       "id": "uniprot",
       "url": "https://raw.githubusercontent.com/mapping-commons/ebi-text-mappings/main/mappings/uniprot.sssom.tsv",
       "category": "curated"
+    },
+    {
+      "id": "duplicates",
+      "url": "testcases/worktree/duplicates.sssom.tsv",
+      "category": "curated"
+    },
+    {
+      "id": "duplicates.literal",
+      "url": "testcases/worktree/duplicates.literal.sssom.tsv",
+      "category": "curated"
     }
   ]
 }

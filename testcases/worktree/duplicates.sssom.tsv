@@ -1,0 +1,33 @@
+# mapping_set_id: https://github.com/EBISPOT/oxo2/testcases/worktree/duplicates.sssom.tsv
+# mapping_set_title: Same-SPO duplicate test set
+# mapping_set_description: A synthetic curated set that deliberately re-asserts triples already
+#   present in the EFO / MONDO fixtures, so a worktree load produces same-SPO mapping groups of more
+#   than one member (ADR-0013 / ADR-0023). Every triple here is real and taken verbatim from another
+#   fixture, except the two skos:closeMatch rows on MONDO:0000234, which form a group that lives
+#   entirely inside this one set. See README.md for the group-by-group breakdown.
+# mapping_provider: https://github.com/EBISPOT/oxo2
+# mapping_date: '2026-08-20'
+# license: https://creativecommons.org/publicdomain/zero/1.0/
+# curie_map:
+#   semapv: https://w3id.org/semapv/vocab/
+#   skos: http://www.w3.org/2004/02/skos/core#
+#   owl: http://www.w3.org/2002/07/owl#
+#   rdfs: http://www.w3.org/2000/01/rdf-schema#
+#   MONDO: http://purl.obolibrary.org/obo/MONDO_
+#   doid: http://purl.obolibrary.org/obo/DOID_
+#   DOID: http://purl.obolibrary.org/obo/DOID_
+#   efo: http://www.ebi.ac.uk/efo/EFO_
+#   EFO: http://www.ebi.ac.uk/efo/EFO_
+#   ncit: http://purl.obolibrary.org/obo/NCIT_
+#   NCIT: http://purl.obolibrary.org/obo/NCIT_
+subject_id	predicate_id	object_id	mapping_justification	subject_label	object_label	confidence
+MONDO:0000616	skos:exactMatch	doid:0060078	semapv:ManualMappingCuration	progesterone-receptor negative breast cancer	progesterone receptor negative breast cancer	0.95
+MONDO:0000230	skos:exactMatch	doid:0050043	semapv:ManualMappingCuration	Israeli tick typhus	Israeli tick typhus	0.9
+MONDO:0000230	skos:exactMatch	doid:0050043	semapv:LexicalMatching	Israeli tick typhus	Israeli tick typhus	0.6
+MONDO:0000236	skos:exactMatch	doid:0050059	semapv:ManualMappingCuration	oropharyngeal anthrax	oropharyngeal anthrax	0.98
+MONDO:0000236	skos:exactMatch	doid:0050059	semapv:LexicalMatching	oropharyngeal anthrax	oropharyngeal anthrax	0.72
+MONDO:0000236	skos:exactMatch	doid:0050059	semapv:CompositeMatching	oropharyngeal anthrax	oropharyngeal anthrax	
+MONDO:0005117	skos:exactMatch	efo:0000776	semapv:ManualMappingCuration	Aeromonas hydrophila infectious disease	Aeromonas hydrophila infectious disease	0.65
+EFO:1000466	skos:exactMatch	ncit:C3316	semapv:UnspecifiedMatching	Penile Fibromatosis	Penile Fibromatosis	
+MONDO:0000234	skos:closeMatch	doid:0050051	semapv:ManualMappingCuration	Rickettsia parkeri spotted fever	Rickettsia parkeri spotted fever	0.8
+MONDO:0000234	skos:closeMatch	doid:0050051	semapv:MappingReview	Rickettsia parkeri spotted fever	Rickettsia parkeri spotted fever	0.8

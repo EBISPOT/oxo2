@@ -1,0 +1,18 @@
+#curie_map:
+#  CL: http://purl.obolibrary.org/obo/CL_
+#  EFO: http://www.ebi.ac.uk/efo/EFO_
+#  semapv: https://w3id.org/semapv/vocab/
+#  skos: http://www.w3.org/2004/02/skos/core#
+#mapping_set_id: https://github.com/EBISPOT/oxo2/testcases/worktree/duplicates.literal.sssom.tsv
+#mapping_set_title: Same-SPO duplicate test set (literal subjects)
+#mapping_set_description: A synthetic curated set that re-asserts literal-subject mappings already
+#  present in hca.sssom.tsv, so the same free text mapped the same way in two different sets collapses
+#  into one row (ADR-0042). Subject texts are copied byte for byte from hca.sssom.tsv — a literal
+#  subject's identity is its text, so any edit would split the group instead of forming it.
+#mapping_provider: https://github.com/EBISPOT/oxo2
+#mapping_date: '2026-08-20'
+#subject_type: rdfs literal
+subject_label	predicate_id	object_id	mapping_justification	confidence
+10X 3' v2 sequencing	skos:closeMatch	EFO:0009899	semapv:LexicalMatching	0.88
+Adult	skos:closeMatch	EFO:0001272	semapv:LexicalMatching	0.5
+129S6	skos:closeMatch	EFO:0000598	semapv:ManualMappingCuration	
