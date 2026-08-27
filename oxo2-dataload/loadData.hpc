@@ -45,6 +45,11 @@ HPC_MEM="${HPC_MEM:-32G}"
 # and at the end compresses $SOLR_HOME with pigz (parallel gzip), which scales with cores.
 # pigz is run with -p $SLURM_CPUS_PER_TASK in loadData.slurm, so it tracks this value.
 HPC_CPUS="${HPC_CPUS:-8}"
+# Heap for the Solr instance the batch step hosts. Solr's launcher otherwise defaults to a
+# fixed 512m, which OOM-crashed the JVM at dev-corpus scale during index-entities (job
+# 29435209, 2026-08-27). 4g = parity with startSolr.sh / loadData.nextflow; must stay well
+# inside HPC_MEM alongside the Nextflow driver and inline stages.
+SOLR_HEAP="${SOLR_HEAP:-4g}"
 
 # --- Resume point (see oxo2-dataload/CONTEXT.md § Resumable dataload) ---
 # download (default) = full run; any later (sub)stage resumes from there, reusing earlier stages'
@@ -77,7 +82,7 @@ SBATCH_ARGS=(
     --cpus-per-task="$HPC_CPUS"
     --output="$SLURM_LOGS/oxo2-dataload-%j.out"
     --error="$SLURM_LOGS/oxo2-dataload-%j.err"
-    --export="SCRIPT_DIR=$SCRIPT_DIR,OXO2_DATA=$OXO2_DATA,OXO2_CONFIG=$OXO2_CONFIG,NEXTFLOW_DIR=$NEXTFLOW_DIR,SOLR_HOME=$SOLR_HOME,NF_CONTAINER=$NF_CONTAINER,SIF_DIGEST_FILE=$SIF_DIGEST_FILE,START_STAGE=$START_STAGE${HPC_PATH:+,HPC_PATH=$HPC_PATH}${REMOTE_DIGEST:+,REMOTE_DIGEST=$REMOTE_DIGEST}"
+    --export="SCRIPT_DIR=$SCRIPT_DIR,OXO2_DATA=$OXO2_DATA,OXO2_CONFIG=$OXO2_CONFIG,NEXTFLOW_DIR=$NEXTFLOW_DIR,SOLR_HOME=$SOLR_HOME,NF_CONTAINER=$NF_CONTAINER,SIF_DIGEST_FILE=$SIF_DIGEST_FILE,START_STAGE=$START_STAGE,SOLR_HEAP=$SOLR_HEAP${HPC_PATH:+,HPC_PATH=$HPC_PATH}${REMOTE_DIGEST:+,REMOTE_DIGEST=$REMOTE_DIGEST}"
 )
 
 if [ -n "${HPC_ACCOUNT:-}" ]; then
@@ -90,6 +95,7 @@ echo "  Start stage: $START_STAGE"
 echo "  Time limit: $HPC_TIME"
 echo "  Memory: $HPC_MEM"
 echo "  CPUs: $HPC_CPUS"
+echo "  Solr heap: $SOLR_HEAP"
 echo "  Container: $NF_CONTAINER"
 echo "  Data dir: $OXO2_DATA"
 echo "  Config: $OXO2_CONFIG"
