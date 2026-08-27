@@ -23,11 +23,16 @@ So two mappings could carry **identical** indexed ids and still receive **differ
 values. The collapse then renders one triple as two rows — the precise failure ADR-0013 exists to
 prevent, hidden behind ids that look the same everywhere a developer would go to check.
 
-Prefix-case drift is real in the corpora OxO2 loads. In the OLS export at
-`testcases/worktree/mondo.ols.sssom.tsv` (1,128 rows) the term `DOID:0050043` is written both
-`DOID:0050043` and `doid:0050043` — within a single file from a single source. (In that file the two
-spellings sit on rows with different predicates, so no group of its own splits; it establishes that
-the drift occurs, not that this file demonstrates a split.)
+Prefix-case drift is real in the corpora OxO2 loads. Across the seven OLS/curated exports in
+`testcases/worktree/` (3,921 triples), **93 terms are written more than one way** — `DOID:0050043`
+appears as both `DOID:0050043` and `doid:0050043` inside `mondo.ols.sssom.tsv` alone, and
+`mondo.ols.obsolete.sssom.tsv` accounts for 62 of them by itself. Each one indexes to a single
+`subject_id` / `object_id` and hashed to two different `spo_key` values.
+
+What that corpus does *not* show is worth stating: none of those 93 produces a **split triple**
+there, because the differently-cased spellings happen to sit on rows with different predicates or
+objects. Source-side drift is established; a source-side split is not demonstrated by the fixtures,
+and the impact argument below rests on the divergence OxO2 introduces itself.
 
 The drift is not confined to what a source writes, though: OxO2 **introduces** it. An asserted
 mapping keys its predicate as the TSV spelled it, while the OxO2-inferred mapping over the same
