@@ -27,7 +27,9 @@ single **mapping group**, rendered as one expandable row whose members are reach
   `spo_key` to `oxo2-mappings`, populated **once at dataload** as a deterministic hash of the four key
   components. **IDs only** — labels and IRIs are excluded so the same entity collapses despite per-set label
   drift (amended by [ADR-0042](0042-literal-subject-identity-in-spo-key.md): a subject with *no* id is keyed
-  on its text, which is its identity rather than a drifting label for one);
+  on its text, which is its identity rather than a drifting label for one; and by
+  [ADR-0048](0048-spo-key-uses-the-normalised-id.md): an id contributes the **normalised** form Solr
+  indexes, not the source spelling, since a CURIE prefix drifts in case too);
   **`predicate_modifier` is included** so a relation and its negation (`predicate_modifier = Not`)
   never collapse into one row. Mapping set, justification, and `inference_type` are deliberately *not* in the
   key — they are exactly the axes being collapsed.

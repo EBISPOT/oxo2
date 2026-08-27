@@ -73,7 +73,7 @@
   "object_prefix" : "EX",
   "predicate_id" : "OWL:equivalentClass",
   "predicate_iri" : "http://www.w3.org/2002/07/owl#equivalentClass",
-  "spo_key" : "a52af3cb-26b1-35ef-a8f1-a2de777ca5d6",
+  "spo_key" : "ba475087-01b1-3e56-b328-fbbcce4ffd36",
   "subject_id" : "EX:B",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
   "subject_label" : "Entity B",

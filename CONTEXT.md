@@ -54,7 +54,9 @@ sources. It carries `inference_type`; its IRI resolves to an OxO2 mapping-set vi
 - **Mapping group** — the set of mappings that share the same `subject_id`, `predicate_id`, `predicate_modifier`, and `object_id`: one 
 asserted *meaning* of a triple, collapsed into a single row in the Search and Inferences result views (see § Cross-cutting constraints). 
 Identified by the denormalised `spo_key` field. A relation and its negation (`predicate_modifier = Not`) form **different** groups. 
-A **literal mapping** has no `subject_id`, so its group is keyed on the subject text instead
+The ids are keyed as **indexed** — prefix-normalised, so `doid:` and `DOID:` are one group
+([ADR-0048](docs/adr/0048-spo-key-uses-the-normalised-id.md)). 
+A **literal mapping** has no `subject_id`, so its group is keyed on the subject text instead, verbatim
 ([ADR-0042](docs/adr/0042-literal-subject-identity-in-spo-key.md)). 
 _Avoid_: collapsed row, duplicate mappings, SPO group.
 - **Literal mapping** — a mapping whose subject is a string of free text that has no CURIE assigned yet
@@ -187,10 +189,12 @@ field and the Solr CollapsingQParserPlugin + ExpandComponent (ADR-0023, replacin
 `group.ngroups` count cost ~19s on high-frequency terms). Collapse is presentation-layer, layered on top of the inference-type 
 filter, and a page counts groups not documents (the collapsed `numFound`). A **literal mapping** has no `subject_id`, so 
 its subject slot carries the subject text instead — without which every literal mapping sharing a predicate and object 
-collapsed into one row (ADR-0042). See 
+collapsed into one row (ADR-0042). The three ids are keyed in the **normalised** form Solr indexes, not as the 
+source TSV spelled them, so a drifting CURIE prefix cannot split one triple across two rows (ADR-0048). See 
 [ADR-0013](docs/adr/0013-group-same-spo-mappings-in-result-views.md), 
-[ADR-0023](docs/adr/0023-collapse-for-same-spo.md) and 
-[ADR-0042](docs/adr/0042-literal-subject-identity-in-spo-key.md). Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` 
+[ADR-0023](docs/adr/0023-collapse-for-same-spo.md), 
+[ADR-0042](docs/adr/0042-literal-subject-identity-in-spo-key.md) and 
+[ADR-0048](docs/adr/0048-spo-key-uses-the-normalised-id.md). Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` 
 (collapse query path + `group_members` transport), and `oxo2-frontend` (expandable rows, paging over groups).
 - **Cross-ontology mapping is a prefix filter over the precomputed closure** — mapping a source
 ontology to target ontologies is a directional filter on denormalised `subject_prefix` / `object_prefix`

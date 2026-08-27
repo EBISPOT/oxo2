@@ -122,6 +122,53 @@ class MappingSpoKeyTest {
     }
 
     @Test
+    void prefixCaseDriftDoesNotSplitATriple() {
+        // Not hypothetical: a single OLS export (testcases/worktree/mondo.ols.sssom.tsv) writes
+        // doid:0050043 on its skos:exactMatch row and DOID:0050043 on its oboInOwl:hasDbXref row.
+        // EntityReference upper-cases the prefix on parse, so both spellings index as the SAME
+        // subject_id — keying on the raw string handed them two spo_keys and two result rows.
+        Mapping lowerCasePrefixes = triple("doid:0050043", "skos:exactMatch", "mondo:0000616").build();
+        Mapping upperCasePrefixes = triple("DOID:0050043", "SKOS:exactMatch", "MONDO:0000616").build();
+        assertEquals(lowerCasePrefixes.spoKey(), upperCasePrefixes.spoKey(),
+                "one triple written with differently-cased CURIE prefixes must be one group");
+    }
+
+    @Test
+    void spoKeyMatchesTheIndexedIdsNotTheSourceSpelling() {
+        // The invariant behind the case-drift fix, stated directly: whatever spelling arrives, the
+        // key is the key of the ids Solr actually stores. An asserted mapping and the OxO2-inferred
+        // mapping that duplicates it reach the model by different routes — the inferred side mints
+        // its predicate CURIE from the prefix map, lowercase — and must still collapse together.
+        Mapping asserted = triple("ex:b", "owl:equivalentClass", "ex:a").build();
+        Mapping asIndexed = triple(
+                asserted.subjectId().orElseThrow().getDataRepresentation().orElseThrow(),
+                asserted.predicateId().orElseThrow().getDataRepresentation().orElseThrow(),
+                asserted.objectId().orElseThrow().getDataRepresentation().orElseThrow()).build();
+        assertEquals(asIndexed.spoKey(), asserted.spoKey(),
+                "spo_key must hash the normalised ids that land in Solr, not the raw source strings");
+    }
+
+    @Test
+    void caseFoldingStopsAtThePrefix() {
+        // Only the prefix normalises. The local id is opaque and case-significant — OMIM:PS100070
+        // is not OMIM:ps100070 — so it must keep splitting the group.
+        Mapping oneLocalId = triple("OMIM:PS100070", "skos:exactMatch", "B:2").build();
+        Mapping otherLocalId = triple("OMIM:ps100070", "skos:exactMatch", "B:2").build();
+        assertNotEquals(oneLocalId.spoKey(), otherLocalId.spoKey(),
+                "the local part of a CURIE identifies the term and must stay case-sensitive");
+    }
+
+    @Test
+    void literalSubjectTextStaysCaseSensitive() {
+        // The literal branch must NOT normalise (ADR-0042): a label is free text, and text identity
+        // is case-sensitive on purpose. Only the CURIE branches fold their prefix.
+        Mapping titleCase = literalTriple("Lung", "skos:closeMatch", "UBERON:0002048").build();
+        Mapping lowerCase = literalTriple("lung", "skos:closeMatch", "UBERON:0002048").build();
+        assertNotEquals(titleCase.spoKey(), lowerCase.spoKey(),
+                "a literal subject is identified by its exact text, so case must still separate it");
+    }
+
+    @Test
     void builderIgnoresDerivedSpoKeyOnInput() {
         // The derived, output-only spo_key must not break deserialisation through the builder.
         Mapping mapping = assertDoesNotThrow(() -> triple("A:1", "skos:exactMatch", "B:2")

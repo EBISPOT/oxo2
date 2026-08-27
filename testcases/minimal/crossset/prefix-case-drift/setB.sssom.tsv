@@ -1,0 +1,14 @@
+# mapping_set_id: https://w3id.org/oxo2/test/minimal/crossset/prefix-case-drift/setB
+# mapping_set_title: Prefix-case-drift fixture set B (uppercase CURIE prefixes, same triple as set A)
+# license: https://creativecommons.org/publicdomain/zero/1.0/
+# curie_map:
+#   DOID: http://purl.obolibrary.org/obo/DOID_
+#   MONDO: http://purl.obolibrary.org/obo/MONDO_
+#   OMIM: https://omim.org/entry/
+#   oboInOwl: http://www.geneontology.org/formats/oboInOwl#
+#   owl: http://www.w3.org/2002/07/owl#
+#   rdfs: http://www.w3.org/2000/01/rdf-schema#
+#   SKOS: http://www.w3.org/2004/02/skos/core#
+subject_id	subject_label	predicate_id	object_id	object_label
+DOID:0050043	Rett syndrome	SKOS:exactMatch	MONDO:0000616	Rett syndrome
+OMIM:ps100070	Aortic aneurysm, familial abdominal	oboInOwl:hasDbXref	OMIM:100070	Aortic aneurysm, familial abdominal 1

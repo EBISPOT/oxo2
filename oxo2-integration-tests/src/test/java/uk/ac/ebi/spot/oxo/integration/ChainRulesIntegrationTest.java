@@ -292,13 +292,16 @@ public class ChainRulesIntegrationTest {
         // How many rows the collapsed views render (ADR-0013 / ADR-0023). Pinned separately from the
         // document counts because a grouping key that conflates unrelated mappings moves this number
         // and leaves every other count untouched — which is how literal subjects all shared one key
-        // until ADR-0042.
+        // until ADR-0042. It also moves when a key stops conflating mappings it SHOULD collapse: the
+        // prefix-case-drift fixture is the one whose count is strictly below its document count, and
+        // it returns 5 instead of 4 the moment spo_key keys on the raw spelling again (ADR-0048).
         JsonNode expectedSpoGroups = root.path(SolrCheck.SPO_GROUPS_KEY);
         assertTrue(expectedSpoGroups.isNumber(),
                 "numFound.json for " + fixture.name + " carries no " + SolrCheck.SPO_GROUPS_KEY
                 + " count.\nRun `mvn -pl oxo2-integration-tests exec:java@captureExpected` to baseline.");
         assertEquals(expectedSpoGroups.asInt(), SolrCheck.distinctSpoKeys(),
                 "Distinct spo_key count differs for fixture " + fixture.name
-                + " — mappings are collapsing into a different number of rows (ADR-0042).");
+                + " — mappings are collapsing into a different number of rows"
+                + " (ADR-0042, ADR-0048).");
     }
 }

@@ -458,6 +458,16 @@ between fixtures with a `delete *:*` (see `oxo2-integration-tests/CONTEXT.md` §
 > accessor, so a normal `loadData.nextflow` run repopulates it. Keys for subjects that have an id are
 > byte-identical to before, so only the literal sets move.
 
+> **Reindex required (ADR-0048):** `spo_key` now hashes the **normalised** `subject_id` /
+> `predicate_id` / `object_id` — the prefix-upper-cased form Solr indexes — instead of the raw
+> string the source TSV wrote, so a triple written `doid:0050043` in one place and `DOID:0050043`
+> in another stops splitting into two collapsed rows. No schema change and no pipeline code change:
+> `Mapping.spoKey()` is a derived accessor, so a normal `loadData.nextflow` run repopulates it.
+> Unlike ADR-0042, **almost every key moves** — any id with a lowercase prefix (`skos:exactMatch`
+> on nearly every mapping) hashed differently before — and group counts fall wherever the drift was
+> splitting a triple, including where a mapping asserted in a source set failed to collapse with
+> its own `SSSOM_INFERENCE` re-derivation.
+
 > **Reindex required (ADR-0028):** explanations are precomputed again, so every inferred mapping doc
 > now carries `explanation`, `asserted_mappings` and a computed `explanation_length`. `asserted_mappings`
 > also changes to `indexed="false"` (it is retrieve-only, like `explanation`): nothing queries, facets or

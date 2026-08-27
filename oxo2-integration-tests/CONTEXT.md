@@ -22,7 +22,9 @@ Scope: one minimal single-set fixture per active `ChainRulesEnum` rule under `te
   each explanation chain ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)).
   The shape also carries anything that needs two sets to show at all: `literal-subject` uses it to prove
   that the same free-text subject asserted in both sets collapses into one row while different texts do
-  not ([ADR-0042](../docs/adr/0042-literal-subject-identity-in-spo-key.md)). And anything that needs
+  not ([ADR-0042](../docs/adr/0042-literal-subject-identity-in-spo-key.md)), and `prefix-case-drift` to
+  prove that one triple spelled `doid:` in one set and `DOID:` in the other is still one row
+  ([ADR-0048](../docs/adr/0048-spo-key-uses-the-normalised-id.md)). And anything that needs
   a per-**registry** config flag, which a SSSOM TSV cannot express: a set whose base name ends
   `-obsolete` is declared `"obsolete": true` in the generated config
   (`ConfigGenerator.OBSOLETE_SET_SUFFIX`), which is how `obsolete-endpoint` gets an obsolete term to
@@ -32,8 +34,10 @@ Scope: one minimal single-set fixture per active `ChainRulesEnum` rule under `te
   counts. All mirrored per fixture under `testcases_expected_output/minimal/<fixture>/`.
   `numFound.json` also pins `oxo2-mappings-spo-groups`, the distinct `spo_key` count — how many rows the
   collapsed views render. It is not a collection count, and it is the only golden that moves when a
-  grouping key starts conflating unrelated mappings, since document counts stay put
-  ([ADR-0042](../docs/adr/0042-literal-subject-identity-in-spo-key.md)).
+  grouping key starts conflating unrelated mappings
+  ([ADR-0042](../docs/adr/0042-literal-subject-identity-in-spo-key.md)) — or stops collapsing ones it
+  should ([ADR-0048](../docs/adr/0048-spo-key-uses-the-normalised-id.md)) — since document counts stay
+  put either way.
   `ArtifactPaths.artifactsFor(fixture)` is the single source of truth for the path list.
   The explained-mapping layer is a **set** of files — `inferences-explained-NNNNN.json`, one per
   explanation bundle ([ADR-0028](../docs/adr/0028-component-sharded-explanation-precompute.md)) — so its
@@ -218,6 +222,24 @@ encoding an unsafe prefix as `enc-<hex>`; before it existed, `FilenameGuard` ref
 whole `mappings2entities` stage aborted mid-load. The fixture drives that path end to end, which a
 `ShardNameTest` (correct as it is) cannot: the bug was the Nextflow wiring using the raw prefix as the
 filename, not the encoding itself.
+
+The **`prefix-case-drift` fixture** is the only one that exercises the same-SPO collapse rather
+than merely pinning its stability, and the only fixture whose `oxo2-mappings-spo-groups` (4) is
+strictly **below** its document count (5). Every other fixture has the two equal, so before it
+existed a regression that keyed `spo_key` on the raw source spelling again — the ADR-0048 defect —
+left all 23 goldens byte-identical and kept the whole suite green, with only `MappingSpoKeyTest`
+to catch it. It is a cross-set fixture because the drift is *per-set* by nature: `setA` writes the
+triple `doid:0050043 skos:exactMatch mondo:0000616` and `setB` writes the same triple as
+`DOID:0050043 SKOS:exactMatch MONDO:0000616`. Solr indexes both rows under identical ids, so they
+are one mapping group, and the count parts into 5-and-4 only because the key normalises.
+
+The `omim:PS100070` / `OMIM:ps100070` pair carries the **negative** half, and is what stops the
+fixture passing for the wrong reason: those two rows differ only in the case of the CURIE's *local
+part*, which identifies the term and must stay case-sensitive, so they hold **two** groups. Without
+them a "fix" that lower-cased the whole CURIE would also drive groups below documents and look
+correct. They use `oboInOwl:hasDbXref` deliberately — a weak predicate does not chain (ADR-0009),
+so the control adds no inferences and the fixture's single `SSSOM_INFERENCE` stays the symmetric
+`exactMatch` edge of the pair under test.
 
 > **"Weak" means two different things here.** `RCE_WEAK_NOCHAIN` means *inference*-weak — `skos:closeMatch`,
 > which the RCE role chains do not propagate. ADR-0035's weak predicates are *visibility*-weak — hidden

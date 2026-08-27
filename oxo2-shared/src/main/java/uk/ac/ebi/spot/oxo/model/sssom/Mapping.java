@@ -225,28 +225,33 @@ public record Mapping (
      * ("ab","c") and ("a","bc") from colliding. Derived, not stored: emitted as the Solr
      * {@code spo_key} field at dataload and present in API responses as a stable per-triple row key.
      *
+     * <p>The three ids contribute their <b>normalised</b> form — the one Solr indexes, see
+     * {@link EntityReference#getNormalisedId} — never the raw spelling the source TSV wrote, so per-set
+     * prefix-case drift cannot split one triple into two groups (ADR-0048).
+     *
      * <p>A <b>literal mapping</b> ({@code subject_type: rdfs literal}) carries no subject_id: its
      * subject is a string of text that has no CURIE assigned yet, and that string — held in
      * subject_label — <em>is</em> the subject's identity. Such a subject therefore contributes its
      * label rather than nothing (ADR-0042), marked with {@link #LITERAL_SUBJECT_MARKER} so a literal
      * can never share a key with a CURIE spelled the same way. Without the fallback every literal
      * mapping sharing a predicate and object hashed identically, conflating thousands of unrelated
-     * mappings into one collapsed row. The object side needs no equivalent: an object is always
-     * identified.
+     * mappings into one collapsed row. The label is taken verbatim, never normalised: free text is
+     * its own identity, and "Lung" is not "lung". The object side needs no equivalent: an object is
+     * always identified.
      */
     @JsonProperty(SPO_KEY)
     public String spoKey() {
         StringBuilder keyAsString = new StringBuilder();
         if (subjectId.isPresent())
-            keyAsString.append(subjectId.get().getDataAsString());
+            keyAsString.append(subjectId.get().getNormalisedId());
         else
             subjectLabel.ifPresent(label -> keyAsString.append(LITERAL_SUBJECT_MARKER).append(label));
         keyAsString.append('\u001f');
-        predicateId.ifPresent(reference -> keyAsString.append(reference.getDataAsString()));
+        predicateId.ifPresent(reference -> keyAsString.append(reference.getNormalisedId()));
         keyAsString.append('\u001f');
         predicateModifier.ifPresent(modifier -> keyAsString.append(modifier.value()));
         keyAsString.append('\u001f');
-        objectId.ifPresent(reference -> keyAsString.append(reference.getDataAsString()));
+        objectId.ifPresent(reference -> keyAsString.append(reference.getNormalisedId()));
         byte[] bytes = keyAsString.toString().getBytes(StandardCharsets.UTF_8);
         return UUID.nameUUIDFromBytes(bytes).toString();
     }
