@@ -233,6 +233,14 @@ triple `doid:0050043 skos:exactMatch mondo:0000616` and `setB` writes the same t
 `DOID:0050043 SKOS:exactMatch MONDO:0000616`. Solr indexes both rows under identical ids, so they
 are one mapping group, and the count parts into 5-and-4 only because the key normalises.
 
+The fixture's duplicate pair also pins **evidence expansion**
+([ADR-0049](../docs/adr/0049-asserted-evidence-expands-to-corpus-identical-premises.md)): its two
+rows produce corpus quads identical in (s, p, o), so Nemo's trace carried an arbitrary one and the
+inferred mapping's `asserted_mappings` / `mapping_set_source` flipped between `setA` and `setB`
+across runs — the goldens pinned a coin flip. Under ADR-0049 the leaf canonicalises to the lowest
+`mapping_id`, `asserted_mappings` lists **both** rows, and the inferred set's source union is
+`[setA, setB]`, deterministically.
+
 The `omim:PS100070` / `OMIM:ps100070` pair carries the **negative** half, and is what stops the
 fixture passing for the wrong reason: those two rows differ only in the case of the CURIE's *local
 part*, which identifies the term and must stay case-sensitive, so they hold **two** groups. Without

@@ -458,6 +458,16 @@ between fixtures with a `delete *:*` (see `oxo2-integration-tests/CONTEXT.md` §
 > accessor, so a normal `loadData.nextflow` run repopulates it. Keys for subjects that have an id are
 > byte-identical to before, so only the literal sets move.
 
+> **Reindex required (ADR-0049):** every asserted leaf of an explanation now expands to **all**
+> corpus quads sharing its exact (s, p, o) — the same triple asserted in several sets — instead of
+> the one quad Nemo's trace happened to walk. `asserted_mappings` lists the full duplicate set
+> (sorted by mapping_id), the chain shows the lowest-id duplicate as its canonical leaf, and the
+> inferred set's `mapping_set_source` union credits every contributing set. Output becomes
+> deterministic run-to-run where it silently was not. The expansion reads the shard `.nq` corpora
+> (`OXO2_SHARDS_DIR`, set by `explanations2json.nf`); with no resolvable shard files it falls back
+> to the old single-leaf behaviour. A normal `loadData.nextflow` run repopulates everything;
+> documents change wherever a premise is multiply asserted.
+
 > **Reindex required (ADR-0048):** `spo_key` now hashes the **normalised** `subject_id` /
 > `predicate_id` / `object_id` — the prefix-upper-cased form Solr indexes — instead of the raw
 > string the source TSV wrote, so a triple written `doid:0050043` in one place and `DOID:0050043`

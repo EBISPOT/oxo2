@@ -18,6 +18,25 @@
     "subject_id" : "DOID:0050043",
     "subject_iri" : "http://purl.obolibrary.org/obo/DOID_0050043",
     "subject_label" : "Rett syndrome"
+  }, {
+    "chain_rule_applications" : {
+      "chain_rule" : {
+        "chain_rule_abbreviated" : "Asserted",
+        "chain_rule_long_form" : "Asserted",
+        "chain_rule_name" : "Asserted"
+      }
+    },
+    "distance" : 1,
+    "mapping_id" : "95654f1f-5ffe-3406-9db7-407e8ffecfab",
+    "mapping_set_id" : "https://w3id.org/oxo2/test/minimal/crossset/prefix-case-drift/setB",
+    "object_id" : "MONDO:0000616",
+    "object_iri" : "http://purl.obolibrary.org/obo/MONDO_0000616",
+    "object_label" : "Rett syndrome",
+    "predicate_id" : "SKOS:exactMatch",
+    "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "subject_id" : "DOID:0050043",
+    "subject_iri" : "http://purl.obolibrary.org/obo/DOID_0050043",
+    "subject_label" : "Rett syndrome"
   } ],
   "distance" : 1,
   "explanation" : {

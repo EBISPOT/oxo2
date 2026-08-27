@@ -40,11 +40,18 @@ public class NemoHelper {
      * (length/asserted-evidence/distance are structural over the reachable sub-DAG), so a cache
      * eviction that forces a sub-chain to be rebuilt yields an equal result — only the work changes,
      * never the output.
+     *
+     * <p>{@code shardIndex} (nullable) is the bundle's shard corpus index (ADR-0049): when the
+     * corpus asserts a leaf's exact (s, p, o) more than once, the leaf is canonicalised to the
+     * lowest mapping_id among the duplicates — rather than whichever one Nemo's trace happened to
+     * carry — and the full duplicate set is attached as equivalent asserted evidence. Without an
+     * index the leaf keeps the trace's own mapping_id, the pre-ADR-0049 behaviour.
      */
     public static InferredMapping buildInferredMapping(InferenceLookup lookup, String conclusion,
-            DataloadSolr solrClient, Map<String, InferredMapping> memo, String inferredMappingSetId) {
+            DataloadSolr solrClient, Map<String, InferredMapping> memo, String inferredMappingSetId,
+            ShardAssertedIndex shardIndex) {
         return determineInferencesLeadingToConclusion(lookup, conclusion, solrClient, memo,
-                inferredMappingSetId);
+                inferredMappingSetId, shardIndex);
     }
 
     public static void collectAssertedMappingId(String atom, Set<String> assertedMappingIds) {
@@ -78,7 +85,8 @@ public class NemoHelper {
             InferenceLookup lookup,
             String conclusion, DataloadSolr solrClient,
             Map<String, InferredMapping> memo,
-            String inferredMappingSetId) {
+            String inferredMappingSetId,
+            ShardAssertedIndex shardIndex) {
 
         InferredMapping cached = memo.get(conclusion);
         if (cached != null) return cached;
@@ -99,22 +107,50 @@ public class NemoHelper {
         inferredMapping.setObjectIRI(new Uri(objectIRI));
 
         if (!OXOInferenceConstants.isInferredIdTerm(mappingIdTerm)) {
-            // Asserted leaf: the id term is the real mapping_id and the provenance key.
-            String bareMappingId = OXOInferenceConstants.toBareMappingId(mappingIdTerm);
-            Mapping assertedMapping = solrClient.queryByMappingId(bareMappingId);
-            if (assertedMapping != null) {
-                inferredMapping.populateFromMapping(assertedMapping);
+            // Asserted leaf: the id term is a real mapping_id — but only the one Nemo's derivation
+            // happened to use. When the corpus asserts the same (s, p, o) in several sets, the
+            // duplicates are indistinguishable premises, so the leaf shown in the chain is
+            // canonicalised to the lowest mapping_id and the full set becomes the evidence
+            // (ADR-0049). With no shard index, the trace's own id stands, as before.
+            String tracedMappingId = OXOInferenceConstants.toBareMappingId(mappingIdTerm);
+            List<String> corpusMappingIds = shardIndex == null
+                    ? List.of()
+                    : shardIndex.idsFor(subjectIRI, predicateIRI, objectIRI);
+            String canonicalMappingId;
+            if (corpusMappingIds.isEmpty()) {
+                if (shardIndex != null) {
+                    logger.warn("Asserted leaf <{}> <{}> <{}> (mapping_id {}) is not in the shard "
+                            + "corpus index; keeping the trace's own mapping_id.",
+                            subjectIRI, predicateIRI, objectIRI, tracedMappingId);
+                }
+                canonicalMappingId = tracedMappingId;
             } else {
-                logger.warn("No asserted mapping in Solr for mapping_id {} (<{}> <{}> <{}>)",
-                        bareMappingId, subjectIRI, predicateIRI, objectIRI);
-                inferredMapping.setMappingId(bareMappingId);
+                canonicalMappingId = corpusMappingIds.get(0);
+                if (!corpusMappingIds.contains(tracedMappingId)) {
+                    logger.warn("Trace mapping_id {} for asserted leaf <{}> <{}> <{}> is not among "
+                            + "its shard corpus quads {} — trace and corpus disagree.",
+                            tracedMappingId, subjectIRI, predicateIRI, objectIRI, corpusMappingIds);
+                }
             }
-            InferredMapping.ChainRuleApplications chainRuleApplications =
-                    new InferredMapping.ChainRuleApplications(Optional.of(ChainRulesEnum.ASSERTED));
-            chainRuleApplications.setPremises(new ArrayList<>());
-            inferredMapping.setChainRuleApplications(Optional.of(chainRuleApplications));
+            populateAssertedLeaf(inferredMapping, canonicalMappingId, solrClient);
 
-            enrichEntityDetails(inferredMapping, solrClient);
+            if (corpusMappingIds.size() > 1) {
+                List<InferredMapping> equivalentLeaves = new ArrayList<>(corpusMappingIds.size());
+                for (String duplicateMappingId : corpusMappingIds) {
+                    if (duplicateMappingId.equals(canonicalMappingId)) {
+                        equivalentLeaves.add(inferredMapping);
+                        continue;
+                    }
+                    InferredMapping duplicateLeaf = new InferredMapping();
+                    duplicateLeaf.setSubjectIRI(new Uri(subjectIRI));
+                    duplicateLeaf.setPredicateIRI(new Uri(predicateIRI));
+                    duplicateLeaf.setObjectIRI(new Uri(objectIRI));
+                    populateAssertedLeaf(duplicateLeaf, duplicateMappingId, solrClient);
+                    equivalentLeaves.add(duplicateLeaf);
+                }
+                inferredMapping.setEquivalentAssertedLeaves(equivalentLeaves);
+            }
+
             memo.put(conclusion, inferredMapping);
             return inferredMapping;
         }
@@ -141,7 +177,7 @@ public class NemoHelper {
                     // before we ever consult it. The guard is belt-and-suspenders.
                     if (!isMappingAtom(premise)) continue;
                     InferredMapping premiseMapping = determineInferencesLeadingToConclusion(
-                            lookup, premise, solrClient, memo, inferredMappingSetId);
+                            lookup, premise, solrClient, memo, inferredMappingSetId, shardIndex);
                     if (premiseMapping != null) {
                         premises.add(premiseMapping);
                     }
@@ -156,6 +192,30 @@ public class NemoHelper {
         enrichEntityDetails(inferredMapping, solrClient);
         memo.put(conclusion, inferredMapping);
         return inferredMapping;
+    }
+
+    /**
+     * Fill in one asserted leaf from its Solr doc: provenance (source set, curie/labels) via
+     * {@link InferredMapping#populateFromMapping}, the ASSERTED chain-rule marker, and the
+     * entity-index curie/label enrichment. Shared between the canonical leaf shown in the chain
+     * and its corpus duplicates (ADR-0049), so every leaf is built one way.
+     */
+    private static void populateAssertedLeaf(InferredMapping leaf, String bareMappingId,
+            DataloadSolr solrClient) {
+        Mapping assertedMapping = solrClient.queryByMappingId(bareMappingId);
+        if (assertedMapping != null) {
+            leaf.populateFromMapping(assertedMapping);
+        } else {
+            logger.warn("No asserted mapping in Solr for mapping_id {} (<{}> <{}> <{}>)",
+                    bareMappingId, leaf.getSubjectIRI(), leaf.getPredicateIRI(), leaf.getObjectIRI());
+            leaf.setMappingId(bareMappingId);
+        }
+        InferredMapping.ChainRuleApplications chainRuleApplications =
+                new InferredMapping.ChainRuleApplications(Optional.of(ChainRulesEnum.ASSERTED));
+        chainRuleApplications.setPremises(new ArrayList<>());
+        leaf.setChainRuleApplications(Optional.of(chainRuleApplications));
+
+        enrichEntityDetails(leaf, solrClient);
     }
 
     /**
