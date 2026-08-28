@@ -12,6 +12,17 @@ basePath: /oxo2
 
 solr:
   replicaCount: 1
+  # Explicit heap: without SOLR_HEAP the Solr launcher defaults to 512m, which cannot serve
+  # grouping/collapse queries on the full index (and OOM-killed the HPC dataload Solr at dev
+  # scale). The container memory sizes leave the heap headroom for JVM overhead; the OS page
+  # cache the index relies on is reclaimable, so the limit does not need to cover the index.
+  heap: 4g
+  resources:
+    requests:
+      cpu: 1
+      memory: 5Gi
+    limits:
+      memory: 8Gi
   service:
     port: 8983
     containerPort: 8983

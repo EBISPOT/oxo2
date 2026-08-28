@@ -76,10 +76,16 @@ spec:
           env:
             - name: SOLR_HOME
               value: /var/solr
+            # Never rely on the launcher default (512m): it cannot serve grouping/collapse
+            # queries on the full index. See values.yaml § solr.heap.
+            - name: SOLR_HEAP
+              value: {{ .Values.solr.heap | quote }}
             - name: SOLR_JETTY_HOST
               value: "0.0.0.0"
             - name: SOLR_SECURITY_MANAGER_ENABLED
               value: "false"
+          resources:
+{{ toYaml .Values.solr.resources | indent 12 }}
           ports:
             - containerPort: {{ .Values.solr.service.containerPort }}
           # Gate Service traffic on all three cores actually answering queries, the same
