@@ -1,6 +1,13 @@
 # OxO2 HPC Data Release Pipeline
 
-This document describes the end-to-end process for running an OxO2 data release on the EBI HPC (SLURM) cluster. The pipeline downloads SSSOM ontology mappings, converts them to JSON, runs cross-set SSSOM inference via the Nemo rules engine, and indexes the asserted and (bare) inferred mappings into Apache Solr. Explanations are no longer precomputed in the dataload — they are deferred to a future on-demand service ([ADR-0020](adr/0020-defer-explanations-to-on-demand.md)).
+This document describes the end-to-end process for running an OxO2 data release on the EBI HPC
+(SLURM) cluster. The pipeline downloads SSSOM ontology mappings, converts them to JSON, runs
+cross-set SSSOM inference via the Nemo rules engine, precomputes every inferred mapping's
+explanation by component-sharded chase+trace
+([ADR-0028](adr/0028-component-sharded-explanation-precompute.md)), indexes the asserted and
+explained inferred mappings into Apache Solr, and derives the per-entity typeahead collection. The
+same pipeline serves two environments — `dev` and `prod` — selected by `OXO2_ENV` (see
+§ Environments and [ADR-0050](adr/0050-production-data-release-channel.md)).
 
 ## Architecture Overview
 
@@ -8,7 +15,9 @@ The HPC data release uses a **three-layer execution model**:
 
 1. **Login node** (`loadData.hpc`) -- validates the environment and submits a SLURM batch job. No computation happens here.
 2. **Compute node** (`loadData.slurm`) -- the main orchestrator allocated by SLURM. It initializes directories, manages Solr via Singularity, and launches Nextflow pipelines.
-3. **Nextflow + SLURM sub-jobs** -- Nextflow submits individual tasks as SLURM jobs, running them inside Singularity containers pulled from `ghcr.io/ebispot/oxo2-nextflow:dev`.
+3. **Nextflow + SLURM sub-jobs** -- Nextflow submits individual tasks as SLURM jobs, running them
+   inside Singularity containers pulled from `ghcr.io/ebispot/oxo2-nextflow` at the environment's
+   tag (`:dev` or `:stable` — see § Environments).
 
 ```
  Login Node                    Compute Node (SLURM)              SLURM Sub-jobs
@@ -23,32 +32,60 @@ The HPC data release uses a **three-layer execution model**:
                                  ├─ nextflow run (sssom2json)     ├─ SHARD_CONCLUSIONS (x 1)
                                  ├─ nextflow run (infer)─────────>├─ EXPLAIN_SHARD (x S)
                                  ├─ nextflow run (explain)        ├─ EXPLANATIONS_TO_JSON (x S/100)
-                                 ├─ json2solr (index-asserted)    └─ MERGE_INFERRED_MAPPING_SETS (x 1)
+                                 ├─ json2solr (index-asserted)    ├─ MERGE_INFERRED_MAPPING_SETS (x 1)
                                  ├─ nextflow run (explanations2json)
-                                 ├─ json2solr (index-inferred)
-                                 ├─ archive (solr-data.tar.gz)
-                                 └─ Stop Solr
+                                 ├─ json2solr (index-inferred)    └─ ENTITIES_FOR_PREFIX (x P)
+                                 ├─ nextflow run (mappings2entities)
+                                 ├─ json2solr (index-entities)
+                                 ├─ Stop Solr
+                                 └─ archive (solr-data.tar.gz)
 ```
 
 The orchestrator's stages are resumable via `START_STAGE`
 ([ADR-0019](adr/0019-resumable-hpc-dataload.md)): `download`, `sssom2json`, `nquads`, `infer`,
-`shard`, `explain`, `index-asserted`, `explanations2json`, `index-inferred`, `archive`.
+`shard`, `explain`, `index-asserted`, `explanations2json`, `index-inferred`, `mappings2entities`,
+`index-entities`, `archive`.
 
 ## Prerequisites
 
+### Environments
+
+`OXO2_ENV` selects which environment a run targets. The shared `loadData.env.sh` — sourced by
+`loadData.hpc`, `loadData.jenkins.sh`, and `cleanup.hpc` — derives every path, the config, and the
+container image from it ([ADR-0050](adr/0050-production-data-release-channel.md)). The value is
+whitelisted: anything other than `dev` or `prod` fails before any directory is created or deleted.
+
+| | `dev` (default) | `prod` |
+|---|---|---|
+| Branch of the NFS checkout | `dev` | `stable` |
+| Image tag | `:dev` | `:stable` |
+| NFS tree | `/nfs/production/parkinso/spot/oxo2/dev` | `/nfs/production/parkinso/spot/oxo2/prod` |
+| HPS tree | `/hps/nobackup/parkinso/spot/oxo2/dev` | `/hps/nobackup/parkinso/spot/oxo2/prod` |
+
+The NFS tree holds the logs, the image digest file, and the repo checkout (`<NFS tree>/oxo2` —
+whose `oxo-config.json` is the environment's config); the HPS tree holds the pipeline data,
+Nextflow dirs, and Solr home. The prod HPS tree is created by the scripts on first run. Dev and
+prod runs may execute concurrently — the trees are disjoint — but if SLURM places both main jobs
+on one compute node, the second Solr cannot bind :8983 and that run aborts at the readiness probe;
+resume it with `START_STAGE` once the node frees.
+
 ### Environment Variables
 
-All variables are hardcoded with EBI Evora defaults in `loadData.hpc` but can be overridden:
+All variables are derived per environment by `loadData.env.sh`; an explicitly exported variable
+overrides its derived default (`OXO2_ENV` picks the set, a named variable overrides a member):
 
 | Variable | Default                                      | Description |
 |----------|----------------------------------------------|-------------|
-| `OXO2_DATA` | `/hpc/.../oxo2/dev/data`                     | Root directory for all pipeline data |
-| `OXO2_CONFIG` | `/nfs/.../oxo-config-evora.json`  | JSON file listing mapping registries to download |
-| `NEXTFLOW_DIR` | `/hps/.../nextflow`                 | Nextflow working directories and caches |
-| `SOLR_HOME` | `/hps/.../solr-data`                | Solr index data (persists between runs) |
-| `NF_CONTAINER` | `docker://ghcr.io/ebispot/oxo2-nextflow:dev` | Container image URI |
+| `OXO2_ENV` | `dev`                                      | Target environment (`dev` or `prod`) — selects every derived default below |
+| `OXO2_DATA` | `<HPS tree>/data`                         | Root directory for all pipeline data |
+| `OXO2_CONFIG` | `<NFS tree>/oxo2/oxo-config.json`       | JSON file listing mapping registries to download |
+| `NEXTFLOW_DIR` | `<HPS tree>/nextflow`                  | Nextflow working directories and caches |
+| `SOLR_HOME` | `<HPS tree>/solr-data`                    | Solr index data (persists between runs) |
+| `NF_CONTAINER` | `docker://ghcr.io/ebispot/oxo2-nextflow:<tag>` | Container image URI (`:dev` / `:stable`) |
 | `HPC_TIME` | `72:00:00`                                   | SLURM time limit for the main job |
-| `HPC_MEM` | `16G`                                        | SLURM memory for the main orchestrator job |
+| `HPC_MEM` | `32G`                                        | SLURM memory for the main orchestrator job |
+| `HPC_CPUS` | `8`                                          | CPUs for the main job (Solr + Nextflow driver + inline stages + pigz) |
+| `SOLR_HEAP` | `4g`                                        | Heap for the Solr instance the batch step hosts |
 
 ### Storage Layout
 
@@ -69,13 +106,18 @@ The pipeline uses two filesystem tiers:
 ### Step 0: Launch from Login Node (`loadData.hpc`)
 
 ```bash
-./loadData.hpc
+./loadData.hpc                  # dev (the default)
+OXO2_ENV=prod ./loadData.hpc    # production
 ```
 
 What happens:
-1. Validates that all required environment variables are set.
-2. Queries the GHCR registry for the latest container image digest. This runs on the login node because compute nodes typically lack internet access.
-3. Builds `sbatch` arguments, forwarding all environment variables (including the remote digest) to the compute node.
+1. Sources `loadData.env.sh`, which validates `OXO2_ENV` and derives the environment's paths,
+   config, and container image (explicit exports override the derived defaults).
+2. Queries the GHCR registry for the configured image's latest digest (repository and tag are
+   parsed out of `NF_CONTAINER`). This runs on the login node because compute nodes typically lack
+   internet access.
+3. Builds `sbatch` arguments — including a per-environment job name, `oxo2-dataload-<env>` —
+   forwarding all environment variables (including the remote digest) to the compute node.
 4. Submits `loadData.slurm` as a SLURM batch job.
 
 ### Step 1: Compute Node Initialization (`loadData.slurm`)
@@ -97,14 +139,16 @@ $OXO2_DATA/
   sssom/                 # Downloaded SSSOM TSV files
   sssom-as-json/         # Converted JSON (mapping/ and mappingSet/ subdirs)
   assertedMappings/      # Per-set N-Quads facts
+  entities/              # Per-entity JSON derived from the mappings index (ADR-0034)
   tmp/                   # Temporary files
   inferences/
-    crossSet/            # Concatenated corpus + Nemo inference output (TTL)
-    solr/                # Bare inferred-mapping JSON for Solr (mapping/ and mappingSet/)
+    crossSet/            # Concatenated corpus, Nemo inference output, shards + shard chains
+    solr/                # Explained inferred-mapping JSON for Solr (mapping/ and mappingSet/)
 
 $SOLR_HOME/
   oxo2-mappings/         # Solr core: individual mappings
   oxo2-mappingsets/      # Solr core: mapping sets
+  oxo2-entities/         # Solr core: distinct entities for the typeahead (ADR-0034)
   logs/                  # Solr server logs
   pid/                   # Solr PID file
 ```
@@ -117,19 +161,25 @@ All directories except `NXF_SINGULARITY_CACHEDIR` are cleaned at the start of a 
 
 The digest is tracked in `$NFS_PATH/oxo2-nextflow.digest`.
 
-**Solr startup:** Solr runs as a Singularity instance (long-running background container) on the compute node, bound to `$SOLR_HOME` for data persistence:
+**Solr startup:** Solr runs in the foreground inside a plain `singularity exec`, backgrounded by
+the batch-step shell, bound to `$SOLR_HOME` for data persistence and with `SOLR_HEAP` (default 4g)
+set explicitly — the launcher's fixed 512m default cannot index the corpus:
 
 ```bash
-singularity instance start \
+singularity exec \
     --bind "$SOLR_HOME:/opt/solr/server/solr" \
     --bind "$SOLR_HOME/logs:/opt/solr/server/logs" \
-    "$SIF_IMAGE" solr_svc
-
-singularity exec instance://solr_svc \
-    /opt/solr/bin/solr start --user-managed -Djetty.host=$(hostname)
+    --env "SOLR_JETTY_HOST=0.0.0.0" \
+    --env "SOLR_HEAP=${SOLR_HEAP:-4g}" \
+    "$SIF_IMAGE" \
+    /opt/solr/bin/solr start -f --user-managed &
 ```
 
-Solr binds to $(hostname) so Nextflow sub-jobs on other nodes can reach it via `http://<compute-node-hostname>:8983/solr`.
+This keeps Solr's JVM inside the SLURM cgroup and visible to its process tracking; an EXIT trap
+tears it down on any failure. (The earlier `singularity instance start` pattern was abandoned —
+the detached sinit was being SIGTERM'd silently on this HPC.) Jetty binds 0.0.0.0 so Nextflow
+sub-jobs on other nodes can reach Solr via `http://<compute-node-hostname>:8983/solr`; readiness
+is probed via localhost, the FQDN, and each core before any stage runs.
 
 ### Step 2: Stage 1 -- Download Mappings (`downloadMappings.nf`)
 
@@ -165,8 +215,9 @@ This is intentionally run as a single process because multiple SSSOM TSV files a
 
 This is the most resource-intensive stage. SSSOM reasoning (ADR-0016) runs **once across all
 mapping sets**: each set's JSON is converted to N-Quads, every set's N-Quads is concatenated into one
-corpus, and `nmo` runs `sssom.rls` over the whole corpus to produce the inferred mappings. No trace or
-explanation is computed — explanations are deferred to an on-demand service (ADR-0020).
+corpus, and `nmo` runs `sssom.rls` over the whole corpus to produce the inferred mappings. No trace
+or explanation is computed in this stage — the `shard`/`explain` stages trace every conclusion
+afterwards (ADR-0028).
 
 ```
 *.json ─> JSON2NQUADS ─> CONCAT_CORPUS ─> INFER_CROSS_SET
@@ -290,19 +341,49 @@ json2solr.sh "$OXO2_INFERENCES/solr/mapping"    http://localhost:8983/solr/oxo2-
 json2solr.sh "$OXO2_INFERENCES/solr/mappingSet" http://localhost:8983/solr/oxo2-mappingsets
 ```
 
-### Step 8: Archive and Shutdown
+### Step 8: Shutdown and Archive
 
-1. **Archive:** Packs the contents of `$SOLR_HOME` into `$OXO2_INFERENCES/solr-data.tar.gz` (using the
-   image's `pigz`). This archive is what the separate copy-to-NFS + Kubernetes redeploy job consumes; the
+1. **Stop Solr:** SIGTERM to the backgrounded `singularity exec` (the same idempotent handler the
+   EXIT trap uses), so Solr commits and closes the index and the on-disk state in `$SOLR_HOME` is
+   durable before it is packed.
+2. **Permissions:** `chmod -R 777 "$SOLR_HOME"/*` so downstream services (e.g., Kubernetes pods) can read the Solr data.
+3. **Archive:** Packs the contents of `$SOLR_HOME` (excluding the run-local `logs/` and `pid/`)
+   into `$OXO2_INFERENCES/solr-data.tar.gz` using the image's `pigz` at `$SLURM_CPUS_PER_TASK`
+   threads. This archive is what the separate copy-to-NFS + Kubernetes redeploy job consumes; the
    dataload itself stops here and does not deploy.
-2. **Stop Solr:** `solr stop` then `singularity instance stop solr_svc`.
-3. **Permissions:** `chmod -R 777 "$SOLR_HOME"/*` so downstream services (e.g., Kubernetes pods) can read the Solr data.
+
+## Cutting a Production Release
+
+Production runs the **stable** branch ([ADR-0050](adr/0050-production-data-release-channel.md)):
+the prod NFS checkout is of `stable`, and CI publishes the `:stable` image tags on every push to
+`stable`. To cut a release:
+
+1. **Open a pull request merging `dev` into `stable`** and merge it. The push to `stable` triggers
+   the image builds (`.github/workflows/docker.yml`) — wait for them to publish the `:stable` tags.
+2. **Update the prod checkout** on the login node:
+
+   ```bash
+   git -C /nfs/production/parkinso/spot/oxo2/prod/oxo2 pull
+   ```
+
+3. **Run the prod dataload** — either via the prod Jenkins job (a clone of the dev job whose build
+   step exports `OXO2_ENV=prod`; see `oxo2-dataload/CONTEXT.md` § Resumable dataload) or by hand
+   from the prod checkout's `oxo2-dataload/`:
+
+   ```bash
+   OXO2_ENV=prod ./loadData.hpc
+   ```
+
+   The digest probe notices the moved `:stable` tag, so the compute node re-pulls the image.
+4. The archive lands at `<prod HPS tree>/data/inferences/solr-data.tar.gz` — the same contract as
+   dev. Copying it off-cluster and deploying to the Kubernetes clusters (failover first, then
+   prod) is the separate deploy job's concern.
 
 ## Resource Summary
 
 | Process | CPU | Memory | Time | Parallelism |
 |---------|-----|--------|------|-------------|
-| Main SLURM job | 1 | 16 GB | 72h | 1 (orchestrator) |
+| Main SLURM job | 8 | 32 GB | 72h | 1 (orchestrator; hosts Solr + the Nextflow driver) |
 | DOWNLOAD_REGISTRY | 1 | 4 GB | 2h | N registries |
 | SSSOM2JSON | 1 | 4 GB | 2h | 1 (batch) |
 | JSON2NQUADS | 1 | 4 GB | 2h | M files |
@@ -348,13 +429,16 @@ Key settings from `nextflow/nextflow.config`:
 
 ## Cleanup
 
-To remove all pipeline data and start fresh:
+To remove one environment's pipeline data and start fresh:
 
 ```bash
-./cleanup.hpc
+./cleanup.hpc                  # dev
+OXO2_ENV=prod ./cleanup.hpc    # production
 ```
 
-This submits a quick SLURM job (`srun`, 1 hour, 8 GB) that deletes `$NEXTFLOW_DIR`, `$OXO2_DATA`, and `$SOLR_HOME`.
+This submits a quick SLURM job (`srun`, 1 hour, 8 GB) that deletes that environment's
+`$NEXTFLOW_DIR`, `$OXO2_DATA`, and `$SOLR_HOME`. It sources the same `loadData.env.sh`, so an
+unknown `OXO2_ENV` fails before anything is deleted.
 
 ## Key Design Decisions
 

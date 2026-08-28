@@ -396,6 +396,15 @@ local). Affects `oxo2-dataload` (`loadData.lib.sh`, `loadData.slurm`/`.hpc`, `lo
 `loadData.jenkins.sh`). NB: [ADR-0028](docs/adr/0028-component-sharded-explanation-precompute.md)
 adds the `shard`/`explain` substages (one Nextflow process graph, `explainSssomCrossSet.nf`, resume
 entry `from_explain_shard`) and replaces `inferences2json` with `explanations2json`.
+- **Production data releases come from the stable branch** — the HPC dataload is parameterised by
+`OXO2_ENV` (whitelisted `dev`, the default, or `prod`; anything else hard-fails): the shared
+`oxo2-dataload/loadData.env.sh`, sourced by every login-node entry point, derives the mirrored
+`/nfs|/hps .../oxo2/<env>` trees, the checkout's `oxo-config.json`, and the image tag (`prod` pulls
+the mutable `:stable` images CI builds on every push to `stable`). Explicit exports override the
+derived defaults. Cutting a release is a manual PR merging `dev` into `stable`, then pulling the
+prod checkout on NFS. See [ADR-0050](docs/adr/0050-production-data-release-channel.md). Affects
+`oxo2-dataload` (`loadData.env.sh`, `loadData.hpc`, `loadData.jenkins.sh`, `cleanup.hpc`) and CI
+(`.github/workflows/docker.yml` builds on `stable`).
 - **OxO2 is backwards compatible with OxO v1** — API surface answers v1's questions even where SSSOM terms are richer. 
 See [ADR-0004](docs/adr/0004-backwards-compatible-with-oxo-v1.md). Affects `oxo2-backend` (API design) and `oxo2-frontend` (documentation surface).
 - **GitHub registries are fetched via archive tarball** — GitHub mapping registries download as the default-branch archive 

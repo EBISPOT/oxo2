@@ -3,7 +3,9 @@
 # login node via the "ssh" plugin's "Execute shell script on remote host using ssh" build step,
 # pointed at a Jenkins-global SSH site (host + HPC user + key live there, not in the repo) — the same
 # SSH site the solr-data.tar.gz copy job uses. The build step exports the job parameters (START_STAGE,
-# OXO2_DATALOAD_DIR, OXO2_CONFIG, NF_CONTAINER, HPC_*, POLL_INTERVAL) and invokes this wrapper. It
+# OXO2_DATALOAD_DIR, OXO2_CONFIG, NF_CONTAINER, HPC_*, POLL_INTERVAL) and invokes this wrapper. The
+# prod job's build step additionally exports OXO2_ENV=prod (hardcoded in the step, not a parameter, so
+# a misclick cannot run prod from the dev job) — see loadData.env.sh for what OXO2_ENV derives. It
 # submits the dataload via loadData.hpc, then BLOCKS — polling Slurm and streaming the job's log to
 # stdout (which the ssh build step captures into the Jenkins console) — and exits with the job's final
 # status, so the Jenkins build passes iff the dataload COMPLETED. See oxo2-dataload/CONTEXT.md
@@ -28,15 +30,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 START_STAGE="${START_STAGE:-download}"
 POLL_INTERVAL="${POLL_INTERVAL:-30}"
 
+# Shared dev/prod environment derivation (ADR-0050). Gives this wrapper the same NFS_PATH /
+# SLURM_LOGS that loadData.hpc will use — needed here BEFORE submission, for the reattach check
+# and log tailing — and exports the resolved values so the loadData.hpc child sees them too.
+. "$SCRIPT_DIR/loadData.env.sh"
+
 echo "=== OXO2 dataload (Jenkins -> HPC) ==="
 echo "Host        : $(hostname)"
 echo "Date        : $(date)"
+echo "OXO2_ENV    : $OXO2_ENV"
 echo "START_STAGE : $START_STAGE"
 echo "Script dir  : $SCRIPT_DIR"
 
-# Where loadData.hpc writes its Slurm logs (kept in sync with loadData.hpc's NFS_PATH/SLURM_LOGS).
-NFS_PATH="${NFS_PATH:-/nfs/production/parkinso/spot/oxo2/dev}"
-SLURM_LOGS="${SLURM_LOGS:-$NFS_PATH/logs}"
 CURRENT_JOBID_FILE="$SLURM_LOGS/oxo2-dataload.current-jobid"
 
 # Terminal Slurm states: the job has stopped (cleanly or not). Anything else — RUNNING, PENDING,

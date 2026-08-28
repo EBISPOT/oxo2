@@ -1,9 +1,18 @@
 #!/bin/bash
+# Deletes one environment's HPC dataload trees (Nextflow dirs, pipeline data, Solr index).
+# OXO2_ENV selects the environment (dev, the default, or prod) via the shared loadData.env.sh —
+# an unknown value fails there before anything is deleted (ADR-0050).
 
- NFS_PATH="/nfs/production/parkinso/spot/oxo2/dev"
- HPS_PATH="/hps/nobackup/parkinso/spot/oxo2/dev"
- NEXTFLOW_DIR="$HPS_PATH/nextflow"
- OXO2_DATA="$HPS_PATH/data"
- SOLR_HOME="$HPS_PATH/solr-data"
+set -euo pipefail
 
- srun -t 1:00:00 -J oxo2cleanUp --cpus-per-task=48 --mem=8G bash -c " rm -Rf $NEXTFLOW_DIR &&  rm -Rf $OXO2_DATA &&  rm -Rf $SOLR_HOME"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+. "$SCRIPT_DIR/loadData.env.sh"
+
+echo "Cleaning up OXO2_ENV=$OXO2_ENV:"
+echo "  $NEXTFLOW_DIR"
+echo "  $OXO2_DATA"
+echo "  $SOLR_HOME"
+
+srun -t 1:00:00 -J "oxo2cleanUp-$OXO2_ENV" --cpus-per-task=48 --mem=8G \
+    bash -c " rm -Rf $NEXTFLOW_DIR &&  rm -Rf $OXO2_DATA &&  rm -Rf $SOLR_HOME"

@@ -57,7 +57,11 @@ Java sub-modules depend on `oxo2-shared` for the SSSOM data model.
   single batch job) for SLURM-based deployments. Both honour a `START_STAGE` resume parameter, and
   `loadData.jenkins.sh` (the login-node submit→poll→tail wrapper a Jenkins Freestyle job runs over
   SSH) wraps them for CI-driven runs — see § Resumable dataload. The `START_STAGE` contract they share
-  with the local `loadData.nextflow` lives in the sourced `loadData.lib.sh`.
+  with the local `loadData.nextflow` lives in the sourced `loadData.lib.sh`. The target environment
+  is selected by `OXO2_ENV` (`dev`, the default, or `prod` — the production release built from the
+  `stable` branch): the sourced `loadData.env.sh` derives each environment's paths, config, and image
+  tag, with explicit exports overriding the derived defaults (ADR-0050). `loadData.slurm` itself is
+  environment-agnostic — everything reaches it via `--export`.
 - **Solr data archive** — on a successful HPC run, `loadData.slurm` stops Solr cleanly and writes
   `$OXO2_INFERENCES/solr-data.tar.gz` (the contents of `$SOLR_HOME`, excluding the run-local `logs/`
   and `pid/` dirs). Jenkins copies it onto the NFS export, and the dev-cluster Solr init container
@@ -388,6 +392,16 @@ parameter (`download` … `archive`, default `download`); string parameters `OXO
 checked-out `oxo2-dataload` dir on the login node), `OXO2_CONFIG`, `NF_CONTAINER`, `HPC_TIME`,
 `HPC_MEM`, `HPC_CPUS`, `HPC_ACCOUNT` (blank = none), `POLL_INTERVAL`; and tick **Do not allow
 concurrent builds** (so two dataloads never race on the checkpoint/jobid files and `$SOLR_HOME`).
+A blank `OXO2_CONFIG` / `NF_CONTAINER` parameter means "use the environment's derived default"
+(`loadData.env.sh`); a non-blank value overrides it.
+
+The **production job** (ADR-0050) is a clone of this job whose build step additionally runs
+`export OXO2_ENV=prod` — hardcoded in the step, not offered as a parameter, so a misclick cannot
+run prod from the dev job — and whose `OXO2_DATALOAD_DIR` points at the **stable-branch** checkout
+(`/nfs/production/parkinso/spot/oxo2/prod/oxo2/oxo2-dataload`). Everything else derives from
+`OXO2_ENV=prod`: the mirrored `prod` NFS/HPS trees, that checkout's `oxo-config.json`, and the
+`:stable` image tag. The dev and prod jobs may run concurrently (disjoint trees, separate
+checkpoint/jobid files); only same-job concurrency must stay disallowed.
 
 `loadData.jenkins.sh` submits via `loadData.hpc`, then blocks — polling Slurm and streaming the job
 log to the build console — and exits with the job's final state, so the build passes iff the dataload

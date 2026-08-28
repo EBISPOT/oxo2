@@ -1,21 +1,24 @@
 #!/bin/bash
 # Login-node entry point for OXO2 HPC dataload.
 # Validates environment and submits a single Slurm job — no computation on the login node.
+#
+# OXO2_ENV selects the target environment (dev, the default, or prod): the shared
+# loadData.env.sh derives every path and the container image from it, and any explicitly
+# exported variable overrides its derived default. A production submission is
+#
+#   OXO2_ENV=prod ./loadData.hpc
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
- NFS_PATH="/nfs/production/parkinso/spot/oxo2/dev"
- HPS_PATH="/hps/nobackup/parkinso/spot/oxo2/dev"
- SLURM_LOGS="$NFS_PATH/logs"
- NEXTFLOW_DIR="$HPS_PATH/nextflow"
- NF_CONTAINER="docker://ghcr.io/ebispot/oxo2-nextflow:dev"
- OXO2_CONFIG="/nfs/production/parkinso/spot/oxo2/dev/oxo2/oxo-config.json"
- OXO2_DATA="$HPS_PATH/data"
- SOLR_HOME="$HPS_PATH/solr-data"
+# Shared dev/prod environment derivation — also sourced by loadData.jenkins.sh and cleanup.hpc,
+# so the entry points cannot disagree on where an environment lives (ADR-0050).
+. "$SCRIPT_DIR/loadData.env.sh"
 
 # --- Validate required environment variables ---
+# loadData.env.sh always assigns these, so this can only fire on a broken edit of the
+# derivation — kept as a cheap regression net.
 missing=()
 for var in OXO2_DATA OXO2_CONFIG NEXTFLOW_DIR SOLR_HOME NF_CONTAINER; do
     if [ -z "${!var:-}" ]; then
@@ -26,13 +29,8 @@ done
 if [ ${#missing[@]} -gt 0 ]; then
     echo "ERROR: Required environment variables not set: ${missing[*]}" >&2
     echo "" >&2
-    echo "Usage:" >&2
-    echo "  export OXO2_DATA=/hpc/shared/oxo2/data" >&2
-    echo "  export OXO2_CONFIG=/hpc/shared/oxo2/config.json" >&2
-    echo "  export NEXTFLOW_DIR=/hpc/shared/oxo2/nextflow" >&2
-    echo "  export SOLR_HOME=/hpc/shared/oxo2/solr" >&2
-    echo "  export NF_CONTAINER=docker://ghcr.io/ebispot/oxo2-nextflow:dev" >&2
-    echo "  $0" >&2
+    echo "These normally come from loadData.env.sh (OXO2_ENV=$OXO2_ENV); export any of them" >&2
+    echo "explicitly to override the derived defaults." >&2
     exit 1
 fi
 
@@ -61,22 +59,32 @@ mkdir -p "$SLURM_LOGS"
 rm -rf "$SLURM_LOGS"/*
 
 # --- Check for new Singularity image ---
+# The repository path and tag are parsed out of NF_CONTAINER so the digest probe follows the
+# image actually configured (an explicit NF_CONTAINER override included) instead of a hardcoded
+# dev tag. A non-GHCR ref just fails the token request, degrading to "not available", which the
+# compute node treats as "keep the cached image".
+IMAGE_REF="${NF_CONTAINER#docker://}"                              # ghcr.io/ebispot/oxo2-nextflow:<tag>
+IMAGE_TAG="${IMAGE_REF##*:}"
+IMAGE_PATH="${IMAGE_REF%:*}"; IMAGE_PATH="${IMAGE_PATH#ghcr.io/}"  # ebispot/oxo2-nextflow
 SIF_DIGEST_FILE="$NFS_PATH/oxo2-nextflow.digest"
 REMOTE_DIGEST=""
-GHCR_TOKEN=$(curl -sf "https://ghcr.io/token?scope=repository:ebispot/oxo2-nextflow:pull" | jq -r '.token' 2>/dev/null) || true
+GHCR_TOKEN=$(curl -sf "https://ghcr.io/token?scope=repository:$IMAGE_PATH:pull" | jq -r '.token' 2>/dev/null) || true
 if [ -n "$GHCR_TOKEN" ]; then
     HEADER_TMP=$(mktemp)
     curl -sf -D "$HEADER_TMP" -o /dev/null \
         -H "Authorization: Bearer $GHCR_TOKEN" \
         -H "Accept: application/vnd.oci.image.index.v1+json" \
-        https://ghcr.io/v2/ebispot/oxo2-nextflow/manifests/dev || true
+        "https://ghcr.io/v2/$IMAGE_PATH/manifests/$IMAGE_TAG" || true
     REMOTE_DIGEST=$(sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: *\([^ ]*\).*/\1/Ip' "$HEADER_TMP") || true
     rm -f "$HEADER_TMP"
 fi
 echo "Remote image digest: ${REMOTE_DIGEST:-not available}"
 
 # --- Build sbatch arguments ---
+# The per-environment job name overrides loadData.slurm's #SBATCH header so dev and prod runs
+# are distinguishable in squeue.
 SBATCH_ARGS=(
+    --job-name="oxo2-dataload-$OXO2_ENV"
     --time="$HPC_TIME"
     --mem="$HPC_MEM"
     --cpus-per-task="$HPC_CPUS"
@@ -91,6 +99,7 @@ fi
 
 # --- Submit the job ---
 echo "Submitting OXO2 dataload job..."
+echo "  Environment: $OXO2_ENV"
 echo "  Start stage: $START_STAGE"
 echo "  Time limit: $HPC_TIME"
 echo "  Memory: $HPC_MEM"
