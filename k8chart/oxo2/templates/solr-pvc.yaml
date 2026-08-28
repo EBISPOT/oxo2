@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-solr-pvc
+spec:
+  storageClassName: local-storage
+  volumeName: {{ .Release.Name }}-solr-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.solr.persistence.size }}

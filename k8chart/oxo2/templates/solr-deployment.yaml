@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-solr
+spec:
+  replicas: {{ .Values.solr.replicaCount }}
+  # Recreate (not the default RollingUpdate): the Solr PVC is ReadWriteOnce, so a
+  # rolling update would try to start the new pod while the old one still holds the
+  # volume and deadlock. Recreate frees the volume before the replacement starts.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-solr
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-solr
+    spec:
+      securityContext:
+        fsGroup: 8389
+        runAsUser: 8389
+        runAsGroup: 8389
+        runAsNonRoot: true  
+      initContainers:
+        - name: import-solr-data
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              IMPORT_TARBALL=/import/solr-data.tar.gz
+              MARKER_FILE=/var/solr/.import-version
+
+              if [ ! -f "$IMPORT_TARBALL" ]; then
+                echo "ERROR: $IMPORT_TARBALL not found in import volume" >&2
+                exit 1
+              fi
+
+              # Identity of the source data: tarball size + mtime. This changes
+              # whenever the dataload pipeline writes a new tarball to NFS, so a
+              # pod restart re-imports only when the data has actually changed.
+              CURRENT_VERSION="$(stat -c '%s-%Y' "$IMPORT_TARBALL")"
+              LOADED_VERSION="$(cat "$MARKER_FILE" 2>/dev/null || echo none)"
+
+              if [ "$CURRENT_VERSION" = "$LOADED_VERSION" ]; then
+                echo "Solr data already at version $CURRENT_VERSION; skipping import."
+              else
+                echo "Import tarball changed (loaded=$LOADED_VERSION current=$CURRENT_VERSION); refreshing /var/solr..."
+                rm -rf /var/solr/* 2>/dev/null
+                rm -rf /var/solr/.[!.]* 2>/dev/null
+                if tar -xzf "$IMPORT_TARBALL" -C /var/solr; then
+                  printf '%s' "$CURRENT_VERSION" > "$MARKER_FILE"
+                  echo "Import complete; now at version $CURRENT_VERSION."
+                else
+                  echo "ERROR: extraction of $IMPORT_TARBALL failed" >&2
+                  exit 1
+                fi
+              fi
+          volumeMounts:
+            - name: solr-data
+              mountPath: /var/solr
+            - name: import-data
+              mountPath: /import
+              readOnly: true
+      containers:
+        - name: solr
+          image: ghcr.io/ebispot/oxo2-solr:{{ .Values.imageTag }}
+          # Always, like the backend and frontend. imageTag is a MUTABLE tag ("stable"), and
+          # solr.xml does not ship in this image — it arrives in the solr-data tarball the
+          # initContainer extracts. IfNotPresent pinned the node to its cached pre-Solr-10
+          # image while the tarball moved to the Solr 10 config, and the two drifted apart:
+          # the Solr 9 binary died on the migrated solr.xml with "solrcloud section missing
+          # required entry 'hostContext'" (that entry was dropped in Solr 10, SOLR-17931).
+          imagePullPolicy: Always
+          env:
+            - name: SOLR_HOME
+              value: /var/solr
+            # Never rely on the launcher default (512m): it cannot serve grouping/collapse
+            # queries on the full index. See values.yaml § solr.heap.
+            - name: SOLR_HEAP
+              value: {{ .Values.solr.heap | quote }}
+            - name: SOLR_JETTY_HOST
+              value: "0.0.0.0"
+            - name: SOLR_SECURITY_MANAGER_ENABLED
+              value: "false"
+          resources:
+{{ toYaml .Values.solr.resources | indent 12 }}
+          ports:
+            - containerPort: {{ .Values.solr.service.containerPort }}
+          # Gate Service traffic on all three cores actually answering queries, the same
+          # check docker-compose and startSolr.sh make. Probe /select per core and NOT
+          # /admin/info/system or /admin/cores?action=STATUS: both return 200 for a Solr
+          # whose cores failed to load, which is exactly how a wrong-mode or stale-binary
+          # Solr reaches users as 500s on every query instead of as a failed rollout.
+          #
+          # No livenessProbe on purpose: core load on the full index and large background
+          # merges are both slow, and a liveness timeout would restart the container into
+          # the same slow start, in a loop.
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - >-
+                  curl -fsS "http://localhost:{{ .Values.solr.service.containerPort }}/solr/oxo2-mappings/select?q=*:*&rows=0" > /dev/null &&
+                  curl -fsS "http://localhost:{{ .Values.solr.service.containerPort }}/solr/oxo2-mappingsets/select?q=*:*&rows=0" > /dev/null &&
+                  curl -fsS "http://localhost:{{ .Values.solr.service.containerPort }}/solr/oxo2-entities/select?q=*:*&rows=0" > /dev/null
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 10
+            # 60 x 10s = 10 min for the cores to open on a 200Gi index before the rollout
+            # is reported as failed.
+            failureThreshold: 60
+          volumeMounts:
+            - name: solr-data
+              mountPath: /var/solr
+      volumes:
+        - name: solr-data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-solr-pvc
+        - name: import-data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-import-pvc
+          

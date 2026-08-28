@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-solr
+spec:
+  selector:
+    app: {{.Release.Name }}-solr
+  ports:
+    - port: {{ .Values.solr.service.port }}
+      targetPort: {{ .Values.solr.service.targetPort}}
+  type: ClusterIP
