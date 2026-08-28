@@ -39,6 +39,10 @@ All Java types under `uk.ac.ebi.spot.oxo.model.sssom`:
 (`src/main/resources/bioregistry.context.jsonld`, ~2260 prefixes). It is the fallback `curie_map` for SSSOM sets that
 declare no prefixes of their own — see [ADR-0015](../docs/adr/0015-default-prefix-map-and-metadata-synthesis-for-bare-sssom.md).
 Refresh the snapshot with `refresh-bioregistry-context.sh`; keep `BioregistryPrefixMapTest` green.
+**Not** the answer to "what namespace does this prefix expand to" for anything user-facing: it covers a
+third of the corpus's prefixes and contradicts the ADR-0029 overrides. Use the `namespace` derived from
+the index instead — `EntityConstants.namespaceOf` in `uk.ac.ebi.spot.oxo.model.entity`, the single
+source of the derivation, per [ADR-0047](../docs/adr/0047-ontology-namespace-and-iri-on-the-ontologies-api.md).
 - **SSSOM value wrappers** — `Uri`, `Date`, `Double` (SSSOM-shaped types with Jackson custom serialization).
 - **Enumerations** — `ChainRulesEnum`, `MappingCardinalityEnum`, `MappingEnum`, `MappingSetConstants`/`MappingConstants` (string keys), 
 `PredicateModifierEnum`, `EntityTypeEnum`, `SSSOMDataType`.

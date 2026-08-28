@@ -219,6 +219,13 @@ if [ "$SOLR_NEEDED" = true ]; then
     #
     # Bind Jetty to 0.0.0.0 — singularity uses host networking, so all of localhost, the
     # host's loopback, and the FQDN-resolved IPs reach the same listener.
+    #
+    # SOLR_HEAP must be set explicitly: without it Solr's launcher pins the JVM to
+    # -Xms512m -Xmx512m, which cannot index the dev corpus — job 29435209 (2026-08-27)
+    # died with the heap 99.6% full mid-way through posting the 617 MB SLM.json entities
+    # shard (with the 2.7 GB NCBITAXON.json still queued), after spending its final hour
+    # in continuous Full-GC thrash. 4g matches startSolr.sh and loadData.nextflow, both
+    # of which have carried the full corpus locally. Overridable via loadData.hpc.
     echo "Starting Solr (foreground via singularity exec, backgrounded by slurm shell)..."
     mkdir -p "$SOLR_HOME/logs" "$SOLR_HOME/pid"
     singularity exec \
@@ -227,6 +234,7 @@ if [ "$SOLR_NEEDED" = true ]; then
         --bind "$OXO2_DATA/tmp:/tmp" \
         --env "SOLR_PID_DIR=/opt/solr/server/solr/pid" \
         --env "SOLR_JETTY_HOST=0.0.0.0" \
+        --env "SOLR_HEAP=${SOLR_HEAP:-4g}" \
         "$SIF_IMAGE" \
         /opt/solr/bin/solr start -f --user-managed -Djava.io.tmpdir=/tmp &
     SOLR_PID=$!

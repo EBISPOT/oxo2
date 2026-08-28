@@ -54,7 +54,9 @@ sources. It carries `inference_type`; its IRI resolves to an OxO2 mapping-set vi
 - **Mapping group** — the set of mappings that share the same `subject_id`, `predicate_id`, `predicate_modifier`, and `object_id`: one 
 asserted *meaning* of a triple, collapsed into a single row in the Search and Inferences result views (see § Cross-cutting constraints). 
 Identified by the denormalised `spo_key` field. A relation and its negation (`predicate_modifier = Not`) form **different** groups. 
-A **literal mapping** has no `subject_id`, so its group is keyed on the subject text instead
+The ids are keyed as **indexed** — prefix-normalised, so `doid:` and `DOID:` are one group
+([ADR-0048](docs/adr/0048-spo-key-uses-the-normalised-id.md)). 
+A **literal mapping** has no `subject_id`, so its group is keyed on the subject text instead, verbatim
 ([ADR-0042](docs/adr/0042-literal-subject-identity-in-spo-key.md)). 
 _Avoid_: collapsed row, duplicate mappings, SPO group.
 - **Literal mapping** — a mapping whose subject is a string of free text that has no CURIE assigned yet
@@ -187,10 +189,12 @@ field and the Solr CollapsingQParserPlugin + ExpandComponent (ADR-0023, replacin
 `group.ngroups` count cost ~19s on high-frequency terms). Collapse is presentation-layer, layered on top of the inference-type 
 filter, and a page counts groups not documents (the collapsed `numFound`). A **literal mapping** has no `subject_id`, so 
 its subject slot carries the subject text instead — without which every literal mapping sharing a predicate and object 
-collapsed into one row (ADR-0042). See 
+collapsed into one row (ADR-0042). The three ids are keyed in the **normalised** form Solr indexes, not as the 
+source TSV spelled them, so a drifting CURIE prefix cannot split one triple across two rows (ADR-0048). See 
 [ADR-0013](docs/adr/0013-group-same-spo-mappings-in-result-views.md), 
-[ADR-0023](docs/adr/0023-collapse-for-same-spo.md) and 
-[ADR-0042](docs/adr/0042-literal-subject-identity-in-spo-key.md). Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` 
+[ADR-0023](docs/adr/0023-collapse-for-same-spo.md), 
+[ADR-0042](docs/adr/0042-literal-subject-identity-in-spo-key.md) and 
+[ADR-0048](docs/adr/0048-spo-key-uses-the-normalised-id.md). Affects `oxo2-dataload` (`spo_key` population + reindex), `oxo2-backend` 
 (collapse query path + `group_members` transport), and `oxo2-frontend` (expandable rows, paging over groups).
 - **Cross-ontology mapping is a prefix filter over the precomputed closure** — mapping a source
 ontology to target ontologies is a directional filter on denormalised `subject_prefix` / `object_prefix`
@@ -392,6 +396,15 @@ local). Affects `oxo2-dataload` (`loadData.lib.sh`, `loadData.slurm`/`.hpc`, `lo
 `loadData.jenkins.sh`). NB: [ADR-0028](docs/adr/0028-component-sharded-explanation-precompute.md)
 adds the `shard`/`explain` substages (one Nextflow process graph, `explainSssomCrossSet.nf`, resume
 entry `from_explain_shard`) and replaces `inferences2json` with `explanations2json`.
+- **Production data releases come from the stable branch** — the HPC dataload is parameterised by
+`OXO2_ENV` (whitelisted `dev`, the default, or `prod`; anything else hard-fails): the shared
+`oxo2-dataload/loadData.env.sh`, sourced by every login-node entry point, derives the mirrored
+`/nfs|/hps .../oxo2/<env>` trees, the checkout's `oxo-config.json`, and the image tag (`prod` pulls
+the mutable `:stable` images CI builds on every push to `stable`). Explicit exports override the
+derived defaults. Cutting a release is a manual PR merging `dev` into `stable`, then pulling the
+prod checkout on NFS. See [ADR-0050](docs/adr/0050-production-data-release-channel.md). Affects
+`oxo2-dataload` (`loadData.env.sh`, `loadData.hpc`, `loadData.jenkins.sh`, `cleanup.hpc`) and CI
+(`.github/workflows/docker.yml` builds on `stable`).
 - **OxO2 is backwards compatible with OxO v1** — API surface answers v1's questions even where SSSOM terms are richer. 
 See [ADR-0004](docs/adr/0004-backwards-compatible-with-oxo-v1.md). Affects `oxo2-backend` (API design) and `oxo2-frontend` (documentation surface).
 - **GitHub registries are fetched via archive tarball** — GitHub mapping registries download as the default-branch archive 
@@ -426,6 +439,22 @@ Spring Data `Page` is never serialized directly. See
 [ADR-0046](docs/adr/0046-spring-boot-4-and-jackson-3.md). Affects `oxo2-shared` (`SSSOMDataType`
 serializer, builder deserialization), all four `oxo2-dataload` modules, `oxo2-backend`
 (`MappingSearchResponse`, shade transformers) and `oxo2-integration-tests`.
+- **A prefix's namespace is read back from the index, not looked up** — `/api/v2/ontologies` entries
+carry a `namespace` (the IRI stem the prefix's CURIEs expand against) and, where an ontology backs the
+prefix, its `uri`. The namespace is derived per entity by `mappings2entities` as the entity's `iri`
+minus its CURIE's local part, stored on `oxo2-entities`, and resolved per prefix by one
+`prefix,namespace` pivot facet (most-used stem wins). It is deliberately NOT taken from the Bioregistry
+snapshot (33.5% of prefixes, and contradicts 8 of the 16 ADR-0029 stems) nor from the sets' declared
+`curie_map`s (92%, but carries producer corruption and loses to ADR-0029 at load time) — only the
+indexed IRI records what the dataload actually minted, so only it cannot disagree with what the API
+serves. `uri` is `ontology_iri`, promoted out of the OLS `other` bag exactly as ADR-0038 promotes
+`prefix`/`ontology`, and joined onto the listing **case-insensitively** (an exact join drops
+`NCBITaxon`, `HGNC`, `mesh` — 15.0% vs 33.9% of occurrences). Both are omitted when unknown, which
+makes `uri`'s presence the marker that an entry is a real ontology rather than a bare prefix. Needs a
+reindex. See [ADR-0047](docs/adr/0047-ontology-namespace-and-iri-on-the-ontologies-api.md). Affects
+`oxo2-shared` (`EntityConstants.namespaceOf`, `MappingSet.ontologyIri`), `oxo2-dataload`
+(`Mappings2Entities`, both schemas) and `oxo2-backend` (`OntologySummary`, `OntologyController`,
+`MappingSetSummary`).
 
 ## End-to-end flow
 

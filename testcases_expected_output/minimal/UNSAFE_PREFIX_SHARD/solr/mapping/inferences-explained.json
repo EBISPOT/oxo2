@@ -73,7 +73,7 @@
   "object_prefix" : "EX/X",
   "predicate_id" : "SKOS:exactMatch",
   "predicate_iri" : "http://www.w3.org/2004/02/skos/core#exactMatch",
-  "spo_key" : "c3bfe636-b14f-38d8-9875-c3f6c99df1eb",
+  "spo_key" : "fc6f42bc-1f84-309f-86a1-5297608726bc",
   "subject_id" : "EX:B",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
   "subject_label" : "Entity B",

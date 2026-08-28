@@ -105,6 +105,13 @@
   <!-- CURIE prefix (ADR-0024), e.g. MONDO. Filters the suggest by the from/to ontology selectors. -->
   <field name="prefix" type="string" indexed="true" stored="true" docValues="true"/>
 
+  <!-- The IRI stem this entity's CURIE expanded against (ADR-0047), e.g.
+       http://purl.obolibrary.org/obo/MONDO_ — the iri minus the CURIE's local part. Repeated across
+       every entity of a prefix on purpose: /api/v2/ontologies pivot-facets prefix,namespace to answer
+       "what does this prefix expand to" in one query, and takes the most frequent stem where a prefix
+       has more than one. docValues is what makes that pivot possible. -->
+  <field name="namespace" type="string" indexed="true" stored="true" docValues="true"/>
+
   <!-- Totals over EVERY predicate. Display only: a search hides the weak predicates by default, so
        these overcount what a suggestion would actually return. Do not filter or rank on them. -->
   <field name="mapping_count" type="plong" indexed="true" stored="true" docValues="true"/>

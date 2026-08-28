@@ -31,6 +31,7 @@ class MappingSetOtherPromotionTest {
         other.put("local_id", "addicto.ols");
         other.put(MappingConstants.PREFIX, "ADDICTO");
         other.put(MappingConstants.ONTOLOGY, "Addiction Ontology (ADDICTO)");
+        other.put(MappingConstants.ONTOLOGY_IRI, "http://addictovocab.org/addicto.owl");
         MappingSet mappingSet = MappingSet.builder()
                 .mappingSetId("https://w3id.org/commons/ols/mappings/addicto.ols.sssom.tsv")
                 .other(other)
@@ -40,8 +41,31 @@ class MappingSetOtherPromotionTest {
 
         assertEquals("ADDICTO", doc.path(MappingConstants.PREFIX).asString());
         assertEquals("Addiction Ontology (ADDICTO)", doc.path(MappingConstants.ONTOLOGY).asString());
+        assertEquals("http://addictovocab.org/addicto.owl",
+                doc.path(MappingConstants.ONTOLOGY_IRI).asString());
         // The raw `other` block is kept alongside the promoted fields (it still carries local_id).
         assertTrue(doc.has(MappingConstants.OTHER));
+    }
+
+    /**
+     * The ontology IRI is the ontology's own identity; the namespace its terms expand against is a
+     * different string that this promotion neither carries nor can derive (ADR-0047).
+     */
+    @Test
+    void promotesOntologyIriIndependentlyOfPrefixAndName() throws Exception {
+        Map<String, String> other = new LinkedHashMap<>();
+        other.put(MappingConstants.ONTOLOGY_IRI, "http://purl.obolibrary.org/obo/sepio.owl");
+        MappingSet mappingSet = MappingSet.builder()
+                .mappingSetId("https://w3id.org/commons/ols/mappings/sepio.ols.sssom.tsv")
+                .other(other)
+                .build();
+
+        JsonNode doc = objectMapper.readTree(objectMapper.writeValueAsString(mappingSet));
+
+        assertEquals("http://purl.obolibrary.org/obo/sepio.owl",
+                doc.path(MappingConstants.ONTOLOGY_IRI).asString());
+        assertFalse(doc.has(MappingConstants.PREFIX));
+        assertFalse(doc.has(MappingConstants.ONTOLOGY));
     }
 
     @Test
@@ -54,5 +78,6 @@ class MappingSetOtherPromotionTest {
 
         assertFalse(doc.has(MappingConstants.PREFIX));
         assertFalse(doc.has(MappingConstants.ONTOLOGY));
+        assertFalse(doc.has(MappingConstants.ONTOLOGY_IRI));
     }
 }

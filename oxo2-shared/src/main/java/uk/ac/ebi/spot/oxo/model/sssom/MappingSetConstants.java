@@ -18,6 +18,7 @@ public final class MappingSetConstants {
     public static final String MAPPING_SET_CATEGORY    = MappingConstants.MAPPING_SET_CATEGORY;
     public static final String PREFIX                  = MappingConstants.PREFIX;
     public static final String ONTOLOGY                = MappingConstants.ONTOLOGY;
+    public static final String ONTOLOGY_IRI            = MappingConstants.ONTOLOGY_IRI;
     public static final String OBSOLETE                = MappingConstants.OBSOLETE;
     public static final String DATA_RELEASE_DATE        = MappingConstants.DATA_RELEASE_DATE;
 

@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.spot.oxo.dataload.solr.DataloadSolr;
 import uk.ac.ebi.spot.oxo.dataload.solr.EntityDetails;
 import uk.ac.ebi.spot.oxo.inferences.nemo.helpers.NemoHelper;
+import uk.ac.ebi.spot.oxo.inferences.nemo.helpers.ShardAssertedIndex;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.NemoInferences;
 import uk.ac.ebi.spot.oxo.inferences.nemo.model.OXOInferenceConstants;
 import uk.ac.ebi.spot.oxo.model.sssom.ChainRulesEnum;
@@ -175,6 +176,16 @@ public class ExplainInferredMappings {
             logger.info("Indexed {} inferences; {} final conclusions; {} asserted ids to prefetch",
                     store.size(), finalConclusionCount, assertedMappingIds.size());
 
+            // ADR-0049: the bundle's shard corpora, so a premise asserted identically in several
+            // sets expands to all of its duplicates instead of whichever quad Nemo's trace carried.
+            // Shards are disjoint components, so one merged index serves the whole bundle. Null
+            // (no .nq resolvable) falls back to the trace's own ids, the pre-ADR-0049 behaviour.
+            ShardAssertedIndex shardIndex = ShardAssertedIndex.loadForChainFiles(inputFilePaths);
+            if (shardIndex != null) {
+                // The duplicates are leaves too — their Solr docs must be in the same bulk prefetch.
+                assertedMappingIds.addAll(shardIndex.allMappingIds());
+            }
+
             // Bulk-load the asserted leaves once. This also indexes the curie/label of every
             // subject/predicate/object IRI they carry, which enrichEntityDetails reads back, so no
             // separate per-IRI Solr round-trips are needed.
@@ -193,7 +204,7 @@ public class ExplainInferredMappings {
             // different result.
             Map<String, InferredMapping> memo = boundedMemo(MAX_MEMO_ENTRIES);
             Iterator<InferredMapping> inferredMappings = streamFinalConclusionMappings(
-                    finalConclusionsFile, store, solrClient, memo, inferredMappingSetId);
+                    finalConclusionsFile, store, solrClient, memo, inferredMappingSetId, shardIndex);
 
             logger.info("Creating mappings and streaming to file: {}", outputFilePath);
             long writtenCount = streamMappingsToJson(inferredMappings, solrClient, inferredMappingSetId,
@@ -307,7 +318,7 @@ public class ExplainInferredMappings {
      */
     private static Iterator<InferredMapping> streamFinalConclusionMappings(File finalConclusionsFile,
             InferenceLookup lookup, DataloadSolr solrClient, Map<String, InferredMapping> memo,
-            String inferredMappingSetId) throws IOException {
+            String inferredMappingSetId, ShardAssertedIndex shardIndex) throws IOException {
         BufferedReader reader = Files.newBufferedReader(finalConclusionsFile.toPath());
         return new Iterator<>() {
             private InferredMapping nextMapping = advance();
@@ -317,7 +328,7 @@ public class ExplainInferredMappings {
                     String conclusion;
                     while ((conclusion = reader.readLine()) != null) {
                         InferredMapping mapping = NemoHelper.buildInferredMapping(
-                                lookup, conclusion, solrClient, memo, inferredMappingSetId);
+                                lookup, conclusion, solrClient, memo, inferredMappingSetId, shardIndex);
                         if (mapping != null) {
                             return mapping;
                         }
@@ -563,8 +574,8 @@ public class ExplainInferredMappings {
                         }
                     }
 
-                    List<InferredMapping> assertedEvidence =
-                            determineAssertedMappingsForExplanation(inferredMapping, assertedMemo);
+                    List<InferredMapping> assertedEvidence = canonicalEvidence(
+                            determineAssertedMappingsForExplanation(inferredMapping, assertedMemo));
                     // Accumulate the source-set union for the cross-set inferred set metadata: every
                     // asserted leaf carries its own source set in mappingSetId (ADR-0010).
                     for (InferredMapping assertedLeaf : assertedEvidence) {
@@ -673,6 +684,23 @@ public class ExplainInferredMappings {
      * <p>Memoized: shared sub-chains in the DAG (created via NemoHelper's
      * conclusion-keyed memo) are walked once, not once per parent.
      */
+    /**
+     * Deduplicate and order asserted evidence by mapping_id (ADR-0049). A leaf shared between
+     * branches of the proof DAG is collected once per branch, and after duplicate expansion the
+     * same asserted mapping can arrive through several leaves; each belongs in the emitted
+     * {@code asserted_mappings} exactly once. Keyed on mapping_id, never on
+     * {@link InferredMapping#equals} — that is (s, p, o) identity, which would conflate the very
+     * duplicates being collected. The ordering makes the emitted evidence deterministic run to
+     * run, so two dataloads over the same corpus produce byte-identical documents.
+     */
+    static List<InferredMapping> canonicalEvidence(List<InferredMapping> assertedEvidence) {
+        Map<String, InferredMapping> evidenceByMappingId = new TreeMap<>();
+        for (InferredMapping assertedLeaf : assertedEvidence) {
+            evidenceByMappingId.putIfAbsent(String.valueOf(assertedLeaf.getMappingId()), assertedLeaf);
+        }
+        return new ArrayList<>(evidenceByMappingId.values());
+    }
+
     static List<InferredMapping> determineAssertedMappingsForExplanation(
             InferredMapping explanation,
             IdentityHashMap<InferredMapping, List<InferredMapping>> memo) {
@@ -689,8 +717,17 @@ public class ExplainInferredMappings {
         InferredMapping.ChainRuleApplications chainRuleApplications = explanation.getChainRuleApplications().get();
 
         if (chainRuleApplications.getChainRule().isPresent() &&
-                chainRuleApplications.getChainRule().get().equals(ChainRulesEnum.ASSERTED))
-            assertedMappings.add(explanation);
+                chainRuleApplications.getChainRule().get().equals(ChainRulesEnum.ASSERTED)) {
+            // ADR-0049: a leaf whose (s, p, o) the corpus asserts more than once carries its full
+            // duplicate set — every one of them is equally the evidence, not just the duplicate
+            // Nemo's trace happened to walk.
+            List<InferredMapping> equivalentLeaves = explanation.getEquivalentAssertedLeaves();
+            if (equivalentLeaves != null && !equivalentLeaves.isEmpty()) {
+                assertedMappings.addAll(equivalentLeaves);
+            } else {
+                assertedMappings.add(explanation);
+            }
+        }
 
         for (InferredMapping premise : chainRuleApplications.getPremises()) {
             assertedMappings.addAll(determineAssertedMappingsForExplanation(premise, memo));

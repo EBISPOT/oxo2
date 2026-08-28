@@ -57,7 +57,11 @@ Java sub-modules depend on `oxo2-shared` for the SSSOM data model.
   single batch job) for SLURM-based deployments. Both honour a `START_STAGE` resume parameter, and
   `loadData.jenkins.sh` (the login-node submit→poll→tail wrapper a Jenkins Freestyle job runs over
   SSH) wraps them for CI-driven runs — see § Resumable dataload. The `START_STAGE` contract they share
-  with the local `loadData.nextflow` lives in the sourced `loadData.lib.sh`.
+  with the local `loadData.nextflow` lives in the sourced `loadData.lib.sh`. The target environment
+  is selected by `OXO2_ENV` (`dev`, the default, or `prod` — the production release built from the
+  `stable` branch): the sourced `loadData.env.sh` derives each environment's paths, config, and image
+  tag, with explicit exports overriding the derived defaults (ADR-0050). `loadData.slurm` itself is
+  environment-agnostic — everything reaches it via `--export`.
 - **Solr data archive** — on a successful HPC run, `loadData.slurm` stops Solr cleanly and writes
   `$OXO2_INFERENCES/solr-data.tar.gz` (the contents of `$SOLR_HOME`, excluding the run-local `logs/`
   and `pid/` dirs). Jenkins copies it onto the NFS export, and the dev-cluster Solr init container
@@ -218,6 +222,14 @@ an entity can hold a thousand xrefs and still be invisible to a default search. 
 buckets gives the count the search will actually produce, which is what the suggest filters and ranks
 on. If you add a weak predicate, add it to `WeakPredicate` in `oxo2-shared` — the fold and
 `SolrQueryBuilder`'s exclusion both derive from it, and they must not drift apart.
+
+Each document also carries a `namespace`: the entity's IRI minus its CURIE's local part, e.g.
+`http://purl.obolibrary.org/obo/MONDO_` ([ADR-0047](../docs/adr/0047-ontology-namespace-and-iri-on-the-ontologies-api.md)).
+It is written only when derivable, and is what lets `/api/v2/ontologies` answer "what does this prefix
+expand to" from a single pivot facet. The value is deliberately the stem the dataload **actually
+minted** — after the ADR-0029 override, the set's own `curie_map`, and the Bioregistry fallback have
+all had their say — so it can never contradict the IRIs served elsewhere. Do not reimplement the
+derivation: `EntityConstants.namespaceOf` is the one place it lives.
 
 Each bucket also has a **live twin** — `{subject,object}_count_<bucket>_live` — counting only sightings
 whose mapping has NO obsolete endpoint ([ADR-0045](../docs/adr/0045-live-buckets-for-obsolete-endpoints.md)).
@@ -380,6 +392,16 @@ parameter (`download` … `archive`, default `download`); string parameters `OXO
 checked-out `oxo2-dataload` dir on the login node), `OXO2_CONFIG`, `NF_CONTAINER`, `HPC_TIME`,
 `HPC_MEM`, `HPC_CPUS`, `HPC_ACCOUNT` (blank = none), `POLL_INTERVAL`; and tick **Do not allow
 concurrent builds** (so two dataloads never race on the checkpoint/jobid files and `$SOLR_HOME`).
+A blank `OXO2_CONFIG` / `NF_CONTAINER` parameter means "use the environment's derived default"
+(`loadData.env.sh`); a non-blank value overrides it.
+
+The **production job** (ADR-0050) is a clone of this job whose build step additionally runs
+`export OXO2_ENV=prod` — hardcoded in the step, not offered as a parameter, so a misclick cannot
+run prod from the dev job — and whose `OXO2_DATALOAD_DIR` points at the **stable-branch** checkout
+(`/nfs/production/parkinso/spot/oxo2/prod/oxo2/oxo2-dataload`). Everything else derives from
+`OXO2_ENV=prod`: the mirrored `prod` NFS/HPS trees, that checkout's `oxo-config.json`, and the
+`:stable` image tag. The dev and prod jobs may run concurrently (disjoint trees, separate
+checkpoint/jobid files); only same-job concurrency must stay disallowed.
 
 `loadData.jenkins.sh` submits via `loadData.hpc`, then blocks — polling Slurm and streaming the job
 log to the build console — and exits with the job's final state, so the build passes iff the dataload
@@ -449,6 +471,26 @@ between fixtures with a `delete *:*` (see `oxo2-integration-tests/CONTEXT.md` §
 > all hash together. No schema change and no pipeline code change: `Mapping.spoKey()` is a derived
 > accessor, so a normal `loadData.nextflow` run repopulates it. Keys for subjects that have an id are
 > byte-identical to before, so only the literal sets move.
+
+> **Reindex required (ADR-0049):** every asserted leaf of an explanation now expands to **all**
+> corpus quads sharing its exact (s, p, o) — the same triple asserted in several sets — instead of
+> the one quad Nemo's trace happened to walk. `asserted_mappings` lists the full duplicate set
+> (sorted by mapping_id), the chain shows the lowest-id duplicate as its canonical leaf, and the
+> inferred set's `mapping_set_source` union credits every contributing set. Output becomes
+> deterministic run-to-run where it silently was not. The expansion reads the shard `.nq` corpora
+> (`OXO2_SHARDS_DIR`, set by `explanations2json.nf`); with no resolvable shard files it falls back
+> to the old single-leaf behaviour. A normal `loadData.nextflow` run repopulates everything;
+> documents change wherever a premise is multiply asserted.
+
+> **Reindex required (ADR-0048):** `spo_key` now hashes the **normalised** `subject_id` /
+> `predicate_id` / `object_id` — the prefix-upper-cased form Solr indexes — instead of the raw
+> string the source TSV wrote, so a triple written `doid:0050043` in one place and `DOID:0050043`
+> in another stops splitting into two collapsed rows. No schema change and no pipeline code change:
+> `Mapping.spoKey()` is a derived accessor, so a normal `loadData.nextflow` run repopulates it.
+> Unlike ADR-0042, **almost every key moves** — any id with a lowercase prefix (`skos:exactMatch`
+> on nearly every mapping) hashed differently before — and group counts fall wherever the drift was
+> splitting a triple, including where a mapping asserted in a source set failed to collapse with
+> its own `SSSOM_INFERENCE` re-derivation.
 
 > **Reindex required (ADR-0028):** explanations are precomputed again, so every inferred mapping doc
 > now carries `explanation`, `asserted_mappings` and a computed `explanation_length`. `asserted_mappings`

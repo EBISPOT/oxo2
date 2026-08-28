@@ -73,6 +73,19 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
     }
 
     /**
+     * This reference as it is indexed: the prefix-upper-cased CURIE {@link #parseData} produced
+     * (doid:0050043 → DOID:0050043), which is the value the {@code SSSOMDataType} serializer writes
+     * and Solr stores in subject_id / predicate_id / object_id. Anything that has to agree with the
+     * index — the same-SPO grouping key (ADR-0048), the ontology prefix below — must read this rather
+     * than {@link #getDataAsString()}, which is the
+     * raw string the source wrote and drifts in case between sets. Falls back to the raw string for a
+     * value that never parsed (a blank reference, which stays blank).
+     */
+    public String getNormalisedId() {
+        return getDataRepresentation().orElseGet(this::getDataAsString);
+    }
+
+    /**
      * The CURIE prefix that identifies the ontology this entity belongs to (DOID:0001816 → "DOID") —
      * OxO2's notion of a term's ontology (ADR-0024), and the value emitted as the Solr
      * {@code subject_prefix} / {@code object_prefix} fields and counted for a mapping's
@@ -81,7 +94,7 @@ public class EntityReference extends SSSOMDataType<String> implements Comparable
      * sources. Empty for a bare IRI that never resolved to a CURIE.
      */
     public Optional<String> getCuriePrefix() {
-        String normalised = getDataRepresentation().orElseGet(this::getDataAsString);
+        String normalised = getNormalisedId();
         if (normalised == null || !StringUtils.isCurie(normalised))
             return Optional.empty();
         return Optional.of(normalised.substring(0, normalised.indexOf(':')));

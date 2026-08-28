@@ -327,6 +327,14 @@ public class Mappings2Entities {
                 if (entity.prefix() != null) {
                     json.writeStringProperty(EntityConstants.PREFIX, entity.prefix());
                 }
+                // ADR-0047: the stem this entity's CURIE expanded against, so /api/v2/ontologies can
+                // answer prefix -> namespace from what was actually minted. Written only when it can be
+                // derived (a bare IRI that never resolved to a CURIE has no local part to strip), so an
+                // undecidable entity carries no field rather than a guess.
+                String namespace = EntityConstants.namespaceOf(entity.id(), entity.iri());
+                if (namespace != null) {
+                    json.writeStringProperty(EntityConstants.NAMESPACE, namespace);
+                }
                 json.writeNumberProperty(EntityConstants.SUBJECT_COUNT, entity.subjectCount());
                 json.writeNumberProperty(EntityConstants.OBJECT_COUNT, entity.objectCount());
                 json.writeNumberProperty(EntityConstants.MAPPING_COUNT, entity.mappingCount());

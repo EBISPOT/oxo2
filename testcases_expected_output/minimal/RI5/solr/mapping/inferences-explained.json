@@ -73,7 +73,7 @@
   "object_prefix" : "EX",
   "predicate_id" : "SEMAPV:crossSpeciesNarrowMatch",
   "predicate_iri" : "https://w3id.org/semapv/vocab/crossSpeciesNarrowMatch",
-  "spo_key" : "a273b4c8-4465-307e-8159-8313f819796d",
+  "spo_key" : "f3c58c44-4131-33b9-89b6-c307ca3f3432",
   "subject_id" : "EX:B",
   "subject_iri" : "https://w3id.org/oxo2/test/ex/B",
   "subject_label" : "Entity B",

@@ -1,0 +1,3 @@
+<http://purl.obolibrary.org/obo/DOID_0050043> <http://www.w3.org/2004/02/skos/core#exactMatch> <http://purl.obolibrary.org/obo/DOID_0050043> .
+<http://purl.obolibrary.org/obo/MONDO_0000616> <http://www.w3.org/2004/02/skos/core#exactMatch> <http://purl.obolibrary.org/obo/DOID_0050043> .
+<http://purl.obolibrary.org/obo/MONDO_0000616> <http://www.w3.org/2004/02/skos/core#exactMatch> <http://purl.obolibrary.org/obo/MONDO_0000616> .

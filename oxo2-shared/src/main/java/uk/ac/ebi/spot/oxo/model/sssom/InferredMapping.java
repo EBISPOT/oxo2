@@ -70,6 +70,27 @@ public class InferredMapping {
     @JsonProperty(CHAIN_RULE_APPLICATIONS)
     private Optional<ChainRuleApplications> chainRuleApplications = Optional.empty();
 
+    /**
+     * The full set of asserted mappings whose corpus quads share this leaf's exact
+     * subject/predicate/object IRIs — the same triple asserted in more than one set (ADR-0049).
+     * Set only on an ASSERTED leaf, only when duplicates exist, and always includes this leaf
+     * itself, sorted by mapping_id. Nemo's trace carries whichever duplicate its derivation
+     * happened to use; since the duplicates are indistinguishable premises, they are all equally
+     * the evidence, and the explanation stage expands the leaf to this list when collecting
+     * asserted evidence. Transient — never serialised into the explanation chain, which keeps a
+     * single canonical leaf per premise.
+     */
+    private List<InferredMapping> equivalentAssertedLeaves;
+
+    @JsonIgnore
+    public List<InferredMapping> getEquivalentAssertedLeaves() {
+        return equivalentAssertedLeaves;
+    }
+
+    public void setEquivalentAssertedLeaves(List<InferredMapping> equivalentAssertedLeaves) {
+        this.equivalentAssertedLeaves = equivalentAssertedLeaves;
+    }
+
     public Optional<EntityReference> getMappingJustification() {
         return mappingJustification;
     }

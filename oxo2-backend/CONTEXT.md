@@ -44,7 +44,14 @@ into target ontologies; returns the paged mappings **plus** `unmappedInputs` (su
 mapping into the targets). Input is capped (default 1 000 terms).
 - **`GET /api/v2/ontologies`** — distinct CURIE prefixes with counts (drives the Search-tab from/to
 selectors); `?forSubject=<prefix>` facets `object_prefix` over that subject subset to return reachable
-targets with counts.
+targets with counts. Each entry also carries `namespace` (the IRI stem its CURIEs expand against, from
+a `prefix,namespace` pivot over `oxo2-entities` — most-used stem wins) and `uri` (the ontology's own
+IRI, joined case-insensitively from the ontology sets' `ontology_iri`), both **omitted** when unknown,
+so `uri`'s presence is what marks an entry as a real ontology rather than a bare prefix
+([ADR-0047](../docs/adr/0047-ontology-namespace-and-iri-on-the-ontologies-api.md)). Both enrichments
+degrade to absent rather than failing the request — the counts are the payload. Note the namespace is
+NOT resolved from the Bioregistry snapshot: that is what makes the export's `curie_map` disagree with
+the IRIs this API serves ([issue 118](https://github.com/EBISPOT/oxo2/issues/118)).
 - **`GET /api/v2/data-content`** — the landing page's Data Content summary
 ([ADR-0043](../docs/adr/0043-data-content-summary-on-landing-page.md)):
 `{releaseDate, mappings:{total,asserted,inferred}, mappingSets:{total,curated,ontologies}}`. Three cheap

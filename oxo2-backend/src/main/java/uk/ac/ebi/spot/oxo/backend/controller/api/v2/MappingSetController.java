@@ -42,7 +42,7 @@ public class MappingSetController {
     private static final String[] SUMMARY_FIELDS = {
             MAPPING_SET_ID, MAPPING_SET_TITLE, MAPPING_SET_DESCRIPTION,
             CREATOR_LABEL, MAPPING_PROVIDER, INFERENCE_TYPE, MAPPING_SET_SOURCE,
-            MAPPING_SET_CATEGORY, PREFIX, ONTOLOGY, OBSOLETE
+            MAPPING_SET_CATEGORY, PREFIX, ONTOLOGY, ONTOLOGY_IRI, OBSOLETE
     };
 
     @Autowired
@@ -134,6 +134,7 @@ public class MappingSetController {
                 asString(doc.getFieldValue(MAPPING_SET_CATEGORY)),
                 asString(doc.getFieldValue(PREFIX)),
                 asString(doc.getFieldValue(ONTOLOGY)),
+                asString(doc.getFieldValue(ONTOLOGY_IRI)),
                 // ADR-0041: absent (a set indexed before the field existed, or any non-obsolete set)
                 // reads false. Solr BoolField returns a Boolean when present.
                 Boolean.TRUE.equals(doc.getFieldValue(OBSOLETE))

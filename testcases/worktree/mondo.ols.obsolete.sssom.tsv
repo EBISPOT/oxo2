@@ -10,6 +10,7 @@
 #   local_id: mondo.ols.obsolete
 #   prefix: MONDO
 #   ontology: Mondo Disease Ontology (MONDO)
+#   ontology_iri: http://purl.obolibrary.org/obo/mondo/mondo-international.owl
 # local_name: mondo.ols.obsolete.sssom.tsv
 # curie_map:
 #   semapv: https://w3id.org/semapv/vocab/

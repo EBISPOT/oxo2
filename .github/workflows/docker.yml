@@ -2,7 +2,9 @@ name: Build and push OxO2 images
 
 on:
   push:
-    branches: [ "dev" ]
+    # A push to stable is a release act: it publishes the mutable :stable image tags the
+    # production HPC dataload and clusters pull (ADR-0050).
+    branches: [ "dev", "stable" ]
   pull_request:
     branches: [ "dev" ]
 

@@ -19,6 +19,10 @@
 
 params.cross_set_dir = "${System.getenv('OXO2_INFERENCES')}/crossSet"
 params.shard_chains_dir = "${params.cross_set_dir}/shardChains"
+// The shard corpora (.nq) matching the chain files. Chain files are staged into the task work dir,
+// so the Java side cannot find the shards by relative layout; it reads OXO2_SHARDS_DIR instead
+// (ADR-0049: an asserted premise expands to every corpus quad sharing its s/p/o).
+params.shards_dir = "${params.cross_set_dir}/shards"
 params.output_dir = "${System.getenv('OXO2_INFERENCES')}/solr"
 params.inference_type = "SSSOM_INFERENCE"
 
@@ -71,6 +75,7 @@ process EXPLANATIONS_TO_JSON {
     def heap_mb = (task.memory.toMega() * 0.8) as long
     """
     export SOLR_URL="${solr_url}"
+    export OXO2_SHARDS_DIR="${params.shards_dir}"
     export no_proxy="localhost,127.0.0.1,\$(hostname),${solr_url.replaceAll('https?://','').replaceAll('/.*','').replaceAll(':.*','')}"
     export JAVA_OPTS="-Xmx${heap_mb}m \${JAVA_OPTS:-} -Dhttp.nonProxyHosts=localhost|127.0.0.1|${solr_url.replaceAll('https?://','').replaceAll('/.*','').replaceAll(':.*','')}"
     "${effective_script_dir}/explanations2jsonNextflow.sh" "${output_file}" "${mapping_set_output_file}" "${params.inference_type}" ${trace_files}
