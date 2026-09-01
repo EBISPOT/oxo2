@@ -1,4 +1,16 @@
-imageTag: "dev"
+# Production chart. The SAME chart and values deploy to both the production and the failover
+# Kubernetes clusters (ADR-0050: both serve the same solr-data.tar.gz release). Anything that
+# differs between the two clusters is deliberately NOT in this file and is injected at deploy
+# time by the Jenkins job for that cluster:
+#
+#   nfs_host, nfs_path                      — the NFS export holding solr-data.tar.gz
+#   solr.persistence.nodeSelectorHostnames  — the node(s) with the local Solr disk
+#   frontend.backendUrl                     — the backend URL the frontend calls
+#
+# The :stable images are published by CI on every push to the stable branch — a release act,
+# never routine (ADR-0050). The tag is mutable, so every deployment pulls with
+# imagePullPolicy: Always.
+imageTag: "stable"
 
 # The path the whole stack is served under, without a trailing slash. Single source for the ingress
 # routes, the frontend's OXO_PUBLIC_URL and the backend's servlet context path, which have to agree:
@@ -8,7 +20,7 @@ imageTag: "dev"
 # It must be a sub-path. Serving at the root would need the ingress prefix and OXO_PUBLIC_URL to
 # diverge — an empty prefix but a literal "/" for the frontend, which treats "" as "no public URL
 # set" and falls back to OXO_BACKEND_URL. k8chart-local is root-served and does not use this key.
-basePath: /oxo2
+basePath: /spot/oxo
 
 solr:
   replicaCount: 1
@@ -26,7 +38,7 @@ solr:
   service:
     port: 8983
     containerPort: 8983
-    targetPort: 8983  
+    targetPort: 8983
   persistence:
     enabled: true
     size: 200Gi
@@ -38,7 +50,7 @@ backend:
     port: 8080
     containerPort: 8081
     targetPort: 8081
-    
+
 
 frontend:
   image: "oxo2/frontend"

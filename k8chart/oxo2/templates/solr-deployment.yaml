@@ -66,7 +66,7 @@ spec:
       containers:
         - name: solr
           image: ghcr.io/ebispot/oxo2-solr:{{ .Values.imageTag }}
-          # Always, like the backend and frontend. imageTag is a MUTABLE tag ("dev"), and
+          # Always, like the backend and frontend. imageTag is a MUTABLE tag ("stable"), and
           # solr.xml does not ship in this image — it arrives in the solr-data tarball the
           # initContainer extracts. IfNotPresent pinned the node to its cached pre-Solr-10
           # image while the tarball moved to the Solr 10 config, and the two drifted apart:

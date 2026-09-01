@@ -23,3 +23,14 @@ spec:
               value: "http://{{ .Release.Name }}-solr:{{ .Values.solr.service.port }}/solr"
           ports:
             - containerPort: {{ .Values.backend.service.containerPort }}
+          # Same deep readiness gate as the dev and prod charts (ADR-0051); this chart runs the
+          # backend at the root, so no basePath prefix. No livenessProbe on purpose — the plausible
+          # failures are all Solr-side and a backend restart fixes none of them.
+          readinessProbe:
+            httpGet:
+              path: /api/v2/health
+              port: {{ .Values.backend.service.containerPort }}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3

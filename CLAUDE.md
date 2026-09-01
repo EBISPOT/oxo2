@@ -104,7 +104,9 @@ GitHub Actions (`.github/workflows/docker.yml`): builds and pushes Docker images
 ## Deployment
 
 - **Local**: Docker Compose or manual setup
-- **Kubernetes**: Helm charts in `k8chart-local/` and `k8chart-dev/`
+- **Kubernetes**: Helm charts in `k8chart-local/` (minikube), `k8chart-dev/` (dev cluster) and
+  `k8chart/` (production — the same chart deploys to the production and failover clusters,
+  see [ADR-0050](docs/adr/0050-production-data-release-channel.md))
 - **HPC**: SLURM integration via `loadData.slurm` / `loadData.hpc`
 
 ## Markdown style
