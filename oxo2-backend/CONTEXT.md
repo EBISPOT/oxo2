@@ -62,6 +62,15 @@ for `total`. `releaseDate` is `null` until the first dataload that stamps the fi
 no `unique()` aggregation — that is what makes `/api/sssom/stats` expensive — so `mappings.total` counts
 documents, not distinct triples. `mappingSets.ontologies` is the ONTOLOGY-category set count, *not*
 `/api/v2/ontologies`' prefix count; the two answer different questions and will not agree.
+- **`GET /api/v2/health`** — the deep health check
+([ADR-0051](../docs/adr/0051-deep-health-endpoint-for-traffic-manager-routing.md)): 200 with
+`All systems are operational.` in the body only when all three Solr cores answer a `rows=0` query
+**and** each holds at least one document; 503 with per-core detail otherwise. Probed by the EBI
+traffic manager, which routes production traffic between the prod and failover clusters and
+regex-matches that exact sentence (a contract — never reword it without the traffic-manager config),
+and by the backend's k8s readinessProbe in all three charts. Probe requests currently appear in the
+request log like any other traffic — suppression is deliberately deferred while the endpoint is
+bedding in (ADR-0051 § Consequences).
 - **`GET /api/v2/suggest/entities?q=&side=&prefix=&mappingSetId=&size=`** — the entity typeahead
 ([ADR-0034](../docs/adr/0034-entity-collection-for-typeahead.md)). Reads `oxo2-entities` (one document
 per DISTINCT entity), not `oxo2-mappings`, which is denormalised and would suggest an entity once per

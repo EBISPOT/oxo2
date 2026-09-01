@@ -25,3 +25,21 @@ spec:
               value: {{ include "oxo2.basePath" . | quote }}
           ports:
             - containerPort: {{ .Values.backend.service.containerPort }}
+          # Gate Service traffic on the backend actually being able to serve (ADR-0051): the deep
+          # /api/v2/health endpoint answers 200 only when all three Solr cores respond to a query
+          # AND each holds documents. The EBI traffic manager probes the same endpoint through the
+          # ingress to pick the serving cluster, so in-cluster readiness and cross-cluster routing
+          # agree on what "up" means. During a rollout the backend stays unready until Solr's cores
+          # open (up to the 10 min Solr's own readinessProbe allows) — readiness failures gate
+          # traffic, they do not restart anything.
+          #
+          # No livenessProbe on purpose: the plausible failures are all Solr-side (cores loading,
+          # Solr down, empty index) and restarting the backend cannot fix any of them.
+          readinessProbe:
+            httpGet:
+              path: {{ include "oxo2.basePath" . }}/api/v2/health
+              port: {{ .Values.backend.service.containerPort }}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
