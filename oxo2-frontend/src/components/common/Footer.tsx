@@ -33,7 +33,7 @@ export default function Footer() {
         <div className="flex flex-row gap-4 h-6 items-center">
         <span>
           <i className="icon icon-common icon-copyright icon-spacer" />
-          EMBL-EBI&nbsp;2023
+          EMBL-EBI&nbsp;2026
         </span>
           <a href={import.meta.env.REACT_APP_EBI_LICENSING} className="link-footer">
             Licensing
