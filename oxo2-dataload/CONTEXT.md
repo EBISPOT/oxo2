@@ -64,7 +64,11 @@ Java sub-modules depend on `oxo2-shared` for the SSSOM data model.
   environment-agnostic — everything reaches it via `--export`.
 - **Solr data archive** — on a successful HPC run, `loadData.slurm` stops Solr cleanly and writes
   `$OXO2_INFERENCES/solr-data.tar.gz` (the contents of `$SOLR_HOME`, excluding the run-local `logs/`
-  and `pid/` dirs). Jenkins copies it onto the NFS export, and the dev-cluster Solr init container
+  and `pid/` dirs), then copies the image's `/opt/oxo/oxo2-release.json` beside it as
+  `$OXO2_INFERENCES/oxo2-release.json` — the manifest of the software release that built the index
+  ([ADR-0052](../docs/adr/0052-versioned-software-releases-from-stable.md); the development
+  placeholder in a `:dev` image). Both paths are owned by the `archive` stage. Jenkins copies the
+  tarball onto the NFS export, and the dev-cluster Solr init container
   extracts it into `/var/solr` (`k8chart-dev/oxo2/templates/solr-deployment.yaml`). The init
   container is version-gated: it records the tarball's size+mtime in `/var/solr/.import-version` on
   the persistent PVC and re-extracts only when a new tarball differs from that marker. So restarting

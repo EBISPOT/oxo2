@@ -47,7 +47,7 @@ declare -A OXO2_STAGE_OWNS=(
     [index-inferred]=""
     [mappings2entities]="$OXO2_DATA/entities"
     [index-entities]=""
-    [archive]="$OXO2_INFERENCES/solr-data.tar.gz"
+    [archive]="$OXO2_INFERENCES/solr-data.tar.gz $OXO2_INFERENCES/oxo2-release.json"
 )
 
 # Checkpoint: the name of the last (sub)stage that completed this/last run. Written after each stage;

@@ -41,6 +41,9 @@ Production data releases are produced by the same HPC dataload, parameterised by
 - **Cutting a release is a manual act**: a pull request merging `dev` into `stable`, then pulling
   the prod checkout on NFS. Pushing `stable` publishes the `:stable` images — it is a release
   gesture, never routine.
+  *Refined by [ADR-0052](0052-versioned-software-releases-from-stable.md): the merge stays the
+  manual act, but the push now also tags a `vX.Y.Z` software release, and `:stable` is
+  re-pointed only after all versioned images exist.*
 - **The archive contract is unchanged**: each environment writes
   `$OXO2_DATA/inferences/solr-data.tar.gz`; the trees are disjoint, so dev and prod never collide.
   Retention/rollback of production tarballs belongs to the copy-to-NFS deploy side, not the

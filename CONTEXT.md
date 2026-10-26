@@ -405,6 +405,17 @@ derived defaults. Cutting a release is a manual PR merging `dev` into `stable`, 
 prod checkout on NFS. See [ADR-0050](docs/adr/0050-production-data-release-channel.md). Affects
 `oxo2-dataload` (`loadData.env.sh`, `loadData.hpc`, `loadData.jenkins.sh`, `cleanup.hpc`) and CI
 (`.github/workflows/docker.yml` builds on `stable`).
+- **Software releases are versioned and cut automatically from `stable`** — a pull
+request merged into `stable` is the one human gesture; the push runs the checks, then one job
+picks `vMAJOR.MINOR.PATCH` from a `release:patch|minor|major` label (default patch), tags the
+commit, publishes a GitHub release (notes from the PR, else from conventional-commit subjects)
+archived to Zenodo for a DOI, builds `:vX.Y.Z` images, and only then re-points `:stable` at the
+recorded digests — so `:stable` is never a mixed set. Maven/npm/Chart versions do not change; the
+tag and `oxo2-release.json` (served at `GET /api/v2/release`) carry the version. Data releases
+(`solr-data.tar.gz`) and deployments stay separate and unversioned. See
+[ADR-0052](docs/adr/0052-versioned-software-releases-from-stable.md). Affects CI
+(`release.yml`, `.github/release/`, `docker.yml`), `oxo2-backend`, `oxo2-frontend` and
+`oxo2-dataload` (bundled manifest, `archive` stage).
 - **OxO2 is backwards compatible with OxO v1** — API surface answers v1's questions even where SSSOM terms are richer. 
 See [ADR-0004](docs/adr/0004-backwards-compatible-with-oxo-v1.md). Affects `oxo2-backend` (API design) and `oxo2-frontend` (documentation surface).
 - **GitHub registries are fetched via archive tarball** — GitHub mapping registries download as the default-branch archive 

@@ -1,0 +1,72 @@
+name: Stable release
+
+# A push to stable is a software release (ADR-0052). This workflow is the gate: it runs the
+# checks and, only when they all pass, calls release.yml, which versions, tags, publishes,
+# archives, builds the images and finally moves :stable. Pull requests into stable run the same
+# checks without releasing, so a release PR is green or red before it is merged.
+#
+# Pushes to stable are queued, never cancelled: an in-flight release must finish before the next
+# starts, and release.py's ancestry checks stop an out-of-order publication.
+
+on:
+  push:
+    branches: [ "stable" ]
+  pull_request:
+    branches: [ "stable" ]
+
+concurrency:
+  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/stable' && 'oxo2-stable-release' || github.run_id }}
+  queue: max
+
+jobs:
+  release-contract:
+    name: Release contract tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Test the release lifecycle without publishing
+        run: python -m unittest discover -s .github/release -p 'test_*.py' -v
+
+  backend-tests:
+    name: Backend unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Run the backend tests
+        run: mvn -B -ntp -pl oxo2-backend -am test
+
+  frontend-checks:
+    name: Frontend lint, typecheck, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oxo2-frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          # Keep in step with the base image in oxo2-frontend/Dockerfile.frontend and frontend.yml.
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: oxo2-frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+
+  publish:
+    name: Publish software release
+    needs: [release-contract, backend-tests, frontend-checks]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/stable'
+    permissions:
+      contents: write
+      packages: write
+    uses: ./.github/workflows/release.yml

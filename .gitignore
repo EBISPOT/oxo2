@@ -48,3 +48,7 @@ skills-lock.json
 # Per-checkout dev-environment files (machine-local worktree index + direnv shim)
 .worktree-index
 .envrc
+
+# Working directory of the release workflow (.github/release/release.py)
+.release-output/
+__pycache__/
