@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
 """Cut an OxO2 software release from a push to the stable branch (ADR-0052).
 
-Run by .github/workflows/release.yml as four idempotent commands, in order:
+Run by .github/workflows/release.yml as five idempotent commands:
 
   prepare         choose version + notes, create (or recover) the draft GitHub release
   archive         tag the tested commit, publish the release, wait for the Zenodo DOI
+  prepare-image   recover the release on an image build runner: write the manifest into the
+                  tree and report whether one component's image is already recorded
   remember-image  record one component image's digest as a release asset (called per image)
   finish          upload the manifest + enriched source tarball, mark images complete
 
-Every step reads and writes a JSON state comment hidden in the GitHub release body, so a re-run
-of the original workflow run resumes where it stopped and never makes a second release for the
-same commit. Zenodo is driven only by GitHub's native integration (publishing the release is the
-trigger); this script reads Zenodo's public records API without a token to find the DOI.
+The workflow runs them in three jobs: prepare and archive first; then one job per component,
+all in parallel, each running prepare-image, the image build and remember-image; then finish.
+Every job starts from an empty checkout, so every step reads and writes a JSON state comment
+hidden in the GitHub release body and the release assets, never the runner: a re-run of the
+original workflow run, or of one failed build job, resumes where it stopped and never makes a
+second release for the same commit. The components build in any order. Zenodo is driven only by
+GitHub's native integration (publishing the release is the trigger); this script reads Zenodo's
+public records API without a token to find the DOI.
 
 Configuration lives in .github/release/config.json:
   firstVersion         the version of the very first release (no bump label applies to it)
@@ -434,6 +440,25 @@ def prepare(gh, config, commit, output):
     return context
 
 
+def prepare_image(gh, config, commit, output, component):
+    """Recover the release on a build runner and say whether this component's image exists.
+
+    Each image is built in its own job from a fresh checkout. This recovers the release state,
+    writes the release manifest into the tree (the images must carry it, ADR-0052) and restores
+    the digests recorded so far, so the job can skip an image an earlier run already pushed.
+    """
+    context = prepare(gh, config, commit, output)
+    if "bundle" not in context:
+        raise ValueError("The release has not been archived yet; the images must not be built "
+                         "from the development placeholder manifest")
+    recorded = (output / f"image-{component}.json").exists()
+    if os.environ.get("GITHUB_OUTPUT"):
+        with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
+            handle.write(f"recorded={str(recorded).lower()}\n")
+    print(f"{component} image {'already recorded' if recorded else 'to be built'} for v{context['state']['version']}")
+    return recorded
+
+
 def ensure_tag(gh, state):
     tag = "v" + state["version"]
     refs = gh.request(f"{gh.root}/git/matching-refs/tags/{tag}")
@@ -569,7 +594,7 @@ def load_config(path=Path(".github/release/config.json")):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["prepare", "archive", "remember-image", "finish"])
+    parser.add_argument("command", choices=["prepare", "archive", "prepare-image", "remember-image", "finish"])
     parser.add_argument("--commit", default=os.environ.get("GITHUB_SHA"))
     parser.add_argument("--output", type=Path, default=Path(".release-output"))
     parser.add_argument("--component", choices=COMPONENTS)
@@ -582,6 +607,10 @@ def main():
     config = load_config()
     if args.command == "prepare":
         prepare(gh, config, args.commit, args.output)
+    elif args.command == "prepare-image":
+        if not args.component:
+            parser.error("prepare-image requires --component")
+        prepare_image(gh, config, args.commit, args.output, args.component)
     elif args.command == "archive":
         archive(gh, PublicZenodo(), config, args.output)
     else:

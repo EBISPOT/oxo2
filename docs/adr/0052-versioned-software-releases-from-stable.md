@@ -44,7 +44,7 @@ should derive it. Three facts about OxO2 shape the design:
 ## Decision
 
 **A software release is a pull request merged into `stable`.** The push to `stable` runs the
-existing checks and then one release job. Nobody tags by hand, and no version string in
+existing checks and then the release workflow. Nobody tags by hand, and no version string in
 `pom.xml`, `package.json` or `Chart.yaml` changes: the git tag and the generated release manifest
 identify the software release, and the Maven/npm/Helm identifiers keep their existing values (the
 `oxo2-*-1.0.0-SNAPSHOT.jar` names are baked into the Dockerfiles' `COPY` paths).
@@ -64,8 +64,8 @@ identify the software release, and the Maven/npm/Helm identifiers keep their exi
   `chore(deps)` commits collapsed into one "Dependency updates" line) and ending with the GitHub
   compare link. GitHub's own release-notes generator is not the fallback: it only sees pull
   requests, and most OxO2 changes are not one.
-- **The release job is `release.py`, run in four idempotent steps from the push to `stable`**,
-  after the checks pass and gated so that only `EBISPOT/oxo2`'s `stable` runs it:
+- **The release workflow is `release.py`, run in four idempotent stages from the push to
+  `stable`**, after the checks pass and gated so that only `EBISPOT/oxo2`'s `stable` runs it:
   1. *prepare* — refuse unless the checked-out SHA is on `stable`, no earlier release is
      unfinished, and release order follows `stable` history; choose version and notes; create a
      **draft** GitHub release whose body ends in a hidden JSON state comment, the durable state
@@ -76,12 +76,17 @@ identify the software release, and the Maven/npm/Helm identifiers keep their exi
      metadata only; DOI, version and date are never written into the repository. The step is
      skipped when `config.json` sets `"archiving": "none"`, so releases work before the Zenodo
      integration is enabled on the repository.
-  3. *build* — write the release manifest into the working tree (see runtime visibility below),
-     then build each of the five images as a **multi-platform image for `linux/amd64` and
-     `linux/arm64`**, push it as `ghcr.io/ebispot/<image>:vX.Y.Z` with OCI
-     `version`/`revision`/`source` labels, and save its manifest-list digest as a release asset
-     so a re-run skips images that already exist. Docker Desktop on a Mac or on Windows then
-     pulls the matching architecture from the same tag.
+  3. *build* — one job per image, the five in parallel. Each job recovers the release state
+     from GitHub, writes the release manifest into its working tree (see runtime visibility
+     below), builds its image as a **multi-platform image for `linux/amd64` and
+     `linux/arm64`**, pushes it as `ghcr.io/ebispot/<image>:vX.Y.Z` with OCI
+     `version`/`revision`/`source` labels, and saves its manifest-list digest as a release
+     asset. A job whose digest asset already exists builds nothing, so re-running the failed
+     jobs rebuilds only what is missing, and the jobs pass nothing through the runner. Layers
+     are cached in the registry (`:release-buildcache`), which unlike the Actions cache survives
+     the weeks between releases; the architecture-neutral stages also read the `dev` builds'
+     Actions cache. Docker Desktop on a Mac or on Windows then pulls the matching architecture
+     from the same tag.
   4. *finish and promote* — upload `release-manifest.json` (version, date, notes, DOI, image
      digests) and an enriched source tarball; then, **only if `stable` still points at this
      SHA**, re-tag the five recorded digests as `:stable`. Promotion is digest-only (no rebuild)
@@ -146,7 +151,14 @@ identify the software release, and the Maven/npm/Helm identifiers keep their exi
   dataload Dockerfiles select the Nemo tarball by `TARGETARCH` (`amd64` → `x86_64`, `arm64` →
   `aarch64`) instead of hard-coding one, and their Maven builder stages run on `$BUILDPLATFORM`
   so the jars are compiled once natively rather than twice under emulation; only the thin
-  runtime stages are built per architecture (under QEMU for arm64 on the x86 runner). The `:dev`
+  runtime stages are built per architecture (under QEMU for arm64 on the x86 runner).
+  `Dockerfile.solr` downloads and unpacks Solr, pure Java, in a `$BUILDPLATFORM` stage for the
+  same reason. The frontend image has no native stage to hoist work into: it runs `vite build`
+  when the container starts, because the public base URL is injected at runtime, so its `npm ci`
+  and Caddy install produce architecture-specific files the running container needs and are
+  built under emulation. That makes the frontend the slowest image and, since the first release
+  built the five images one after another in one job (over forty minutes), the reason the build
+  is now one parallel job per image: a release takes about as long as its slowest image. The `:dev`
   and `:<sha>` images from `docker.yml` stay `linux/amd64`: they are consumed by the dev cluster
   and the dev HPC dataload, both x86_64, and doubling every push's build time buys nothing there.
   Local development on a Mac builds natively through `docker compose`, which is unaffected.
@@ -159,5 +171,6 @@ identify the software release, and the Maven/npm/Helm identifiers keep their exi
 - **Affects** CI (`.github/workflows/release.yml`, `.github/release/`, `docker.yml`, the PR
   template, `.zenodo.json`), `oxo2-backend` (`ReleaseController`, bundled manifest),
   `oxo2-frontend` (footer, bundled manifest), `oxo2-dataload` (`TARGETARCH`-selected Nemo and
-  manifest `COPY` in the Dockerfiles, `archive` stage), and the operator docs
+  manifest `COPY` in the Dockerfiles, the native Solr download stage in `Dockerfile.solr`, the
+  `archive` stage), and the operator docs
   (`docs/releases.md`, `docs/hpc-data-release.md`).

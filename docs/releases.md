@@ -114,19 +114,28 @@ identifier is this exact release URL and whose version matches, for up to `archi
 (30 minutes); ambiguous matches fail rather than pick a DOI, and after the first release the
 concept DOI must match the previous release's.
 
-*Build* writes `oxo2-release.json` into the backend, frontend and dataload trees, then builds and
-pushes each image as `:vX.Y.Z`, saving each digest as a release asset. A re-run skips components
-whose asset already exists.
+*Build* runs as five parallel jobs, one per image. Each job recovers the release state from
+GitHub (`release.py prepare-image`), writes `oxo2-release.json` into the backend, frontend and
+dataload trees, builds its image for `linux/amd64` and `linux/arm64`, pushes it as `:vX.Y.Z` and
+saves the digest as a release asset. A job whose component already has its digest asset builds
+nothing, so re-running the failed jobs rebuilds only the images that are missing; the jobs share
+nothing through the runner. The build layers are cached in
+`ghcr.io/ebispot/oxo2-<component>:release-buildcache` from one release to the next, and the
+architecture-neutral stages (Maven, npm) also read the Actions cache that the `dev` builds refresh
+on every push. The whole build takes about as long as the slowest image, the frontend, whose
+`npm ci` and Caddy install run under emulation for arm64 because the container compiles the site
+when it starts.
 
 *Finish* uploads the manifest and the enriched source tarball and marks the release complete.
 *Promote* then re-tags the recorded digests as `:stable`, but only if `stable` still points at this
 SHA; otherwise the versioned release stands and the aliases are left for the newer run.
 
 **If anything fails, re-run the failed jobs of the original run.** The state comment, the tag and
-the assets recover the same version, DOI and finished images. Do not create another release, and
-do not delete or edit the tag, the state comment or the assets to get past a pending release. If
-the DOI never appears, open `EBISPOT/oxo2` in Zenodo's GitHub settings, inspect that release's
-errors, fix the integration, and re-run the original workflow.
+the assets recover the same version, DOI and finished images; a failed image build re-runs on its
+own and the finish job then picks up the digests the other builds recorded. Do not create another
+release, and do not delete or edit the tag, the state comment or the assets to get past a pending
+release. If the DOI never appears, open `EBISPOT/oxo2` in Zenodo's GitHub settings, inspect that
+release's errors, fix the integration, and re-run the original workflow.
 
 Stable pushes are queued (`queue: max`), never cancelled; queue order is arrival order, and the
 ancestry check stops an out-of-order publication. Do not merge another release PR until the
@@ -136,7 +145,8 @@ previous run has finished.
 
 - `python3 -m unittest discover -s .github/release -p 'test_*.py' -v` exercises the lifecycle
   (publication, DOI discovery, successive releases, delayed indexing, timeouts, partial image
-  builds, lost responses) against fake GitHub and Zenodo providers and a temporary git repository.
+  builds, image builds split across runners, lost responses) against fake GitHub and Zenodo
+  providers and a temporary git repository.
   It makes no real releases. CI runs it on every push and PR.
 - `ReleaseControllerTest` (`mvn -pl oxo2-backend test`) covers the development placeholder the
   backend serves and the released manifest shape `release.py` writes.
