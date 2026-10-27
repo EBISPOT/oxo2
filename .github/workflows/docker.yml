@@ -2,9 +2,11 @@ name: Build and push OxO2 images
 
 on:
   push:
-    # A push to stable is a release act: it publishes the mutable :stable image tags the
-    # production HPC dataload and clusters pull (ADR-0050).
-    branches: [ "dev", "stable" ]
+    # dev only. A push to stable is a software release (ADR-0052): stable.yml runs the checks
+    # and release.yml builds the versioned images and is the ONLY thing that moves the mutable
+    # :stable tags the production HPC dataload and clusters pull (ADR-0050) — after all five
+    # versioned images exist, so :stable is never a mixed set.
+    branches: [ "dev" ]
   pull_request:
     branches: [ "dev" ]
 

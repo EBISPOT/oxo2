@@ -62,6 +62,14 @@ for `total`. `releaseDate` is `null` until the first dataload that stamps the fi
 no `unique()` aggregation — that is what makes `/api/sssom/stats` expensive — so `mappings.total` counts
 documents, not distinct triples. `mappingSets.ontologies` is the ONTOLOGY-category set count, *not*
 `/api/v2/ontologies`' prefix count; the two answer different questions and will not agree.
+- **`GET /api/v2/release`** — the software release this backend was built from
+([ADR-0052](../docs/adr/0052-versioned-software-releases-from-stable.md)): `current` (version,
+commit, release notes, DOI, GitHub release URL), the Zenodo `conceptDoi` of the series, and the
+`releases` history newest first. Read once at startup from the bundled
+`src/main/resources/oxo2-release.json`, which the release workflow writes before building the
+versioned images; the checked-in copy is the development placeholder (`current: null`, empty
+history). No runtime call to GitHub or Zenodo. Mapping *data* releases are not reported here — the
+index's load date comes from `/api/v2/data-content`.
 - **`GET /api/v2/health`** — the deep health check
 ([ADR-0051](../docs/adr/0051-deep-health-endpoint-for-traffic-manager-routing.md)): 200 with
 `All systems are operational.` in the body only when all three Solr cores answer a `rows=0` query

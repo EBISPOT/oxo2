@@ -64,6 +64,12 @@ via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/
 
 - `src/App.tsx`, `src/index.tsx` — root and routing.
 - `src/app/api.ts` — HTTP client for `oxo2-backend`.
+- `src/app/release.ts` — `useReleaseManifest()`, the software release this build is
+  ([ADR-0052](../docs/adr/0052-versioned-software-releases-from-stable.md)), read from
+  `public/oxo2-release.json` under `BASE_URL`. The release workflow writes that file before
+  building the image; the checked-in copy is the development placeholder (`current: null`).
+  `common/Footer.tsx` shows `OxO2 vX.Y.Z` linking to the release notes (plus a DOI link when
+  archived), or `Development build`.
 - `src/model/` — TypeScript shapes mirroring backend DTOs (`Mapping`, `MappingSet`, `Search`).
 - `src/pages/` — top-level views (`home/`, `results/`, `documentation/`, `about/`).
 - `src/components/` — reusable widgets: `search/Search.tsx`, `paging/Paging.tsx`, 
