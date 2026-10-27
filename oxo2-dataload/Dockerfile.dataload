@@ -1,5 +1,8 @@
 # syntax=docker/dockerfile:1.7
-FROM maven:3.9.15-eclipse-temurin-26 AS builder
+# The jars are architecture-neutral, so the Maven stage runs natively on the build platform and
+# is shared by every target platform of a multi-arch build (ADR-0052); only the runtime stage
+# below is built per architecture.
+FROM --platform=$BUILDPLATFORM maven:3.9.15-eclipse-temurin-26 AS builder
 
 WORKDIR /build
 
@@ -35,8 +38,17 @@ RUN mkdir -p /opt/nextflow  \
     && chmod +x /opt/nextflow/nextflow \
     && /opt/nextflow/nextflow -version
 
-RUN mkdir -p /opt/nemo \
-    && curl -fL https://github.com/knowsys/nemo/releases/download/v0.10.1/nemo_v0.10.1_x86_64-unknown-linux-gnu.tar.gz | tar --strip-components=1 -C /opt/nemo -xzf -
+# Nemo publishes one tarball per architecture; pick the one for the platform this image is being
+# built for (release images are linux/amd64 and linux/arm64, ADR-0052). TARGETARCH is set by
+# BuildKit — to the host architecture for a plain `docker build`.
+ARG TARGETARCH
+RUN set -eu; case "$TARGETARCH" in \
+        amd64) nemo_arch=x86_64 ;; \
+        arm64) nemo_arch=aarch64 ;; \
+        *) echo "Unsupported TARGETARCH '$TARGETARCH' for the Nemo download" >&2; exit 1 ;; \
+    esac \
+    && mkdir -p /opt/nemo \
+    && curl -fL "https://github.com/knowsys/nemo/releases/download/v0.10.1/nemo_v0.10.1_${nemo_arch}-unknown-linux-gnu.tar.gz" | tar --strip-components=1 -C /opt/nemo -xzf -
 
 RUN mkdir -p /opt/solr  \
     && curl -fL https://archive.apache.org/dist/solr/solr/10.0.0/solr-10.0.0-slim.tgz | tar --strip-components=1 -C /opt/solr -xzf - \
@@ -62,6 +74,11 @@ ENV PATH="${PATH}:/opt/nextflow:/opt/nemo:/opt/solr" \
     OXO2_CONFIG=/mnt/oxo/configs/config.json
 
 RUN mkdir -p /opt/oxo
+
+# The software release manifest (ADR-0052): the development placeholder as checked in, overwritten
+# by the release workflow before it builds the versioned images. The HPC archive stage copies it
+# next to solr-data.tar.gz so a data release records the software that built it.
+COPY ./oxo2-dataload/oxo2-release.json /opt/oxo/oxo2-release.json
 
 COPY     ./oxo2-dataload/oxo2-json2inferences/sssom.rls \
          ./oxo2-dataload/oxo2-json2inferences/explanations2json.nf \

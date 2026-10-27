@@ -1,0 +1,20 @@
+{
+  "title": "OxO2: Ontology Xref Service software",
+  "description": "OxO2 is EMBL-EBI's SSSOM-compliant ontology mapping (cross-reference) service: a dataload that downloads SSSOM mapping sets, infers cross-set mappings with the Nemo rules engine and indexes them into Apache Solr, a REST API that is backwards compatible with OxO version 1, and a web interface. This record archives the OxO2 software source code; mapping data releases are independent of software releases.",
+  "creators": [
+    {
+      "name": "OxO2 contributors"
+    }
+  ],
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "Apache-2.0",
+  "keywords": [
+    "ontology",
+    "ontology mappings",
+    "SSSOM",
+    "cross-references",
+    "OxO"
+  ],
+  "language": "eng"
+}

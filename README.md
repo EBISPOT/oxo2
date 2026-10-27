@@ -8,6 +8,13 @@ guide to the web interface — searching, reading results, how mappings are rank
 edges. A [PDF](docs/user/ui/oxo2-user-interface.pdf) is generated from it. Open either straight from
 disk; no build step, no server.
 
+## Releases
+
+Software releases are cut by merging a pull request into `stable`; the push tags `vX.Y.Z`,
+publishes a GitHub release with a Zenodo DOI, builds versioned multi-platform images and then
+moves the `:stable` image tags. See [docs/releases.md](docs/releases.md). Mapping data releases
+([docs/hpc-data-release.md](docs/hpc-data-release.md)) and deployments are separate actions.
+
 ## API documentation
 
 The backend publishes an OpenAPI 3 description of its REST API. Once the backend is running

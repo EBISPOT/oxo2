@@ -656,6 +656,16 @@ singularity exec \
     bash -c "set -o pipefail; tar -cf - -C '$SOLR_HOME' --exclude=./logs --exclude=./pid . | pigz -p $PIGZ_THREADS > '$SOLR_ARCHIVE'"
 archive_end_time=$(date +%s)
 echo "Solr data archived in $((archive_end_time - archive_start_time)) seconds ($(du -h "$SOLR_ARCHIVE" | cut -f1))"
+
+# Record which software built this data release (ADR-0052). The image carries the release manifest
+# of the software it was built from (/opt/oxo/oxo2-release.json — the development placeholder in a
+# :dev image, the release's own manifest in a :stable one); a copy beside the tarball lets an index
+# on NFS or in a cluster be tied back to its software version. Data releases themselves stay
+# unversioned: this is a sidecar, not a tag.
+RELEASE_MANIFEST="$OXO2_INFERENCES/oxo2-release.json"
+singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
+    cp /opt/oxo/oxo2-release.json "$RELEASE_MANIFEST"
+echo "Software release manifest copied to $RELEASE_MANIFEST"
 record_stage archive
 
 echo "=== OXO2 HPC Dataload Complete ==="
