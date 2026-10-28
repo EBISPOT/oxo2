@@ -378,6 +378,39 @@ class ReleaseTestCase(unittest.TestCase):
         self.assertTrue(gh.state_for("v2.0.0")["imagesComplete"])
         self.assertEqual(release.prepare(gh, self.config, commit, Path(self.tmp.name) / "again")["complete"], True)
 
+    def test_images_build_in_separate_jobs_in_any_order(self):
+        commit = self.push_stable()
+        gh = FakeGitHub()
+        release.prepare(gh, self.config, commit, self.output)
+        # A build runner must never bake the development placeholder manifest into an image.
+        with self.assertRaisesRegex(ValueError, "not been archived"):
+            release.prepare_image(gh, self.config, commit, Path(self.tmp.name) / "early", "backend")
+        release.archive(gh, FakeZenodo(), self.config, self.output)
+
+        # Each component is built on its own runner from an empty output directory, in whatever
+        # order the jobs happen to run; the release assets are the only shared state.
+        for index, component in enumerate(reversed(release.COMPONENTS)):
+            job_output = Path(self.tmp.name) / f"job-{component}"
+            self.assertFalse(release.prepare_image(gh, self.config, commit, job_output, component))
+            for target in release.BUNDLE_TARGETS:
+                bundle = json.loads((self.repo / target).read_text())
+                self.assertEqual(bundle["current"]["version"], "2.0.0")
+            release.remember_image(gh, job_output, component, self.metadata_file(component, str(index)))
+            # A re-run of this job finds its image recorded and builds nothing.
+            retry_output = Path(self.tmp.name) / f"retry-{component}"
+            self.assertTrue(release.prepare_image(gh, self.config, commit, retry_output, component))
+            self.assertTrue((retry_output / f"image-{component}.json").exists())
+
+        # The finish job recovers the five digests from the release, not from any build runner.
+        finish_output = Path(self.tmp.name) / "finish"
+        release.prepare(gh, self.config, commit, finish_output)
+        release.finish(gh, finish_output)
+        manifest = json.loads(gh.assets[gh.release_for("v2.0.0")["id"]]["release-manifest.json"])
+        self.assertEqual(set(manifest["images"]), set(release.COMPONENTS))
+        self.assertTrue(manifest["images"]["solr"].startswith("ghcr.io/ebispot/oxo2-solr@sha256:0"))
+        self.assertTrue(manifest["images"]["dataload"].startswith("ghcr.io/ebispot/oxo2-dataload@sha256:4"))
+        self.assertTrue(gh.state_for("v2.0.0")["imagesComplete"])
+
     def test_zenodo_timeout_tells_the_operator_to_rerun(self):
         commit = self.push_stable()
         gh = FakeGitHub()

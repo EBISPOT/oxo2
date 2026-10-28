@@ -1,17 +1,29 @@
 # syntax=docker/dockerfile:1.7
+# Solr is pure Java, so the download and unpack run natively on the build platform and the
+# result is shared by every target platform of a multi-arch build (ADR-0052), as the Maven
+# stages of the other images are; only the runtime stage below is built per architecture.
+FROM --platform=$BUILDPLATFORM eclipse-temurin:25-jdk-noble AS solr-download
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /opt/solr \
+    && curl -fL https://archive.apache.org/dist/solr/solr/10.0.0/solr-10.0.0-slim.tgz | tar --strip-components=1 -C /opt/solr -xzf -
+
+
 FROM eclipse-temurin:25-jdk-noble
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates bash tar gzip lsof \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /opt/solr \
-    && curl -fL https://archive.apache.org/dist/solr/solr/10.0.0/solr-10.0.0-slim.tgz | tar --strip-components=1 -C /opt/solr -xzf -
-
 RUN addgroup --system --gid 8389 solr \
     && adduser --system --uid 8389 --ingroup solr --home /var/solr solr \
     && mkdir -p /var/solr /mnt/oxo/solr-data \
-    && chown -R solr:solr /opt/solr /var/solr /mnt/oxo
+    && chown -R solr:solr /var/solr /mnt/oxo
+
+COPY --from=solr-download --chown=solr:solr /opt/solr /opt/solr
 
 ENV PATH="${PATH}:/opt/solr/bin" \
     SOLR_HOME="/mnt/oxo/solr-data" \
