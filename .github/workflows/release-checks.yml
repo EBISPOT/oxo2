@@ -1,0 +1,25 @@
+name: Release contract tests
+
+# Keeps .github/release/release.py honest on dev, where it is edited, so a broken release script
+# is caught before it reaches stable (where stable.yml runs the same tests as a release gate).
+
+on:
+  push:
+    branches: [ "dev" ]
+  pull_request:
+    branches: [ "dev" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Test the release lifecycle without publishing
+        run: python -m unittest discover -s .github/release -p 'test_*.py' -v

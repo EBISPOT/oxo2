@@ -1,0 +1,6 @@
+{
+  "firstVersion": "2.0.0",
+  "archiving": "github",
+  "archiveWaitSeconds": 1800,
+  "archivePollSeconds": 30
+}

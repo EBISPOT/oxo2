@@ -349,8 +349,11 @@ json2solr.sh "$OXO2_INFERENCES/solr/mappingSet" http://localhost:8983/solr/oxo2-
 2. **Permissions:** `chmod -R 777 "$SOLR_HOME"/*` so downstream services (e.g., Kubernetes pods) can read the Solr data.
 3. **Archive:** Packs the contents of `$SOLR_HOME` (excluding the run-local `logs/` and `pid/`)
    into `$OXO2_INFERENCES/solr-data.tar.gz` using the image's `pigz` at `$SLURM_CPUS_PER_TASK`
-   threads. This archive is what the separate copy-to-NFS + Kubernetes redeploy job consumes; the
-   dataload itself stops here and does not deploy.
+   threads, then copies the image's `/opt/oxo/oxo2-release.json` to
+   `$OXO2_INFERENCES/oxo2-release.json`, so the archive sits next to the manifest of the software
+   release that built it ([ADR-0052](adr/0052-versioned-software-releases-from-stable.md)). This
+   archive is what the separate copy-to-NFS + Kubernetes redeploy job consumes; the dataload
+   itself stops here and does not deploy.
 
 ## Cutting a Production Release
 
@@ -358,8 +361,12 @@ Production runs the **stable** branch ([ADR-0050](adr/0050-production-data-relea
 the prod NFS checkout is of `stable`, and CI publishes the `:stable` image tags on every push to
 `stable`. To cut a release:
 
-1. **Open a pull request merging `dev` into `stable`** and merge it. The push to `stable` triggers
-   the image builds (`.github/workflows/docker.yml`) — wait for them to publish the `:stable` tags.
+1. **Cut a software release**: open a pull request merging `dev` into `stable` and merge it
+   ([releases.md](releases.md), [ADR-0052](adr/0052-versioned-software-releases-from-stable.md)).
+   The push to `stable` tags `vX.Y.Z`, publishes the release and builds the versioned images;
+   the `:stable` tags move only once the whole run has finished — wait for it. A data release
+   needs no software release: re-running this procedure against an unchanged `stable` is just a
+   data refresh.
 2. **Update the prod checkout** on the login node:
 
    ```bash

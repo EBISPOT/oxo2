@@ -1,0 +1,208 @@
+name: Publish software release
+
+# The release job of ADR-0052: called by stable.yml once the checks on a push to stable have
+# passed. It never runs on its own trigger. Every step is idempotent and keyed on the release
+# state .github/release/release.py keeps in the GitHub release body, so recovery from any
+# failure is "re-run the failed jobs of the original run", never "make another release".
+#
+# Three jobs: prepare (version, tag, publication, DOI), build-images (one matrix job per
+# component, all five in parallel) and finish (manifest, source tarball, :stable). The jobs pass
+# nothing through the runner: each one starts with `release.py prepare`, which recovers the
+# release state and the recorded image digests from the GitHub release itself. A build job
+# therefore skips its image when the release already holds that component's digest asset,
+# whatever run recorded it, and a failed matrix entry is re-run on its own with
+# "re-run failed jobs".
+#
+# Only this workflow may move the :stable image aliases (docker.yml stops at dev). They move last,
+# by digest, and only if stable still points at this commit — so :stable is never a mixed set
+# of images from different commits and an old re-run can never move it backwards.
+
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  COMPONENTS: dataload nextflow backend frontend solr
+
+jobs:
+  prepare:
+    name: Prepare, tag, publish and archive
+    if: github.repository == 'EBISPOT/oxo2' && github.event_name == 'push' && github.ref == 'refs/heads/stable'
+    runs-on: ubuntu-latest
+    # archiveWaitSeconds in .github/release/config.json bounds the Zenodo wait.
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      tag: ${{ steps.prepare.outputs.tag }}
+      version: ${{ steps.prepare.outputs.version }}
+      complete: ${{ steps.prepare.outputs.complete }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          # Full history: prepare checks ancestry against origin/stable and the notes generator
+          # walks the commits since the previous tag.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Prepare or recover the release
+        id: prepare
+        run: python .github/release/release.py prepare
+
+      - name: Tag, publish, and wait for the Zenodo DOI
+        run: python .github/release/release.py archive
+
+  build-images:
+    name: Build the ${{ matrix.component }} image
+    needs: prepare
+    if: needs.prepare.outputs.complete != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      # One failed image must not cancel the others: they are recorded as they finish, and the
+      # re-run then builds only what is missing.
+      fail-fast: false
+      matrix:
+        include:
+          - component: dataload
+            dockerfile: ./oxo2-dataload/Dockerfile.dataload
+            context: .
+          - component: nextflow
+            dockerfile: ./oxo2-dataload/Dockerfile.nextflow
+            context: .
+          - component: backend
+            dockerfile: ./oxo2-backend/Dockerfile.backend
+            context: .
+          - component: frontend
+            dockerfile: ./oxo2-frontend/Dockerfile.frontend
+            context: ./oxo2-frontend
+          - component: solr
+            dockerfile: ./oxo2-dataload/Dockerfile.solr
+            context: .
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Recover the release and write its manifest into the tree
+        id: recover
+        # Writes oxo2-release.json into the backend, frontend and dataload trees, so the image
+        # built here carries the manifest of the release it belongs to, and sets recorded=true
+        # when this component's digest is already a release asset.
+        run: python .github/release/release.py prepare-image --component ${{ matrix.component }}
+
+      - uses: docker/setup-qemu-action@v4
+        if: steps.recover.outputs.recorded != 'true'
+      - uses: docker/setup-buildx-action@v4
+        if: steps.recover.outputs.recorded != 'true'
+      - uses: docker/login-action@v4
+        if: steps.recover.outputs.recorded != 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the versioned multi-platform image
+        id: build
+        if: steps.recover.outputs.recorded != 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/ebispot/oxo2-${{ matrix.component }}:${{ needs.prepare.outputs.tag }}
+          labels: |
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          # The registry cache is the durable one: releases are usually further apart than the
+          # seven days after which GitHub evicts an unused Actions cache entry. The dev scope that
+          # docker.yml refreshes on every push to dev is read as a second source, so the
+          # architecture-neutral build stages (Maven dependencies, npm packages) are warm even
+          # when the release cache is cold; nothing is written back to it.
+          cache-from: |
+            type=registry,ref=ghcr.io/ebispot/oxo2-${{ matrix.component }}:release-buildcache
+            type=gha,scope=oxo2-${{ matrix.component }}
+          cache-to: type=registry,mode=max,ref=ghcr.io/ebispot/oxo2-${{ matrix.component }}:release-buildcache
+
+      - name: Record the image digest as a release asset
+        if: steps.recover.outputs.recorded != 'true'
+        env:
+          BUILD_METADATA: ${{ steps.build.outputs.metadata }}
+          COMPONENT: ${{ matrix.component }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$BUILD_METADATA" > ".release-output/build-${COMPONENT}.json"
+          python .github/release/release.py remember-image --component "$COMPONENT" \
+            --metadata ".release-output/build-${COMPONENT}.json"
+
+  finish:
+    name: Finish the release and promote :stable
+    needs: [prepare, build-images]
+    # Runs after the build jobs whether they built or were skipped as already complete; never
+    # after a failed or cancelled one.
+    if: always() && needs.prepare.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.build-images.result)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          # Full history: finish archives the tagged source with git archive.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Recover the release and the five recorded image digests
+        run: python .github/release/release.py prepare
+
+      - name: Finish the release with the manifest and source tarball
+        run: python .github/release/release.py finish
+
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote the recorded digests to :stable
+        run: |
+          set -euo pipefail
+          git fetch origin stable
+          latest=$(git rev-parse origin/stable)
+          if [ "$latest" != "$GITHUB_SHA" ]; then
+            echo "stable has advanced past this commit; the versioned release stands and :stable is left to the newer run"
+            exit 0
+          fi
+          for component in $COMPONENTS; do
+            image=$(python -c 'import json,sys; print(json.load(open(".release-output/release-manifest.json"))["images"][sys.argv[1]])' "$component")
+            docker buildx imagetools create --tag "ghcr.io/ebispot/oxo2-${component}:stable" "$image"
+          done
+
+      - name: Release summary
+        if: success()
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          echo "Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Deployment and the HPC data release are separate actions (docs/releases.md)." >> "$GITHUB_STEP_SUMMARY"
