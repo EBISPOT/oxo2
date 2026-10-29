@@ -2,7 +2,7 @@
 # The jars are architecture-neutral, so the Maven stage runs natively on the build platform and
 # is shared by every target platform of a multi-arch build (ADR-0052); only the runtime stage
 # below is built per architecture.
-FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-26 AS builder
+FROM --platform=$BUILDPLATFORM maven:3.9.16-eclipse-temurin-26 AS builder
 
 WORKDIR /build
 
