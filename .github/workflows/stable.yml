@@ -14,6 +14,10 @@ on:
   pull_request:
     branches: [ "stable" ]
 
+# Checks only need checkout access; the publish job declares its write permissions below.
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/stable' && 'oxo2-stable-release' || github.run_id }}
   queue: max
