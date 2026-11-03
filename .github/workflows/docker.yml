@@ -65,14 +65,15 @@ jobs:
         id: image-tags
         shell: bash
         run: |
-          raw_ref="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-          ref_tag="$(printf '%s' "$raw_ref" \
-            | tr '[:upper:]' '[:lower:]' \
-            | sed -E 's/[^a-z0-9_.-]+/-/g; s/^[.-]+//; s/[.-]+$//')"
-          ref_tag="${ref_tag:0:128}"
-
-          if [[ -z "$ref_tag" ]]; then
-            ref_tag="ref-${GITHUB_SHA::12}"
+          # Branch names are not safe image aliases: a stable -> dev PR used to overwrite
+          # :stable with development builds. Only release.yml may publish release aliases.
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/dev" ]]; then
+            ref_tag="dev"
+          elif [[ "$GITHUB_EVENT_NAME" == "pull_request" && "$GITHUB_REF" =~ ^refs/pull/([0-9]+)/merge$ ]]; then
+            ref_tag="pr-${BASH_REMATCH[1]}"
+          else
+            echo "Unsupported image publication event/ref: $GITHUB_EVENT_NAME $GITHUB_REF" >&2
+            exit 1
           fi
 
           echo "ref_tag=$ref_tag" >> "$GITHUB_OUTPUT"
