@@ -82,6 +82,20 @@ at runtime. Development and local builds, whose checked-in copies hold `"current
 reports from the index ([ADR-0043](adr/0043-data-content-summary-on-landing-page.md)); they are
 independent of the software release date.
 
+The ordinary Docker workflow publishes `:dev` only on pushes to `dev`. Pull-request images use
+`:pr-<number>`, never the source branch name: a `stable` → `dev` merge-back must not overwrite
+the released `:stable` images with development placeholders. Both builds also retain their
+commit-SHA tag. Only the release workflow publishes version tags and promotes `:stable`.
+
+If production reports "Development build", check both `/oxo2-release.json` under the site's
+base path and `/api/v2/release`. A null `current` means that component carries the development
+placeholder. Compare the registry's `:stable` digest with the component's digest in the completed
+release's `release-manifest.json`. To recover from an overwritten alias, redeploy production and
+failover with `--set imageTag=vX.Y.Z` for the verified completed release. Fix the publishing
+workflow before returning to `:stable`; re-run the original stable release workflow to restore
+its recorded digests, provided `stable` still points at that release commit. Verify that both
+public manifests report the expected version after the rollout.
+
 ## One-time setup
 
 Needed once, by someone with admin rights on `EBISPOT/oxo2`, before the first release:

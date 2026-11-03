@@ -30,20 +30,20 @@ public class DownloadMappings {
         ExecutorService executorService = Executors.newFixedThreadPool(inputParameters.numberOfThreads);
         Collection<Future> futures = new LinkedList<>();
 
-        oxoConfiguration.getMappingRegistries().forEach(mappingRegistry -> {
-            logger.debug("Downloading registry {} from {}", mappingRegistry.getId(), mappingRegistry.getPurl());
-            try {
+        try {
+            oxoConfiguration.getMappingRegistries().forEach(mappingRegistry -> {
+                logger.debug("Downloading registry {} from {}", mappingRegistry.getId(), mappingRegistry.getPurl());
                 futures.add(downloadMappings(executorService, mappingRegistry,
                         inputParameters.downloadDirectory + File.separator + mappingRegistry.getId(),
                         inputParameters.baseDirectory));
-            } catch (IllegalArgumentException e) {
-                logger.error("Failed to download registry {}: {}", mappingRegistry.getId(), e.getMessage());
-            }
-        });
-
-        waitForFutures(futures);
-
-        shutdownAndAwaitTermination(executorService);
+            });
+            waitForFutures(futures);
+        } catch (RuntimeException e) {
+            executorService.shutdownNow();
+            throw e;
+        } finally {
+            shutdownAndAwaitTermination(executorService);
+        }
     }
 
     private static void waitForFutures(Collection<Future> futures) {
@@ -53,8 +53,11 @@ public class DownloadMappings {
                 if (o instanceof Collection) {
                     waitForFutures((Collection<Future>) o);
                 }
-            } catch (InterruptedException | ExecutionException e) {
-                logger.error("Error waiting for future to complete", e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while waiting for required downloads", e);
+            } catch (ExecutionException e) {
+                throw new IllegalStateException("Required registry download failed", e.getCause());
             }
         }
     }
