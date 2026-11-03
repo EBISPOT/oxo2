@@ -141,7 +141,8 @@ execution id is undefined, so the workflow is two steps:
 # Use `clean`: the oxo2-sssom2json / oxo2-json2inferences shaded jars bundle oxo2-shared, and a
 # non-clean `install` can re-shade around a stale bundled Mapping.class, so the pipeline silently
 # runs old code (e.g. emitting fields the source no longer defines). `clean` forces a fresh shade.
-mvn clean install -DskipTests
+# Failsafe 3.6+ uses skipITs separately from Surefire's skipTests.
+mvn clean install -DskipTests -DskipITs
 
 # Bootstrap or refresh expected outputs after intentional change.
 mvn -pl oxo2-integration-tests exec:java@captureExpected

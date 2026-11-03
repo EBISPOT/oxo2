@@ -48,7 +48,7 @@ jobs:
           # walks the commits since the previous tag.
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -94,7 +94,7 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -168,7 +168,7 @@ jobs:
           # Full history: finish archives the tagged source with git archive.
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
