@@ -52,7 +52,8 @@ public class HTTPDowloader {
                 }
 
                 if (isRemote(url)) {
-                    try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+                    // Nextflow owns bounded retries for this registry (including extraction).
+                    try (CloseableHttpClient httpClient = HttpClients.custom().disableAutomaticRetries().build()) {
                         HttpGet request = new HttpGet(url);
                         downloadFile(httpClient, request, fileWithExtension);
                     }
@@ -77,6 +78,7 @@ public class HTTPDowloader {
             } catch (Exception e) {
                 logger.error("Error downloading file from URL = {}, destination = {}, extension = {}, fileWithExtension = {}",
                         url, destination, extension, fileWithExtension, e);
+                throw new IllegalStateException("Required download failed: " + url, e);
             }
         }
 
@@ -132,14 +134,14 @@ public class HTTPDowloader {
         private static void downloadFile(CloseableHttpClient httpClient, HttpGet request, String destination)
                 throws IOException {
 
-            try (CloseableHttpResponse response = httpClient.execute(request);
-                 InputStream in = response.getEntity().getContent();
-                 FileOutputStream out = new FileOutputStream(destination)) {
-
-                byte[] buffer = new byte[2048];
-                int count;
-                while ((count = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, count);
+            try (CloseableHttpResponse response = httpClient.execute(request)) {
+                if (response.getCode() != 200) {
+                    throw new IOException("HTTP GET failed for " + request.getRequestUri()
+                            + " (status=" + response.getCode() + ")");
+                }
+                try (InputStream in = response.getEntity().getContent();
+                     FileOutputStream out = new FileOutputStream(destination)) {
+                    in.transferTo(out);
                 }
             }
         }
