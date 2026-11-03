@@ -93,6 +93,12 @@ HPC path — see § Resumable dataload.
   (gunzipped to `.tsv`). A `url` may also be a **relative local path**, resolved against the directory of
   `OXO2_CONFIG` (`--base-dir`), so a committed test config can reference in-repo fixtures without a
   machine-specific `file://` path — see [ADR-0039](../docs/adr/0039-repo-relative-fixtures-and-single-gzip-in-downloader.md).
+  Connection, HTTP status, copy and extraction failures propagate out of the direct-URL task and
+  downloader command. `DOWNLOAD_REGISTRY` retries failed tasks three times (four attempts total),
+  waiting 10, 20 and 40 seconds. This overrides the global `ignore` policy in every profile:
+  exhausted retries fail the download stage, so the orchestrator cannot mark it complete or
+  continue to indexing and publishing an incomplete data release. Successful registry tasks are
+  not repeated. Direct-URL HTTP retries are owned by Nextflow, not multiplied by the HTTP client.
 - `github_repository` registries are fetched as the default-branch archive tarball and only the configured `directory` is
   extracted — no GitHub API, see [ADR-0007](../docs/adr/0007-github-registries-via-archive-tarball.md).
 - `mapping_commons_registry` registries point at a Mapping Commons aggregated catalogue
