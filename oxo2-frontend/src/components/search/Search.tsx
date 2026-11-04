@@ -95,6 +95,9 @@ export function Search({ searchInput = initialSearchState, onClear }: {
     const ontologyMetadata = useMemo(() => new Map(
         (mappingSets ?? [])
             .filter((set) => set.mappingSetCategory === 'ONTOLOGY' && set.prefix && set.ontology)
+            // Current and obsolete extracts can share a prefix. Insert current metadata last so
+            // the general ontology picker does not describe the ontology as obsolete-only.
+            .sort((a, b) => Number(b.obsolete) - Number(a.obsolete))
             .map((set) => [set.prefix.toUpperCase(), {
                 name: set.ontology, description: set.mappingSetDescription,
             }])
