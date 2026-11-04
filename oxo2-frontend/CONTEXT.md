@@ -103,8 +103,14 @@ mapping set was loaded into OxO.
 Individual asserted mapping details show `ReportIncorrectMapping`, which fetches the source set
 using the shared `mappingSetById` query cache. It offers the issue tracker first and the mailing
 list as an alternative. Missing or unusable contacts produce the no-contact message; lookup errors
-offer a retry. Inferred mapping details and grouped result rows have no report action. Existing
-asserted-evidence links lead to the reportable source mapping's details page.
+offer a retry. Inferred mappings and mapping groups are not report targets.
+
+Each row of the inferred mapping's asserted-evidence table offers a report action beneath its source
+link. `AssertedMappingReportDialog` fetches the full asserted mapping by its own ID before showing
+the same reporting options; premise summaries omit metadata such as predicate modifiers. Reports
+identify that asserted mapping and include the parent inferred mapping's URL as context. Closing the
+dialog restores focus and preserves table filters, sorting, and position. Missing premise IDs disable
+the action; failed lookups offer a retry, and missing mappings show an unavailable message.
 
 `util/mappingReport.ts` prepares source-specific report text, preserving predicate modifiers and
 literal subjects. It prefills ordinary GitHub issue forms and email drafts; custom GitHub templates,

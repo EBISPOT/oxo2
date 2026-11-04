@@ -205,6 +205,7 @@ test('asserted mappings precede the graph and fit the details panel without hori
         const heading = page.getByRole('heading', {name: 'Asserted Mappings', exact: true});
         const graphHeading = page.getByRole('heading', {name: 'Explanation of inferred mapping', exact: true});
         await heading.waitFor();
+        assert.equal(await page.getByRole('button', {name: 'Report incorrect mapping', exact: true}).isDisabled(), true);
         assert.ok((await heading.boundingBox()).y < (await graphHeading.boundingBox()).y);
         for (const width of [1440, 1024, 390]) {
             await page.setViewportSize({width, height: 1000});
@@ -215,5 +216,94 @@ test('asserted mappings precede the graph and fit the details panel without hori
                 await page.screenshot({path: `${process.env.UI_SCREENSHOT_DIR}/asserted-table-${width}.png`, fullPage: true, animations: 'disabled'});
             }
         }
+    } finally { await page.close(); }
+});
+
+const reportPremises = [
+    {...mappingFixture, mapping_id: 'premise-one', mapping_set_id: 'first-source'},
+    {...mappingFixture, mapping_id: 'premise-two', mapping_set_id: 'second-source', subject_id: 'EFO:0001'},
+];
+
+async function openReportableInference() {
+    return openMapping({...mappingFixture, inference_type: 'SSSOM_INFERENCE',
+        asserted_mappings: JSON.stringify(reportPremises), explanation: JSON.stringify(explanation)});
+}
+
+test('each asserted row reports its own full mapping and contacts with inference context', async () => {
+    const page = await openReportableInference();
+    try {
+        const fetched = [];
+        await page.route('**/api/sssom/mappings/premise-*', route => {
+            const id = route.request().url().split('/').at(-1);
+            fetched.push(id);
+            return route.fulfill({json: {...reportPremises.find(premise => premise.mapping_id === id),
+                predicate_modifier: 'Not'}});
+        });
+        await page.route('**/api/v2/mapping-sets/by-id?**', route => {
+            const id = new URL(route.request().url()).searchParams.get('mappingSetId');
+            return route.fulfill({json: {mapping_set_id: id, mapping_set_title: id,
+                ...(id === 'first-source' ? {issue_tracker: 'https://github.com/example/first/issues'}
+                    : {mailing_list: 'second@example.org'})}});
+        });
+        const originalUrl = page.url();
+        const buttons = page.getByRole('button', {name: 'Report incorrect mapping', exact: true});
+        const dialog = page.getByRole('dialog', {name: 'Report incorrect asserted mapping', exact: true});
+        assert.deepEqual(fetched, []);
+        for (const [index, premise] of reportPremises.entries()) {
+            await buttons.nth(index).click();
+            const report = dialog.getByLabel('Report text', {exact: true});
+            await report.waitFor();
+            const body = await report.inputValue();
+            assert.ok(body.includes(`Source mapping set: ${premise.mapping_set_id}`));
+            assert.ok(body.includes(`OxO mapping: ${originalUrl.replace('/example', `/${premise.mapping_id}`)}`));
+            assert.ok(body.includes(`Noticed while reviewing this inferred mapping: ${originalUrl}`));
+            assert.ok(body.includes('Predicate: Not skos:exactMatch'));
+            assert.equal(await dialog.getByRole('region', {name: 'Asserted mapping to report'}).getByText('Not', {exact: true}).count(), 1);
+            const link = dialog.getByRole('link', {name: index === 0 ? 'Open issue tracker' : 'Open email draft'});
+            const destination = new URL(await link.getAttribute('href'));
+            assert.equal(destination.pathname, index === 0 ? '/example/first/issues/new' : 'second@example.org');
+            assert.ok(destination.searchParams.get('body').includes(originalUrl));
+            if (index === 0) {
+                for (const width of [1440, 390]) {
+                    await page.setViewportSize({width, height: 1000});
+                    assert.ok(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth + 1));
+                    if (process.env.UI_SCREENSHOT_DIR) {
+                        await page.screenshot({path: `${process.env.UI_SCREENSHOT_DIR}/asserted-report-${width}.png`, animations: 'disabled'});
+                    }
+                }
+                await page.setViewportSize({width: 1440, height: 1000});
+                await page.keyboard.press('Escape');
+            } else {
+                await dialog.getByRole('button', {name: 'Close report'}).click();
+            }
+            await dialog.waitFor({state: 'hidden'});
+            assert.equal(page.url(), originalUrl);
+            assert.equal(await buttons.nth(index).evaluate(el => el === el.ownerDocument.activeElement), true);
+        }
+        assert.deepEqual(fetched, ['premise-one', 'premise-two']);
+    } finally { await page.close(); }
+});
+
+test('asserted report lookup can retry and shows missing mappings or missing contacts clearly', async () => {
+    const page = await openReportableInference();
+    try {
+        let status = 503;
+        await page.route('**/api/sssom/mappings/premise-one', route => route.fulfill({status,
+            json: status === 200 ? reportPremises[0] : {message: 'Unavailable'}}));
+        await page.route('**/api/sssom/mappings/premise-two', route => route.fulfill({status: 404, json: {}}));
+        await page.route('**/api/v2/mapping-sets/by-id?**', route => route.fulfill({json: {mapping_set_id: 'first-source'}}));
+        const buttons = page.getByRole('button', {name: 'Report incorrect mapping', exact: true});
+        await buttons.first().click();
+        const dialog = page.getByRole('dialog', {name: 'Report incorrect asserted mapping', exact: true});
+        await dialog.getByRole('alert').waitFor();
+        assert.equal(await dialog.getByLabel('Report text', {exact: true}).count(), 0);
+        status = 200;
+        await dialog.getByRole('button', {name: 'Try again'}).click();
+        await dialog.getByText('No reporting contact available for this mapping source.', {exact: true}).waitFor();
+        await dialog.getByRole('button', {name: 'Close report'}).click();
+        await dialog.waitFor({state: 'hidden'});
+        await buttons.nth(1).click();
+        await dialog.getByText('This asserted mapping is no longer available for reporting.', {exact: true}).waitFor();
+        assert.equal(await dialog.getByLabel('Report text', {exact: true}).count(), 0);
     } finally { await page.close(); }
 });

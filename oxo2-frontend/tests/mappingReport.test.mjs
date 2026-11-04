@@ -13,6 +13,20 @@ const mapping = {
 const mappingUrl = 'https://example.org/oxo2/mapping/example-id';
 const report = createMappingReport(mapping, mappingUrl);
 
+test('reports from an inference identify the asserted target and retain the inference as context', () => {
+    const inferredUrl = 'https://example.org/oxo2/mapping/inferred-id';
+    const contextual = createMappingReport(mapping, mappingUrl, inferredUrl);
+    assert.equal(contextual.title, report.title);
+    assert.ok(contextual.body.includes(`OxO mapping: ${mappingUrl}`));
+    assert.ok(contextual.body.includes(`Noticed while reviewing this inferred mapping: ${inferredUrl}`));
+    assert.ok(!report.body.includes('Noticed while reviewing'));
+    for (const destination of reportingDestinations({
+        issueTracker: 'https://github.com/example/ontology/issues', mailingList: 'users@example.org',
+    }, contextual)) {
+        assert.ok(new URL(destination.href).searchParams.get('body').includes(inferredUrl));
+    }
+});
+
 test('report preserves negation, source identity and a shareable mapping link', () => {
     assert.match(report.body, /Predicate: Not skos:exactMatch/);
     const lines = report.body.split('\n');

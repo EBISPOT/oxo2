@@ -11,6 +11,7 @@ import {mappingSetHref} from "../../util/mappingSetUrl";
 import {fetchConfidenceByMappingIds} from "./MappingResultsSlice";
 import {InferredMapping, Mapping} from "../../model/Mapping.ts";
 import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
+import {AssertedMappingReportDialog} from "../../components/mapping/AssertedMappingReportDialog";
 import {EntityRefCell} from "../../components/mapping/EntityRefCell";
 import {ColumnFilterPopover, type FilterFieldDef} from "../../components/mapping/ColumnFilterPopover";
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
@@ -101,6 +102,7 @@ const compareValues = (left: unknown, right: unknown, descending?: boolean): num
  * every row without paging.
  */
 function InferredMappings({ mapping }: { mapping: Mapping }) {
+    const [reportMappingId, setReportMappingId] = useState<string | null>(null);
     const [sorting, setSorting] = useState<MRT_SortingState>([]);
 
     // Confidence is not in the precomputed premise blob (ADR-0028), but each premise carries its
@@ -343,17 +345,24 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 Header: () => <ColumnHeaderLabel topic="mapping_set" label="Mapping set" />,
                 Cell: ({ row }) => {
                     const setId = row.original.mappingSetId;
-                    if (!setId) {
-                        return <span className="text-gray-400">—</span>;
-                    }
                     return (
-                        <Link
-                            to={mappingSetHref(setId)}
-                            className="break-all text-link-default hover:underline"
-                            title="View mapping set details"
-                        >
-                            {setId}
-                        </Link>
+                        <div className="min-w-0">
+                            {setId ? (
+                                <Link to={mappingSetHref(setId)}
+                                    className="break-all text-link-default hover:underline"
+                                    title="View mapping set details">
+                                    {setId}
+                                </Link>
+                            ) : <span className="text-gray-400">—</span>}
+                            <button type="button"
+                                className="block mt-2 text-sm text-link-default text-left hover:underline disabled:text-gray-400 disabled:no-underline"
+                                disabled={!row.original.mappingId}
+                                title={row.original.mappingId ? undefined : 'Full details are unavailable for this mapping.'}
+                                aria-haspopup="dialog"
+                                onClick={() => setReportMappingId(row.original.mappingId ?? null)}>
+                                Report incorrect mapping
+                            </button>
+                        </div>
                     );
                 },
             },
@@ -442,6 +451,8 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
             <SortingContext.Provider value={sorting}>
                 <MaterialReactTable table={assertedMappingsTable}/>
             </SortingContext.Provider>
+            <AssertedMappingReportDialog mappingId={reportMappingId} inferredMappingId={mapping.mappingId}
+                onClose={() => setReportMappingId(null)} />
         </div>
     );
 }
