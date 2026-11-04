@@ -36,9 +36,8 @@ const MULTIPLE_EXAMPLE = "UBERON:0002107\nCataract\nhttp://purl.obolibrary.org/o
  * results table whose per-column sort popovers write `?sort`. No `?sort` means the backend ranks
  * by relevance (the provenance-led boost, ADR-0027).
  */
-export function Search({ searchInput = initialSearchState, showWelcome = false, onClear }: {
+export function Search({ searchInput = initialSearchState, onClear }: {
     searchInput: SearchInput,
-    showWelcome?: boolean,
     // Called after the form's own state is reset, on the results page only. The results-table filters,
     // sort and search options all live in the URL query string, and the table keeps a local copy of
     // its filter inputs; clearing both (query string + a table remount) is the results page's job, not
@@ -269,11 +268,6 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
 
     return (
         <div className="search-container">
-            {showWelcome && (
-                <div className="text-primary">
-                    Welcome to the EMBL-EBI OxO Mapping Service
-                </div>
-            )}
             <div
                 role="radiogroup"
                 aria-label="How many terms are you mapping?"
