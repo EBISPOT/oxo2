@@ -108,6 +108,12 @@ export function MappingItem({
                     title={mapping.predicateId}
                     className={`text-center ${mapping.predicateLabel ? "text-sm" : "font-bold"}`}
                 >
+                    {mapping.predicateModifier && (
+                        <span className="mr-1 px-1.5 py-0.5 text-xs font-bold rounded bg-red-600 text-white uppercase"
+                            title={`predicate_modifier = ${mapping.predicateModifier}`}>
+                            {mapping.predicateModifier}
+                        </span>
+                    )}
                     {mapping.predicateId ? mapping.predicateId : mapping.predicateIri }
                 </div>
             </div>

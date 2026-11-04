@@ -3,7 +3,7 @@ import {InferredMapping, Mapping, MappingFields} from "../../model/Mapping";
 import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
 import {Link, useNavigate} from "react-router";
 import {mappingSetHref} from "../../util/mappingSetUrl";
-import {EntityRefCell} from "../../components/mapping/EntityRefCell";
+import {MappingItem} from "../../components/mapping/MappingItem";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {ChevronDownIcon, ChevronUpIcon} from "@heroicons/react/24/solid";
 import InferredMappings from "./InferredMappings.tsx";
@@ -83,11 +83,8 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
     ].filter(Boolean);
 
     return (
-        // Full viewport width (only side/vertical gutters), matching the search results page rather
-        // than Tailwind's `container`, whose breakpoint cap (1536px at 2xl) left dead space on wide
-        // screens and forced the wide Asserted Mappings table into a horizontal scrollbar it did not
-        // need.
-        <main className="w-full px-4 py-6 md:px-8 space-y-6">
+        // Match the landing page's reading width; the expanded graph uses its own fullscreen dialog.
+        <main className="container mx-auto py-6 space-y-6">
             <div className="flex flex-wrap justify-between items-center gap-3">
                 <div className="flex items-center gap-3">
                     <h1 className="text-2xl font-bold">Mapping Details</h1>
@@ -102,18 +99,15 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
             </div>
 
 
-            <section aria-label="Mapping" className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(12rem,0.7fr)_minmax(0,1fr)] gap-5 rounded-lg border border-gray-200 bg-gray-50 p-5">
-                <div className="min-w-0">
-                    <h2 className="text-xs uppercase tracking-wide text-gray-500 mb-2">Subject</h2>
-                    <EntityRefCell id={mapping.subjectId} iri={mapping.subjectIri} label={mapping.subjectLabel} showOlsLink />
-                </div>
-                <div className="min-w-0 border-y lg:border-y-0 lg:border-x border-gray-200 py-3 lg:py-0 lg:px-5">
-                    <h2 className="text-xs uppercase tracking-wide text-gray-500 mb-2">Predicate</h2>
-                    <EntityRefCell id={mapping.predicateId} iri={mapping.predicateIri} label={mapping.predicateLabel} modifier={mapping.predicateModifier} />
-                </div>
-                <div className="min-w-0">
-                    <h2 className="text-xs uppercase tracking-wide text-gray-500 mb-2">Object</h2>
-                    <EntityRefCell id={mapping.objectId} iri={mapping.objectIri} label={mapping.objectLabel} showOlsLink />
+            <section aria-labelledby="mapping-summary-heading">
+                <h2 id="mapping-summary-heading" className="section-heading">Mapping</h2>
+                <div className="p-4">
+                    <MappingItem
+                        mapping={mapping}
+                        navigateFn={navigate}
+                        showDetailsLink={false}
+                        alwaysHighlighted
+                    />
                 </div>
             </section>
 

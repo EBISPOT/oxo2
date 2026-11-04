@@ -162,12 +162,13 @@ test('mapping details explicitly summarize missing scores', async () => {
 });
 
 test('zero-valued confidence and similarity remain visible', async () => {
-    const page = await openMapping({...mappingFixture, confidence: 0, similarity_score: 0, similarity_measure: 'Jaccard'});
+    const page = await openMapping({...mappingFixture, confidence: 0, similarity_score: 0, similarity_measure: 'Jaccard', predicate_modifier: 'Not'});
     try {
         const section = page.getByRole('region', {name: 'Justification'});
         assert.match(await section.innerText(), /Confidence.*0/s);
         assert.match(await section.innerText(), /Similarity score.*0/s);
         assert.match(await section.innerText(), /Jaccard/);
+        assert.equal(await page.getByRole('region', {name: 'Mapping', exact: true}).getByText('Not', {exact: true}).count(), 1);
         assert.equal(await page.getByText(/Not provided:/).count(), 0);
     } finally { await page.close(); }
 });

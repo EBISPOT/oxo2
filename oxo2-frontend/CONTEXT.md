@@ -78,9 +78,9 @@ via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/
 
 ### Mapping details layout
 
-Mapping details show the subject, predicate (including negation), and object in a responsive summary,
-with copy controls and confirmed OLS links. Metadata sections use two columns on wide screens and
-stack on mobile. The justification section shows supplied confidence, similarity score, and similarity
+Mapping details use the original highlighted subject–predicate–object diagram, with copy controls,
+confirmed OLS links, and a negation badge when applicable. The page shares the landing page’s centered
+container width. Metadata sections use two columns on wide screens and stack on mobile. The justification section shows supplied confidence, similarity score, and similarity
 measure; a compact “Not provided” line names absent scores, preserving real zero values.
 
 Inference explanations appear independently of the asserted-mappings list, above that evidence table.
