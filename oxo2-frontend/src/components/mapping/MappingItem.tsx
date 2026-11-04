@@ -1,8 +1,7 @@
 import { useState, JSX } from "react";
 import { Mapping } from "../../model/Mapping";
 import { EyeIcon } from "@heroicons/react/24/solid";
-import olsLogo from "/public/logo.svg";
-import { buildOlsTermUrl } from "../../util/olsUrl";
+import { OlsLink } from "./OlsLink";
 
 async function copyToClipboard(text: string): Promise<void> {
     if (!navigator.clipboard) {
@@ -53,7 +52,6 @@ export function MappingItem({
         setCopied: (val: boolean) => void;
         isLeftSide: boolean;
     }): JSX.Element {
-        const olsUrl = buildOlsTermUrl(id, iri);
             const entityClasses = `mapping-entity 
                               ${isLeftSide ? 'mapping-entity-left' : 'mapping-entity-right'} 
                               ${alwaysHighlighted ? 'mapping-entity-highlighted' : 'mapping-entity-normal'}`;
@@ -78,20 +76,7 @@ export function MappingItem({
                         }`}
                         onClick={() => copyText(id, setCopied)}
                     />
-                    {olsUrl && (
-                        <a
-                            href={olsUrl}
-                            title={`View ${id} in OLS`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            <img
-                                src={olsLogo}
-                                alt="OLS"
-                                className="h-6 w-6 inline-block icon-spacer"
-                            />
-                        </a>
-                    )}
+                    <OlsLink id={id} iri={iri} large />
                 </div>
             </div>
         );

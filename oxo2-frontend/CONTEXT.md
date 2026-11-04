@@ -76,6 +76,15 @@ via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/
 `mapping/MappingItem.tsx`, `mapping/InferredMappingGraph.tsx`, `common/Header.tsx`, `common/Footer.tsx`,
 `common/HelpTerm.tsx`, `infoCard/`, `error/`.
 
+### OLS term links
+
+`mapping/OlsLink.tsx` is shared by result cells and mapping diagrams. It only renders after an exact
+OLS `/api/terms` lookup confirms the IRI (or `obo_id` when no IRI is available). Links use OLS’s returned
+ontology name, preferring a defining ontology and otherwise a confirmed import. Pending, absent, and
+failed lookups leave the icon hidden. React Query shares lookups for repeated entities, caches results
+for a day, and avoids retries or refetches on window focus. This is independent of whether an ontology’s
+mapping set was loaded into OxO.
+
 ### Reporting incorrect mappings (ADR-0053)
 
 Individual asserted mapping details show `ReportIncorrectMapping`, which fetches the source set

@@ -76,3 +76,46 @@ test('ontology prefixes remain usable without descriptive metadata', async () =>
         assert.ok(await page.getByText('UNKNOWN', {exact: true}).count());
     } finally { await page.close(); }
 });
+
+const mappingFixture = {
+    mapping_id: 'example', inference_type: 'ASSERTED', mapping_set_id: 'source',
+    subject_id: 'MONDO:0000001', subject_iri: 'http://purl.obolibrary.org/obo/MONDO_0000001', subject_label: 'Disease',
+    predicate_id: 'skos:exactMatch',
+    object_id: 'OMIMPS:116200', object_iri: 'https://omim.org/phenotypicSeries/PS116200', object_label: 'Example phenotypic series',
+};
+
+async function openMapping(mapping = mappingFixture, olsStatus = 200) {
+    const page = await browser.newPage({viewport: {width: 1440, height: 1000}});
+    await page.route('**/api/**', route => route.fulfill({json:
+        route.request().url().includes('/api/sssom/mappings/') ? mapping : {mapping_set_id: 'source'},
+    }));
+    await page.route('https://www.ebi.ac.uk/ols4/api/terms?**', route => route.fulfill({status: olsStatus, json: {
+        _embedded: {terms: route.request().url().includes('MONDO') ? [{
+            iri: mapping.subject_iri, obo_id: mapping.subject_id,
+            ontology_name: 'mondo', is_defining_ontology: true,
+        }] : []},
+    }}));
+    await page.goto(`${process.env.UI_BASE_URL || 'http://localhost:20100'}/mapping/example`);
+    await page.getByRole('heading', {name: 'Mapping Details', exact: true}).waitFor();
+    return page;
+}
+
+test('OLS links appear only for confirmed terms', async () => {
+    const page = await openMapping();
+    try {
+        const known = page.getByRole('link', {name: 'OLS', exact: true});
+        await known.first().waitFor();
+        assert.equal(await page.locator('a[title="View OMIMPS:116200 in OLS"]').count(), 0);
+        assert.equal(await known.count(), 1);
+        assert.match(await known.getAttribute('href'), /\/ontologies\/mondo\/classes\//);
+    } finally { await page.close(); }
+});
+
+
+test('OLS unavailability leaves the mapping readable without speculative links', async () => {
+    const page = await openMapping(mappingFixture, 503);
+    try {
+        assert.equal(await page.getByRole('link', {name: 'OLS', exact: true}).count(), 0);
+        assert.ok(await page.getByText('Example phenotypic series', {exact: true}).count());
+    } finally { await page.close(); }
+});
