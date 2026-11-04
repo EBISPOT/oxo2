@@ -76,6 +76,24 @@ via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/
 `mapping/MappingItem.tsx`, `mapping/InferredMappingGraph.tsx`, `common/Header.tsx`, `common/Footer.tsx`,
 `common/HelpTerm.tsx`, `infoCard/`, `error/`.
 
+### Reporting incorrect mappings (ADR-0053)
+
+Individual asserted mapping details show `ReportIncorrectMapping`, which fetches the source set
+using the shared `mappingSetById` query cache. It offers the issue tracker first and the mailing
+list as an alternative. Missing or unusable contacts produce the no-contact message; lookup errors
+offer a retry. Inferred mapping details and grouped result rows have no report action. Existing
+asserted-evidence links lead to the reportable source mapping's details page.
+
+`util/mappingReport.ts` prepares source-specific report text, preserving predicate modifiers and
+literal subjects. It prefills ordinary GitHub issue forms and email drafts; custom GitHub templates,
+other trackers, and list websites keep their supplied URLs and use copyable text. Oversized drafts
+also use the copy fallback, keeping the complete report available. Only HTTP(S) links and single
+mailing-list email addresses are actionable. The user reviews and submits externally; OxO2 sends
+and stores no reports. See [ADR-0053](../docs/adr/0053-external-reports-for-asserted-mappings.md).
+
+Run `npm test` for report content and destination tests (Node's built-in test runner with TypeScript
+stripping; Node 22.18+), alongside `npm run typecheck`, `npm run lint`, and `npm run build`.
+
 ### Explained terms
 
 A UI label that names a domain concept the reader may not know carries its own definition, revealed on

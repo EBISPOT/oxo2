@@ -214,12 +214,8 @@ public class SSSOM2JSON {
             throw new IOException("Error creating output directories", e);
         }
 
-        try {
-            processFile(tsvFile, mappingSetDirectory, mappingDirectory, mappingSetCategory,
-                    obsoleteEntityIris, setObsolete, dataReleaseDate);
-        } catch (Throwable t) {
-            logger.error("Error processing file {}", tsvFile, t);
-        }
+        processFile(tsvFile, mappingSetDirectory, mappingDirectory, mappingSetCategory,
+                obsoleteEntityIris, setObsolete, dataReleaseDate);
 
         long usedMemoryBytes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         double usedMemoryMB = usedMemoryBytes / (1024.0 * 1024.0);

@@ -14,6 +14,8 @@ public record MappingSetSummary(
         @Schema(description = "Free-text description.") @JsonProperty(MAPPING_SET_DESCRIPTION) String mappingSetDescription,
         @Schema(description = "Creator labels.") @JsonProperty(CREATOR_LABEL) List<String> creatorLabel,
         @Schema(description = "Mapping provider URL.") @JsonProperty(MAPPING_PROVIDER) String mappingProvider,
+        @Schema(description = "Source issue tracker URL, supplied in SSSOM metadata.") @JsonProperty(ISSUE_TRACKER) String issueTracker,
+        @Schema(description = "Source mailing-list email address or web URL, supplied in SSSOM metadata.") @JsonProperty(MAILING_LIST) String mailingList,
         @Schema(description = "Inference type of the set (`ASSERTED` or `SSSOM_INFERENCE`).") @JsonProperty(INFERENCE_TYPE) String inferenceType,
         @Schema(description = "Source sets this set was derived from (full IRIs).") @JsonProperty(MAPPING_SET_SOURCE) List<String> mappingSetSource,
         @Schema(description = "OxO curation category: `ONTOLOGY` (OLS-derived) or `CURATED`; absent on the synthetic inferences set.") @JsonProperty(MAPPING_SET_CATEGORY) String mappingSetCategory,

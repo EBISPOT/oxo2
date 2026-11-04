@@ -121,6 +121,14 @@ HPC path — see § Resumable dataload.
   so distinct sets that share a basename across sub-directories (the five landscape `priority.sssom.tsv` files) don't
   collapse at the flat publish dir. Downstream stages treat the stem as an opaque unique key.
 
+Reporting contacts (`issue_tracker` and optional `mailing_list`) are preserved from SSSOM metadata
+when rebuilding each mapping set and stored in `oxo2-mappingsets`. No OLS API enrichment or inferred
+contact fallback is performed. New contacts require updated source SSSOM and a dataload with the
+updated mapping-set schema ([ADR-0053](../docs/adr/0053-external-reports-for-asserted-mappings.md)).
+Embedded headers accept both `#` and `# ` comment prefixes, including mixed prefixes. Invalid YAML
+in an embedded header or external metadata file fails conversion with the source filename; it must
+not trigger the bare-TSV fallback and silently discard the source identity or reporting contacts.
+
 This is also where the **mapping set category** is stamped
 ([ADR-0027](../docs/adr/0027-config-driven-mapping-set-category.md)). The category — `ONTOLOGY`
 or `CURATED` — is not in the SSSOM data; it is the `category` key on the config's

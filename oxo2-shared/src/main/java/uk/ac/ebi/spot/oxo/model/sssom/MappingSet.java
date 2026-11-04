@@ -34,6 +34,9 @@ public record MappingSet (
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(ISSUE_TRACKER)
         Optional<Uri> issueTracker,
+        // A mailing list may be a bare email address or a web URL (ADR-0053).
+        @JsonProperty(MAILING_LIST)
+        Optional<String> mailingList,
         @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = SSSOMDataType.FilterOut.class)
         @JsonProperty(LICENSE)
         Uri license,
@@ -197,6 +200,7 @@ public record MappingSet (
         private List<EntityReference> objectPreprocessing = new ArrayList<>();
         private SortedSet<String> seeAlso = new TreeSet<>();
         private Optional<Uri> issueTracker = Optional.empty();
+        private Optional<String> mailingList = Optional.empty();
         private Optional<KeyValuePairsAsString> other = Optional.empty();
         private Optional<String> comment = Optional.empty();
 
@@ -582,6 +586,16 @@ public record MappingSet (
             return this;
         }
 
+        @JsonProperty(MAILING_LIST)
+        public Builder mailingList(String mailingList) {
+            this.mailingList = Optional.ofNullable(mailingList)
+                    .map(String::trim).filter(value -> !value.isEmpty());
+            return this;
+        }
+
+        public Builder mailingList(Optional<String> mailingList) {
+            return mailingList(mailingList.orElse(null));
+        }
 
         public Builder other(Optional<KeyValuePairsAsString> other) {
             this.other = other;
@@ -620,6 +634,7 @@ public record MappingSet (
                     creatorLabel,
                     curieMap,
                     issueTracker,
+                    mailingList,
                     license,
                     mappingDate,
                     mappingProvider,
