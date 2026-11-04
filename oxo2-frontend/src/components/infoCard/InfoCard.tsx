@@ -25,8 +25,8 @@ export function InfoCard(infoCardProps: InfoCardProps):  JSX.Element {
 
     return (
         <div className="px-2">
-            <div className="flex flex-col items-center justify-center max-h-screen text-2xl mb-3 text-neutral-default">
-                <div className="flex items-center space-x-4 p-4 w-full">
+            <div className="flex flex-col items-center justify-center max-h-screen mb-2 text-neutral-default">
+                <div className="flex items-center space-x-3 py-2 w-full">
                     <span>
                     {infoCardProps.icon && React.isValidElement(infoCardProps.icon)? (
                         infoCardProps.icon
@@ -36,16 +36,16 @@ export function InfoCard(infoCardProps: InfoCardProps):  JSX.Element {
                     </span>
                     <span>
                     {infoCardProps.link ?  (
-                        <Link to={infoCardProps.link} className="link-header">
+                        <Link to={infoCardProps.link} className="link-header text-xl">
                             {infoCardProps.title}
                         </Link>
                     ) : (
-                        <span className="link-header">{infoCardProps.title}</span>
+                        <span className="link-header text-xl">{infoCardProps.title}</span>
                     )}
                     </span>
                 </div>
             </div>
-            <p className="text-tertiary">
+            <p className="text-neutral-dark text-lg leading-7 [&_.link-default]:text-lg">
                 {renderDescription()}
             </p>
         </div>
