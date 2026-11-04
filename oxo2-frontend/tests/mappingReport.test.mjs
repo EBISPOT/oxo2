@@ -15,8 +15,9 @@ const report = createMappingReport(mapping, mappingUrl);
 
 test('report preserves negation, source identity and a shareable mapping link', () => {
     assert.match(report.body, /Predicate: Not skos:exactMatch/);
-    assert.ok(report.body.includes(mapping.mappingSetId));
-    assert.ok(report.body.includes(mappingUrl));
+    const lines = report.body.split('\n');
+    assert.equal(lines.find(line => line.startsWith('Source mapping set: ')), `Source mapping set: ${mapping.mappingSetId}`);
+    assert.equal(lines.find(line => line.startsWith('OxO mapping: ')), `OxO mapping: ${mappingUrl}`);
     assert.match(report.body, /Subject: MONDO:0000001 \(Disease & disorder\)/);
     assert.match(report.title, /Not skos:exactMatch/);
 });
@@ -80,9 +81,20 @@ test('missing or unsafe destinations never become actionable links', () => {
     assert.deepEqual(reportingDestinations({}, report), []);
     for (const value of ['', '  ', 'javascript:alert(1)', 'data:text/html,hello', '//example.org',
         'https://user:password@example.org', 'mailto:users@example.org?bcc=other@example.org',
-        'users@example.org\r\nBcc: other@example.org']) {
+        'users@example.org\r\nBcc: other@example.org', 'users@extra@example.org']) {
         assert.deepEqual(reportingDestinations({ issueTracker: value, mailingList: value }, report), [], value);
     }
+});
+
+test('email recipient punctuation stays encoded without introducing headers or extra recipients', () => {
+    const address = 'users+tag%40%40?bcc=other&name#section@example.org';
+    const [destination] = reportingDestinations({ mailingList: address }, report);
+    const url = new URL(destination.href);
+    assert.equal(decodeURIComponent(url.pathname), address);
+    assert.equal(url.hash, '');
+    assert.deepEqual([...url.searchParams.keys()], ['subject', 'body']);
+    assert.equal(url.searchParams.get('subject'), report.title);
+    assert.equal(url.searchParams.get('body'), report.body.replace(/\n/g, '\r\n'));
 });
 
 test('oversized reports fall back to destination links without truncating report text', () => {

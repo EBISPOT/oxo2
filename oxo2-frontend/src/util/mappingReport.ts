@@ -81,7 +81,8 @@ function mailingListDestination(value: string | undefined, report: MappingReport
     if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/i.test(address)) {
         return undefined;
     }
-    const mailto = `mailto:${encodeURIComponent(address).replace('%40', '@')}`;
+    const [localPart, domain] = address.split('@');
+    const mailto = `mailto:${encodeURIComponent(localPart)}@${encodeURIComponent(domain)}`;
     const href = `${mailto}?subject=${encodeURIComponent(report.title)}&body=${encodeURIComponent(report.body.replace(/\n/g, '\r\n'))}`;
     return href.length <= MAX_PREFILLED_URL_LENGTH
         ? { label: 'Open email draft', href, prefilled: true }
