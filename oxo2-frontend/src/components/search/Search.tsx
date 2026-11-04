@@ -14,6 +14,7 @@ import { OntologySelector } from "./OntologySelector";
 import { TermFileDrop } from "./TermFileDrop";
 import { parseTerms } from "../../util/terms";
 import { fetchOntologies, fetchTargetsForSubject } from "../../pages/results/OntologiesSlice";
+import { fetchMappingSets } from "../../pages/results/MappingSetsSlice";
 
 const tableTheme = createTheme({
     palette: {
@@ -88,6 +89,16 @@ export function Search({ searchInput = initialSearchState, onClear }: {
         queryKey: ["ontologies"], queryFn: fetchOntologies, staleTime: Infinity,
     });
     const allPrefixes = useMemo(() => (ontologies ?? []).map((o) => o.prefix), [ontologies]);
+    const { data: mappingSets } = useQuery({
+        queryKey: ["fetchMappingSets"], queryFn: () => fetchMappingSets(), staleTime: Infinity,
+    });
+    const ontologyMetadata = useMemo(() => new Map(
+        (mappingSets ?? [])
+            .filter((set) => set.mappingSetCategory === 'ONTOLOGY' && set.prefix && set.ontology)
+            .map((set) => [set.prefix.toUpperCase(), {
+                name: set.ontology, description: set.mappingSetDescription,
+            }])
+    ), [mappingSets]);
     const subjectCounts = useMemo(
         () => Object.fromEntries((ontologies ?? []).map((o) => [o.prefix, o.asSubject])), [ontologies]);
     const objectCounts = useMemo(
@@ -359,6 +370,7 @@ export function Search({ searchInput = initialSearchState, onClear }: {
                             label="From ontologies"
                             placeholder="source, e.g. DOID"
                             options={allPrefixes}
+                            metadata={ontologyMetadata}
                             counts={subjectCounts}
                             value={subjectPrefixes}
                             onChange={setSubjectPrefixes}
@@ -377,6 +389,7 @@ export function Search({ searchInput = initialSearchState, onClear }: {
                             label="To ontologies"
                             placeholder="target, e.g. EFO, MONDO"
                             options={targetOptions}
+                            metadata={ontologyMetadata}
                             counts={targetCounts}
                             value={objectPrefixes}
                             onChange={setObjectPrefixes}

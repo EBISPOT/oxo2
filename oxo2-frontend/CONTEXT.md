@@ -119,7 +119,9 @@ asserted leaf with its source mapping set, surfacing cross-set provenance.
 
 The search form is extended (not a separate surface) with two optional exact-prefix selectors,
 **"from \[source ontologies]"** and **"to \[target ontologies]"**, plus a ⇄ swap, beside the existing
-terms box. Options and counts come from `GET /api/v2/ontologies` (re-fetched with `?forSubject=` once a
+terms box. Names and descriptions come from ontology-category mapping sets, sharing the picker’s
+`fetchMappingSets` cache. Names are searchable and shown alongside prefixes; unknown metadata falls
+back to the prefix. Submitted values remain exact prefixes. Options and counts come from `GET /api/v2/ontologies` (re-fetched with `?forSubject=` once a
 source is chosen, so targets show counts and zero-count targets grey out). They compose: source prefix
 + empty box → entire ontology; terms + target prefix → bounded batch lookup; terms only → today's
 search. A label input (not a CURIE/IRI) is treated as a **source-side** label, bounded by the target
