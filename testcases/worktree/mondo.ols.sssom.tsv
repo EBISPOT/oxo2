@@ -6,6 +6,8 @@
 # mapping_set_title: OLS extracted MONDO mappings
 # mapping_set_description: These mappings were extracted during the OLS dataload from MONDO
 # mapping_date: '2026-07-27'
+# issue_tracker: https://github.com/EBISPOT/oxo2/issues
+# mailing_list: mondo-users@lists.sourceforge.net
 # other:
 #   local_id: mondo.ols
 #   prefix: MONDO

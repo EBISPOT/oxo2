@@ -102,6 +102,42 @@ class MappingSetControllerTest {
         ArgumentCaptor<SolrParams> captor = ArgumentCaptor.forClass(SolrParams.class);
         verify(solrClient).queryMappingSets(captor.capture());
         SolrQuery solrQuery = (SolrQuery) captor.getValue();
-        assertThat(solrQuery.getFields()).contains("mapping_set_category", "prefix", "ontology");
+        assertThat(solrQuery.getFields()).contains("mapping_set_category", "prefix", "ontology",
+                "issue_tracker", "mailing_list");
+    }
+
+    @Test
+    void exposesReportingContactsOnListAndDetails() throws Exception {
+        SolrDocument document = ontologySet();
+        document.setField("issue_tracker", "https://github.com/example/ontology/issues");
+        document.setField("mailing_list", "users@example.org");
+        QueryResponse response = responseOf(document);
+        when(solrClient.queryMappingSets(any())).thenReturn(response);
+
+        mockMvc.perform(get("/api/v2/mapping-sets"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].issue_tracker").value("https://github.com/example/ontology/issues"))
+                .andExpect(jsonPath("$[0].mailing_list").value("users@example.org"));
+        mockMvc.perform(get("/api/v2/mapping-sets/by-id")
+                        .param("mappingSetId", document.getFieldValue("mapping_set_id").toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.issue_tracker").value("https://github.com/example/ontology/issues"))
+                .andExpect(jsonPath("$.mailing_list").value("users@example.org"));
+
+        ArgumentCaptor<SolrParams> captor = ArgumentCaptor.forClass(SolrParams.class);
+        verify(solrClient, org.mockito.Mockito.times(2)).queryMappingSets(captor.capture());
+        for (SolrParams query : captor.getAllValues()) {
+            assertThat(query.get("fl")).contains("issue_tracker", "mailing_list");
+        }
+    }
+
+    @Test
+    void missingContactsRemainAbsentOnOlderIndexedSets() throws Exception {
+        QueryResponse response = responseOf(curatedSet());
+        when(solrClient.queryMappingSets(any())).thenReturn(response);
+        mockMvc.perform(get("/api/v2/mapping-sets/by-id").param("mappingSetId", "ictv_to_ncbitaxon"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.issue_tracker").doesNotExist())
+                .andExpect(jsonPath("$.mailing_list").doesNotExist());
     }
 }

@@ -7,6 +7,8 @@ export interface MappingSetResponse {
     mapping_set_description?: string;
     creator_label?: string[];
     mapping_provider?: string;
+    issue_tracker?: string;
+    mailing_list?: string;
     inference_type?: string;
     mapping_set_source?: string[];
     mapping_set_category?: string;
@@ -21,6 +23,8 @@ export interface MappingSet {
     mappingSetDescription: string;
     creatorLabel: string[];
     mappingProvider: string;
+    issueTracker?: string;
+    mailingList?: string;
     inferenceType: InferenceType;
     mappingSetSource: string[];
     // OxO curation category (ADR-0027); undefined on the synthetic inferences set.
@@ -40,6 +44,8 @@ export function fromMappingSetResponse(r: MappingSetResponse): MappingSet {
         mappingSetDescription: r.mapping_set_description ?? '',
         creatorLabel: r.creator_label ?? [],
         mappingProvider: r.mapping_provider ?? '',
+        issueTracker: r.issue_tracker,
+        mailingList: r.mailing_list,
         inferenceType: asInferenceType(r.inference_type),
         mappingSetSource: r.mapping_set_source ?? [],
         mappingSetCategory: asMappingSetCategory(r.mapping_set_category),

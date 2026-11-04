@@ -11,6 +11,7 @@ public class MappingConstants {
     public static final String CURIE_MAP = "curie_map";
     public static final String EXTENSION_DEFINITIONS = "extension_definitions";
     public static final String ISSUE_TRACKER = "issue_tracker";
+    public static final String MAILING_LIST = "mailing_list";
     public static final String ISSUE_TRACKER_ITEM = "issue_tracker_item";
     public static final String LICENSE = "license";
     public static final String MAPPING_CARDINALITY = "mapping_cardinality";

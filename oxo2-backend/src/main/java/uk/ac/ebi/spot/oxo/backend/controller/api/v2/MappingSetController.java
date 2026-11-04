@@ -42,6 +42,7 @@ public class MappingSetController {
     private static final String[] SUMMARY_FIELDS = {
             MAPPING_SET_ID, MAPPING_SET_TITLE, MAPPING_SET_DESCRIPTION,
             CREATOR_LABEL, MAPPING_PROVIDER, INFERENCE_TYPE, MAPPING_SET_SOURCE,
+            ISSUE_TRACKER, MAILING_LIST,
             MAPPING_SET_CATEGORY, PREFIX, ONTOLOGY, ONTOLOGY_IRI, OBSOLETE
     };
 
@@ -129,6 +130,8 @@ public class MappingSetController {
                 asString(doc.getFieldValue(MAPPING_SET_DESCRIPTION)),
                 asStringList(doc.getFieldValues(CREATOR_LABEL)),
                 asString(doc.getFieldValue(MAPPING_PROVIDER)),
+                asString(doc.getFieldValue(ISSUE_TRACKER)),
+                asString(doc.getFieldValue(MAILING_LIST)),
                 asString(doc.getFieldValue(INFERENCE_TYPE)),
                 asStringList(doc.getFieldValues(MAPPING_SET_SOURCE)),
                 asString(doc.getFieldValue(MAPPING_SET_CATEGORY)),

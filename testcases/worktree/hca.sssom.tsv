@@ -18,6 +18,7 @@
 #mapping_set_description: Human Cell Atlas curated mappings
 #subject_type: rdfs literal
 #subject_source: https://www.ebi.ac.uk/about/collaborations/human-cell-atlas
+#issue_tracker: https://github.com/EBISPOT/oxo2/issues
 subject_label	subject_category	predicate_id	object_id	mapping_justification
 """Blood pre-cDC,blood pre-conventional dendritic cells (cDCs)"""	selected_cell_types	skos:closeMatch	CL:0002010	semapv:ManualMappingCuration
 10X 3' v2 sequencing	library_construction_method	skos:closeMatch	EFO:0009899	semapv:ManualMappingCuration

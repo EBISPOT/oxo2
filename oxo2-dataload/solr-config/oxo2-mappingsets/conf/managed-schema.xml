@@ -462,6 +462,7 @@
   <field name="data_release_date" type="pdate" multiValued="false" indexed="true" stored="true"/>
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="issue_tracker" type="string" multiValued="false" indexed="false" stored="true"/>
+  <field name="mailing_list" type="string" multiValued="false" indexed="false" stored="true" docValues="false"/>
   <field name="license" type="string" multiValued="false" indexed="true" stored="true"/>
   <field name="mapping_date" type="pdates" multiValued="false" indexed="true" stored="true"/>
   <field name="mapping_provider" type="string" multiValued="false" indexed="true" stored="true"/>
