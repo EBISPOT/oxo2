@@ -76,6 +76,17 @@ via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/
 `mapping/MappingItem.tsx`, `mapping/InferredMappingGraph.tsx`, `common/Header.tsx`, `common/Footer.tsx`,
 `common/HelpTerm.tsx`, `infoCard/`, `error/`.
 
+### Mapping details layout
+
+Mapping details show the subject, predicate (including negation), and object in a responsive summary,
+with copy controls and confirmed OLS links. Metadata sections use two columns on wide screens and
+stack on mobile. The justification section shows supplied confidence, similarity score, and similarity
+measure; a compact “Not provided” line names absent scores, preserving real zero values.
+
+Inference explanations appear independently of the asserted-mappings list, above that evidence table.
+The graph has a responsive inline canvas and an **Expand graph** dialog that fills the window. Close
+or Escape returns focus to the expand button; both canvases retain zoom, pan, and fit controls.
+
 ### OLS term links
 
 `mapping/OlsLink.tsx` is shared by result cells and mapping diagrams. It only renders after an exact
