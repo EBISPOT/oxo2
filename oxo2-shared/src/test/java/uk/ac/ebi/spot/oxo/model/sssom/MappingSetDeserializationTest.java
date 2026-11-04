@@ -3,12 +3,36 @@ package uk.ac.ebi.spot.oxo.model.sssom;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class MappingSetDeserializationTest {
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
+
+    @ParameterizedTest
+    @ValueSource(strings = {"users@example.org", "https://example.org/mailing-list", "mailto:users@example.org"})
+    void roundTripsMailingListAsSupplied(String mailingList) {
+        MappingSet source = MappingSet.builder().mappingSetId("https://example.org/set")
+                .mailingList(mailingList).build();
+        String json = objectMapper.writeValueAsString(source);
+        MappingSet restored = objectMapper.readValue(json, MappingSet.class);
+        assertEquals(mailingList, restored.mailingList().orElseThrow());
+        assertEquals(mailingList, objectMapper.readTree(json).path("mailing_list").asText());
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   "})
+    void omitsMissingMailingList(String mailingList) {
+        MappingSet source = MappingSet.builder().mappingSetId("https://example.org/set")
+                .mailingList(mailingList).build();
+        assertFalse(objectMapper.readTree(objectMapper.writeValueAsString(source)).has("mailing_list"));
+    }
 
     /**
      * Regression: {@code mapping_set_source} is multivalued in SSSOM, so a metadata header may

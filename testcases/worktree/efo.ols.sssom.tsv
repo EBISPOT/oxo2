@@ -6,6 +6,7 @@
 # mapping_set_title: OLS extracted EFO mappings
 # mapping_set_description: These mappings were extracted during the OLS dataload from EFO
 # mapping_date: '2026-07-27'
+# mailing_list: efo-users@lists.sourceforge.net
 # other:
 #   local_id: efo.ols
 #   prefix: EFO

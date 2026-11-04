@@ -114,6 +114,10 @@ inferred-set resolution surface ([ADR-0012](../docs/adr/0012-resolvable-inferenc
 not a path variable, because a mapping-set id is a full IRI and Tomcat rejects the encoded slashes a path variable
 would require.
 
+Both mapping-set endpoints expose optional `issue_tracker` and `mailing_list` contacts from the
+stored set. They perform no external metadata lookup; older indexed sets without contacts remain
+without contacts ([ADR-0053](../docs/adr/0053-external-reports-for-asserted-mappings.md)).
+
 Backwards compatibility with OxO v1 is mostly *behavioural* ([ADR-0004](../docs/adr/0004-backwards-compatible-with-oxo-v1.md)) — the `/api/v2/...` endpoints above use OxO2/SSSOM-shaped JSON; 
 the design constraint is that v1 questions remain answerable. The **wire-compatible** exceptions live at
 the literal v1 paths (not under `/api/v2`), in `controller/api/v1/`:

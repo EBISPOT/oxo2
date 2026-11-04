@@ -7,6 +7,7 @@ import {MappingItem} from "../../components/mapping/MappingItem";
 import {ChevronDownIcon, ChevronUpIcon} from "@heroicons/react/24/solid";
 import InferredMappings from "./InferredMappings.tsx";
 import InferredMappingGraph from "../../components/mapping/InferredMappingGraph.tsx";
+import {ReportIncorrectMapping} from "../../components/mapping/ReportIncorrectMapping";
 
 const hasValue = (value?: string | number | string[] | Record<string, string> | InferredMapping | InferredMapping[]): boolean => {
     if (value === undefined) return false;
@@ -112,6 +113,10 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                     alwaysHighlighted={true}
                 />
             </Section>
+
+            {mapping.inferenceType === 'ASSERTED' && (
+                <ReportIncorrectMapping key={mapping.mappingId} mapping={mapping} />
+            )}
 
             <Section
                 title="Inference Details"

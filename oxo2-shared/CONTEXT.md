@@ -53,6 +53,12 @@ Nemo representations. This is the bridge between the SSSOM chaining-rules spec a
 
 ## Module notes
 
+`MappingSet` preserves optional reporting contacts from SSSOM metadata: `issue_tracker` as a URI and
+`mailing_list` as a string accepting either an email address or a web URL. Missing or blank mailing
+lists are omitted from JSON. These contacts belong to the source set, not individual mappings;
+mapping-level `issue_tracker_item` remains a reference to an existing issue, not a report destination
+([ADR-0053](../docs/adr/0053-external-reports-for-asserted-mappings.md)).
+
 `Mapping` is a Java `record` deserialized via a builder (`Mapping.Builder`). Field set follows the SSSOM spec closely 
 (subject/predicate/object IDs and IRIs, label fields, justification, confidence, mapping set provenance, author/creator metadata). 
 See the class Javadoc for the SSSOM Mapping spec link.

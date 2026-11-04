@@ -48,7 +48,6 @@ import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_SOURCE_VER
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingConstants.SUBJECT_TYPE;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,7 +60,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeSet;
@@ -126,8 +124,8 @@ public class TSV2JSON {
                                 mappingSetOutputDirectory, mappingsOutputDirectory, mappingSetCategory,
                                 obsoleteEntityIris, setObsolete, dataReleaseDate);
                     });
-        } catch (Throwable t) {
-            logger.error("Error while looking for .yml files in {}", directory, t);
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot read SSSOM directory " + directory, e);
         }
     }
 
@@ -581,48 +579,26 @@ public class TSV2JSON {
         }
     }
 
-    private static Optional<MappingSet.Builder> readYamlHeader(File file)
-            throws IOException {
+    private static Optional<MappingSet.Builder> readYamlHeader(File file) throws IOException {
         String yamlCommentsAsString = getCommentsFromTSVAsYaml(file);
-        return readYaml(yamlCommentsAsString);
+        try {
+            return readYaml(yamlCommentsAsString);
+        } catch (JacksonException e) {
+            throw new IllegalArgumentException("Invalid SSSOM YAML metadata in " + file, e);
+        }
     }
 
     private static String getCommentsFromTSVAsYaml(File file) throws IOException {
-        String header = getCommentsFromTSVAsYaml(file, "# ");
-        if (header.isEmpty()) {
-            header = getCommentsFromTSVAsYaml(file, "#");
-        }
-        return header;
-    }
-
-    private static String getCommentsFromTSVAsYaml(File file, String startsWith) throws IOException {
-        StringBuilder stringBuilder = new StringBuilder();
-        FileInputStream fileInputStream = null;
-        Scanner scanner = null;
-        try {
-            fileInputStream = new FileInputStream(file);
-            scanner = new Scanner(fileInputStream, "UTF-8");
-            String line = startsWith;
-            while (scanner.hasNextLine() && line.startsWith(startsWith)) {
-                if (line.length() > startsWith.length()) {
-                    stringBuilder.append(line.substring(startsWith.length()));
-                    stringBuilder.append("\n");
-                }
-                line = scanner.nextLine();
-            }
-            // note that Scanner suppresses exceptions
-            if (scanner.ioException() != null) {
-                throw scanner.ioException();
-            }
-        } finally {
-            if (fileInputStream != null) {
-                fileInputStream.close();
-            }
-            if (scanner != null) {
-                scanner.close();
+        StringBuilder header = new StringBuilder();
+        try (var reader = Files.newBufferedReader(file.toPath())) {
+            String line;
+            while ((line = reader.readLine()) != null && line.startsWith("#")) {
+                // Accept both comment prefixes throughout the header. Remove at most the
+                // separator space, preserving the remaining YAML indentation.
+                header.append(line.substring(line.startsWith("# ") ? 2 : 1)).append('\n');
             }
         }
-        return stringBuilder.toString();
+        return header.toString();
     }
 
     /**
@@ -660,13 +636,11 @@ public class TSV2JSON {
                 .configure(SerializationFeature.INDENT_OUTPUT, true)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .build();
-        Optional<MappingSet.Builder> mappingSetBuilderOptional = Optional.empty();
         try {
-            mappingSetBuilderOptional = Optional.of(objectMapper.readValue(file, MappingSet.Builder.class));
+            return Optional.of(objectMapper.readValue(file, MappingSet.Builder.class));
         } catch (JacksonException e) {
-            logger.error("Error while reading YAML file {}", file, e);
+            throw new IllegalArgumentException("Invalid SSSOM YAML metadata in " + file, e);
         }
-        return mappingSetBuilderOptional;
     }
 
     private static Optional<MappingSet.Builder> readYaml(String yaml) {
@@ -678,13 +652,7 @@ public class TSV2JSON {
         YAMLMapper objectMapper = YAMLMapper.builder()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .build();
-        Optional<MappingSet.Builder> mappingSetBuilderOptional = Optional.empty();
-        try {
-            mappingSetBuilderOptional = Optional.of(objectMapper.readValue(yaml, MappingSet.Builder.class));
-        } catch (JacksonException e) {
-            logger.error("Error while reading YAML String={}", yaml, e);
-        }
-        return mappingSetBuilderOptional;
+        return Optional.of(objectMapper.readValue(yaml, MappingSet.Builder.class));
     }
     private static MappingSet.Builder updateBuilder(MappingSet.Builder builder, MappingSet tempMappingSet) {
         builder.curieMap(tempMappingSet.curieMap())
@@ -715,6 +683,7 @@ public class TSV2JSON {
                 .objectPreprocessing(tempMappingSet.objectPreprocessing())
                 .seeAlso(tempMappingSet.seeAlso())
                 .issueTracker(tempMappingSet.issueTracker())
+                .mailingList(tempMappingSet.mailingList())
                 .other(tempMappingSet.other())
                 .comment(tempMappingSet.comment());
         return builder;

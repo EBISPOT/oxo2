@@ -14,6 +14,8 @@ public final class MappingSetConstants {
     public static final String CREATOR_LABEL           = MappingConstants.CREATOR_LABEL;
     public static final String CREATOR_ID              = MappingConstants.CREATOR_ID;
     public static final String MAPPING_PROVIDER        = MappingConstants.MAPPING_PROVIDER;
+    public static final String ISSUE_TRACKER           = MappingConstants.ISSUE_TRACKER;
+    public static final String MAILING_LIST            = MappingConstants.MAILING_LIST;
     public static final String INFERENCE_TYPE          = MappingConstants.INFERENCE_TYPE;
     public static final String MAPPING_SET_CATEGORY    = MappingConstants.MAPPING_SET_CATEGORY;
     public static final String PREFIX                  = MappingConstants.PREFIX;

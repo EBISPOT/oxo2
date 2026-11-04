@@ -33,6 +33,13 @@ A SSSOM-defined enumeration.
 
 ### OxO2 cross-cutting vocabulary
 
+- **Mapping report** — a user's report to a source mapping set's maintainers that a particular
+  asserted mapping is incorrect. A report expresses a concern; it is not a correction or a
+  judgement that the mapping is invalid. _Avoid_: mapping correction, inference report.
+- **Reporting destination** — a source mapping set's issue tracker or mailing list through which
+  its maintainers receive mapping reports.
+- **Mailing list** — a source mapping set's discussion channel, identified by an email address or
+  the web address of the list.
 - **Asserted mapping** — a mapping that came directly from an input SSSOM file (`inference_type = ASSERTED`). Contrast with *inferred mapping*; represented in explanation chains by `ChainRulesEnum.ASSERTED`.
 - **Inferred mapping** — a mapping derived by OxO's SSSOM reasoning (see § Cross-cutting constraints), not present in any input file. Modelled as `InferredMapping` in `oxo2-shared`. In the index each carries
 (`inference_type = SSSOM_INFERENCE`) the chain rule that produced it and its full explanation chain,
@@ -107,6 +114,11 @@ and Jackson serialization. The vocabulary library every other module depends on.
 
 Decisions that bind multiple modules. Each ADR captures one decision and its consequences; this list points at where each one bites.
 
+- **Mapping reports concern individual asserted mappings** — issue #132 sends users to the source
+  mapping set's issue tracker or mailing list to review and submit a report. OxO2 does not store
+  reports or change mappings through this workflow. Inferred mappings and mapping groups are not
+  report targets. Reporting contacts come exclusively from SSSOM mapping-set metadata, with no
+  separate OLS lookup; see [ADR-0053](docs/adr/0053-external-reports-for-asserted-mappings.md).
 - **Reasoning is a single SSSOM cross-set pass** — SSSOM rules (transitivity + role chains over the strong
 mapping/equivalence predicates) run **across all mapping sets** for findability, over the asserted mappings
 only. OxO2 derives no subsumption — the former per-set OWL phase was dropped (no value on either corpus). See
