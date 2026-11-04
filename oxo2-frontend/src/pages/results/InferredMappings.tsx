@@ -239,7 +239,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 header: "Subject",
                 size: 320,
                 Header: () => (
-                    <span className="flex items-center gap-1">
+                    <span className="flex flex-wrap items-center gap-1">
                         <ColumnHeaderLabel topic="subject_label" label="Subject" />
                         <ColumnFilterPopover title="Subject" fields={subjectFilterFields} onChange={handleFilterChange} />
                         <ColumnSortPopover title="Subject" fields={SUBJECT_SORT_FIELDS} onApply={handleSortChange} />
@@ -260,7 +260,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 header: "Predicate",
                 size: 240,
                 Header: () => (
-                    <span className="flex items-center gap-1">
+                    <span className="flex flex-wrap items-center gap-1">
                         <ColumnHeaderLabel topic="predicate_label" label="Predicate" />
                         <ColumnFilterPopover title="Predicate" fields={predicateFilterFields} onChange={handleFilterChange} />
                         <ColumnSortPopover title="Predicate" fields={PREDICATE_SORT_FIELDS} onApply={handleSortChange} />
@@ -279,7 +279,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 header: "Object",
                 size: 320,
                 Header: () => (
-                    <span className="flex items-center gap-1">
+                    <span className="flex flex-wrap items-center gap-1">
                         <ColumnHeaderLabel topic="object_label" label="Object" />
                         <ColumnFilterPopover title="Object" fields={objectFilterFields} onChange={handleFilterChange} />
                         <ColumnSortPopover title="Object" fields={OBJECT_SORT_FIELDS} onApply={handleSortChange} />
@@ -317,7 +317,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                 header: "Mapping justification",
                 size: 200,
                 Header: () => (
-                    <span className="flex items-center gap-1">
+                    <span className="flex flex-wrap items-center gap-1">
                         <ColumnHeaderLabel topic="mapping_justification" label="Mapping justification" />
                         <ColumnFilterPopover
                             title="Mapping justification"
@@ -365,6 +365,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
     const assertedMappingsTable = useMaterialReactTable({
         columns: assertedMappingColumns,
         data: sortedAssertedMappings,
+        enableColumnActions: false,
         enableColumnFilters: false,
         enableSorting: false, // sorting is driven by the per-column sort popovers
         manualSorting: true,
@@ -373,26 +374,63 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
         enableDensityToggle: false,
         enableHiding: false,
         enableTopToolbar: false,
+        enableBottomToolbar: false,
         enablePagination: false,
+        // Use proportional columns within the details panel instead of imposing their combined
+        // pixel widths. On narrow screens keep fields readable as labelled, stacked table cells.
+        muiTableProps: {sx: {tableLayout: 'fixed', width: '100%', display: {xs: 'block', md: 'table'}}},
+        muiTableHeadProps: {sx: {display: {xs: 'block', md: 'table-header-group'}}},
+        muiTableHeadRowProps: {sx: {
+            display: {xs: 'grid', md: 'table-row'},
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+        }},
+        muiTableBodyRowProps: {sx: {
+            display: {xs: 'grid', md: 'table-row'},
+            gridTemplateColumns: {xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))'},
+            borderBottom: '1px solid #e5e7eb',
+        }},
         muiTableBodyProps: {
             sx: {
+                display: {xs: 'block', md: 'table-row-group'},
                 // stripe the rows, make even rows a darker color
                 '& tr:nth-of-type(even) > td': {
                     backgroundColor: '#F3F4F6',
                 },
             },
         },
-        muiTableBodyCellProps: {
+        muiTableBodyCellProps: ({column, table}) => ({
+            'data-label': column.columnDef.header,
             sx: {
+                minWidth: 0,
+                width: {xs: 'auto', md: `${100 * column.getSize() / table.getTotalSize()}%`},
+                display: {xs: 'block', md: 'table-cell'},
+                p: 1,
                 verticalAlign: 'top',
+                overflowWrap: 'anywhere',
+                '&::before': {
+                    content: 'attr(data-label)',
+                    display: {xs: 'block', md: 'none'},
+                    fontWeight: 600,
+                    color: '#525252',
+                    mb: 0.5,
+                },
             },
-        },
-        muiTableHeadCellProps: {
+        }),
+        muiTableHeadCellProps: ({column, table}) => ({
             sx: {
+                minWidth: 0,
+                width: {xs: 'auto', md: `${100 * column.getSize() / table.getTotalSize()}%`},
+                display: {xs: 'block', md: 'table-cell'},
+                p: 1,
                 fontWeight: 'bold',
-                fontSize: '16px',
+                fontSize: '14px',
+                '& .Mui-TableHeadCell-Content-Labels, & .Mui-TableHeadCell-Content-Wrapper': {
+                    minWidth: 0,
+                    whiteSpace: 'normal',
+                    overflow: 'visible',
+                },
             },
-        },
+        }),
         state: {
             sorting,
         },
@@ -400,7 +438,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
 
     return (
         <div>
-            <h1 className="section-subheading">Asserted Mappings</h1>
+            <h3 className="section-subheading">Asserted Mappings</h3>
             <SortingContext.Provider value={sorting}>
                 <MaterialReactTable table={assertedMappingsTable}/>
             </SortingContext.Provider>

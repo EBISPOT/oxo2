@@ -83,7 +83,9 @@ confirmed OLS links, and a negation badge when applicable. The page shares the l
 container width. Metadata sections use two columns on wide screens and stack on mobile. The justification section shows supplied confidence, similarity score, and similarity
 measure; a compact “Not provided” line names absent scores, preserving real zero values.
 
-Inference explanations appear independently of the asserted-mappings list, above that evidence table.
+The asserted-mappings evidence table appears above the inference explanation. Its columns fit the
+page width, with wrapping text and labelled stacked cells on narrow screens. Explanations also render
+when no asserted-mappings list is available.
 The graph has a responsive inline canvas and an **Expand graph** dialog that fills the window. Close
 or Escape returns focus to the expand button; both canvases retain zoom, pan, and fit controls.
 

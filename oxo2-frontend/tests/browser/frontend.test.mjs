@@ -191,3 +191,29 @@ test('inference graph expands even without an asserted-mappings list, and Escape
         assert.equal(await expand.evaluate(el => el === el.ownerDocument.activeElement), true);
     } finally { await page.close(); }
 });
+
+test('asserted mappings precede the graph and fit the details panel without horizontal scrolling', async () => {
+    const premises = [
+        {subject_id: 'MONDO:0000001', subject_label: 'Disease', subject_iri: 'http://purl.obolibrary.org/obo/MONDO_0000001',
+            predicate_id: 'skos:exactMatch', object_id: 'EFO:0000001', object_label: 'Example disease',
+            object_iri: 'http://www.ebi.ac.uk/efo/EFO_0000001', mapping_justification: 'semapv:ManualMappingCuration',
+            mapping_set_id: 'https://w3id.org/commons/ols/mappings/mondo.ols.sssom.tsv'},
+    ];
+    const page = await openMapping({...mappingFixture, inference_type: 'SSSOM_INFERENCE',
+        asserted_mappings: JSON.stringify(premises), explanation: JSON.stringify(explanation)});
+    try {
+        const heading = page.getByRole('heading', {name: 'Asserted Mappings', exact: true});
+        const graphHeading = page.getByRole('heading', {name: 'Explanation of inferred mapping', exact: true});
+        await heading.waitFor();
+        assert.ok((await heading.boundingBox()).y < (await graphHeading.boundingBox()).y);
+        for (const width of [1440, 1024, 390]) {
+            await page.setViewportSize({width, height: 1000});
+            const container = page.locator('.MuiTableContainer-root');
+            assert.ok(await container.evaluate(el => el.scrollWidth <= el.clientWidth + 1), `Table overflows at ${width}px`);
+            assert.equal(await page.getByRole('columnheader').count(), 6);
+            if (process.env.UI_SCREENSHOT_DIR) {
+                await page.screenshot({path: `${process.env.UI_SCREENSHOT_DIR}/asserted-table-${width}.png`, fullPage: true, animations: 'disabled'});
+            }
+        }
+    } finally { await page.close(); }
+});

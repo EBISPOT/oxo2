@@ -117,10 +117,12 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
 
             <Section title="Inference Details"
                 renderComponent={!!mapping.explanation || hasAnyValue([MappingFields.assertedMappings])}>
-                {mapping.explanation && <InferredMappingGraph explanation={mapping.explanation} />}
                 {!!mapping.assertedMappings?.length && (
-                    <div className={mapping.explanation ? 'mt-6' : ''}>
-                        <InferredMappings mapping={mapping} />
+                    <InferredMappings mapping={mapping} />
+                )}
+                {mapping.explanation && (
+                    <div className={mapping.assertedMappings?.length ? 'mt-6' : ''}>
+                        <InferredMappingGraph explanation={mapping.explanation} />
                     </div>
                 )}
             </Section>
