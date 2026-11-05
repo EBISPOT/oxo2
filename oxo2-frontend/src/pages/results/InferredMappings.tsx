@@ -355,7 +355,7 @@ function InferredMappings({ mapping }: { mapping: Mapping }) {
                                 </Link>
                             ) : <span className="text-gray-400">—</span>}
                             <button type="button"
-                                className="block mt-3 max-w-full rounded-md border border-orange-300 bg-orange-50 px-3 py-2 text-left text-sm font-semibold text-orange-800 transition-colors hover:border-orange-500 hover:bg-orange-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400"
+                                className="block mt-3 max-w-full rounded-md border border-link-default bg-link-default px-3 py-2 text-left text-sm font-semibold text-white transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link-default disabled:cursor-not-allowed disabled:opacity-50"
                                 disabled={!row.original.mappingId}
                                 title={row.original.mappingId ? undefined : 'Full details are unavailable for this mapping.'}
                                 aria-haspopup="dialog"
