@@ -22,18 +22,19 @@ function LabeledValue({ label, value, title }: { label: string; value?: string |
     if (!hasValue(value)) return null;
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-[10rem_minmax(0,1fr)] gap-x-4 gap-y-1 py-2 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-[10rem_minmax(0,1fr)] gap-x-3 gap-y-0.5 py-1 text-sm">
             <span className="font-medium text-gray-600">{label}</span>
             <span className="min-w-0 break-words [overflow-wrap:anywhere]" title={title}>{value}</span>
         </div>
     );
 }
 
-function Section({ title, children, renderComponent = true, useHideShow = true }: {
+function Section({ title, children, renderComponent = true, useHideShow = true, compact = true }: {
     title: string;
     children: ReactNode;
     renderComponent?: boolean;
     useHideShow?: boolean;
+    compact?: boolean;
 }) {
     const [isExpanded, setIsExpanded] = useState(true);
     const headingId = useId();
@@ -41,8 +42,8 @@ function Section({ title, children, renderComponent = true, useHideShow = true }
     if (!renderComponent) return null;
     return (
         <section aria-labelledby={headingId} className="min-w-0 rounded-lg border border-gray-200 bg-white">
-            <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-gray-100">
-                <h2 id={headingId} className="text-lg font-semibold">{title}</h2>
+            <div className={`flex items-center justify-between gap-4 border-b border-gray-100 ${compact ? 'px-4 py-2' : 'px-5 py-3'}`}>
+                <h2 id={headingId} className={`${compact ? 'text-base' : 'text-lg'} font-semibold`}>{title}</h2>
                 {useHideShow && (
                     <button type="button" onClick={() => setIsExpanded(!isExpanded)}
                         aria-expanded={isExpanded} aria-controls={contentId}
@@ -53,7 +54,7 @@ function Section({ title, children, renderComponent = true, useHideShow = true }
                     </button>
                 )}
             </div>
-            <div id={contentId} hidden={useHideShow && !isExpanded} className="p-5">
+            <div id={contentId} hidden={useHideShow && !isExpanded} className={compact ? 'px-4 py-2' : 'p-5'}>
                 {children}
             </div>
         </section>
@@ -115,7 +116,7 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                 <ReportIncorrectMapping key={mapping.mappingId} mapping={mapping} />
             )}
 
-            <Section title="Inference Details"
+            <Section title="Inference Details" compact={false}
                 renderComponent={!!mapping.explanation || hasAnyValue([MappingFields.assertedMappings])}>
                 {!!mapping.assertedMappings?.length && (
                     <InferredMappings mapping={mapping} />
@@ -127,7 +128,7 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                 )}
             </Section>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                 <Section title="Justification">
                     <LabeledValue label="Mapping justification"
                         value={mappingJustificationShortName(mapping.mappingJustification)}
@@ -136,7 +137,7 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                     <LabeledValue label="Similarity score" value={mapping.similarityScore} />
                     <LabeledValue label="Similarity measure" value={mapping.similarityMeasure} />
                     {missingScores.length > 0 && (
-                        <p className="text-sm text-gray-500 py-2">Not provided: {missingScores.join(', ')}.</p>
+                        <p className="text-sm text-gray-500 py-1">Not provided: {missingScores.join(', ')}.</p>
                     )}
                 </Section>
 
@@ -176,7 +177,7 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                     ])}
                 >
                     {mapping.mappingSetId && (
-                        <div className="grid grid-cols-1 sm:grid-cols-[10rem_minmax(0,1fr)] gap-x-4 gap-y-1 py-2 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-[10rem_minmax(0,1fr)] gap-x-3 gap-y-0.5 py-1 text-sm">
                             <span className="font-medium text-gray-600">Mapping Set ID</span>
                             <Link
                                 to={mappingSetHref(mapping.mappingSetId)}
