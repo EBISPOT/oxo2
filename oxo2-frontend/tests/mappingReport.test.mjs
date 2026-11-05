@@ -20,10 +20,15 @@ test('reports from an inference identify the asserted target and retain the infe
     assert.ok(contextual.body.includes(`OxO mapping: ${mappingUrl}`));
     assert.ok(contextual.body.includes(`Noticed while reviewing this inferred mapping: ${inferredUrl}`));
     assert.ok(!report.body.includes('Noticed while reviewing'));
-    for (const destination of reportingDestinations({
+    const destinations = reportingDestinations({
         issueTracker: 'https://github.com/example/ontology/issues', mailingList: 'users@example.org',
-    }, contextual)) {
-        assert.ok(new URL(destination.href).searchParams.get('body').includes(inferredUrl));
+    }, contextual);
+    assert.equal(destinations.length, 2);
+    for (const destination of destinations) {
+        const url = new URL(destination.href);
+        const expectedBody = url.protocol === 'mailto:'
+            ? contextual.body.replace(/\n/g, '\r\n') : contextual.body;
+        assert.equal(url.searchParams.get('body'), expectedBody);
     }
 });
 
