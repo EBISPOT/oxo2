@@ -212,6 +212,9 @@ code {
   .search-container {
     @apply bg-gradient-to-r from-neutral-light to-white rounded-lg my-8 p-8;
   }
+  .landing-page .search-container {
+    @apply my-5 p-5 sm:p-6;
+  }
   .mapping-item {
     @apply mb-2 text-neutral-black flex flex-col items-stretch items-center lg:flex-row w-full transition-all duration-200;
   }

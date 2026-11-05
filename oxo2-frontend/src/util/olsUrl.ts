@@ -1,58 +1,34 @@
 const OLS_BASE = "https://www.ebi.ac.uk/ols4";
 
-/**
- * Build a link to an entity's term page in the EBI Ontology Lookup Service (OLS4).
- *
- * OLS4 has no ontology-agnostic term route — its entity page lives at
- * `/ontologies/{ontologyId}/classes/{iri}`, where the IRI is double-URL-encoded.
- * This mirrors the form OLS4 itself emits when linking between terms
- * (see `EntityLink.tsx` in ols4/frontend, which builds the path with
- * `encodeURIComponent(encodeURIComponent(iri))`). The older
- * `?termId={curie}` form we used before is not a route at all, so it silently
- * dropped users on the OLS home page.
- *
- * The ontology id is derived from the CURIE prefix: by convention the OLS
- * ontology id is the lowercased prefix (`HP` → `hp`, `MP` → `mp`,
- * `DOID` → `doid`). We link to `classes` because OxO2 mappings are between
- * ontology classes; an off-by-one prefix guess lands on OLS's term-not-found
- * page rather than an endless spinner.
- *
- * When we lack either a usable prefix or an IRI we fall back to an OLS search
- * (as OLS4's own `EntityLink` does), so the link still lands somewhere useful.
- *
- * @param id  the entity CURIE, e.g. `"HP:0004361"` (may itself be an IRI)
- * @param iri the entity's full IRI, e.g. `"http://purl.obolibrary.org/obo/HP_0004361"`
- * @returns an OLS4 URL, or `undefined` when there is nothing to link to
- */
-export function buildOlsTermUrl(id?: string, iri?: string): string | undefined {
-    const termIri = iri || (id && isIri(id) ? id : undefined);
-    const ontologyId = ontologyIdFromCurie(id);
-
-    if (ontologyId && termIri) {
-        // Double-encode the IRI into the path, matching OLS4's own term links.
-        const encodedIri = encodeURIComponent(encodeURIComponent(termIri));
-        return `${OLS_BASE}/ontologies/${ontologyId}/classes/${encodedIri}`;
-    }
-
-    const query = termIri || id;
-    return query ? `${OLS_BASE}/search?q=${encodeURIComponent(query)}` : undefined;
+interface OlsTerm {
+    iri: string;
+    obo_id?: string;
+    ontology_name: string;
+    is_defining_ontology?: boolean;
 }
 
 /**
- * Derive an OLS ontology id from a CURIE by lowercasing its prefix.
- * Returns undefined for IRIs or strings without a prefix.
+ * Resolve the exact entity against OLS before offering a link. A CURIE prefix alone neither proves
+ * the term exists in OLS nor identifies its ontology (it may only be present as an imported term).
+ * Prefer the supplied IRI; only use the CURIE when no IRI is available. Never fall back to fuzzy
+ * search, which can give an unrelated hit for an absent resource such as OMIMPS:116200.
  */
-function ontologyIdFromCurie(id?: string): string | undefined {
-    if (!id || isIri(id)) {
-        return undefined;
-    }
-    const colonIndex = id.indexOf(":");
-    if (colonIndex <= 0) {
-        return undefined;
-    }
-    return id.slice(0, colonIndex).toLowerCase();
-}
+export async function fetchOlsTermUrl(id?: string, iri?: string, signal?: AbortSignal): Promise<string | null> {
+    const isIri = (value?: string) => !!value && /^https?:\/\//.test(value);
+    const termIri = isIri(iri) ? iri : isIri(id) ? id : undefined;
+    const curie = !termIri && id && /^[^\s:]+:[^\s]+$/.test(id) ? id : undefined;
+    if (!termIri && !curie) return null;
 
-function isIri(value: string): boolean {
-    return value.startsWith("http://") || value.startsWith("https://");
+    const params = new URLSearchParams(termIri ? {iri: termIri} : {obo_id: curie!});
+    params.set('size', '100');
+    const response = await fetch(`${OLS_BASE}/api/terms?${params}`, {signal});
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`OLS term lookup failed (${response.status})`);
+    const data: { _embedded?: { terms?: OlsTerm[] } } = await response.json();
+    const terms = (data._embedded?.terms ?? []).filter(term =>
+        term.ontology_name && isIri(term.iri) &&
+        (termIri ? term.iri === termIri : term.obo_id === curie));
+    const term = terms.find(term => term.is_defining_ontology) ?? terms[0];
+    if (!term) return null;
+    return `${OLS_BASE}/ontologies/${encodeURIComponent(term.ontology_name)}/classes/${encodeURIComponent(encodeURIComponent(term.iri))}`;
 }

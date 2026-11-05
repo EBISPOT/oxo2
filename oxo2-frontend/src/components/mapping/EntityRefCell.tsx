@@ -1,7 +1,6 @@
 import { useState, type JSX, type MouseEvent } from "react";
 import { CheckIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
-import olsLogo from "/public/logo.svg";
-import { buildOlsTermUrl } from "../../util/olsUrl";
+import { OlsLink } from "./OlsLink";
 
 /**
  * Small copy-to-clipboard button. Stops click propagation so it never triggers
@@ -63,7 +62,6 @@ export function EntityRefCell({
     modifier?: string;
 }): JSX.Element {
     const identifier = id || iri || "—";
-    const olsUrl = showOlsLink ? buildOlsTermUrl(id, iri) : undefined;
     const modifierBadge = modifier && (
         <span
             title={`predicate_modifier = ${modifier}`}
@@ -89,18 +87,7 @@ export function EntityRefCell({
                 {!label && modifierBadge}
                 <span className="break-all">{identifier}</span>
                 {id && <CopyButton value={id} title="Copy identifier" />}
-                {olsUrl && (
-                    <a
-                        href={olsUrl}
-                        title={`View ${identifier} in OLS`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                        className="inline-flex shrink-0 ml-1 align-middle"
-                    >
-                        <img src={olsLogo} alt="OLS" className="h-4 w-4 inline-block" />
-                    </a>
-                )}
+                {showOlsLink && <OlsLink id={id} iri={iri} />}
             </div>
             {iri && (
                 <div className="flex items-start text-xs text-gray-500">

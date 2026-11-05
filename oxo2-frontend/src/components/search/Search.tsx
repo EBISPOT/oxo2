@@ -14,6 +14,7 @@ import { OntologySelector } from "./OntologySelector";
 import { TermFileDrop } from "./TermFileDrop";
 import { parseTerms } from "../../util/terms";
 import { fetchOntologies, fetchTargetsForSubject } from "../../pages/results/OntologiesSlice";
+import { fetchMappingSets } from "../../pages/results/MappingSetsSlice";
 
 const tableTheme = createTheme({
     palette: {
@@ -36,9 +37,8 @@ const MULTIPLE_EXAMPLE = "UBERON:0002107\nCataract\nhttp://purl.obolibrary.org/o
  * results table whose per-column sort popovers write `?sort`. No `?sort` means the backend ranks
  * by relevance (the provenance-led boost, ADR-0027).
  */
-export function Search({ searchInput = initialSearchState, showWelcome = false, onClear }: {
+export function Search({ searchInput = initialSearchState, onClear }: {
     searchInput: SearchInput,
-    showWelcome?: boolean,
     // Called after the form's own state is reset, on the results page only. The results-table filters,
     // sort and search options all live in the URL query string, and the table keeps a local copy of
     // its filter inputs; clearing both (query string + a table remount) is the results page's job, not
@@ -89,6 +89,19 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
         queryKey: ["ontologies"], queryFn: fetchOntologies, staleTime: Infinity,
     });
     const allPrefixes = useMemo(() => (ontologies ?? []).map((o) => o.prefix), [ontologies]);
+    const { data: mappingSets } = useQuery({
+        queryKey: ["fetchMappingSets"], queryFn: () => fetchMappingSets(), staleTime: Infinity,
+    });
+    const ontologyMetadata = useMemo(() => new Map(
+        (mappingSets ?? [])
+            .filter((set) => set.mappingSetCategory === 'ONTOLOGY' && set.prefix && set.ontology)
+            // Current and obsolete extracts can share a prefix. Insert current metadata last so
+            // the general ontology picker does not describe the ontology as obsolete-only.
+            .sort((a, b) => Number(b.obsolete) - Number(a.obsolete))
+            .map((set) => [set.prefix.toUpperCase(), {
+                name: set.ontology, description: set.mappingSetDescription,
+            }])
+    ), [mappingSets]);
     const subjectCounts = useMemo(
         () => Object.fromEntries((ontologies ?? []).map((o) => [o.prefix, o.asSubject])), [ontologies]);
     const objectCounts = useMemo(
@@ -269,11 +282,6 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
 
     return (
         <div className="search-container">
-            {showWelcome && (
-                <div className="text-primary">
-                    Welcome to the EMBL-EBI OxO Mapping Service
-                </div>
-            )}
             <div
                 role="radiogroup"
                 aria-label="How many terms are you mapping?"
@@ -365,6 +373,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
                             label="From ontologies"
                             placeholder="source, e.g. DOID"
                             options={allPrefixes}
+                            metadata={ontologyMetadata}
                             counts={subjectCounts}
                             value={subjectPrefixes}
                             onChange={setSubjectPrefixes}
@@ -383,6 +392,7 @@ export function Search({ searchInput = initialSearchState, showWelcome = false, 
                             label="To ontologies"
                             placeholder="target, e.g. EFO, MONDO"
                             options={targetOptions}
+                            metadata={ontologyMetadata}
                             counts={targetCounts}
                             value={objectPrefixes}
                             onChange={setObjectPrefixes}

@@ -1,5 +1,4 @@
 import { Link, useLocation } from "react-router";
-import urlJoin from "url-join";
 
 export default function Header() {
   const location = useLocation();
@@ -9,11 +8,11 @@ export default function Header() {
       <header className="bg-black bg-right bg-cover bg-[url('/embl-ebi-background.jpg')]">
         <div className="container mx-auto flex flex-col md:flex-row md:gap-10">
           <div className="py-6 self-center">
-            <a href={urlJoin(import.meta.env.PUBLIC_URL || "", "/")}>
+            <a href={import.meta.env.BASE_URL}>
               <img
                   alt="OxO logo"
                   className="h-24 inline-block"
-                  src={urlJoin(import.meta.env.PUBLIC_URL || "", "/logo.png")}
+                  src={`${import.meta.env.BASE_URL}logo.png`}
               />
             </a>
           </div>

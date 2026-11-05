@@ -98,6 +98,8 @@ export function EntitySuggest({
 
     return (
         <Autocomplete<EntitySuggestion, false, false, true>
+            // MUI must own the input id: its mouse handler uses it to allow native text selection.
+            id={inputId}
             freeSolo
             size="small"
             open={open}
@@ -171,11 +173,6 @@ export function EntitySuggest({
                     }}
                     slotProps={{
                         ...params.slotProps,
-                        // Keep the caller's id on the real <input> (the page targets #home-search).
-                        htmlInput: {
-                            ...params.slotProps.htmlInput,
-                            ...(inputId ? { id: inputId } : {}),
-                        },
                         input: {
                             ...params.slotProps.input,
                             endAdornment: (

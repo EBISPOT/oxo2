@@ -5,6 +5,8 @@ import {
     MarkerType,
     Controls
 } from '@xyflow/react';
+import { useId, useMemo, useState } from 'react';
+import Dialog from '@mui/material/Dialog';
 import dagre from '@dagrejs/dagre';
 import '@xyflow/react/dist/style.css';
 import { InferredMapping } from "../../model/Mapping";
@@ -384,39 +386,61 @@ const nodeTypes = {
     "inferred": CustomNodeInferred,
 };
 
-const InferredMappingGraph = ({ explanation }: { explanation: InferredMapping }) => {
-
-    const graphData = buildGraphData(explanation);
-    const layoutGraph = layoutElements(graphData.nodes, graphData.edges);
-    const graphExtent = getGraphExtent(layoutGraph.nodes);
-    const canvasHeight = '400px';
-
+function GraphCanvas({ explanation }: { explanation: InferredMapping }) {
+    const layoutGraph = useMemo(() => {
+        const graphData = buildGraphData(explanation);
+        return layoutElements(graphData.nodes, graphData.edges);
+    }, [explanation]);
+    const graphExtent = useMemo(() => getGraphExtent(layoutGraph.nodes), [layoutGraph]);
     return (
-        <div style={{ width: "100%", height: canvasHeight }}>
-            <h1 className="section-subheading">Explanation of inferred mapping</h1>
-            {layoutGraph && (
-                    <ReactFlow
-                        nodes={layoutGraph.nodes}
-                        edges={layoutGraph.edges}
-                        nodeTypes={nodeTypes}
-                        fitView
-                        fitViewOptions={{
-                            padding: 0.2,
-                            minZoom: 0.35,
-                            maxZoom: 1.0
-                        }}
-                        translateExtent={graphExtent}
-                        nodeExtent={graphExtent}
-                        minZoom={0.35}
-                        maxZoom={1.2}
-                        panOnDrag={true}
-                        panOnScroll={false}
-                    >
-                        <Controls showInteractive={false} />
-                    </ReactFlow>
-                )}
-        </div>
+        <ReactFlow
+            nodes={layoutGraph.nodes}
+            edges={layoutGraph.edges}
+            nodeTypes={nodeTypes}
+            fitView
+            fitViewOptions={{ padding: 0.15, minZoom: 0.05, maxZoom: 1 }}
+            translateExtent={graphExtent}
+            nodeExtent={graphExtent}
+            minZoom={0.05}
+            maxZoom={2}
+            panOnDrag
+            panOnScroll={false}
+        >
+            <Controls showInteractive={false} fitViewOptions={{ padding: 0.15, minZoom: 0.05, maxZoom: 1 }} />
+        </ReactFlow>
     );
 }
+
+const InferredMappingGraph = ({ explanation }: { explanation: InferredMapping }) => {
+    const [expanded, setExpanded] = useState(false);
+    const titleId = useId();
+    return (
+        <div>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <h3 className="text-lg font-medium">Explanation of inferred mapping</h3>
+                <button type="button" className="text-sm text-link-default hover:underline"
+                    aria-haspopup="dialog" onClick={() => setExpanded(true)}>
+                    Expand graph
+                </button>
+            </div>
+            <div className="rounded border border-gray-200 bg-gray-50" style={{height: 'clamp(360px, 60vh, 720px)'}}>
+                <GraphCanvas explanation={explanation} />
+            </div>
+            <Dialog fullScreen open={expanded} onClose={() => setExpanded(false)} aria-labelledby={titleId}>
+                <div className="flex h-full min-h-0 flex-col">
+                    <div className="flex items-center justify-between gap-4 border-b border-gray-200 px-6 py-4">
+                        <h2 id={titleId} className="text-lg font-semibold">Explanation of inferred mapping</h2>
+                        <button type="button" className="text-link-default hover:underline" onClick={() => setExpanded(false)} autoFocus>
+                            Close graph
+                        </button>
+                    </div>
+                    <div className="flex-1 min-h-0 bg-gray-50">
+                        <GraphCanvas explanation={explanation} />
+                    </div>
+                </div>
+            </Dialog>
+        </div>
+    );
+};
 
 export default InferredMappingGraph;
