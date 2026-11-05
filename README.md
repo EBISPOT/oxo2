@@ -138,4 +138,9 @@ and change to OxO2 source directory.
    3. Start frontend: `npm run dev`
    4. Access frontend from browser at: `http://localhost:8080/`
    5. Backend is accessible at: `http://localhost:8081`.
+
+To stop the local Solr, run `./stopSolr.sh` from the OxO2 root with the same environment used
+to start it. It stops only the configured port (`SOLR_PORT`, then the port in `SOLR_URL`,
+defaulting to `8983`) and leaves the index data in place. In a worktree, load its `.envrc`
+with direnv or source `oxo2-env.sh` first so the correct instance is selected.
  

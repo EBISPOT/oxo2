@@ -59,6 +59,10 @@ cd oxo2-dataload && ./loadData.nextflow && cd ..
 ./startBackend.sh
 ```
 
+Stop that local Solr with `./stopSolr.sh`, using the same environment as `startSolr.sh`.
+It targets only `SOLR_PORT` (falling back to the port in `SOLR_URL`, then `8983`) and keeps
+the index data. Other worktrees' Solr instances are left running.
+
 `loadData.nextflow` owns Solr for the duration of the load (it lays down the config via
 `copySolrConfig.sh`, starts Solr itself, and **stops it again at the end of a successful run**), so
 Solr always has to be started separately before `startBackend.sh`. Use `./startSolr.sh` rather than
