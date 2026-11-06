@@ -14,6 +14,17 @@ class MappingSetDeserializationTest {
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
+    @Test
+    void roundTripsSetConfidenceAndPublisher() {
+        MappingSet source = objectMapper.readValue("""
+                {"mapping_set_id":"https://example.org/set", "mapping_set_confidence":0.99,
+                 "publisher":"Example publisher"}
+                """, MappingSet.class);
+        MappingSet restored = objectMapper.readValue(objectMapper.writeValueAsString(source), MappingSet.class);
+        assertEquals(0.99, restored.mappingSetConfidence().orElseThrow());
+        assertEquals(java.util.Set.of("Example publisher"), restored.publisher());
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"users@example.org", "https://example.org/mailing-list", "mailto:users@example.org"})
     void roundTripsMailingListAsSupplied(String mailingList) {

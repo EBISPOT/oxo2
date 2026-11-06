@@ -4,6 +4,7 @@ import { fetchMappingSetById } from "./MappingSetsSlice";
 import { NormalResultsTable } from "./NormalResultsTable";
 import { INFERENCE_TYPE_ORDER } from "../../model/InferenceType";
 import { InferenceTypeBadge } from "../../components/mapping/InferenceTypeBadge";
+import { MappingSetMetadata } from "../../components/mapping/MappingSetMetadata";
 
 /**
  * Detail surface for a single mapping set: a metadata header above the set's mappings. Backs both
@@ -51,29 +52,16 @@ export function MappingSetDetails({ mappingSetId }: { mappingSetId: string }) {
             )}
             {mappingSet && (
                 <div className="mb-4">
-                    <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-semibold break-words">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="min-w-0 text-2xl font-semibold [overflow-wrap:anywhere]">
                             {mappingSet.mappingSetTitle || "Mapping set"}
                         </h1>
                         <InferenceTypeBadge value={mappingSet.inferenceType} />
                     </div>
                     {mappingSet.mappingSetDescription && (
-                        <p className="text-gray-600 mt-1">{mappingSet.mappingSetDescription}</p>
+                        <p className="text-gray-600 mt-1 whitespace-pre-wrap [overflow-wrap:anywhere]">{mappingSet.mappingSetDescription}</p>
                     )}
-                    <p className="text-xs text-gray-500 mt-1 break-all">{mappingSet.mappingSetId}</p>
-                    {mappingSet.mappingProvider && (
-                        <p className="text-sm mt-1">
-                            <span className="font-medium">Provider:</span> {mappingSet.mappingProvider}
-                        </p>
-                    )}
-                    {mappingSet.creatorLabel.length > 0 && (
-                        <p className="text-sm mt-1">
-                            <span className="font-medium">Creators:</span> {mappingSet.creatorLabel.join(", ")}
-                        </p>
-                    )}
-                    {/* The set's source sets ("Derived from N source set(s)") are intentionally not shown
-                        here: at set level the list is long and unhelpful. This may return at the level of
-                        an individual mapping, where provenance is meaningful. */}
+                    <MappingSetMetadata entries={mappingSet.metadata} />
                 </div>
             )}
             {/* Show every inference type within the set, regardless of the global default filter.

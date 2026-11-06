@@ -60,6 +60,10 @@ public record MappingSet (
         Optional<String> mappingSetTitle,
         @JsonProperty(MAPPING_SET_VERSION)
         Optional<String> mappingSetVersion,
+        @JsonProperty(MAPPING_SET_CONFIDENCE)
+        Optional<java.lang.Double> mappingSetConfidence,
+        @JsonProperty(PUBLISHER)
+        SortedSet<String> publisher,
         @JsonProperty(MAPPING_TOOL)
         Optional<String> mappingTool,
         @JsonProperty(MAPPING_TOOL_VERSION)
@@ -171,6 +175,8 @@ public record MappingSet (
         private SortedSet<Mapping> mappings = new TreeSet<>();
         private Uri mappingSetId;
         private Optional<String> mappingSetVersion = Optional.empty();
+        private Optional<java.lang.Double> mappingSetConfidence = Optional.empty();
+        private SortedSet<String> publisher = new TreeSet<>();
         private SortedSet<Uri> mappingSetSource = new TreeSet<>();
         private Optional<String> mappingSetTitle = Optional.empty();
         private Optional<String> mappingSetDescription = Optional.empty();
@@ -250,6 +256,24 @@ public record MappingSet (
             return this;
         }
 
+
+        @JsonProperty(MAPPING_SET_CONFIDENCE)
+        public Builder mappingSetConfidence(java.lang.Double value) {
+            this.mappingSetConfidence = Optional.ofNullable(value);
+            return this;
+        }
+
+        @JsonProperty(PUBLISHER)
+        public Builder publisher(Object value) {
+            this.publisher = new TreeSet<>();
+            if (value instanceof Collection<?> values) {
+                values.stream().filter(Objects::nonNull).map(Object::toString)
+                        .filter(text -> !text.isBlank()).forEach(this.publisher::add);
+            } else if (value instanceof String text) {
+                this.publisher = StringUtils.splitStringToSortedSet(text, "\\|", String::new);
+            }
+            return this;
+        }
 
         @JsonProperty(MAPPING_SET_VERSION)
         public Builder mappingSetVersion(String mappingSetVersion) {
@@ -644,6 +668,8 @@ public record MappingSet (
                     mappingSetSource,
                     mappingSetTitle,
                     mappingSetVersion,
+                    mappingSetConfidence,
+                    publisher,
                     mappingTool,
                     mappingToolVersion,
                     objectMatchField,

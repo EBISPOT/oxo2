@@ -276,6 +276,77 @@ async function openReportableInference() {
         asserted_mappings: JSON.stringify(reportPremises), explanation: JSON.stringify(explanation)});
 }
 
+async function openMappingSetMetadata(metadata) {
+    const page = await browser.newPage({viewport: {width: 1440, height: 1000}});
+    await page.route('**/api/**', route => route.fulfill({json:
+        route.request().url().includes('/mappings/search')
+            ? {mappings: {content: [], totalElements: 0, totalPages: 0, number: 0, size: 10}}
+            : metadata,
+    }));
+    await page.goto(`${process.env.UI_BASE_URL || 'http://localhost:20100'}/mapping-set?id=${encodeURIComponent(metadata.mapping_set_id)}`);
+    await page.getByRole('region', {name: 'Mapping set metadata', exact: true}).waitFor();
+    return page;
+}
+
+test('mapping set metadata appears above mappings with readable values and safe links', async () => {
+    const id = 'https://w3id.org/biopragmatics/biomappings/sssom/biomappings.sssom.tsv';
+    const page = await openMappingSetMetadata({
+        mapping_set_id: id, mapping_set_title: 'Biomappings',
+        mapping_set_description: 'Community curated mappings.\nContributions are welcome.',
+        mapping_set_version: '0.6.1-dev-9e9cd532', mapping_set_confidence: 0.99,
+        license: 'https://creativecommons.org/publicdomain/zero/1.0/',
+        publisher: ['Example publisher', 'https://example.org/publisher'],
+        creator_id: ['ORCID:0000-0003-4423-4370', 'https://example.org/creator'],
+        creator_label: ['Example curator', 'Another curator'],
+        publication_date: '2026-11-05',
+        mapping_provider: 'https://example.org/provider',
+        issue_tracker: 'javascript:alert(1)',
+        curie_map: 'hidden_prefix:https://example.org/hidden/', _version_: 'internal-value',
+    });
+    try {
+        const metadata = page.getByRole('region', {name: 'Mapping set metadata', exact: true});
+        await page.getByRole('heading', {name: 'Biomappings', exact: true}).waitFor();
+        await page.getByText('Community curated mappings. Contributions are welcome.', {exact: true}).waitFor();
+        for (const value of ['0.99', '0.6.1-dev-9e9cd532', 'Example publisher', 'Example curator', 'Another curator', '2026-11-05']) {
+            assert.equal(await metadata.getByText(value, {exact: true}).count(), 1);
+        }
+        assert.equal(await metadata.getByRole('link', {name: 'ORCID:0000-0003-4423-4370', exact: true}).getAttribute('href'),
+            'https://orcid.org/0000-0003-4423-4370');
+        assert.equal(await metadata.getByRole('link', {name: 'https://creativecommons.org/publicdomain/zero/1.0/', exact: true}).count(), 1);
+        assert.equal(await metadata.getByRole('link', {name: 'https://example.org/publisher', exact: true}).count(), 1);
+        assert.equal(await metadata.locator('a[href^="javascript:"]').count(), 0);
+        assert.ok(!(await metadata.innerText()).includes('hidden_prefix'));
+        assert.ok(!(await metadata.innerText()).includes('internal-value'));
+        for (const width of [1440, 390]) {
+            await page.setViewportSize({width, height: 1000});
+            assert.ok(await metadata.evaluate(el => el.scrollWidth <= el.clientWidth + 1));
+            const box = await metadata.boundingBox();
+            const table = await page.getByRole('table').boundingBox();
+            assert.ok(box.y + box.height <= table.y);
+            if (process.env.UI_SCREENSHOT_DIR) {
+                await mkdir(process.env.UI_SCREENSHOT_DIR, {recursive: true});
+                await metadata.screenshot({path: `${process.env.UI_SCREENSHOT_DIR}/mapping-set-metadata-${width}.png`});
+            }
+        }
+    } finally { await page.close(); }
+});
+
+test('mapping set metadata preserves zero confidence and omits absent fields', async () => {
+    for (const confidence of [0, null]) {
+        const page = await openMappingSetMetadata({mapping_set_id: 'source',
+            mapping_set_confidence: confidence, publisher: [], creator_id: [], license: null});
+        try {
+            const metadata = page.getByRole('region', {name: 'Mapping set metadata', exact: true});
+            assert.equal(await metadata.getByText('Mapping set confidence', {exact: true}).count(), confidence === 0 ? 1 : 0);
+            if (confidence === 0) assert.equal(await metadata.getByText('0', {exact: true}).count(), 1);
+            for (const label of ['Publisher', 'Creator IDs', 'License']) {
+                assert.equal(await metadata.getByText(label, {exact: true}).count(), 0);
+            }
+            assert.ok(!(await metadata.innerText()).includes('undefined'));
+        } finally { await page.close(); }
+    }
+});
+
 test('each asserted row reports its own full mapping and contacts with inference context', async () => {
     const page = await openReportableInference();
     try {

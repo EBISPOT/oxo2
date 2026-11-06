@@ -22,6 +22,8 @@ public class MappingConstants {
     public static final String MAPPING_SET_ID = "mapping_set_id";
     public static final String MAPPING_SET_SOURCE = "mapping_set_source";
     public static final String MAPPING_SET_TITLE = "mapping_set_title";
+    public static final String MAPPING_SET_CONFIDENCE = "mapping_set_confidence";
+    public static final String PUBLISHER = "publisher";
     public static final String MAPPING_SET_VERSION = "mapping_set_version";
     public static final String MAPPING_SOURCE = "mapping_source";
     public static final String MAPPING_TOOL = "mapping_tool";
