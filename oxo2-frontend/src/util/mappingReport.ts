@@ -17,7 +17,7 @@ function entityDescription(id: string, iri: string, label: string): string {
     return identifier ? (label ? `${identifier} (${label})` : identifier) : JSON.stringify(label);
 }
 
-export function createMappingReport(mapping: Mapping, mappingUrl: string): MappingReport {
+export function createMappingReport(mapping: Mapping, mappingUrl: string, inferredMappingUrl?: string): MappingReport {
     const subject = entityDescription(mapping.subjectId, mapping.subjectIri, mapping.subjectLabel);
     const object = entityDescription(mapping.objectId, mapping.objectIri, mapping.objectLabel);
     const predicate = [mapping.predicateModifier, mapping.predicateId || mapping.predicateIri]
@@ -33,6 +33,10 @@ export function createMappingReport(mapping: Mapping, mappingUrl: string): Mappi
             `Source mapping set: ${mapping.mappingSetId}`,
             ...(mapping.mappingSetTitle ? [`Mapping set title: ${mapping.mappingSetTitle}`] : []),
             `OxO mapping: ${mappingUrl}`,
+            ...(inferredMappingUrl ? [
+                '',
+                `Noticed while reviewing this inferred mapping: ${inferredMappingUrl}`,
+            ] : []),
             '',
             'Why I believe this mapping is incorrect:',
             '[Please describe the problem and any supporting evidence.]',

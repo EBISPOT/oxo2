@@ -1,7 +1,51 @@
 import { InferenceType, asInferenceType } from "./InferenceType";
 import { MappingSetCategory, asMappingSetCategory } from "./MappingSetCategory";
 
-export interface MappingSetResponse {
+// Explicit display fields keep infrastructure metadata (e.g. curie_map) out of the page.
+const METADATA_LABELS = {
+    mapping_set_id: 'Mapping set ID',
+    mapping_set_version: 'Mapping set version',
+    mapping_set_confidence: 'Mapping set confidence',
+    license: 'License',
+    publisher: 'Publisher',
+    mapping_provider: 'Mapping provider',
+    creator_label: 'Creator names',
+    creator_id: 'Creator IDs',
+    mapping_date: 'Mapping date',
+    publication_date: 'Publication date',
+    data_release_date: 'OxO data release',
+    issue_tracker: 'Issue tracker',
+    mailing_list: 'Mailing list',
+    mapping_tool: 'Mapping tool',
+    mapping_tool_version: 'Mapping tool version',
+    ontology: 'Ontology',
+    ontology_iri: 'Ontology IRI',
+    prefix: 'Ontology prefix',
+    subject_source: 'Subject source',
+    subject_source_version: 'Subject source version',
+    subject_type: 'Subject type',
+    subject_match_field: 'Subject match fields',
+    subject_preprocessing: 'Subject preprocessing',
+    object_source: 'Object source',
+    object_source_version: 'Object source version',
+    object_type: 'Object type',
+    object_match_field: 'Object match fields',
+    object_preprocessing: 'Object preprocessing',
+    mapping_set_source: 'Source mapping sets',
+    see_also: 'See also',
+    comment: 'Comment',
+} as const;
+
+type MetadataField = keyof typeof METADATA_LABELS;
+type MetadataValue = string | number | string[] | null;
+
+export interface MappingSetMetadataEntry {
+    field: MetadataField;
+    label: string;
+    values: string[];
+}
+
+export interface MappingSetResponse extends Partial<Record<MetadataField, MetadataValue>> {
     mapping_set_id: string;
     mapping_set_title?: string;
     mapping_set_description?: string;
@@ -18,6 +62,7 @@ export interface MappingSetResponse {
 }
 
 export interface MappingSet {
+    metadata?: MappingSetMetadataEntry[];
     mappingSetId: string;
     mappingSetTitle: string;
     mappingSetDescription: string;
@@ -39,6 +84,12 @@ export interface MappingSet {
 
 export function fromMappingSetResponse(r: MappingSetResponse): MappingSet {
     return {
+        metadata: (Object.keys(METADATA_LABELS) as MetadataField[]).flatMap(field => {
+            const value = r[field];
+            const values = (Array.isArray(value) ? value : value == null ? [] : [value])
+                .map(String).filter(text => text.trim() !== '');
+            return values.length ? [{field, label: METADATA_LABELS[field], values}] : [];
+        }),
         mappingSetId: r.mapping_set_id,
         mappingSetTitle: r.mapping_set_title ?? '',
         mappingSetDescription: r.mapping_set_description ?? '',

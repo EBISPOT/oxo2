@@ -132,6 +132,38 @@ class MappingSetControllerTest {
     }
 
     @Test
+    void detailsExposeMetadataWithoutCurieMapOrSolrInternals() throws Exception {
+        SolrDocument doc = curatedSet();
+        doc.setField("mapping_set_version", "0.6.1-dev-9e9cd532");
+        doc.setField("mapping_set_confidence", 0.0);
+        doc.setField("license", "https://creativecommons.org/publicdomain/zero/1.0/");
+        doc.setField("publisher", java.util.List.of("Example publisher"));
+        doc.setField("creator_id", java.util.List.of("ORCID:0000-0003-4423-4370"));
+        doc.setField("publication_date", java.util.Date.from(java.time.Instant.parse("2026-11-05T00:00:00Z")));
+        doc.setField("curie_map", "orcid:https://orcid.org/");
+        doc.setField("_version_", 123);
+        doc.setField("mapping_set_title_str", "Internal sort value");
+        QueryResponse response = responseOf(doc);
+        when(solrClient.queryMappingSets(any())).thenReturn(response);
+
+        mockMvc.perform(get("/api/v2/mapping-sets/by-id").param("mappingSetId", "ictv_to_ncbitaxon"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mapping_set_confidence").value(0.0))
+                .andExpect(jsonPath("$.mapping_set_version").value("0.6.1-dev-9e9cd532"))
+                .andExpect(jsonPath("$.license").value("https://creativecommons.org/publicdomain/zero/1.0/"))
+                .andExpect(jsonPath("$.publisher[0]").value("Example publisher"))
+                .andExpect(jsonPath("$.creator_id[0]").value("ORCID:0000-0003-4423-4370"))
+                .andExpect(jsonPath("$.publication_date").value("2026-11-05T00:00:00Z"))
+                .andExpect(jsonPath("$.curie_map").doesNotExist())
+                .andExpect(jsonPath("$._version_").doesNotExist())
+                .andExpect(jsonPath("$.mapping_set_title_str").doesNotExist());
+        ArgumentCaptor<SolrParams> query = ArgumentCaptor.forClass(SolrParams.class);
+        verify(solrClient).queryMappingSets(query.capture());
+        assertThat(query.getValue().get("fl")).contains("mapping_set_confidence", "publisher", "license", "creator_id")
+                .doesNotContain("curie_map", "_version_");
+    }
+
+    @Test
     void missingContactsRemainAbsentOnOlderIndexedSets() throws Exception {
         QueryResponse response = responseOf(curatedSet());
         when(solrClient.queryMappingSets(any())).thenReturn(response);

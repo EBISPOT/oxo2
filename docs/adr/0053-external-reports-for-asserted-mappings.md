@@ -35,9 +35,11 @@ A mapping group must not implicitly select a source for a report. The source ass
 identified before handing the user to its maintainers. Opening a report destination does not mean
 a report has been submitted or a mapping has been judged incorrect.
 
-The action appears on individual asserted mapping details pages. Users inspecting an inference
-reach those pages through the existing asserted-evidence links. Grouped result rows and inferred
-mapping details do not gain a report action.
+The action appears on individual asserted mapping details pages and, as extended on 2026-11-04,
+on each asserted-evidence row when inspecting an inference. The row action opens a dialog for that
+assertion, loading its full details and source contacts without leaving the inference. Its report
+also links the inferred mapping as context. Grouped result rows and inferred mappings themselves
+remain outside the report targets.
 
 When both contacts exist, the issue tracker is primary and the mailing list remains an alternative.
 When neither is available, show "No reporting contact available for this mapping source." Do not

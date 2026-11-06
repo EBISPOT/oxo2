@@ -26,6 +26,7 @@ import {ColumnFilterPopover, type FilterFieldDef} from "../../components/mapping
 import {ColumnSortPopover, type SortFieldDef} from "../../components/mapping/ColumnSortPopover";
 import {ColumnHeaderLabel} from "../../components/mapping/ColumnHelp";
 import {SortingContext} from "../../components/mapping/sortingContext";
+import {AssertedMappingReportDialog} from "../../components/mapping/AssertedMappingReportDialog";
 
 // Per-column filter inputs. Each `field` is a canonical Solr field name resolved by
 // the backend MappingEnum; the values feed the columnFilters list (AND-combined).
@@ -144,14 +145,14 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
       // nothing yet runs an unbounded CollapsingQParser allocation that OOMs Solr on large sets.
       groupBySpo?: boolean;
       // Which column set to render. "search" is the default full set. "set-detail" is the
-      // single-set page: Type and Mapping set are dropped (every row shares the set — and, since the
-      // set-detail view is ungrouped, a single inference type — so both columns are constant noise)
-      // and Mapping confidence is shown in their place. (Mapping provider is hidden by default in
+      // single-set page omits Distance, Type and Mapping set. Mapping confidence is shown in both
+      // views. (Mapping provider is hidden by default in
       // both views — see initialState — but stays revealable via the columns menu.)
       variant?: "search" | "set-detail" }) {
     const navigate = useNavigate();
     const isSetDetail = variant === "set-detail";
     const [isExporting, setIsExporting] = useState(false);
+    const [reportMappingId, setReportMappingId] = useState<string | null>(null);
 
     // View state (page, size, sort, inference-type filter, field filters) is held in the
     // URL so returning from a mapping's detail page restores exactly what the user was
@@ -387,17 +388,30 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 accessorFn: (row) => row.confidence,
                 header: "Mapping confidence",
                 enableSorting: false,
-                size: 150,
+                size: isSetDetail ? 240 : 150,
                 Header: () => <ColumnHeaderLabel topic="confidence" label="Mapping confidence" />,
                 Cell: ({ row }) => {
                     const shared = sharedValue(row.original, (member) =>
                         typeof member.confidence === "number" ? String(member.confidence) : "");
-                    if (shared === null) {
-                        return <span className="italic text-gray-500">Multiple</span>;
-                    }
-                    return shared === ""
-                        ? <span className="text-gray-400">—</span>
-                        : <span>{shared}</span>;
+                    return (
+                        <div className="flex flex-col items-start gap-3">
+                            {shared === null
+                                ? <span className="italic text-gray-500">Multiple</span>
+                                : shared === ""
+                                    ? <span className="text-gray-400">—</span>
+                                    : <span>{shared}</span>}
+                            {isSetDetail && row.original.inferenceType === 'ASSERTED' && (
+                                <button type="button"
+                                    className="whitespace-nowrap rounded-md border border-link-default bg-link-default px-3 py-2 text-left text-sm font-semibold text-white transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link-default disabled:cursor-not-allowed disabled:opacity-50"
+                                    disabled={!row.original.mappingId}
+                                    title={row.original.mappingId ? undefined : 'Full details are unavailable for this mapping.'}
+                                    aria-haspopup="dialog"
+                                    onClick={() => setReportMappingId(row.original.mappingId || null)}>
+                                    Report incorrect mapping
+                                </button>
+                            )}
+                        </div>
+                    );
                 },
             },
             // Distance: hops behind the mapping — 1 for asserted, the chain length for an inference.
@@ -410,10 +424,10 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             // so "at most 5" would hide the longer rows; below the cap the top number already selects
             // everything and doubles as the default. The backend turns the picked value into a
             // distance:[* TO N] range, applied before grouping, so a group keeps only its members
-            // within N hops.
-            {
+            // within N hops. Omitted on the mapping set page.
+            ...(isSetDetail ? [] : [{
                 id: "distance",
-                accessorFn: (row) => row.distance,
+                accessorFn: (row: Mapping) => row.distance,
                 header: "Distance",
                 enableSorting: false,
                 size: 110,
@@ -429,7 +443,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         />
                     </span>
                 ),
-                Cell: ({ row }) => {
+                Cell: ({ row }: { row: { original: Mapping } }) => {
                     const shared = sharedValue(row.original, (member) =>
                         typeof member.distance === "number" ? String(member.distance) : "");
                     if (shared === null) {
@@ -439,7 +453,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         ? <span className="text-gray-400">—</span>
                         : <span>{shared}</span>;
                 },
-            },
+            } as MRT_ColumnDef<Mapping>]),
             // Type: dropped on a set-detail page (a single set has a single inference type).
             ...(isSetDetail ? [] : [{
                 id: "inference_type",
@@ -793,6 +807,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             <SortingContext.Provider value={sorting}>
                 <MaterialReactTable table={table} />
             </SortingContext.Provider>
+            <AssertedMappingReportDialog mappingId={reportMappingId}
+                onClose={() => setReportMappingId(null)} />
         </>
     );
 }

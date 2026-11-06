@@ -86,7 +86,7 @@ report_wrong_mode() {
     echo "Solr on port $SOLR_PORT is running in SolrCloud mode, not user-managed mode." >&2
     echo "OxO2's cores have no collection state in ZooKeeper, so they cannot load in cloud mode." >&2
     echo "Stop it and start it with this script:" >&2
-    echo "    \$SOLR_SCRIPT/solr stop -p $SOLR_PORT && $SCRIPT_PATH/startSolr.sh" >&2
+    echo "    SOLR_PORT=$SOLR_PORT \"$SCRIPT_PATH/stopSolr.sh\" && \"$SCRIPT_PATH/startSolr.sh\"" >&2
 }
 
 # Starting a second Solr on a bound port fails with "port already in use", so handle the

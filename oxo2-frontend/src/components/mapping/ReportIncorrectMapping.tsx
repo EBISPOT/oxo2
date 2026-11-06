@@ -4,7 +4,11 @@ import type { Mapping } from '../../model/Mapping';
 import { fetchMappingSetById } from '../../pages/results/MappingSetsSlice';
 import { createMappingReport, reportingDestinations } from '../../util/mappingReport';
 
-export function ReportIncorrectMapping({ mapping }: { mapping: Mapping }) {
+export function ReportIncorrectMapping({ mapping, inline = false, inferredMappingUrl }: {
+    mapping: Mapping;
+    inline?: boolean;
+    inferredMappingUrl?: string;
+}) {
     const [expanded, setExpanded] = useState(false);
     const [copyStatus, setCopyStatus] = useState('');
     const panelId = useId();
@@ -20,7 +24,7 @@ export function ReportIncorrectMapping({ mapping }: { mapping: Mapping }) {
         `${import.meta.env.BASE_URL}mapping/${encodeURIComponent(mapping.mappingId)}`,
         window.location.origin,
     ).href;
-    const report = createMappingReport(mapping, mappingUrl);
+    const report = createMappingReport(mapping, mappingUrl, inferredMappingUrl);
     const reportText = `${report.title}\n\n${report.body}`;
     const destinations = mappingSet ? reportingDestinations(mappingSet, report) : [];
 
@@ -55,7 +59,7 @@ export function ReportIncorrectMapping({ mapping }: { mapping: Mapping }) {
 
     return (
         <div className="mb-8">
-            <button
+            {!inline && <button
                 type="button"
                 className="button-primary px-4 py-2"
                 aria-expanded={expanded}
@@ -63,9 +67,9 @@ export function ReportIncorrectMapping({ mapping }: { mapping: Mapping }) {
                 onClick={() => setExpanded(!expanded)}
             >
                 Report incorrect mapping
-            </button>
-            {expanded && (
-                <div id={panelId} className="card mt-3 p-4 space-y-3">
+            </button>}
+            {(inline || expanded) && (
+                <div id={panelId} className={inline ? 'space-y-3' : 'card mt-3 p-4 space-y-3'}>
                     <p>
                         Report this asserted mapping to the maintainers of{' '}
                         <strong className="break-all">{mappingSet?.mappingSetTitle || mapping.mappingSetId}</strong>.

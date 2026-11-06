@@ -76,13 +76,41 @@ via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/
 `mapping/MappingItem.tsx`, `mapping/InferredMappingGraph.tsx`, `common/Header.tsx`, `common/Footer.tsx`,
 `common/HelpTerm.tsx`, `infoCard/`, `error/`.
 
+### Mapping details layout
+
+Mapping details use the original highlighted subject–predicate–object diagram, with copy controls,
+confirmed OLS links, and a negation badge when applicable. The page shares the landing page’s centered
+container width. Metadata sections use two columns on wide screens and stack on mobile. The justification section shows supplied confidence, similarity score, and similarity
+measure; a compact “Not provided” line names absent scores, preserving real zero values.
+
+The asserted-mappings evidence table appears above the inference explanation. Its columns fit the
+page width, with wrapping text and labelled stacked cells on narrow screens. Explanations also render
+when no asserted-mappings list is available.
+The graph has a responsive inline canvas and an **Expand graph** dialog that fills the window. Close
+or Escape returns focus to the expand button; both canvases retain zoom, pan, and fit controls.
+
+### OLS term links
+
+`mapping/OlsLink.tsx` is shared by result cells and mapping diagrams. It only renders after an exact
+OLS `/api/terms` lookup confirms the IRI (or `obo_id` when no IRI is available). Links use OLS’s returned
+ontology name, preferring a defining ontology and otherwise a confirmed import. Pending, absent, and
+failed lookups leave the icon hidden. React Query shares lookups for repeated entities, caches results
+for a day, and avoids retries or refetches on window focus. This is independent of whether an ontology’s
+mapping set was loaded into OxO.
+
 ### Reporting incorrect mappings (ADR-0053)
 
 Individual asserted mapping details show `ReportIncorrectMapping`, which fetches the source set
 using the shared `mappingSetById` query cache. It offers the issue tracker first and the mailing
 list as an alternative. Missing or unusable contacts produce the no-contact message; lookup errors
-offer a retry. Inferred mapping details and grouped result rows have no report action. Existing
-asserted-evidence links lead to the reportable source mapping's details page.
+offer a retry. Inferred mappings and mapping groups are not report targets.
+
+Each row of the inferred mapping's asserted-evidence table offers a report action beneath its source
+link. `AssertedMappingReportDialog` fetches the full asserted mapping by its own ID before showing
+the same reporting options; premise summaries omit metadata such as predicate modifiers. Reports
+identify that asserted mapping and include the parent inferred mapping's URL as context. Closing the
+dialog restores focus and preserves table filters, sorting, and position. Missing premise IDs disable
+the action; failed lookups offer a retry, and missing mappings show an unavailable message.
 
 `util/mappingReport.ts` prepares source-specific report text, preserving predicate modifiers and
 literal subjects. It prefills ordinary GitHub issue forms and email drafts; custom GitHub templates,
@@ -119,7 +147,9 @@ asserted leaf with its source mapping set, surfacing cross-set provenance.
 
 The search form is extended (not a separate surface) with two optional exact-prefix selectors,
 **"from \[source ontologies]"** and **"to \[target ontologies]"**, plus a ⇄ swap, beside the existing
-terms box. Options and counts come from `GET /api/v2/ontologies` (re-fetched with `?forSubject=` once a
+terms box. Names and descriptions come from ontology-category mapping sets, sharing the picker’s
+`fetchMappingSets` cache. Names are searchable and shown alongside prefixes; unknown metadata falls
+back to the prefix. Submitted values remain exact prefixes. Options and counts come from `GET /api/v2/ontologies` (re-fetched with `?forSubject=` once a
 source is chosen, so targets show counts and zero-count targets grey out). They compose: source prefix
 + empty box → entire ontology; terms + target prefix → bounded batch lookup; terms only → today's
 search. A label input (not a CURIE/IRI) is treated as a **source-side** label, bounded by the target
