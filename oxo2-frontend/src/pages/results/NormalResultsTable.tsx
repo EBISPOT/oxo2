@@ -144,9 +144,8 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
       // nothing yet runs an unbounded CollapsingQParser allocation that OOMs Solr on large sets.
       groupBySpo?: boolean;
       // Which column set to render. "search" is the default full set. "set-detail" is the
-      // single-set page: Type and Mapping set are dropped (every row shares the set — and, since the
-      // set-detail view is ungrouped, a single inference type — so both columns are constant noise)
-      // and Mapping confidence is shown in their place. (Mapping provider is hidden by default in
+      // single-set page omits Distance, Type and Mapping set. Mapping confidence is shown in both
+      // views. (Mapping provider is hidden by default in
       // both views — see initialState — but stays revealable via the columns menu.)
       variant?: "search" | "set-detail" }) {
     const navigate = useNavigate();
@@ -410,10 +409,10 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             // so "at most 5" would hide the longer rows; below the cap the top number already selects
             // everything and doubles as the default. The backend turns the picked value into a
             // distance:[* TO N] range, applied before grouping, so a group keeps only its members
-            // within N hops.
-            {
+            // within N hops. Omitted on the mapping set page.
+            ...(isSetDetail ? [] : [{
                 id: "distance",
-                accessorFn: (row) => row.distance,
+                accessorFn: (row: Mapping) => row.distance,
                 header: "Distance",
                 enableSorting: false,
                 size: 110,
@@ -429,7 +428,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         />
                     </span>
                 ),
-                Cell: ({ row }) => {
+                Cell: ({ row }: { row: { original: Mapping } }) => {
                     const shared = sharedValue(row.original, (member) =>
                         typeof member.distance === "number" ? String(member.distance) : "");
                     if (shared === null) {
@@ -439,7 +438,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                         ? <span className="text-gray-400">—</span>
                         : <span>{shared}</span>;
                 },
-            },
+            } as MRT_ColumnDef<Mapping>]),
             // Type: dropped on a set-detail page (a single set has a single inference type).
             ...(isSetDetail ? [] : [{
                 id: "inference_type",

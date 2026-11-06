@@ -77,7 +77,7 @@ export function MappingSetDetails({ mappingSetId }: { mappingSetId: string }) {
                 </div>
             )}
             {/* Show every inference type within the set, regardless of the global default filter.
-                variant="set-detail" drops the Type/Mapping-set columns (constant within one set),
+                variant="set-detail" drops the Distance/Type/Mapping-set columns,
                 shows Mapping confidence, and hides Mapping provider by default. */}
             <NormalResultsTable
                 queries={[]}
