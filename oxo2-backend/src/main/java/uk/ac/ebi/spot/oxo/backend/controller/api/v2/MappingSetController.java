@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 import static uk.ac.ebi.spot.oxo.model.sssom.MappingSetConstants.*;
@@ -45,6 +48,16 @@ public class MappingSetController {
             ISSUE_TRACKER, MAILING_LIST,
             MAPPING_SET_CATEGORY, PREFIX, ONTOLOGY, ONTOLOGY_IRI, OBSOLETE
     };
+
+    // Detail metadata is fetched only for one set; keep the picker summaries small. Neither the
+    // CURIE map nor Solr bookkeeping belongs in the human-readable detail response.
+    private static final String[] DETAIL_FIELDS = Stream.concat(Stream.of(SUMMARY_FIELDS), Stream.of(
+            "mapping_set_version", "mapping_set_confidence", "license", "publisher", "creator_id",
+            "mapping_date", "publication_date", "data_release_date", "comment", "see_also",
+            "mapping_tool", "mapping_tool_version", "subject_source", "subject_source_version",
+            "subject_type", "subject_match_field", "subject_preprocessing", "object_source",
+            "object_source_version", "object_type", "object_match_field", "object_preprocessing"
+    )).toArray(String[]::new);
 
     @Autowired
     private OxOSolrClient solrClient;
@@ -103,20 +116,28 @@ public class MappingSetController {
             @ApiResponse(responseCode = "500", description = "Error querying Solr", content = @io.swagger.v3.oas.annotations.media.Content)
     })
     @GetMapping("/by-id")
-    public ResponseEntity<MappingSetSummary> getMappingSet(
+    public ResponseEntity<Map<String, Object>> getMappingSet(
             @Parameter(description = "Full IRI of the mapping set.", example = "https://www.ebi.ac.uk/oxo2/inferences")
             @RequestParam String mappingSetId) {
         try {
             SolrQuery solrQuery = new SolrQuery();
             solrQuery.setQuery(MAPPING_SET_ID + ":\"" + ClientUtils.escapeQueryChars(mappingSetId) + "\"");
             solrQuery.setRows(1);
-            solrQuery.setFields(SUMMARY_FIELDS);
+            solrQuery.setFields(DETAIL_FIELDS);
 
             QueryResponse response = solrClient.queryMappingSets(solrQuery);
             if (response.getResults().isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
-            return ResponseEntity.ok(toSummary(response.getResults().get(0)));
+            SolrDocument doc = response.getResults().get(0);
+            Map<String, Object> details = new LinkedHashMap<>();
+            for (String field : DETAIL_FIELDS) {
+                Object value = doc.getFieldValue(field);
+                if (value != null) {
+                    details.put(field, value instanceof java.util.Date date ? date.toInstant().toString() : value);
+                }
+            }
+            return ResponseEntity.ok(details);
         } catch (Exception e) {
             logger.error("Error fetching mapping set {}", mappingSetId, e);
             return ResponseEntity.status(500).build();

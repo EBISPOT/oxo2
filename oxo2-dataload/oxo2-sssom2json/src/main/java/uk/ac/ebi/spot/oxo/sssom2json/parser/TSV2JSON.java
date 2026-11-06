@@ -659,6 +659,8 @@ public class TSV2JSON {
                 .mappings(tempMappingSet.mappings())
                 .mappingSetId(tempMappingSet.mappingSetId())
                 .mappingSetVersion(tempMappingSet.mappingSetVersion())
+                .mappingSetConfidence(tempMappingSet.mappingSetConfidence().orElse(null))
+                .publisher(tempMappingSet.publisher())
                 .mappingSetSource(tempMappingSet.mappingSetSource())
                 .mappingSetTitle(tempMappingSet.mappingSetTitle())
                 .mappingSetDescription(tempMappingSet.mappingSetDescription())

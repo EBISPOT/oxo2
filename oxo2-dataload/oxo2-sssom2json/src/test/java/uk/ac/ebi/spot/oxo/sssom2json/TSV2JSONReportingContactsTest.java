@@ -63,10 +63,35 @@ class TSV2JSONReportingContactsTest {
     }
 
     @Test
+    void preservesSetMetadataIncludingZeroConfidenceAndPublisher() throws IOException {
+        JsonNode mappingSet = convert("""
+                # mapping_set_confidence: 0
+                # mapping_set_description: Community curated mappings.
+                # mapping_set_version: 0.6.1-dev-9e9cd532
+                # license: https://creativecommons.org/publicdomain/zero/1.0/
+                # creator_id:
+                # - orcid:0000-0003-4423-4370
+                # publisher:
+                # - Example publisher
+                # - https://example.org/publisher
+                """, true);
+        assertEquals(0.0, mappingSet.path("mapping_set_confidence").asDouble());
+        assertTrue(mappingSet.has("mapping_set_confidence"));
+        assertEquals("0.6.1-dev-9e9cd532", mappingSet.path("mapping_set_version").asText());
+        assertEquals("Community curated mappings.", mappingSet.path("mapping_set_description").asText());
+        assertEquals("https://creativecommons.org/publicdomain/zero/1.0/", mappingSet.path("license").asText());
+        assertEquals("ORCID:0000-0003-4423-4370", mappingSet.path("creator_id").get(0).asText());
+        assertEquals(2, mappingSet.path("publisher").size());
+        assertEquals("Example publisher", mappingSet.path("publisher").get(0).asText());
+    }
+
+    @Test
     void doesNotInventContactsWhenMissing() throws IOException {
         JsonNode mappingSet = convert("");
         assertFalse(mappingSet.has("issue_tracker"));
         assertFalse(mappingSet.has("mailing_list"));
+        assertFalse(mappingSet.has("mapping_set_confidence"));
+        assertFalse(mappingSet.has("publisher"));
     }
 
     @Test
