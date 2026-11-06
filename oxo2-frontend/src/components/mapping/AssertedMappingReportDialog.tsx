@@ -8,10 +8,10 @@ import { fetchMappingById } from '../../pages/results/MappingResultsSlice';
 import { EntityRefCell } from './EntityRefCell';
 import { ReportIncorrectMapping } from './ReportIncorrectMapping';
 
-/** Fetch the complete asserted mapping on demand; premise summaries omit report-critical metadata. */
+/** Fetch the complete asserted mapping on demand; table rows can omit report-critical metadata. */
 export function AssertedMappingReportDialog({ mappingId, inferredMappingId, onClose }: {
     mappingId: string | null;
-    inferredMappingId: string;
+    inferredMappingId?: string;
     onClose: () => void;
 }) {
     const titleId = useId();
@@ -22,10 +22,10 @@ export function AssertedMappingReportDialog({ mappingId, inferredMappingId, onCl
         staleTime: 5 * 60_000,
         retry: false,
     });
-    const inferredMappingUrl = new URL(
+    const inferredMappingUrl = inferredMappingId ? new URL(
         `${import.meta.env.BASE_URL}mapping/${encodeURIComponent(inferredMappingId)}`,
         window.location.origin,
-    ).href;
+    ).href : undefined;
     return (
         <Dialog open={!!mappingId} onClose={onClose} fullWidth maxWidth="md" aria-labelledby={titleId}>
             <DialogTitle id={titleId}>Report incorrect asserted mapping</DialogTitle>

@@ -224,6 +224,53 @@ const reportPremises = [
     {...mappingFixture, mapping_id: 'premise-two', mapping_set_id: 'second-source', subject_id: 'EFO:0001'},
 ];
 
+test('mapping set rows report the selected mapping without inference context', async () => {
+    const page = await browser.newPage({viewport: {width: 1440, height: 1000}});
+    const mappings = [mappingFixture, {...mappingFixture, mapping_id: 'second-mapping', subject_id: 'EFO:0001'}];
+    const fetched = [];
+    try {
+        await page.route('**/api/**', route => {
+            const url = new URL(route.request().url());
+            if (url.pathname.includes('/api/sssom/mappings/')) {
+                const id = url.pathname.split('/').at(-1);
+                fetched.push(id);
+                return route.fulfill({json: {...mappings.find(mapping => mapping.mapping_id === id), predicate_modifier: 'Not'}});
+            }
+            if (url.pathname.endsWith('/mappings/search')) {
+                return route.fulfill({json: {mappings: {content: mappings, totalElements: 2, totalPages: 1, number: 0, size: 10}}});
+            }
+            return route.fulfill({json: {mapping_set_id: 'source', mapping_set_title: 'Example disease mappings',
+                issue_tracker: 'https://github.com/example/ontology/issues'}});
+        });
+        await page.route('https://www.ebi.ac.uk/ols4/api/terms?**', route => route.fulfill({json: {_embedded: {terms: []}}}));
+        await page.goto(`${process.env.UI_BASE_URL || 'http://localhost:20100'}/mapping-set?id=source`);
+        const originalUrl = page.url();
+        const buttons = page.getByRole('button', {name: 'Report incorrect mapping', exact: true});
+        await buttons.first().waitFor();
+        assert.equal(await buttons.count(), 2);
+        assert.deepEqual(fetched, []);
+        for (const [index, mapping] of mappings.entries()) {
+            await buttons.nth(index).click();
+            const dialog = page.getByRole('dialog', {name: 'Report incorrect asserted mapping', exact: true});
+            const report = dialog.getByLabel('Report text', {exact: true});
+            await report.waitFor();
+            const body = await report.inputValue();
+            assert.ok(body.includes(`Subject: ${mapping.subject_id}`));
+            assert.ok(body.includes(`/mapping/${mapping.mapping_id}`));
+            assert.ok(body.includes('Predicate: Not skos:exactMatch'));
+            assert.ok(!body.includes('Noticed while reviewing this inferred mapping'));
+            const destination = new URL(await dialog.getByRole('link', {name: 'Open issue tracker'}).getAttribute('href'));
+            assert.equal(destination.pathname, '/example/ontology/issues/new');
+            assert.ok(destination.searchParams.get('body').includes(`/mapping/${mapping.mapping_id}`));
+            await dialog.getByRole('button', {name: 'Close report'}).click();
+            await dialog.waitFor({state: 'hidden'});
+            assert.equal(page.url(), originalUrl);
+            assert.equal(await buttons.nth(index).evaluate(el => el === el.ownerDocument.activeElement), true);
+        }
+        assert.deepEqual(fetched, mappings.map(mapping => mapping.mapping_id));
+    } finally { await page.close(); }
+});
+
 async function openReportableInference() {
     return openMapping({...mappingFixture, inference_type: 'SSSOM_INFERENCE',
         asserted_mappings: JSON.stringify(reportPremises), explanation: JSON.stringify(explanation)});
