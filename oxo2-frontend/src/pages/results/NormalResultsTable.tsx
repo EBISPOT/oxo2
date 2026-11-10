@@ -1,9 +1,9 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState, ReactNode} from "react";
 import {Link, useNavigate} from "react-router";
 import {mappingSetHref} from "../../util/mappingSetUrl";
-import {emptyMappingPage, MappingPage, fetchMappings, exportMappings, fromJson, buildSearchRequest}
+import {emptyMappingPage, MappingPage, exportMappings, fromJson, buildSearchRequest}
     from "./MappingResultsSlice";
-import {useQuery} from "@tanstack/react-query";
+import {useMappingSearch} from "./useMappingVisibility";
 import {
     MaterialReactTable,
     type MRT_ColumnDef,
@@ -11,7 +11,7 @@ import {
     useMaterialReactTable,
 } from 'material-react-table';
 import {useUrlPagination, useUrlSorting, useUrlInferenceTypes, useUrlFieldFilters, useUrlExactFilters,
-    useUrlWeakPredicates, useUrlIncludeObsolete, fieldFiltersEqual} from "../../util/tableUrlState";
+    useUrlWeakPredicates, useUrlIncludeObsolete, fieldFiltersEqual, buildColumnFilters} from "../../util/tableUrlState";
 import {Mapping} from "../../model/Mapping.ts";
 import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
 import {InferenceType, DEFAULT_INFERENCE_TYPES, INFERENCE_TYPE_ORDER, asInferenceType} from "../../model/InferenceType";
@@ -137,13 +137,14 @@ function sharedValue(mapping: Mapping, pick: (member: Mapping) => string | undef
  */
 export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [], objectPrefixes = [],
     initialInferenceTypes = DEFAULT_INFERENCE_TYPES, labelMatch = DEFAULT_LABEL_MATCH,
-    corpus = DEFAULT_CORPUS, groupBySpo = true, variant = "search" }:
+    corpus = DEFAULT_CORPUS, groupBySpo = true, variant = "search", emptyResults }:
     { queries: string[]; mappingSetIds: string[]; subjectPrefixes?: string[]; objectPrefixes?: string[];
       initialInferenceTypes?: InferenceType[]; labelMatch?: LabelMatchMode; corpus?: CorpusMode;
       // Collapse same-SPO mappings into one expandable row (ADR-0013/0023). Default on for a normal
       // search; a set-detail view passes false — scoped to one set the collapse merges almost
       // nothing yet runs an unbounded CollapsingQParser allocation that OOMs Solr on large sets.
       groupBySpo?: boolean;
+      emptyResults?: ReactNode;
       // Which column set to render. "search" is the default full set. "set-detail" is the
       // single-set page omits Distance, Type and Mapping set. Mapping confidence is shown in both
       // views. (Mapping provider is hidden by default in
@@ -205,13 +206,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
 
     const exactFiltersKey = [...exactFilters].sort().join(",");
     const columnFiltersForBackend = useMemo(
-        () => Object.entries(urlFilters)
-            .filter(([, value]) => value && value.trim() !== "")
-            .map(([id, value]) => ({
-                id,
-                value: value.trim(),
-                match: exactFilters.has(id) ? "EXACT" : "CONTAINS",
-            })),
+        () => buildColumnFilters(urlFilters, exactFilters),
         [urlFilters, exactFiltersKey]
     );
 
@@ -237,42 +232,9 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             mappingSetIdsKey, inferenceTypes.join(","), subjectPrefixesKey, objectPrefixesKey,
             labelMatch, mappingSetCategory, weakPredicatesKey, includeObsolete]
     );
-    const { data, isLoading, isError } = useQuery({
-        queryKey: [
-            "fetchMappings",
-            queries,
-            pagination.pageIndex,
-            pagination.pageSize,
-            columnFiltersForBackend,
-            sorting,
-            mappingSetIdsKey,
-            inferenceTypes.join(","),
-            subjectPrefixesKey,
-            objectPrefixesKey,
-            labelMatch,
-            corpus,
-            weakPredicatesKey,
-            includeObsolete,
-            groupBySpo,
-        ],
-        queryFn: () =>
-            fetchMappings(
-                queries,
-                pagination.pageIndex,
-                pagination.pageSize,
-                columnFiltersForBackend,
-                sorting,
-                mappingSetIds,
-                inferenceTypes,
-                groupBySpo, // group same-SPO mappings into one row (ADR-0013); off for set-detail views
-                subjectPrefixes,
-                objectPrefixes,
-                labelMatch, // label match mode (ADR-0026)
-                mappingSetCategory, // asserted corpora (ADR-0027)
-                weakPredicates, // show the normally-hidden predicates the user ticked (ADR-0035)
-                includeObsolete // show obsolete terms (ADR-0041)
-            ),
-        staleTime: Infinity,
+    const { data, isLoading, isError } = useMappingSearch({
+        ...suggestContext,
+        ...(groupBySpo ? {groupBySpo} : {}),
     });
 
     // Cross-ontology export (ADR-0024): download the full result as SSSOM-compliant TSV.
@@ -720,6 +682,14 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 }
             },
         },
+        renderEmptyRowsFallback: emptyResults ? () => isError
+            ? <p className="p-6">Unable to load mappings. Please try again.</p>
+            : mappingResults.totalElements === 0 ? emptyResults
+                : <div className="p-6 text-left whitespace-normal">
+                    <p>No mappings on this page.</p>
+                    <button type="button" className="link-default" onClick={() =>
+                        setPagination(previous => ({...previous, pageIndex: 0}))}>Go to the first page</button>
+                </div> : undefined,
         muiTableBodyProps: {
             children: isLoading ? (
                 <tr style={{ height: '200px' }}>
