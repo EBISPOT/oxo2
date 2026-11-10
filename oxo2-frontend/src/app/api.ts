@@ -52,10 +52,12 @@ export async function get<TRes>(path: string): Promise<TRes> {
 }
 
 export async function post<TReq, TRes>(path: string,
-    body: TReq
+    body: TReq,
+    signal?: AbortSignal,
 ): Promise<TRes> {
     return await doHTTPRequest<TRes>(path, {
         method: "POST",
+        signal,
         body: JSON.stringify(body),
         headers: {
             "content-type": "application/json",

@@ -40,7 +40,7 @@ export const emptyMappingPage: MappingPage = {
     size: 0
 }
 
-interface SearchRequest {
+export interface SearchRequest {
     queries: string[];
     page: number;
     size: number;
@@ -395,6 +395,10 @@ export function fetchMappings(queries: string[], page: number = 0, pageSize: num
         inferenceType, groupBySpo, subjectPrefixes, objectPrefixes, labelMatch,
         mappingSetCategory, includeWeakPredicates, includeObsolete);
     return post<SearchRequest, MappingSearchResponse>('/api/v2/mappings/search', requestBody);
+}
+
+export function fetchMappingSearch(request: SearchRequest, signal?: AbortSignal): Promise<MappingSearchResponse> {
+    return post<SearchRequest, MappingSearchResponse>('/api/v2/mappings/search', request, signal);
 }
 
 /**
