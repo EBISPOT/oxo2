@@ -429,7 +429,9 @@ tag and `oxo2-release.json` (served at `GET /api/v2/release`) carry the version.
 (`release.yml`, `.github/release/`, `docker.yml`), `oxo2-backend`, `oxo2-frontend` and
 `oxo2-dataload` (bundled manifest, `archive` stage).
 - **OxO2 is backwards compatible with OxO v1** — API surface answers v1's questions even where SSSOM terms are richer. 
-See [ADR-0004](docs/adr/0004-backwards-compatible-with-oxo-v1.md). Affects `oxo2-backend` (API design) and `oxo2-frontend` (documentation surface).
+See [ADR-0004](docs/adr/0004-backwards-compatible-with-oxo-v1.md). Affects `oxo2-backend` (API design) and `oxo2-frontend` (documentation surface,
+and the v1 term-page URL `/terms/<id>` — CURIE or OBO short form, as linked by the GWAS Catalog — which redirects to the subject-side
+`/search/<curie>`; see `oxo2-frontend/CONTEXT.md` § Exposes).
 - **GitHub registries are fetched via archive tarball** — GitHub mapping registries download as the default-branch archive 
 tarball over plain HTTP (no GitHub Contents API, no token), extracting only the configured directory; avoids the shared-NAT 
 60 req/hr API rate limit. See [ADR-0007](docs/adr/0007-github-registries-via-archive-tarball.md). Affects `oxo2-dataload` (downloader).

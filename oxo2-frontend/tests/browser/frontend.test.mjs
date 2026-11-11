@@ -79,6 +79,28 @@ test('ontology prefixes remain usable without descriptive metadata', async () =>
     } finally { await page.close(); }
 });
 
+const emptySearch = {mappings: {content: [], totalElements: 0, totalPages: 0, number: 0, size: 10}};
+
+for (const [id, curie] of [['EFO_0007837', 'EFO:0007837'], ['EFO:0007837', 'EFO:0007837']]) {
+    test(`OxO v1 term URL /terms/${id} redirects to the subject-side search for ${curie}`, async () => {
+        const page = await browser.newPage();
+        try {
+            await page.route('**/api/**', route => route.fulfill({json:
+                route.request().url().includes('/mappings/search') ? emptySearch : [],
+            }));
+            const base = process.env.UI_BASE_URL || 'http://localhost:20100';
+            await page.goto(`${base}/about`);
+            const search = page.waitForRequest(request => request.url().includes('/mappings/search'));
+            await page.goto(`${base}/terms/${encodeURIComponent(id)}`);
+            await page.waitForURL(`**/search/${encodeURIComponent(curie)}`);
+            assert.deepEqual((await search).postDataJSON().queries, [curie]);
+            // The dead v1 URL is replaced, not pushed: Back returns to where the visitor came from.
+            await page.goBack();
+            assert.equal(new URL(page.url()).pathname.endsWith('/about'), true);
+        } finally { await page.close(); }
+    });
+}
+
 const mappingFixture = {
     mapping_id: 'example', inference_type: 'ASSERTED', mapping_set_id: 'source',
     subject_id: 'MONDO:0000001', subject_iri: 'http://purl.obolibrary.org/obo/MONDO_0000001', subject_label: 'Disease',
