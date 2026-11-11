@@ -315,6 +315,13 @@ function readFieldFilters(raw: string[]): Record<string, string> {
     return filters;
 }
 
+/** Use the same exact/contains semantics for results, suggestions and visibility counts. */
+export function buildColumnFilters(filters: Record<string, string>, exact: Set<string>) {
+    return Object.entries(filters)
+        .filter(([, value]) => value && value.trim() !== "")
+        .map(([id, value]) => ({ id, value: value.trim(), match: exact.has(id) ? "EXACT" : "CONTAINS" }));
+}
+
 function writeFieldFilters(params: URLSearchParams, filters: Record<string, string>): void {
     params.delete(FILTER_PARAM);
     nonEmptyEntries(filters).forEach(([field, value]) => params.append(FILTER_PARAM, `${field}=${value}`));

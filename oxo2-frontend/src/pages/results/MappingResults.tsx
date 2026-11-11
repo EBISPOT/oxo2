@@ -3,8 +3,15 @@ import {useParams, useSearchParams} from "react-router";
 import {Search} from "../../components/search/Search";
 import {SearchInput} from "../../model/Search";
 import {asLabelMatchMode} from "../../model/LabelMatchMode";
-import {asCorpusMode} from "../../model/MappingSetCategory";
-import {asWeakPredicate, WeakPredicate} from "../../model/WeakPredicate";
+import {asCorpusMode, corpusToRequest} from "../../model/MappingSetCategory";
+import {WeakPredicate, WEAK_PREDICATE_ORDER} from "../../model/WeakPredicate";
+import {DEFAULT_INFERENCE_TYPES} from "../../model/InferenceType";
+import {buildColumnFilters, useUrlPagination, useUrlSorting, useUrlInferenceTypes,
+    useUrlFieldFilters, useUrlExactFilters, useUrlWeakPredicates} from "../../util/tableUrlState";
+import {buildSearchRequest} from "./MappingResultsSlice";
+import {useMappingVisibility} from "./useMappingVisibility";
+import {EmptyMappingResults} from "../../components/search/EmptyMappingResults";
+import type {MRT_SortingState} from "material-react-table";
 import {ThemeProvider, createTheme} from '@mui/material/styles';
 import {NormalResultsTable} from "./NormalResultsTable";
 
@@ -25,6 +32,8 @@ const tableTheme = createTheme({
     },
 });
 
+const DEFAULT_SORTING: MRT_SortingState = [];
+
 /**
  * Results page. Parses the query from the route, renders the shared search bar, and
  * the compact NormalResultsTable beneath it.
@@ -43,10 +52,7 @@ function MappingResults() {
     // The predicate checkboxes (ADR-0035). The results table reads the same `wp` param through
     // useUrlWeakPredicates, so the search box above the table and the rows below it stay in step —
     // and re-submitting the search does not silently drop the ticks.
-    const includeWeakPredicates = searchParams
-        .getAll("wp")
-        .map(asWeakPredicate)
-        .filter((predicate): predicate is WeakPredicate => predicate !== null);
+    const [includeWeakPredicates] = useUrlWeakPredicates(true);
     // Show obsolete terms (ADR-0041): the same `obs` param the results table reads, fed back so the form
     // checkbox stays ticked on Back and re-submitting the search keeps it.
     const includeObsolete = searchParams.get("obs") === "1";
@@ -68,6 +74,31 @@ function MappingResults() {
         includeObsolete,
         // A batch of terms is what the multi-term entry produced; keep that mode on Back.
         searchMode: queriesForBackend.length > 1 ? "multiple" : "single",
+    };
+
+    // Observe the same query as the table, then probe the unchecked options against its complete
+    // submitted context. Draft edits in Search never alter these counts until submitted.
+    const [pagination] = useUrlPagination();
+    const [sorting] = useUrlSorting(DEFAULT_SORTING);
+    const [inferenceTypes] = useUrlInferenceTypes(DEFAULT_INFERENCE_TYPES, true);
+    const [filters] = useUrlFieldFilters();
+    const [exactFilters] = useUrlExactFilters();
+    const request = buildSearchRequest(queriesForBackend, pagination.pageIndex, pagination.pageSize,
+        buildColumnFilters(filters, exactFilters), sorting, mappingSetIds, inferenceTypes, true,
+        subjectPrefixes, objectPrefixes, labelMatch, corpusToRequest(corpus), includeWeakPredicates, includeObsolete);
+    const visibility = useMappingVisibility(request);
+    const handleVisibilityChange = (weak: WeakPredicate[], obsolete: boolean) => {
+        // A single navigation keeps both switches and pagination atomic. Push so Back restores
+        // the preceding inclusion settings, while retaining every unrelated filter and sort.
+        setSearchParams(previous => {
+            const next = new URLSearchParams(previous);
+            next.delete('wp');
+            WEAK_PREDICATE_ORDER.filter(code => weak.includes(code)).forEach(code => next.append('wp', code));
+            if (obsolete) next.set('obs', '1');
+            else next.delete('obs');
+            next.delete('page');
+            return next;
+        });
     };
 
     // The form's Clear button resets its own fields, then delegates the results side to us. Every
@@ -100,7 +131,8 @@ function MappingResults() {
 
     return (
         <div>
-            <Search searchInput={searchInput} onClear={handleClear} />
+            <Search searchInput={searchInput} onClear={handleClear} visibility={visibility}
+                onVisibilityChange={handleVisibilityChange} />
 
             <ThemeProvider theme={tableTheme}>
                 <NormalResultsTable
@@ -111,6 +143,8 @@ function MappingResults() {
                     objectPrefixes={objectPrefixes}
                     labelMatch={labelMatch}
                     corpus={corpus}
+                    emptyResults={<EmptyMappingResults visibility={visibility}
+                        onIncludeAll={() => handleVisibilityChange(WEAK_PREDICATE_ORDER, true)} />}
                 />
             </ThemeProvider>
         </div>

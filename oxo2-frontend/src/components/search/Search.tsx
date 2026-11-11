@@ -2,13 +2,15 @@ import { useNavigate } from "react-router";
 import { SearchInput, SearchMode, initialSearchState } from "../../model/Search";
 import { LabelMatchMode, LABEL_MATCH_LABELS, LABEL_MATCH_ORDER, DEFAULT_LABEL_MATCH } from "../../model/LabelMatchMode";
 import { CorpusMode, CORPUS_LABELS, DEFAULT_CORPUS, corpusToUrlParam } from "../../model/MappingSetCategory";
-import { WeakPredicate, WEAK_PREDICATE_ORDER, WEAK_PREDICATE_LABELS, WEAK_PREDICATE_HINTS, WEAK_PREDICATE_SHORT_LABELS, DEFAULT_WEAK_PREDICATES } from "../../model/WeakPredicate";
+import { WeakPredicate, DEFAULT_WEAK_PREDICATES } from "../../model/WeakPredicate";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import React from "react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { useQuery } from "@tanstack/react-query";
 import { CorpusSelector } from "./CorpusSelector";
 import { EntitySuggest } from "./EntitySuggest";
+import { MappingVisibilityOptions } from "./MappingVisibilityOptions";
+import { MappingVisibility } from "../../pages/results/useMappingVisibility";
 import { MappingSetSelector } from "./MappingSetSelector";
 import { OntologySelector } from "./OntologySelector";
 import { TermFileDrop } from "./TermFileDrop";
@@ -28,22 +30,24 @@ const MULTIPLE_EXAMPLE = "UBERON:0002107\nCataract\nhttp://purl.obolibrary.org/o
 
 /**
  * The entry point. A novice arrives wanting to map one term, or a list of terms, between ontologies.
- * Everything that is not that question is behind "More options", as three groups: where mappings
- * should come from (corpus, with a nested picker for specific mapping sets), the normally-hidden
- * predicates, and label-match semantics. The collapsed summary line names any non-default choice
- * hiding in there, so a search arriving via URL never applies an invisible filter.
+ * The normally-hidden mapping options stay visible, with counts on the results page. Corpus,
+ * specific mapping sets and label matching remain under More options. Counts describe the
+ * submitted search; editing criteria hides them until the user submits those changes.
  *
  * There is deliberately no result-order control here: ordering is a results decision, made on the
  * results table whose per-column sort popovers write `?sort`. No `?sort` means the backend ranks
  * by relevance (the provenance-led boost, ADR-0027).
  */
-export function Search({ searchInput = initialSearchState, onClear }: {
+export function Search({ searchInput = initialSearchState, onClear, visibility, onVisibilityChange }: {
     searchInput: SearchInput,
     // Called after the form's own state is reset, on the results page only. The results-table filters,
     // sort and search options all live in the URL query string, and the table keeps a local copy of
     // its filter inputs; clearing both (query string + a table remount) is the results page's job, not
     // the form's — see MappingResults. Absent on the home page, where the form reset is the whole job.
     onClear?: () => void,
+    visibility?: MappingVisibility,
+    onVisibilityChange?: (weak: WeakPredicate[], obsolete: boolean) => void,
+
 }) {
     const navigate = useNavigate();
     const [searchState, setSearchState] = useState<SearchInput>(searchInput);
@@ -157,6 +161,32 @@ export function Search({ searchInput = initialSearchState, onClear }: {
         if (searchInput.searchMode) setSearchMode(searchInput.searchMode);
     }, [searchInput.searchMode]);
 
+    useEffect(() => {
+        setIncludeObsolete(searchInput.includeObsolete ?? false);
+    }, [searchInput.includeObsolete]);
+    useEffect(() => {
+        setSearchState(prev => ({...prev, userSearchInput: searchInput.userSearchInput,
+            sanitizedSearchInput: parseTerms(searchInput.userSearchInput)}));
+    }, [searchInput.userSearchInput]);
+
+    const sameValues = (left: string[], right: string[]) =>
+        JSON.stringify([...left].sort()) === JSON.stringify([...right].sort());
+    const hasPendingSearch = !!onVisibilityChange && (
+        !sameValues(searchState.sanitizedSearchInput, searchInput.sanitizedSearchInput)
+        || !sameValues(subjectPrefixes, searchInput.subjectPrefixes ?? [])
+        || !sameValues(objectPrefixes, searchInput.objectPrefixes ?? [])
+        || !sameValues(selectedIds, searchInput.mappingSetIds ?? [])
+        || labelMatch !== (searchInput.labelMatch ?? DEFAULT_LABEL_MATCH)
+        || corpus !== (searchInput.corpus ?? DEFAULT_CORPUS)
+        || !sameValues(weakPredicates, searchInput.includeWeakPredicates ?? [])
+        || includeObsolete !== (searchInput.includeObsolete ?? false)
+    );
+    const handleVisibilityChange = (weak: WeakPredicate[], obsolete: boolean) => {
+        setWeakPredicates(weak);
+        setIncludeObsolete(obsolete);
+        if (!hasPendingSearch) onVisibilityChange?.(weak, obsolete);
+    };
+
     const setTermText = (userSearchInput: string) => {
         setSearchState((prev) => ({
             ...prev,
@@ -268,13 +298,6 @@ export function Search({ searchInput = initialSearchState, onClear }: {
     }
     if (corpus !== DEFAULT_CORPUS) {
         moreOptionsHints.push(`${CORPUS_LABELS[corpus].toLowerCase()} only`);
-    }
-    if (weakPredicates.length > 0) {
-        moreOptionsHints.push(
-            `also showing ${weakPredicates.map((code) => WEAK_PREDICATE_SHORT_LABELS[code]).join(', ')}`);
-    }
-    if (includeObsolete) {
-        moreOptionsHints.push("including obsolete terms");
     }
     if (labelMatch !== DEFAULT_LABEL_MATCH) {
         moreOptionsHints.push(`label matching: ${LABEL_MATCH_LABELS[labelMatch].toLowerCase()}`);
@@ -401,6 +424,10 @@ export function Search({ searchInput = initialSearchState, onClear }: {
                 </div>
             </div>
 
+            <MappingVisibilityOptions weakPredicates={weakPredicates} includeObsolete={includeObsolete}
+                onChange={handleVisibilityChange} counts={hasPendingSearch ? undefined : visibility}
+                pendingSearch={hasPendingSearch} />
+
             {/* Actions come after both questions they submit, and before the More options
                 disclosure so they don't jump when it opens. */}
             <div className="flex gap-2 mt-4">
@@ -459,55 +486,7 @@ export function Search({ searchInput = initialSearchState, onClear }: {
                             </details>
                         </div>
                     </div>
-                    {/* Group 2: the normally-hidden predicates (ADR-0035). Here rather than
-                        only on the result table because they also decide what the search box
-                        above will SUGGEST: with both unticked, an entity whose every mapping is
-                        an xref is not offered, since picking it would land on an empty table. */}
-                    <div>
-                        <span className="text-tertiary mb-2 block">Also show</span>
-                        {WEAK_PREDICATE_ORDER.map((predicate) => (
-                            <label key={predicate} className="flex items-start gap-2 mb-1">
-                                <input
-                                    type="checkbox"
-                                    className="mt-1"
-                                    checked={weakPredicates.includes(predicate)}
-                                    onChange={(event) =>
-                                        setWeakPredicates(
-                                            WEAK_PREDICATE_ORDER.filter((code) =>
-                                                code === predicate
-                                                    ? event.target.checked
-                                                    : weakPredicates.includes(code)
-                                            )
-                                        )
-                                    }
-                                />
-                                <span>
-                                    <span className="text-base">{WEAK_PREDICATE_LABELS[predicate]}</span>
-                                    <span className="text-tertiary text-sm block">
-                                        {WEAK_PREDICATE_HINTS[predicate]}
-                                    </span>
-                                </span>
-                            </label>
-                        ))}
-                        {/* Show obsolete terms (ADR-0041). One switch drives this picker's rows, the
-                            results table and the typeahead, so all three hide or reveal them together. */}
-                        <label className="flex items-start gap-2 mb-1 mt-2">
-                            <input
-                                type="checkbox"
-                                className="mt-1"
-                                checked={includeObsolete}
-                                onChange={(event) => setIncludeObsolete(event.target.checked)}
-                            />
-                            <span>
-                                <span className="text-base">Obsolete terms</span>
-                                <span className="text-tertiary text-sm block">
-                                    Terms an ontology has deprecated. Hidden by default; a live term's
-                                    mappings to a dead one are hidden too.
-                                </span>
-                            </span>
-                        </label>
-                    </div>
-                    {/* Group 3: how free-text terms match labels (ADR-0026). */}
+                    {/* Group 2: how free-text terms match labels (ADR-0026). */}
                     <div>
                         <label htmlFor="label-match" className="text-tertiary mb-2 block">
                             Label matching
