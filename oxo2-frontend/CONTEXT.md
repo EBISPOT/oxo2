@@ -43,6 +43,15 @@ six count labels are explained terms (see § Explained terms); the release-date 
 self-explanatory.
 - **`/search/:curies`** → `MappingResults` — paged mapping results for the given CURIE(s). Page, sort, and filters are
 carried in the query string (see § State management), so a result view is shareable and restores on Back from a detail page.
+- **`/terms/:id`** → `LegacyTermRedirect` — OxO v1's per-term page URL, still linked from outside (the GWAS
+Catalog's "Trait in OXO" button points at `/spot/oxo/terms/EFO_0007837`). Accepts the id as v1 did, a CURIE
+or the OBO short form, normalises it with `util/legacyTerm.ts` (`EFO_0007837` → `EFO:0007837`; the backend
+only recognises a CURIE by its colon) and redirects, replacing the history entry, to `/search/<curie>`.
+Deliberately the subject-side search, not a both-sides term view: for a well-connected term the object side
+is dominated by text-mapping labels that merely point at it ([ADR-0030](../docs/adr/0030-subject-side-default-search.md)
+measured 10 → 87 rows for `MONDO:0005180`). A term with no outgoing mappings therefore shows an empty
+results page, which is the honest answer. Part of the v1 compatibility surface
+([ADR-0004](../docs/adr/0004-backwards-compatible-with-oxo-v1.md)).
 - **`/map`** → cross-ontology results for `?from=…&to=…` (source→target prefixes), bookmarkable; the
 pasted-term-list (batch) variant is POST-only and not bookmarkable ([ADR-0024](../docs/adr/0024-cross-ontology-mapping.md)).
 - **`/mapping/:id`** → `MappingDetailsPage` → `MappingDetails` — detail view for a single mapping, including the
