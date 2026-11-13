@@ -1,5 +1,7 @@
 package uk.ac.ebi.spot.oxo.support;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.core.JsonToken;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
@@ -29,6 +31,7 @@ import java.util.UUID;
  * GNU sort spills the compact (group, source) pairs to disk, and counts use a mapped disk index.
  */
 public class SupportedMappingsLoader {
+    private static final Logger logger = LoggerFactory.getLogger(SupportedMappingsLoader.class);
     private static final JsonMapper MAPPER = JsonMapper.builder().build();
     static final String COUNT = "asserted_source_count";
 
@@ -104,7 +107,7 @@ public class SupportedMappingsLoader {
                     }
                     index.accept(enriched);
                     Files.delete(enriched);
-                    System.out.println("Indexed asserted mappings with support counts: " + file);
+                    logger.info("Indexed asserted mappings with support counts: {}", file);
                 }
             }
         } finally {

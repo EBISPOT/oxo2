@@ -28,13 +28,31 @@ public class OpenApiConfig {
                         .description("""
                                 REST API for OxO2, an SSSOM-compliant ontology mapping service.
 
-                                All endpoints are rooted at `/api/v2` and return SSSOM/OxO2-shaped \
-                                JSON. The service is a thin query layer over Apache Solr: there is \
+                                The main API is rooted at `/api/v2`, with SSSOM endpoints under \
+                                `/api/sssom` and legacy OxO compatibility endpoints under `/api`. \
+                                Responses use the corresponding SSSOM/OxO2 or legacy shapes. The service is a thin query layer over Apache Solr: there is \
                                 no write API — mappings and mapping sets are populated by the \
                                 offline dataload pipeline.
 
-                                Results carry a soft inference-type ranking (asserted mappings rank \
-                                above SSSOM-inferred ones; shorter inference chains rank higher).""")
+                                Default search order is distinct direct asserted source count descending, \
+                                then relevance score descending. Three source sets rank above two, two \
+                                above one, and one above zero, regardless of provenance or query score. \
+                                A column sort replaces this default order.
+
+                                Sources are distinct asserted mapping sets for the same subject, predicate, \
+                                modifier and object across the dataset, unaffected by search filters. \
+                                Repeated records and extra justification methods do not add source sets. \
+                                Missing counts are treated as zero. This is not a confidence estimate \
+                                or independent-evidence count.
+
+                                At equal source count, query relevance is multiplied by provenance, \
+                                predicate strength, manual curation and confidence. Provenance favours \
+                                ontology assertions, then curated assertions, then inferences spanning \
+                                fewer ontologies.
+
+                                `GET /api/v2/mappings/{mappingId}/support` lists every record in that \
+                                group, including the selected record and those hidden by search filters, \
+                                with group-wide justification-method and asserted-source counts.""")
                         .contact(new Contact()
                                 .name("EBI SPOT")
                                 .url("https://github.com/EBISPOT/oxo2"))

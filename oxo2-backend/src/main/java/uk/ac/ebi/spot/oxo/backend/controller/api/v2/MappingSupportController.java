@@ -1,6 +1,12 @@
 package uk.ac.ebi.spot.oxo.backend.controller.api.v2;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
@@ -15,22 +21,56 @@ import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import uk.ac.ebi.spot.oxo.backend.service.helper.SolrQueryBuilder;
 
 /** Dataset-wide evidence for one mapping group, independent of search visibility filters. */
+@Tag(name = "Mappings")
 @RestController
 @RequestMapping(path = "/api/v2/mappings", produces = "application/json")
 public class MappingSupportController {
     private static final Logger logger = LoggerFactory.getLogger(MappingSupportController.class);
     @Autowired private OxOSolrClient solrClient;
 
-    public record SupportResponse(MappingSearchResponse.MappingPage mappings,
-                                  long justificationMethodCount, long assertedSourceCount) {}
+    @Schema(description = "Dataset-wide support for one subject/predicate/modifier/object group.")
+    public record SupportResponse(
+            @Schema(description = "Page of summary records, including the selected record in the group. "
+                    + "totalElements counts all group records; number is the zero-based page. "
+                    + "Explanation trees are omitted; fetch each record's details to inspect them.")
+            MappingSearchResponse.MappingPage mappings,
+            @Schema(description = "Distinct nonblank mapping_justification identifiers across the entire group, "
+                    + "not just this page.", minimum = "0")
+            long justificationMethodCount,
+            @Schema(description = "Distinct nonblank mapping_set_id values among ASSERTED records in the "
+                    + "entire group. Inference premises making other statements are excluded. "
+                    + "Zero for inferred-only groups; not a count of independent evidence.", minimum = "0")
+            long assertedSourceCount) {}
 
     @GetMapping("/{mappingId}/support")
     @Operation(summary = "All supporting records for a mapping",
-            description = "Paged records sharing the mapping's subject, predicate, modifier and object. "
-                    + "Counts cover the whole group across the dataset, including records hidden by search filters. "
-                    + "Asserted sources are distinct mapping sets, not a claim of independent evidence.")
-    public ResponseEntity<SupportResponse> support(@PathVariable String mappingId,
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+            description = """
+                    All records sharing the selected mapping's indexed subject, predicate, modifier and object, \
+                    including the selected record itself. Positive and negated statements remain separate.
+
+                    This endpoint is independent of search filters: corpus, mapping-set, justification, \
+                    weak-predicate and obsolete-term filters do not restrict the group or its counts. \
+                    Records are not collapsed. They are ordered by the default ranking, then index ID \
+                    for stable paging. Pages beyond the end return empty content with the full totals.
+
+                    Counts cover the entire dataset-wide group, not the current page. Asserted sources \
+                    are distinct mapping sets directly asserting this statement, not inference premises \
+                    or a claim of independent evidence. Summary records omit explanation trees. Use \
+                    `GET /api/sssom/mappings/{id}` for an individual record's full details.""")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Page of supporting records and group-wide counts"),
+            @ApiResponse(responseCode = "400", description = "Invalid page or size, or page × size exceeds 2147483647",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Mapping ID not found", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Failed to retrieve supporting records", content = @Content)
+    })
+    public ResponseEntity<SupportResponse> support(
+            @Parameter(description = "ID of any mapping record in the group (not a subject CURIE).")
+            @PathVariable String mappingId,
+            @Parameter(description = "Zero-based page number.", schema = @Schema(type = "integer", format = "int32", minimum = "0", defaultValue = "0"))
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Records per page.", schema = @Schema(type = "integer", format = "int32", minimum = "1", maximum = "100", defaultValue = "20"))
+            @RequestParam(defaultValue = "20") int size) {
         if (page < 0 || size < 1 || size > MappingController.MAX_PAGE_SIZE
                 || (long) page * size > Integer.MAX_VALUE) {
             return ResponseEntity.badRequest().build();

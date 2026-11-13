@@ -33,8 +33,8 @@ A REST API rooted at `/api/v2/`:
 - **`GET /api/v2/mappings/{subjectId}`** — list mappings whose subject is `subjectId` (URL-decoded). Paged.
 - **`POST /api/v2/mappings/search`** — mapping search. Body: `MappingSearchRequest` (filters,
 sort, paging, and a multi-select `inferenceType` filter — [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)).
-Results carry a soft multiplicative edismax ranking (asserted &gt; SSSOM; shorter chains
-higher). Returns `MappingSearchResponse`. Accepts `subjectPrefixes` / `objectPrefixes` for
+Results sort by distinct direct asserted source count descending, then a multiplicative relevance
+score (asserted &gt; SSSOM; fewer ontologies spanned ranks higher). Returns `MappingSearchResponse`. Accepts `subjectPrefixes` / `objectPrefixes` for
 cross-ontology mapping (see § Cross-ontology mapping).
 - **`GET /api/v2/mappings?from=DOID&to=EFO,MONDO`** — the bookmarkable source→target view: the mappings
 collection filtered by source/target prefix via query params (no action verb), mirroring v1's
@@ -257,11 +257,21 @@ would otherwise be dropped by *any* corpus choice — making this control secret
 The two axes stay orthogonal. Before the reindex that populates the field, naming a corpus returns only
 inferences, which is why the default emits no clause at all.
 
-#### Provenance-led ranking
+#### Direct support first, then provenance-weighted relevance
+
+Default search order is `def(asserted_source_count,0) desc,score desc`, with `spo_key asc` appended
+for stable grouped paging. More distinct source sets directly asserting the same statement always
+rank first, even ahead of a higher-provenance or better text match with fewer sources. Explicit
+column sorting overrides this default. The v2 and SSSOM query builders share the sort helper.
+See [ADR-0054](../docs/adr/0054-mapping-support-and-corroboration-ranking.md).
+
+The count covers the whole dataset-wide group, regardless of search filters. Repeated records,
+extra methods within a set, inference premises and blank source IDs do not add sources. Missing
+statistics sort as zero; the schema field must exist before deploying the query builder.
 
 Ranking is a **multiplicative** edismax `boost` (`SolrQueryBuilder.RANKING_BOOST`), not an additive `bq`: an
 additive boost is skewed by term idf (ASSERTED is common, SSSOM rare) and would invert the intended order
-([ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)). Five factors multiply together:
+([ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)). At equal source count, four factors multiply together:
 
 1. **Provenance** — ontology-asserted (10000) &gt; curator-asserted (1000) &gt; inferred (100, divided by 5 per
    extra distance unit; distance measures ontology span). Keyed on `inference_type`, so a doc with no category reads as "asserted, corpus unknown" and
@@ -271,18 +281,13 @@ additive boost is skewed by term idf (ASSERTED is common, SSSOM rare) and would 
    strict-vs-weak identity split is ADR-0016's, not a second strength model.
 3. **Curation** — `semapv:ManualMappingCuration` (1.3) &gt; anything else (1.0).
 4. **Confidence** — `1 + 0.3 × confidence`; absent confidence contributes exactly 1.
-5. **Support** — `1 + min(0.2, 0.05 × max(0, asserted_source_count − 1))`. This counts distinct
-   asserted mapping sets for the **whole group across the dataset**, independent of search filters.
-   Repeated records from one set, inference paths and missing sources add no corroboration. Missing
-   statistics contribute 1. The schema field must exist before deploying this query builder.
-
 The initial asserted mapping load computes `asserted_source_count` across all generated source files
 before indexing complete documents. There is no post-index backfill stage.
-It is a bounded preference for corroboration, not a measure of independent confirmation.
+Source-set count is a corroboration signal, not a measure of independent confirmation.
 
 The **provenance boost dominates the remaining factors**: the closest two provenance values differ by 5×, more than the
-widest combined swing of factors 2–5 (2.0 × 1.3 × 1.3 × 1.2 = 4.056), so no predicate/curation/confidence/support advantage can
-lift a curated mapping above an ontology one at equal query relevance — "trust provenance over predicate". The other factors blend, and the final score also multiplies text relevance; this is not a strict sort by provenance. `SolrQueryBuilder`
+widest combined swing of factors 2–4 (2.0 × 1.3 × 1.3 = 3.38), so no predicate/curation/confidence advantage can
+lift a curated mapping above an ontology one at equal source count and query relevance — "trust provenance over predicate". The other factors blend, and the final score also multiplies text relevance; this is not a strict sort by provenance. `SolrQueryBuilder`
 `.rankingTiersAreLexicographic()` encodes that inequality and is asserted by a unit test, so a future tweak to
 any constant is checked against it.
 

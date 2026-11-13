@@ -22,6 +22,18 @@ The backend publishes an OpenAPI 3 description of its REST API. Once the backend
 `http://localhost:8081/swagger-ui.html` and the raw OpenAPI spec at
 `http://localhost:8081/v3/api-docs`.
 
+`GET /api/v2/mappings/{mappingId}/support?page=0&size=20` returns all records for the selected
+mapping's subject, predicate, modifier and object, including the selected record. It ignores search
+filters and returns a `mappings` page plus group-wide `justificationMethodCount` and
+`assertedSourceCount`. Pages are zero-based; size is 1–100. Asserted sources count distinct mapping
+sets directly asserting that statement, not inference premises or independent evidence.
+
+Default search order puts more distinct direct asserted source sets first: three above two, two
+above one, and one above zero. The existing relevance and provenance score breaks ties. Repeated
+records from one set and extra justification methods do not increase the source count. Explicit
+sorting replaces this default order. Swagger documents the full response and error contract;
+[ADR-0054](docs/adr/0054-mapping-support-and-corroboration-ranking.md) records the design.
+
 ## Running OxO2 using Docker
 
 ## Prerequisites
