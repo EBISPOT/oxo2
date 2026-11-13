@@ -8,6 +8,7 @@ import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {ChevronDownIcon, ChevronUpIcon} from "@heroicons/react/24/solid";
 import InferredMappings from "./InferredMappings.tsx";
 import InferredMappingGraph from "../../components/mapping/InferredMappingGraph.tsx";
+import {SupportingMappings} from "../../components/mapping/SupportingMappings";
 import {ReportIncorrectMapping} from "../../components/mapping/ReportIncorrectMapping";
 
 const hasValue = (value?: string | number | string[] | Record<string, string> | InferredMapping | InferredMapping[]): boolean => {
@@ -115,6 +116,8 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
             {mapping.inferenceType === 'ASSERTED' && (
                 <ReportIncorrectMapping key={mapping.mappingId} mapping={mapping} />
             )}
+
+            <SupportingMappings key={mapping.mappingId} mappingId={mapping.mappingId} inferenceType={mapping.inferenceType} />
 
             <Section title="Inference Details" compact={false}
                 renderComponent={!!mapping.explanation || hasAnyValue([MappingFields.assertedMappings])}>

@@ -160,7 +160,7 @@ run_json2solr() {
     local input_dir=$1
     local solr_url=$2
 
-    if ! "$SCRIPT_DIR/json2solr.sh" "$input_dir" "$solr_url"; then
+    if ! "$SCRIPT_DIR/json2solr.sh" "$input_dir" "$solr_url" "${@:3}"; then
         echo "Failed to post $input_dir to $solr_url" >&2
         exit 1
     fi
@@ -299,7 +299,7 @@ fi
 if should_run index-asserted; then
     start_time=$(date +%s)
     echo  "###################"  json2solr mappings ...
-    run_json2solr "$OXO2_DATA/sssom-as-json/mapping" "$SOLR_URL/oxo2-mappings"
+    run_json2solr "$OXO2_DATA/sssom-as-json/mapping" "$SOLR_URL/oxo2-mappings" --asserted-support
     echo  "###################"  json2solr mappingSets ...
     run_json2solr "$OXO2_DATA/sssom-as-json/mappingSet" "$SOLR_URL/oxo2-mappingsets"
     end_time=$(date +%s)

@@ -33,9 +33,10 @@ public class SolrQueryBuilder {
 
     // ---------- Provenance-led ranking (ADR-0027, superseding ADR-0011's boost) ----------
     //
-    // Ranking tiers, strongest first. Each tier is a multiplicative factor; the tiers below only ever
-    // break ties within a tier above (see #rankingTiersAreLexicographic below and the unit test of the
-    // same name). "Trust provenance over predicate": who asserts a mapping outweighs how strong the
+    // Multiplicative ranking factors. Provenance dominates the combined range of the other
+    // factors (see #rankingTiersAreLexicographic); those other factors blend within a provenance
+    // tier. The final score still multiplies query relevance, so this is a soft preference.
+    // "Trust provenance over predicate": who asserts a mapping outweighs how strong the
     // predicate is, because a skos:exactMatch in an unreviewed lexical-match file is weaker evidence
     // than an ontology's own skos:closeMatch cross-reference.
     //
@@ -44,6 +45,7 @@ public class SolrQueryBuilder {
     //                    broad/narrow > everything else
     //   3. Curation      manually curated > everything else
     //   4. Confidence    the mapping's own confidence, when it declares one
+    //   5. Support       distinct asserted source sets for the group, across the dataset
     //
     // Recency is deliberately NOT a boost factor: mapping_date is sparsely populated and a date
     // function in the boost would silently reorder on every query. It is offered as an explicit sort.
@@ -79,6 +81,13 @@ public class SolrQueryBuilder {
 
     /** Tier 4. confidence in [0,1] scales the boost by 1 + this; absent confidence contributes 1.0. */
     private static final double CONFIDENCE_WEIGHT = 0.3;
+
+    // Dataset-wide corroboration by distinct asserted mapping sets, never raw record count.
+    // One source (or missing statistics) adds nothing; each extra source adds 5%, capped at 20%.
+    private static final double SUPPORT_MAX_BONUS = 0.2;
+    private static final double SUPPORT_PER_SOURCE = 0.05;
+    private static final String SUPPORT_FACTOR = "sum(1,min(" + num(SUPPORT_MAX_BONUS)
+            + ",mul(" + num(SUPPORT_PER_SOURCE) + ",max(0,sub(def(asserted_source_count,0),1)))))";
 
     /**
      * Predicate IRIs by tier-2 strength. A doc matches at most one IRI, so the strengths are unordered
@@ -127,12 +136,12 @@ public class SolrQueryBuilder {
      */
     private static final String RANKING_BOOST = "mul("
             + provenanceFactor() + "," + predicateStrengthFactor() + ","
-            + curationFactor() + "," + confidenceFactor() + ")";
+            + curationFactor() + "," + confidenceFactor() + "," + SUPPORT_FACTOR + ")";
 
     /**
      * Tier 1. Keyed on inference_type (always present) rather than on the category, so that a doc with
      * no category is read as "asserted, corpus unknown" — the pre-reindex state — and not as inferred.
-     * Inferred docs decay by {@link #DISTANCE_DECAY} per hop; a missing distance reads as one hop.
+     * Inferred docs decay by {@link #DISTANCE_DECAY} per distance unit (ontology span); a missing distance reads as one.
      */
     private static String provenanceFactor() {
         String assertedTier = "if(termfreq(" + MappingEnum.MAPPING_SET_CATEGORY.getField() + ",'"
@@ -179,9 +188,9 @@ public class SolrQueryBuilder {
     }
 
     /**
-     * The invariant that makes the tiers a ranking rather than a blend: the closest two provenance
-     * values differ by more than the widest possible swing of every lower tier combined, so no
-     * predicate, curation or confidence advantage can lift a curated mapping above an ontology one.
+     * The closest two provenance factors differ by more than the widest combined swing of
+     * predicate, curation, confidence and support. This preserves provenance priority in the boost
+     * at equal query relevance; it does not impose a strict provenance sort on the final score.
      * Asserted by {@code SolrQueryBuilderTest#rankingTiersAreLexicographic}; kept here so a future
      * tweak to any constant above is checked against it.
      *
@@ -193,7 +202,7 @@ public class SolrQueryBuilder {
                 DISTANCE_DECAY);
         double widestLowerTierSwing = (PREDICATE_STRICT_IDENTITY / PREDICATE_OTHER)
                 * (CURATION_MANUAL / CURATION_OTHER)
-                * (1 + CONFIDENCE_WEIGHT);
+                * (1 + CONFIDENCE_WEIGHT) * (1 + SUPPORT_MAX_BONUS);
         return closestProvenanceRatio > widestLowerTierSwing;
     }
 

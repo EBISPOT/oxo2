@@ -437,7 +437,11 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                             ))}
                         </div>
                         {isMultiMapping(row.original) && (
-                            <span className="text-xs text-gray-500">{row.original.groupSize} mappings</span>
+                            <Link className="text-xs text-link-default hover:underline"
+                                title="View all supporting records across the dataset"
+                                to={`/mapping/${encodeURIComponent(row.original.mappingId)}#supporting-mappings`}>
+                                {row.original.groupSize} matching records · View all support
+                            </Link>
                         )}
                     </div>
                 ),
@@ -545,7 +549,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             const overflow = total - members.length;
             return (
                 <div className="px-4 py-2">
-                    <div className="text-sm font-medium mb-2">{total} mappings for this triple</div>
+                    <div className="text-sm font-medium mb-2">{total} records matching your search for this mapping</div>
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-left text-gray-500">
@@ -616,7 +620,11 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                     </table>
                     {overflow > 0 && (
                         <div className="mt-2 text-sm text-tertiary">
-                            +{overflow} more not shown
+                            {overflow} more matching records.{' '}
+                            <Link className="text-link-default hover:underline"
+                                to={`/mapping/${encodeURIComponent(row.original.mappingId)}#supporting-mappings`}>
+                                View all supporting mappings
+                            </Link>
                         </div>
                     )}
                 </div>
