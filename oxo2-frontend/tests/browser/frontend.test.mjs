@@ -115,9 +115,16 @@ const mappingFixture = {
 
 async function openMapping(mapping = mappingFixture, olsStatus = 200) {
     const page = await browser.newPage({viewport: {width: 1440, height: 1000}});
-    await page.route('**/api/**', route => route.fulfill({json:
-        route.request().url().includes('/api/sssom/mappings/') ? mapping : {mapping_set_id: 'source', mapping_set_title: 'Example disease mappings', issue_tracker: 'https://github.com/example/ontology/issues'},
-    }));
+    await page.route('**/api/**', route => {
+        if (new URL(route.request().url()).pathname.endsWith('/support')) {
+            return route.fulfill({json: {
+                mappings: {content: [mapping], totalElements: 1, totalPages: 1, number: 0, size: 20},
+                justificationMethodCount: 1, assertedSourceCount: mapping.inference_type === 'ASSERTED' ? 1 : 0,
+            }});
+        }
+        return route.fulfill({json: route.request().url().includes('/api/sssom/mappings/') ? mapping
+            : {mapping_set_id: 'source', mapping_set_title: 'Example disease mappings', issue_tracker: 'https://github.com/example/ontology/issues'}});
+    });
     await page.route('https://www.ebi.ac.uk/ols4/api/terms?**', route => route.fulfill({status: olsStatus, json: {
         _embedded: {terms: route.request().url().includes('MONDO') ? [{
             iri: mapping.subject_iri, obo_id: mapping.subject_id,
@@ -233,7 +240,7 @@ test('asserted mappings precede the graph and fit the details panel without hori
             await page.setViewportSize({width, height: 1000});
             const container = page.locator('.MuiTableContainer-root');
             assert.ok(await container.evaluate(el => el.scrollWidth <= el.clientWidth + 1), `Table overflows at ${width}px`);
-            assert.equal(await page.getByRole('columnheader').count(), 6);
+            assert.equal(await container.getByRole('columnheader').count(), 6);
             if (process.env.UI_SCREENSHOT_DIR) {
                 await page.screenshot({path: `${process.env.UI_SCREENSHOT_DIR}/asserted-table-${width}.png`, fullPage: true, animations: 'disabled'});
             }

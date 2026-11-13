@@ -514,7 +514,7 @@ if should_run index-asserted; then
     start_time=$(date +%s)
     echo "###################" json2solr mappings...
     singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
-        /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/sssom-as-json/mapping" "$SOLR_URL/oxo2-mappings"
+        /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/sssom-as-json/mapping" "$SOLR_URL/oxo2-mappings" --asserted-support
     echo "###################" json2solr mappingSets...
     singularity exec --bind "$OXO2_DATA:$OXO2_DATA" "$SIF_IMAGE" \
         /opt/oxo/oxo2-dataload/json2solr.sh "$OXO2_DATA/sssom-as-json/mappingSet" "$SOLR_URL/oxo2-mappingsets"

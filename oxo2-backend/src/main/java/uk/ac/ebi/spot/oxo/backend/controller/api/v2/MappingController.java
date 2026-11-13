@@ -108,6 +108,19 @@ public class MappingController {
                     multi-select inference-type filter, sorting, paging, and optional same-SPO row \
                     collapsing.
 
+                    **Default ranking and support.** Sort by distinct direct asserted source count \
+                    descending, then relevance score descending. Three source sets rank above two, \
+                    two above one, and one above zero, regardless of provenance or query score. \
+                    At equal source count, query relevance is multiplied by provenance, predicate \
+                    strength, manual curation and confidence. Sources are distinct asserted mapping \
+                    sets for the same subject, predicate, modifier and object across the dataset, \
+                    unaffected by search filters. Repeated records or methods within one set do not \
+                    increase that count. Missing counts are treated as zero. Explicit sorting replaces \
+                    this default order. Collapsed rows select the highest-scoring matching record; \
+                    inline expansion is limited to that record plus 20 others. To page through all \
+                    supporting records regardless of search filters, use \
+                    `GET /api/v2/mappings/{mappingId}/support`.
+
                     **Subject-side matching.** A mapping search is asked from the subject's \
                     perspective, so each query term matches the subject side only: an IRI → \
                     `subject_iri`, a CURIE → `subject_id` (prefix normalised), anything else → the \

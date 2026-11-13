@@ -204,16 +204,11 @@ class SssomQueryBuilderTest {
     }
 
     @Test
-    void relevanceIsPrimarySortWithSpoKeyTiebreaker() {
+    void sourceCountPrecedesRelevanceAndSpoKeyTiebreaker() {
         SolrQuery query = SssomQueryBuilder.buildMappingsQuery(List.of(), true, PAGE_OF_TEN);
 
-        // score desc must precede the collapse's spo_key tiebreaker, or the page would order by the
-        // opaque spo_key hash and the provenance boost would be dead weight.
-        assertThat(query.getSorts()).isNotEmpty();
-        assertThat(query.getSorts().get(0).getItem()).isEqualTo(SolrConstants.SCORE);
-        assertThat(query.getSorts().get(0).getOrder()).isEqualTo(SolrQuery.ORDER.desc);
-        assertThat(query.getSorts()).anySatisfy(
-                sort -> assertThat(sort.getItem()).isEqualTo(MappingEnum.SPO_KEY.getField()));
+        assertThat(query.getSortField())
+                .isEqualTo("def(asserted_source_count,0) desc,score desc,spo_key asc");
     }
 
     @Test
