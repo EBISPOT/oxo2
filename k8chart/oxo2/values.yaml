@@ -26,15 +26,23 @@ solr:
   replicaCount: 1
   # Explicit heap: without SOLR_HEAP the Solr launcher defaults to 512m, which cannot serve
   # grouping/collapse queries on the full index (and OOM-killed the HPC dataload Solr at dev
-  # scale). The container memory sizes leave the heap headroom for JVM overhead; the OS page
-  # cache the index relies on is reclaimable, so the limit does not need to cover the index.
+  # scale).
   heap: 4g
+  # Memory: the launcher pre-touches the whole heap (-Xms = -Xmx, AlwaysPreTouch), so resident
+  # memory sits at heap + ~0.4Gi from the first minute. Everything above that is the OS page cache
+  # for the index, which grows until the container reaches its limit and is reclaimable, so the
+  # limit does not need to cover the index. The request covers the working set observed in
+  # production (up to ~7Gi), so Solr is not running above its request and first in line for
+  # eviction; the limit leaves ~7.5Gi of page cache.
+  # CPU: Solr idles near zero but query bursts run at 2-4 cores for tens of minutes. The request
+  # reserves 2 cores for such a burst should the node become contended; there is deliberately no
+  # CPU limit, so a burst can use whatever the node has spare instead of being throttled.
   resources:
     requests:
-      cpu: 1
-      memory: 5Gi
-    limits:
+      cpu: 2
       memory: 8Gi
+    limits:
+      memory: 12Gi
   service:
     port: 8983
     containerPort: 8983
