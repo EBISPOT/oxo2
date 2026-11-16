@@ -1,7 +1,7 @@
 import {ReactNode, useId, useState} from "react";
 import {InferredMapping, Mapping, MappingFields} from "../../model/Mapping";
 import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
-import {Link, useNavigate} from "react-router";
+import {Link, useLocation, useNavigate} from "react-router";
 import {mappingSetHref} from "../../util/mappingSetUrl";
 import {MappingItem} from "../../components/mapping/MappingItem";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
@@ -64,9 +64,8 @@ function Section({ title, children, renderComponent = true, useHideShow = true, 
 
 function MappingDetails({ mapping }: { mapping: Mapping }) {
     const navigate = useNavigate();
-    // React Router keeps its history index in window.history.state.idx; 0 means this page was
-    // reached directly (shared link, bookmark), so there are no results to go back to.
-    const hasInAppHistory = (window.history.state?.idx ?? 0) > 0;
+    // Supporting records preserve this destination; browser history may contain other mappings.
+    const returnTo: string | undefined = useLocation().state?.returnTo;
 
     if (!mapping) {
         return (
@@ -94,9 +93,9 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                 </div>
                 <button
                     className="button-primary text-base font-bold px-4 py-1"
-                    onClick={() => hasInAppHistory ? navigate(-1) : navigate("/")}
+                    onClick={() => navigate(returnTo ?? "/")}
                 >
-                    {hasInAppHistory ? "Back to results" : "New search"}
+                    {returnTo ? "Back to results" : "New search"}
                 </button>
             </div>
 
