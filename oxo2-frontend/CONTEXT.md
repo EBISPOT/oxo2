@@ -61,6 +61,11 @@ without any prior search. A results table still passes the clicked mapping throu
 placeholder data — it paints immediately, then the fetched document replaces it. That document is the full mapping,
 where the search response carries only the fields in its `fieldList`; the provenance, mapping-set and subject/object
 detail sections depend on the fetch.
+Mapping links carry the originating results URL (including query parameters and hash) in router
+state. Supporting-record links retain that destination. **Back to results** navigates to it directly,
+rather than stepping back through mapping visits; reloading preserves it. Without an originating
+results URL, the action remains **New search**, including after following supporting records.
+`MappingDetailsLink` shares this behavior across row actions, group-support links and support records.
 - **`/inferences`** and **`/inferences/*`** → `InferencesPage` — resolution surface for inferred mapping sets: the
 cross-set `https://www.ebi.ac.uk/oxo2/inferences` set, and per-source OWL sets via the `*` splat. Fetches the set
 via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/adr/0012-resolvable-inference-set-iris.md)).

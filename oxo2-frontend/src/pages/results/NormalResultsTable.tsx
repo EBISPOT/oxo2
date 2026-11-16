@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useMemo, useRef, useState, ReactNode} from "react";
-import {Link, useNavigate} from "react-router";
+import {Link} from "react-router";
+import {MappingDetailsLink} from "../../components/mapping/MappingDetailsLink";
 import {mappingSetHref} from "../../util/mappingSetUrl";
 import {emptyMappingPage, MappingPage, exportMappings, fromJson, buildSearchRequest}
     from "./MappingResultsSlice";
@@ -150,7 +151,6 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
       // views. (Mapping provider is hidden by default in
       // both views — see initialState — but stays revealable via the columns menu.)
       variant?: "search" | "set-detail" }) {
-    const navigate = useNavigate();
     const isSetDetail = variant === "set-detail";
     const [isExporting, setIsExporting] = useState(false);
     const [reportMappingId, setReportMappingId] = useState<string | null>(null);
@@ -437,11 +437,11 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                             ))}
                         </div>
                         {isMultiMapping(row.original) && (
-                            <Link className="text-xs text-link-default hover:underline"
+                            <MappingDetailsLink className="text-xs text-link-default hover:underline"
                                 title="View all supporting records across the dataset"
                                 to={`/mapping/${encodeURIComponent(row.original.mappingId)}#supporting-mappings`}>
                                 {row.original.groupSize} matching records · View all support
-                            </Link>
+                            </MappingDetailsLink>
                         )}
                     </div>
                 ),
@@ -608,7 +608,9 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                                         <Tooltip title="View mapping details">
                                             <IconButton
                                                 size="small"
-                                                onClick={() => navigate(`/mapping/${encodeURIComponent(member.mappingId)}`, { state: { mapping: member } })}
+                                                component={MappingDetailsLink}
+                                                to={`/mapping/${encodeURIComponent(member.mappingId)}`}
+                                                state={{mapping: member}}
                                             >
                                                 <EyeIcon className="h-4 w-4" />
                                             </IconButton>
@@ -621,10 +623,10 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                     {overflow > 0 && (
                         <div className="mt-2 text-sm text-tertiary">
                             {overflow} more matching records.{' '}
-                            <Link className="text-link-default hover:underline"
+                            <MappingDetailsLink className="text-link-default hover:underline"
                                 to={`/mapping/${encodeURIComponent(row.original.mappingId)}#supporting-mappings`}>
                                 View all supporting mappings
-                            </Link>
+                            </MappingDetailsLink>
                         </div>
                     )}
                 </div>
@@ -669,10 +671,9 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             <Tooltip title="View mapping details">
                 <IconButton
                     size="small"
-                    onClick={() => {
-                        const mapping = row.original;
-                        navigate(`/mapping/${encodeURIComponent(mapping.mappingId)}`, { state: { mapping } });
-                    }}
+                    component={MappingDetailsLink}
+                    to={`/mapping/${encodeURIComponent(row.original.mappingId)}`}
+                    state={{mapping: row.original}}
                 >
                     <EyeIcon className="h-5 w-5" />
                 </IconButton>

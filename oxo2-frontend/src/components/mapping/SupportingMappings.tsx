@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {Link, useLocation} from 'react-router';
+import {MappingDetailsLink} from './MappingDetailsLink';
 import {get} from '../../app/api';
 import {MappingSearchResponse, fromMappingResponse} from '../../pages/results/MappingResultsSlice';
 import {mappingJustificationLabel, mappingJustificationShortName} from '../../model/MappingJustification';
@@ -73,9 +74,9 @@ export function SupportingMappings({mappingId, inferenceType}: {mappingId: strin
                                 <td className="py-2 pr-4">{mapping.confidence ?? '—'}</td>
                                 <td className="py-2 pr-4 whitespace-nowrap">
                                     {mapping.mappingId === mappingId ? <span>Current record</span> :
-                                        <Link className="text-link-default hover:underline" to={`/mapping/${encodeURIComponent(mapping.mappingId)}`}>
+                                        <MappingDetailsLink className="text-link-default hover:underline" to={`/mapping/${encodeURIComponent(mapping.mappingId)}`}>
                                             {mapping.inferenceType === 'SSSOM_INFERENCE' ? 'View explanation' : 'View record'}
-                                        </Link>}
+                                        </MappingDetailsLink>}
                                 </td>
                             </tr>
                         ))}</tbody>
