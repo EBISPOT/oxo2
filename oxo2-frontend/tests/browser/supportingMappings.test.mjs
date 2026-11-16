@@ -72,3 +72,23 @@ test('support failures can be retried and the table fits a narrow screen', async
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     } finally { await page.close(); }
 });
+
+test('cached supporting-record navigation replaces the reporting notice instead of accumulating notices', async () => {
+    const {page} = await open();
+    try {
+        const support = page.getByRole('region', {name: 'Supporting mappings', exact: true});
+        const notice = page.getByText('No reporting contact available for this mapping source.', {exact: true});
+        await notice.waitFor();
+        // Revisit cached records: an uncached lookup temporarily unmounts the whole details page,
+        // which can hide reconciliation errors between its reporting and supporting sections.
+        for (const mappingId of ['support-1', 'support-0', 'support-1', 'support-0']) {
+            await support.locator(`a[href$="/mapping/${mappingId}"]`).click();
+            await page.waitForURL(`**/mapping/${mappingId}`);
+            await support.locator('tbody tr').filter({hasText: 'Current record'}).waitFor();
+            await notice.first().waitFor();
+            assert.equal(await notice.count(), 1, `Only ${mappingId}'s reporting notice should remain`);
+            assert.equal(await page.getByRole('heading', {name: 'Mapping Details', exact: true}).count(), 1);
+            assert.equal(await support.count(), 1);
+        }
+    } finally { await page.close(); }
+});

@@ -114,10 +114,10 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
             </section>
 
             {mapping.inferenceType === 'ASSERTED' && (
-                <ReportIncorrectMapping key={mapping.mappingId} mapping={mapping} />
+                <ReportIncorrectMapping key={`report-${mapping.mappingId}`} mapping={mapping} />
             )}
 
-            <SupportingMappings key={mapping.mappingId} mappingId={mapping.mappingId} inferenceType={mapping.inferenceType} />
+            <SupportingMappings key={`support-${mapping.mappingId}`} mappingId={mapping.mappingId} inferenceType={mapping.inferenceType} />
 
             <Section title="Inference Details" compact={false}
                 renderComponent={!!mapping.explanation || hasAnyValue([MappingFields.assertedMappings])}>
