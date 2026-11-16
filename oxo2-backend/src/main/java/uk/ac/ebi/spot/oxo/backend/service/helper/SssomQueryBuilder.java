@@ -274,12 +274,8 @@ public final class SssomQueryBuilder {
         solrQuery.set(SolrConstants.DEF_TYPE, SolrConstants.EDISMAX);
         SolrQueryBuilder.applyProvenanceRanking(solrQuery);
         solrQuery.setFields(MappingEnum.MINIMAL_LIST_OF_FIELDS);
-        // Name the relevance sort explicitly so the provenance ranking orders the page. Load-bearing
-        // under collapse: applySpoGrouping appends `spo_key asc` as a paging tiebreaker, and with no
-        // primary sort that hash would become the primary key and order the page by an opaque value
-        // (the trap SolrQueryBuilder#constructSortedFields documents). score desc keeps relevance
-        // primary and demotes spo_key to the tiebreaker.
-        solrQuery.addSort(SolrConstants.SCORE, SolrQuery.ORDER.desc);
+        // Share the UI's source-count-first order before grouping adds its stable tiebreaker.
+        SolrQueryBuilder.applyDefaultRankingSort(solrQuery);
         return solrQuery;
     }
 

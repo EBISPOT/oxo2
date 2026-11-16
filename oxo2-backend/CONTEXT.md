@@ -33,8 +33,8 @@ A REST API rooted at `/api/v2/`:
 - **`GET /api/v2/mappings/{subjectId}`** — list mappings whose subject is `subjectId` (URL-decoded). Paged.
 - **`POST /api/v2/mappings/search`** — mapping search. Body: `MappingSearchRequest` (filters,
 sort, paging, and a multi-select `inferenceType` filter — [ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)).
-Results carry a soft multiplicative edismax ranking (asserted &gt; SSSOM; shorter chains
-higher). Returns `MappingSearchResponse`. Accepts `subjectPrefixes` / `objectPrefixes` for
+Results sort by distinct direct asserted source count descending, then a multiplicative relevance
+score (asserted &gt; SSSOM; fewer ontologies spanned ranks higher). Returns `MappingSearchResponse`. Accepts `subjectPrefixes` / `objectPrefixes` for
 cross-ontology mapping (see § Cross-ontology mapping).
 - **`GET /api/v2/mappings?from=DOID&to=EFO,MONDO`** — the bookmarkable source→target view: the mappings
 collection filtered by source/target prefix via query params (no action verb), mirroring v1's
@@ -257,24 +257,37 @@ would otherwise be dropped by *any* corpus choice — making this control secret
 The two axes stay orthogonal. Before the reindex that populates the field, naming a corpus returns only
 inferences, which is why the default emits no clause at all.
 
-#### Provenance-led ranking
+#### Direct support first, then provenance-weighted relevance
+
+Default search order is `def(asserted_source_count,0) desc,score desc`, with `spo_key asc` appended
+for stable grouped paging. More distinct source sets directly asserting the same statement always
+rank first, even ahead of a higher-provenance or better text match with fewer sources. Explicit
+column sorting overrides this default. The v2 and SSSOM query builders share the sort helper.
+See [ADR-0054](../docs/adr/0054-mapping-support-and-corroboration-ranking.md).
+
+The count covers the whole dataset-wide group, regardless of search filters. Repeated records,
+extra methods within a set, inference premises and blank source IDs do not add sources. Missing
+statistics sort as zero; the schema field must exist before deploying the query builder.
 
 Ranking is a **multiplicative** edismax `boost` (`SolrQueryBuilder.RANKING_BOOST`), not an additive `bq`: an
 additive boost is skewed by term idf (ASSERTED is common, SSSOM rare) and would invert the intended order
-([ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)). Four tiers multiply together:
+([ADR-0011](../docs/adr/0011-inference-type-replaces-is-inferred.md)). At equal source count, four factors multiply together:
 
 1. **Provenance** — ontology-asserted (10000) &gt; curator-asserted (1000) &gt; inferred (100, divided by 5 per
-   extra hop). Keyed on `inference_type`, so a doc with no category reads as "asserted, corpus unknown" and
+   extra distance unit; distance measures ontology span). Keyed on `inference_type`, so a doc with no category reads as "asserted, corpus unknown" and
    scores as curated — which is exactly the pre-reindex state, and exactly ADR-0011's old ordering.
 2. **Predicate strength** — strict identity (2.0: `owl:equivalentClass`/`equivalentProperty`/`sameAs`) &gt;
-   `skos:exactMatch` (1.7) &gt; `skos:closeMatch` (1.4) &gt; broad/narrow (1.2) &gt; anything else (1.0). The
+   `skos:exactMatch` (1.7) &gt; cross-species exact (1.6) &gt; `skos:closeMatch` (1.4) &gt; broad/narrow (1.2) &gt; anything else (1.0). The
    strict-vs-weak identity split is ADR-0016's, not a second strength model.
 3. **Curation** — `semapv:ManualMappingCuration` (1.3) &gt; anything else (1.0).
 4. **Confidence** — `1 + 0.3 × confidence`; absent confidence contributes exactly 1.
+The initial asserted mapping load computes `asserted_source_count` across all generated source files
+before indexing complete documents. There is no post-index backfill stage.
+Source-set count is a corroboration signal, not a measure of independent confirmation.
 
-The tiers are **lexicographic, not a blend**: the closest two provenance values differ by 5×, more than the
-widest combined swing of tiers 2–4 (2.0 × 1.3 × 1.3 = 3.38), so no predicate/curation/confidence advantage can
-lift a curated mapping above an ontology one — "trust provenance over predicate". `SolrQueryBuilder`
+The **provenance boost dominates the remaining factors**: the closest two provenance values differ by 5×, more than the
+widest combined swing of factors 2–4 (2.0 × 1.3 × 1.3 = 3.38), so no predicate/curation/confidence advantage can
+lift a curated mapping above an ontology one at equal source count and query relevance — "trust provenance over predicate". The other factors blend, and the final score also multiplies text relevance; this is not a strict sort by provenance. `SolrQueryBuilder`
 `.rankingTiersAreLexicographic()` encodes that inequality and is asserted by a unit test, so a future tweak to
 any constant is checked against it.
 
@@ -297,7 +310,7 @@ The page total is the **collapsed `numFound`**, which *is* the exact group count
 triples not N documents. `OxOSolrClient.buildCollapsedPage` assembles each row's `group_members`
 JSON string (`{"total":N,"members":[...]}`) by leading with the representative itself and appending
 `response.getExpandedResults()` for that key; true size is `1 + expanded.getNumFound()`, so the
-"+N more" total stays accurate past the inlined cap (the detail view inlines ≤ 21 rows: the
+"+N more" total stays accurate past the inlined cap (the expanded search panel inlines ≤ 21 rows: the
 representative plus up to `expand.rows` members). It is serialised with the app `ObjectMapper`,
 leaving the `MappingSearchResponse` / `Page<Mapping>` shape unchanged. Collapse ANDs with the
 existing filter queries, so a group's members reflect only what passed the inference-type filter.
@@ -315,6 +328,21 @@ The user-facing behaviour and the `spo_key` design are
 [ADR-0023](../docs/adr/0023-collapse-for-same-spo.md), which supersedes ADR-0013's grouping
 mechanism only. The `groupBySpo` / `applySpoGrouping` / `group_members` names predate the switch and
 are kept for API and frontend compatibility — they denote collapse, not Solr result grouping.
+
+#### Supporting mappings (issue #181)
+
+`GET /api/v2/mappings/{mappingId}/support?page=0&size=20` resolves the stored mapping to its indexed
+`spo_key`, then returns an uncollapsed page of **all** records in that group. It applies no search
+visibility filters (including obsolete/weak-predicate filters). The response contains `mappings`
+(the usual page envelope), `justificationMethodCount` and `assertedSourceCount`. Exact terms facets
+cover the entire group rather than the current page; inferred sets are excluded from the source count.
+These are counts of records, method identifiers and asserted source sets, respectively — none claims
+that all evidence is independent. Source-set identity is the mapping-set ID, not provider text.
+
+The mapping detail page links each supporting record to its own detail/explanation, and pages past the
+search panel's 21-record inline limit. Search badges explicitly count **matching records**; “View all
+support” opens the dataset-wide section. The support endpoint returns summary fields only; large
+explanation trees are fetched only when opening an individual record.
 
 #### Cross-ontology mapping
 

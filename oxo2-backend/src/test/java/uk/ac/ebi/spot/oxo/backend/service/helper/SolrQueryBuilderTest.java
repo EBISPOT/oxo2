@@ -680,7 +680,7 @@ class SolrQueryBuilderTest {
 
         assertThat(solrQuery.get(SolrConstants.DEF_TYPE)).isEqualTo(SolrConstants.EDISMAX);
         String boost = solrQuery.get(SolrConstants.BOOST);
-        assertThat(boost).startsWith("mul(");
+        assertThat(boost).startsWith("mul(").doesNotContain("asserted_source_count");
 
         // Tier 1: keyed on inference_type, so a doc with no category (pre-reindex) reads as an
         // asserted mapping of an unknown corpus and scores CURATED, never as an inference.
@@ -789,28 +789,27 @@ class SolrQueryBuilderTest {
                 .noneMatch(fq -> fq.contains(MappingEnum.MAPPING_SET_CATEGORY.getField()));
     }
 
-    // ---------- relevance is the default sort, so the ranking is actually visible ----------
+    // ---------- source count precedes relevance in the default sort ----------
 
     /**
      * An explicit Solr sort replaces {@code score}, so a default sorted field would silently discard
-     * the whole provenance ranking. Without a caller sort we must name {@code score desc} ourselves.
+     * the whole provenance ranking. Without a caller sort we must order by source count, then score.
      */
     @Test
-    void noSortedFieldsSortsByRelevance() {
+    void noSortedFieldsSortsBySourceCountThenRelevance() {
         MappingSearchRequest request = baseRequest();
         request.setQueries(List.of("diabetes"));
 
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
-        assertThat(solrQuery.getSortField()).isEqualTo("score desc");
+        assertThat(solrQuery.getSortField()).isEqualTo("def(asserted_source_count,0) desc,score desc");
     }
 
     /**
-     * Collapse appends spo_key as a paging tiebreaker. It must stay a tiebreaker: if relevance were
-     * not named first, spo_key would become the primary key and order the page by an opaque hash.
+     * Collapse appends spo_key after source count and relevance so equal-ranked groups page stably.
      */
     @Test
-    void groupedSearchKeepsRelevancePrimaryAndSpoKeyAsTiebreaker() {
+    void groupedSearchKeepsSourceCountThenRelevanceAndSpoKeyAsTiebreaker() {
         MappingSearchRequest request = baseRequest();
         request.setQueries(List.of("diabetes"));
         request.setGroupBySpo(true);
@@ -818,7 +817,7 @@ class SolrQueryBuilderTest {
         SolrQuery solrQuery = SolrQueryBuilder.buildSolrQuery(request, PAGE_OF_TEN);
 
         assertThat(solrQuery.getSortField())
-                .isEqualTo("score desc," + MappingEnum.SPO_KEY.getField() + " asc");
+                .isEqualTo("def(asserted_source_count,0) desc,score desc," + MappingEnum.SPO_KEY.getField() + " asc");
     }
 
     /** An explicit caller sort still wins — the fallback only applies when none was given. */

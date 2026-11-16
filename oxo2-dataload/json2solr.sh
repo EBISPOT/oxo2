@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <inputDir> <solrUrl> where <solrUrl> has the form <solr_server_url>:<port>/<solr_core>"
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ] || { [ "$#" -eq 3 ] && [ "$3" != "--asserted-support" ]; }; then
+  echo "Usage: $0 <inputDir> <solrUrl> [--asserted-support] where <solrUrl> has the form <solr_server_url>:<port>/<solr_core>"
   echo "i.e. http://localhost:8983/solr/oxo2-mappings"
   exit 1
 fi
@@ -21,6 +21,14 @@ fi
 # Solr URL
 SOLR_URL=$2
 echo "Solr URL: $SOLR_URL"
+
+# Asserted mappings need counts across ALL source files before their first Solr write.
+# Other collections and inferred mappings retain the plain JSON loader.
+if [ "${3:-}" = "--asserted-support" ]; then
+  SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+  exec java -Xmx512m -cp "$SCRIPT_DIR/oxo2-mappings2entities/target/oxo2-mappings2entities-1.0.0-SNAPSHOT.jar" \
+    uk.ac.ebi.spot.oxo.support.SupportedMappingsLoader "$DIRECTORY" "$SOLR_URL"
+fi
 
 # Function to post JSON files to Solr
 post_to_solr() {
