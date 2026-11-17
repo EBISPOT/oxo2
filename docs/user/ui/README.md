@@ -27,12 +27,12 @@ copies under `oxo2-frontend/public/`.
 The document describes behaviour, and behaviour drifts. When you change the interface, this file is
 as much a consumer of that change as the code is. In particular:
 
-- The **ranking tiers** in § 5 restate the constants in `SolrQueryBuilder` (`ONTOLOGY_BOOST`,
-  `PREDICATE_STRICT_IDENTITY`, `CURATION_MANUAL`, `CONFIDENCE_WEIGHT`, `DISTANCE_DECAY`, and the
-  whole tier-2 predicate ladder). Change a constant and the worked arithmetic in § 5 becomes wrong.
-  `SolrQueryBuilderTest#rankingTiersAreLexicographic` pins the *invariant* that tier 1 dominates
-  tiers 2–4, so the table's punchline cannot silently rot — but the individual numbers are prose and
-  nothing checks them.
+- The **ranking order** in § 5 follows `SolrQueryBuilder.applyDefaultRankingSort`: direct asserted
+  source count first, then score. The score factors restate the constants in `SolrQueryBuilder`
+  (`ONTOLOGY_BOOST`, `PREDICATE_STRICT_IDENTITY`, `CURATION_MANUAL`, `CONFIDENCE_WEIGHT`,
+  `DISTANCE_DECAY`, and the predicate ladder). Change a constant and the worked arithmetic becomes
+  wrong. `rankingTiersAreLexicographic` checks provenance dominance within the score; it does not
+  override source-count ordering. Keep the examples and source-count-first diagram in sync.
 - § 10, *Things that will surprise you*, records known rough edges. Fixing one means deleting its
   entry, not leaving a stale warning behind.
 - **No deployment-specific URLs.** The same file is served by every instance, so a hostname or port

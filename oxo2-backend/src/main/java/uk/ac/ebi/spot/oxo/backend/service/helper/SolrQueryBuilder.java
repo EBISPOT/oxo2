@@ -31,11 +31,13 @@ public class SolrQueryBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(SolrQueryBuilder.class);
 
-    // ---------- Provenance-led ranking (ADR-0027, superseding ADR-0011's boost) ----------
+    // ---------- Support-first ranking (ADR-0054), then provenance-led score (ADR-0027) ----------
     //
-    // Ranking tiers, strongest first. Each tier is a multiplicative factor; the tiers below only ever
-    // break ties within a tier above (see #rankingTiersAreLexicographic below and the unit test of the
-    // same name). "Trust provenance over predicate": who asserts a mapping outweighs how strong the
+    // Default sorting puts distinct asserted source count first, ahead of the score below.
+    // Multiplicative ranking factors. Provenance dominates the combined range of the other
+    // factors (see #rankingTiersAreLexicographic); those other factors blend within a provenance
+    // tier. The final score still multiplies query relevance, so this is a soft preference.
+    // "Trust provenance over predicate": who asserts a mapping outweighs how strong the
     // predicate is, because a skos:exactMatch in an unreviewed lexical-match file is weaker evidence
     // than an ontology's own skos:closeMatch cross-reference.
     //
@@ -79,6 +81,9 @@ public class SolrQueryBuilder {
 
     /** Tier 4. confidence in [0,1] scales the boost by 1 + this; absent confidence contributes 1.0. */
     private static final double CONFIDENCE_WEIGHT = 0.3;
+
+    // Missing statistics sort as zero. Count is a strict primary sort, not a score multiplier.
+    private static final String ASSERTED_SOURCE_SORT = "def(asserted_source_count,0)";
 
     /**
      * Predicate IRIs by tier-2 strength. A doc matches at most one IRI, so the strengths are unordered
@@ -132,7 +137,7 @@ public class SolrQueryBuilder {
     /**
      * Tier 1. Keyed on inference_type (always present) rather than on the category, so that a doc with
      * no category is read as "asserted, corpus unknown" — the pre-reindex state — and not as inferred.
-     * Inferred docs decay by {@link #DISTANCE_DECAY} per hop; a missing distance reads as one hop.
+     * Inferred docs decay by {@link #DISTANCE_DECAY} per distance unit (ontology span); a missing distance reads as one.
      */
     private static String provenanceFactor() {
         String assertedTier = "if(termfreq(" + MappingEnum.MAPPING_SET_CATEGORY.getField() + ",'"
@@ -179,9 +184,9 @@ public class SolrQueryBuilder {
     }
 
     /**
-     * The invariant that makes the tiers a ranking rather than a blend: the closest two provenance
-     * values differ by more than the widest possible swing of every lower tier combined, so no
-     * predicate, curation or confidence advantage can lift a curated mapping above an ontology one.
+     * The closest two provenance factors differ by more than the widest combined swing of
+     * predicate, curation and confidence. This preserves provenance priority in the boost
+     * at equal query relevance; it does not impose a strict provenance sort on the final score.
      * Asserted by {@code SolrQueryBuilderTest#rankingTiersAreLexicographic}; kept here so a future
      * tweak to any constant above is checked against it.
      *
@@ -1021,30 +1026,20 @@ public class SolrQueryBuilder {
         return field.getField() + ":*" + ClientUtils.escapeQueryChars(value) + "*";
     }
 
+    /** Default ordering is source count first, then the provenance-weighted relevance score. */
+    public static void applyDefaultRankingSort(SolrQuery solrQuery) {
+        solrQuery.setSort(ASSERTED_SOURCE_SORT, SolrQuery.ORDER.desc);
+        solrQuery.addSort(SolrConstants.SCORE, SolrQuery.ORDER.desc);
+    }
+
     /**
-     * Solr can only sort on docValue fields. Text_general fields (used for labels) are not docValue fields.
-     * To enable sorting these fields are copied to _str fields that are docValue fields.
-     *
-     *
-     * @param solrQuery
-     * @param mappingSearchRequest
-     * @return
-     */
-    /**
-     * Apply the caller's sort, or fall back to relevance.
-     *
-     * <p>The fallback is load-bearing, not cosmetic. An explicit Solr {@code sort} <em>replaces</em>
-     * {@code score}, so any sorted field silently discards the whole provenance ranking
-     * ({@link #RANKING_BOOST}). Worse, {@link #applySpoGrouping} appends {@code spo_key asc} as a
-     * paging tiebreaker: with no sort at all, that tiebreaker would become the <em>primary</em> key and
-     * order the page by an opaque hash. Naming {@code score desc} here keeps relevance primary and
-     * demotes {@code spo_key} to the tiebreaker it was meant to be. Outside grouping this is exactly
-     * Solr's own default, so it changes nothing.
+     * Apply the caller's explicit sort, or the shared default before any grouping tiebreaker.
+     * Label fields sort on their docValues-backed string copies rather than analysed text.
      */
     private static SolrQuery constructSortedFields(SolrQuery solrQuery, MappingSearchRequest mappingSearchRequest) {
         List<SortedField> sortedFields = mappingSearchRequest.getSortedFields();
         if (sortedFields == null || sortedFields.isEmpty()) {
-            solrQuery.addSort(SolrConstants.SCORE, SolrQuery.ORDER.desc);
+            applyDefaultRankingSort(solrQuery);
             return solrQuery;
         }
         for (SortedField sortedField : sortedFields) {
@@ -1165,8 +1160,8 @@ public class SolrQueryBuilder {
      * Apply the provenance-led ranking ({@link #RANKING_BOOST}, ADR-0027) as a multiplicative edismax
      * {@code boost} function. Requires {@code defType=edismax}. The boost multiplies the relevance
      * score, so every tier still appears — ontology-asserted mappings just float above curated ones,
-     * curated above inferred, and shorter inference chains above longer ones — without a hard filter
-     * or sort.
+     * curated above inferred, and shorter inference chains above longer ones. This score breaks ties
+     * after direct asserted source count in the default search sort (ADR-0054).
      */
     public static void applyProvenanceRanking(SolrQuery solrQuery) {
         solrQuery.set(SolrConstants.BOOST, RANKING_BOOST);

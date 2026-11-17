@@ -1,13 +1,14 @@
 import {ReactNode, useId, useState} from "react";
 import {InferredMapping, Mapping, MappingFields} from "../../model/Mapping";
 import {mappingJustificationShortName, mappingJustificationLabel} from "../../model/MappingJustification";
-import {Link, useNavigate} from "react-router";
+import {Link, useLocation, useNavigate} from "react-router";
 import {mappingSetHref} from "../../util/mappingSetUrl";
 import {MappingItem} from "../../components/mapping/MappingItem";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {ChevronDownIcon, ChevronUpIcon} from "@heroicons/react/24/solid";
 import InferredMappings from "./InferredMappings.tsx";
 import InferredMappingGraph from "../../components/mapping/InferredMappingGraph.tsx";
+import {SupportingMappings} from "../../components/mapping/SupportingMappings";
 import {ReportIncorrectMapping} from "../../components/mapping/ReportIncorrectMapping";
 
 const hasValue = (value?: string | number | string[] | Record<string, string> | InferredMapping | InferredMapping[]): boolean => {
@@ -63,9 +64,8 @@ function Section({ title, children, renderComponent = true, useHideShow = true, 
 
 function MappingDetails({ mapping }: { mapping: Mapping }) {
     const navigate = useNavigate();
-    // React Router keeps its history index in window.history.state.idx; 0 means this page was
-    // reached directly (shared link, bookmark), so there are no results to go back to.
-    const hasInAppHistory = (window.history.state?.idx ?? 0) > 0;
+    // Supporting records preserve this destination; browser history may contain other mappings.
+    const returnTo: string | undefined = useLocation().state?.returnTo;
 
     if (!mapping) {
         return (
@@ -93,9 +93,9 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
                 </div>
                 <button
                     className="button-primary text-base font-bold px-4 py-1"
-                    onClick={() => hasInAppHistory ? navigate(-1) : navigate("/")}
+                    onClick={() => navigate(returnTo ?? "/")}
                 >
-                    {hasInAppHistory ? "Back to results" : "New search"}
+                    {returnTo ? "Back to results" : "New search"}
                 </button>
             </div>
 
@@ -113,8 +113,10 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
             </section>
 
             {mapping.inferenceType === 'ASSERTED' && (
-                <ReportIncorrectMapping key={mapping.mappingId} mapping={mapping} />
+                <ReportIncorrectMapping key={`report-${mapping.mappingId}`} mapping={mapping} />
             )}
+
+            <SupportingMappings key={`support-${mapping.mappingId}`} mappingId={mapping.mappingId} inferenceType={mapping.inferenceType} />
 
             <Section title="Inference Details" compact={false}
                 renderComponent={!!mapping.explanation || hasAnyValue([MappingFields.assertedMappings])}>

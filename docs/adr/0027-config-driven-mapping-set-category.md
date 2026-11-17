@@ -2,6 +2,9 @@
 
 - **Status**: Accepted
 - **Date**: 2026-07-08
+- **Ranking priority amended by**: [ADR-0054](0054-mapping-support-and-corroboration-ranking.md).
+  Direct asserted source count is now the primary default sort; the score defined here breaks ties.
+  Mapping-set category and corpus filtering are unchanged.
 
 ## Context
 

@@ -554,6 +554,10 @@
        so its subject slot carries subject_label instead (ADR-0042) — the text is the subject's
        identity. Derived at serialization time by Mapping.spoKey(); docValues for grouping, not stored
        (never retrieved). -->
+  <!-- Dataset-wide distinct asserted source sets per mapping group, supplied on initial load.
+       Used by the ranking function; no inverted index or stored copy is needed. -->
+  <field name="asserted_source_count" type="plong" multiValued="false" indexed="false"
+         stored="false" docValues="true" default="0"/>
   <field name="spo_key" type="string" multiValued="false" indexed="true" stored="false" docValues="true"/>
   <!-- Cross-ontology mapping (ADR-0024): the CURIE prefix of subject_id / object_id (the "ontology"),
        derived at serialization time by Mapping.subjectPrefix() / objectPrefix(). indexed for prefix

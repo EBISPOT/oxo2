@@ -112,6 +112,13 @@ and Jackson serialization. The vocabulary library every other module depends on.
 
 ## Cross-cutting constraints
 
+- **Mapping support** groups records by the existing subject/predicate/modifier/object key.
+  Dataset-wide support includes the selected record; method count, record count and distinct asserted
+  source-set count are separate quantities. Default search order is asserted source count descending,
+  then the provenance-weighted relevance score; explicit sorting overrides it. Counts are attached
+  during initial asserted indexing, with no post-index backfill.
+  See [ADR-0054](docs/adr/0054-mapping-support-and-corroboration-ranking.md).
+
 Decisions that bind multiple modules. Each ADR captures one decision and its consequences; this list points at where each one bites.
 
 - **Mapping reports concern individual asserted mappings** — issue #132 sends users to the source

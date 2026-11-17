@@ -105,6 +105,33 @@ class OpenApiDocsTest {
     }
 
     @Test
+    void supportOperationDocumentsPagingCountsAndErrors() throws Exception {
+        String operation = "$.paths['/api/v2/mappings/{mappingId}/support'].get";
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(operation + ".description",
+                        Matchers.containsString("including the selected record itself")))
+                .andExpect(jsonPath(operation + ".parameters[?(@.name=='mappingId')].required",
+                        Matchers.contains(true)))
+                .andExpect(jsonPath(operation + ".parameters[?(@.name=='page')].schema.minimum",
+                        Matchers.contains(0)))
+                .andExpect(jsonPath(operation + ".parameters[?(@.name=='size')].schema.minimum",
+                        Matchers.contains(1)))
+                .andExpect(jsonPath(operation + ".parameters[?(@.name=='size')].schema.maximum",
+                        Matchers.contains(100)))
+                .andExpect(jsonPath(operation + ".parameters[?(@.name=='size')].schema.default",
+                        Matchers.contains(20)))
+                .andExpect(jsonPath(operation + ".responses['200'].content['application/json']").exists())
+                .andExpect(jsonPath(operation + ".responses['400']").exists())
+                .andExpect(jsonPath(operation + ".responses['404']").exists())
+                .andExpect(jsonPath(operation + ".responses['500']").exists())
+                .andExpect(jsonPath("$.components.schemas.SupportResponse.properties.assertedSourceCount.description",
+                        Matchers.containsString("Inference premises making other statements are excluded")))
+                .andExpect(jsonPath("$.components.schemas.SupportResponse.properties.justificationMethodCount.description",
+                        Matchers.containsString("not just this page")));
+    }
+
+    @Test
     void swaggerUiIsAvailable() throws Exception {
         mockMvc.perform(get("/swagger-ui/index.html"))
                 .andExpect(status().isOk());
