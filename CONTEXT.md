@@ -112,6 +112,10 @@ and Jackson serialization. The vocabulary library every other module depends on.
 
 ## Cross-cutting constraints
 
+- **Serving ontology catalog** — the global ontology listing is warmed and cached once per backend
+  lifetime. Every serving-index replacement requires a backend restart, including rollbacks.
+  See [ADR-0055](docs/adr/0055-warmed-ontology-catalog-per-data-release.md).
+
 - **Mapping support** groups records by the existing subject/predicate/modifier/object key.
   Dataset-wide support includes the selected record; method count, record count and distinct asserted
   source-set count are separate quantities. Default search order is asserted source count descending,
