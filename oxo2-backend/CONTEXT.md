@@ -52,6 +52,12 @@ so `uri`'s presence is what marks an entry as a real ontology rather than a bare
 degrade to absent rather than failing the request — the counts are the payload. Note the namespace is
 NOT resolved from the Bioregistry snapshot: that is what makes the export's `curie_map` disagree with
 the IRIs this API serves ([issue 118](https://github.com/EBISPOT/oxo2/issues/118)).
+The global listing is held as an immutable response in `OntologyCatalog` for the backend lifetime
+([ADR-0055](../docs/adr/0055-warmed-ontology-catalog-per-data-release.md)). A daemon warms it on
+application readiness and retries every 30 seconds until a complete, nonempty result is available.
+HTTP requests share the same loader. Failed enrichment can still return counts, but is not cached.
+Every serving-index replacement requires a restart of every backend replica. Subject-specific
+target facets and export queries do not use this cache.
 - **`GET /api/v2/data-content`** — the landing page's Data Content summary
 ([ADR-0043](../docs/adr/0043-data-content-summary-on-landing-page.md)):
 `{releaseDate, mappings:{total,asserted,inferred}, mappingSets:{total,curated,ontologies}}`. Three cheap
@@ -233,6 +239,9 @@ Also builds the two value-suggest queries, because the contextual one has to reu
 them must actually read.
 - `service/SuggestFacetWarmup.java` — warms the facet caches on startup (the `string` fields have no docValues, so the
 first facet on one uninverts it).
+- `service/OntologyCatalog.java` — serialises loads and retains the complete global ontology response.
+- `service/OntologyCatalogWarmup.java` — warms the catalog on startup and retries while Solr is
+  unavailable or the result is empty/incomplete; stops after success or application shutdown.
 - `service/helper/SolrConstants.java` — Solr field-name constants for this module's queries.
 - `exception/GlobalExceptionHandler.java` — top-level exception translation.
 - `config/OpenApiConfig.java` — OpenAPI 3 `info` metadata for the Swagger docs (see § API documentation).

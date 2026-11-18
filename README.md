@@ -155,4 +155,10 @@ To stop the local Solr, run `./stopSolr.sh` from the OxO2 root with the same env
 to start it. It stops only the configured port (`SOLR_PORT`, then the port in `SOLR_URL`,
 defaulting to `8983`) and leaves the index data in place. In a worktree, load its `.envrc`
 with direnv or source `oxo2-env.sh` first so the correct instance is selected.
+
+The backend warms and caches the global ontology listing in memory. Whenever the serving Solr
+index is replaced (a data release, rollback, or local dataload), restart every backend replica
+against the new, ready Solr index before restoring traffic. A Solr restart alone does not clear
+this cache. Warmup runs in the background and retries every 30 seconds until successful; early
+requests may wait for it. See [ADR-0055](docs/adr/0055-warmed-ontology-catalog-per-data-release.md).
  
