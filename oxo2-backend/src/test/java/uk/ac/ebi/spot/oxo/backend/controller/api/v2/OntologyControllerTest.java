@@ -11,9 +11,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
+import uk.ac.ebi.spot.oxo.backend.service.OntologyCatalog;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,12 +26,15 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(OntologyController.class)
+@Import(OntologyCatalog.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class OntologyControllerTest {
 
     @Autowired
@@ -162,6 +168,25 @@ class OntologyControllerTest {
     }
 
     // ---------- ADR-0047: namespace and uri ----------
+
+    @Test
+    void repeatedHttpRequestsReuseTheCatalog() throws Exception {
+        when(solrClient.queryMappings(any(SolrParams.class)))
+                .thenReturn(facetResponse(Map.of("DOID", 5), Map.of()));
+        when(solrClient.queryEntities(any(SolrParams.class))).thenReturn(pivotResponse(Map.of()));
+        when(solrClient.queryMappingSets(any(SolrParams.class)))
+                .thenReturn(mappingSetResponse(List.of()));
+
+        for (int request = 0; request < 10; request++) {
+            mockMvc.perform(get("/api/v2/ontologies"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].prefix").value("DOID"))
+                    .andExpect(jsonPath("$[0].asSubject").value(5));
+        }
+        verify(solrClient, times(1)).queryMappings(any(SolrParams.class));
+        verify(solrClient, times(1)).queryEntities(any(SolrParams.class));
+        verify(solrClient, times(1)).queryMappingSets(any(SolrParams.class));
+    }
 
     @Test
     void namespaceComesFromTheEntityIndexAndUriFromTheOntologySets() throws Exception {
