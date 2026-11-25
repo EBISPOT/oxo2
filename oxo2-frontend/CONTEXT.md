@@ -90,6 +90,22 @@ via `GET /api/v2/mapping-sets/by-id` and lists its mappings ([ADR-0012](../docs/
 `mapping/MappingItem.tsx`, `mapping/InferredMappingGraph.tsx`, `common/Header.tsx`, `common/Footer.tsx`,
 `common/HelpTerm.tsx`, `infoCard/`, `error/`.
 
+### DocBot help
+
+`index.html` loads the external DocBot SDK (`Chatbot-Modal.web.js`) and stylesheet
+(`dist/Chatbot-Modal.css`) from `https://docbot-64c680.gitdocs.ebi.ac.uk/`. Its single
+`docbot-modal` element sits outside the React root so route changes preserve the chat.
+It uses the production backend `https://www.ebi.ac.uk/docbot/api`, with
+`selectedteam="ontology_tools"` and `enableselector="false"` to keep help focused on ontology tools.
+The Documentation page also links to the standalone service, including when the widget cannot load.
+
+Follow the [DocBot integration guide](https://ebi-wp.gitdocs.ebi.ac.uk/docbot_docs/adding-docbot-modal-to-project.html)
+when updating these assets or attributes. Non-EBI origins require allowlisting by the DocBot team;
+live chat from localhost may therefore fail CORS checks. Browser integration tests stub the SDK
+and block external DocBot traffic; opening/closing the real widget, keyboard focus and mobile
+layout should also be checked when updating the integration. The SDK and CSS are externally hosted
+and unversioned, so their behaviour can change independently of an OxO release.
+
 ### Mapping details layout
 
 Mapping details use the original highlighted subject–predicate–object diagram, with copy controls,

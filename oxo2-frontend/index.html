@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <link rel="icon" href="%BASE_URL%favicon.ico" />
   <link rel="stylesheet" href="%BASE_URL%styles.css" />
+  <link rel="stylesheet" href="https://docbot-64c680.gitdocs.ebi.ac.uk/dist/Chatbot-Modal.css" />
+  <script type="module" src="https://docbot-64c680.gitdocs.ebi.ac.uk/Chatbot-Modal.web.js"></script>
   <link
           rel="stylesheet"
           href="https://ebi.emblstatic.net/web_guidelines/EBI-Icon-fonts/v1.3/fonts.css"
@@ -32,6 +34,12 @@
 <body>
 <noscript>You need to enable JavaScript to run this app.</noscript>
 <div id="root"></div>
+<!-- Keep DocBot outside the React root so navigation preserves the chat. -->
+<docbot-modal
+  selectedteam="ontology_tools"
+  backendurl="https://www.ebi.ac.uk/docbot/api"
+  enableselector="false"
+></docbot-modal>
 <!--
   This HTML file is a template.
   If you open it directly in the browser, you will see an empty page.
