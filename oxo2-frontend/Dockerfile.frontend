@@ -13,7 +13,9 @@ WORKDIR /opt/oxo2-frontend
 
 COPY package.json package-lock.json ./
 
-RUN npm ci
+# Keep npm in step with package.json and the frontend/stable workflows.
+RUN npm install --global npm@12.2.3 \
+    && npm ci
 
 COPY . .
 
