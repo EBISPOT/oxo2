@@ -12,6 +12,12 @@ updates:
     commit-message:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
+    # ESLint still requires the TypeScript 6 compiler API. Type checking uses the
+    # separate typescript-native alias; see docs/typescript-toolchain.md.
+    ignore:
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
     groups:
       frontend-minor-patch:
         applies-to: version-updates
