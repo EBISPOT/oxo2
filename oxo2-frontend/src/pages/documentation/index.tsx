@@ -20,6 +20,23 @@ const openApiSpecUrl = resolveUrl("/v3/api-docs");
 export default function Documentation() {
     return (
         <main className="container mx-auto">
+            <div className="text-secondary">Ontology Tools DocBot</div>
+            <div className="text-tertiary">
+                <p className="mb-4">
+                    Ask questions about using OxO and other ontology tools with the DocBot chat
+                    widget. You can also{' '}
+                    <a
+                        href="https://www.ebi.ac.uk/docbot/?selected=ontology_tools"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="link-default"
+                    >
+                        Ask Ontology Tools DocBot
+                    </a>
+                    {' '}in a new tab if the widget is unavailable.
+                </p>
+            </div>
+
             <div className="text-secondary">OxO API Documentation</div>
             <div className="text-tertiary">
                 <p className="mb-4">
