@@ -1,6 +1,6 @@
 export default function About() {
   return (
-      <main className="container mx-auto">
+      <main>
         <div className="text-secondary">About OxO</div>
         <div className="text-tertiary">
           <p className="mb-4">

@@ -31,7 +31,7 @@ export function MappingSetDetails({ mappingSetId }: { mappingSetId: string }) {
     });
 
     return (
-        <div className="px-4 py-6 max-w-screen-2xl mx-auto">
+        <div className="py-6">
             <div className="flex justify-end mb-4">
                 <button
                     className="button-primary text-base font-bold px-4 py-1"
