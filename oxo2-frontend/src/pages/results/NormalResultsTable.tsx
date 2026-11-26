@@ -103,13 +103,33 @@ function withoutField(fields: Set<string>, field: string): Set<string> {
 // renders (useUrlSorting memoises against it).
 const DEFAULT_SORTING: MRT_SortingState = [];
 
-// Keep the label and its controls readable within the search table’s column budget.
-// The menu and drag handle sit below the label instead of forcing wider columns.
+// Flatten the custom filter/sort wrappers and MRT's built-in actions into one row.
+// Reserve two text lines so every column's controls share the same row below its heading.
 const compactSearchHeaderStyles = {
-    '& .Mui-TableHeadCell-Content': {flexDirection: 'column', alignItems: 'flex-start'},
-    '& .Mui-TableHeadCell-Content-Wrapper': {whiteSpace: 'normal'},
-    '& .Mui-TableHeadCell-Content-Wrapper > span': {flexWrap: 'wrap'},
-    '& .Mui-TableHeadCell-Content-Wrapper > span > .cursor-help': {flexBasis: '100%'},
+    '& .Mui-TableHeadCell-Content': {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'start',
+    },
+    '& .Mui-TableHeadCell-Content-Labels, & .Mui-TableHeadCell-Content-Wrapper, & .Mui-TableHeadCell-Content-Actions': {
+        display: 'contents',
+        whiteSpace: 'normal',
+    },
+    '& .Mui-TableHeadCell-Content-Wrapper > span:not(.cursor-help)': {display: 'contents'},
+    '& .Mui-TableHeadCell-Content .cursor-help': {
+        flexBasis: '100%',
+        minHeight: '3rem',
+        alignSelf: 'start',
+        minWidth: 0,
+    },
+    '& .Mui-TableHeadCell-Content .MuiIconButton-root': {
+        minWidth: 28,
+        width: 'auto',
+        height: 28,
+        p: 0,
+        m: 0,
+    },
 };
 
 // Same-SPO grouping helpers (ADR-0013). A grouped representative carries all its members (including
@@ -401,7 +421,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 accessorFn: (row: Mapping) => row.distance,
                 header: "Distance",
                 enableSorting: false,
-                size: 90,
+                size: 100,
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <ColumnHeaderLabel topic="distance" label="Distance" />
@@ -485,7 +505,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 accessorFn: (row: Mapping) => row.mappingSetTitle || row.mappingSetId,
                 header: "Mapping set",
                 enableSorting: false,
-                size: 160,
+                size: 150,
                 Header: () => <ColumnHeaderLabel topic="mapping_set" label="Mapping set" />,
                 Cell: ({ row }: { row: { original: Mapping } }) => {
                     // One row can span several sets; show "Multiple sets" rather than a misleading single set.

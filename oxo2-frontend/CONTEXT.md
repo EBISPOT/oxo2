@@ -114,7 +114,8 @@ cap on large screens; pages own their vertical spacing without nesting another w
 flex column to keep the footer below the content, including when its links wrap on narrow screens.
 Search results use a slightly wider, fluid container capped at 105rem (1,680px), with outer
 margins on desktop. Their default columns fit from 1,280px viewport width: a fixed table layout,
-compact cell padding and wrapping headings/values keep all columns visible. Below that width the
+compact cell padding and wrapping headings/values keep all columns visible. Headings reserve two
+text lines, with filter, sort, reorder and action controls aligned in one row underneath. Below that width the
 table scrolls inside its container. Other pages keep the home-page width, and expanded graph dialogs
 remain viewport-sized.
 
