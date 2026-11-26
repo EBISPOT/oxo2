@@ -131,12 +131,20 @@ code {
   font-family: source-code-pro, "Courier New", monospace;
 }
 #root {
-  padding-bottom: 11rem;
-  position: relative;
   min-height: 100vh;
 }
 .container {
   padding-inline: 1rem;
+}
+.search-results-container {
+  width: 100%;
+  max-width: 105rem;
+  padding-inline: 1rem;
+}
+@media (min-width: 64rem) {
+  .search-results-container {
+    width: calc(100% - 2rem);
+  }
 }
 
 @layer components {

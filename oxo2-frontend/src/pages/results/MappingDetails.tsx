@@ -85,7 +85,7 @@ function MappingDetails({ mapping }: { mapping: Mapping }) {
 
     return (
         // Match the landing page's reading width; the expanded graph uses its own fullscreen dialog.
-        <main className="container mx-auto py-6 space-y-6">
+        <main className="py-6 space-y-6">
             <div className="flex flex-wrap justify-between items-center gap-3">
                 <div className="flex items-center gap-3">
                     <h1 className="text-2xl font-bold">Mapping Details</h1>
