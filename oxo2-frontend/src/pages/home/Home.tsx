@@ -13,7 +13,7 @@ export default function Home(): JSX.Element {
     const iconClass = "w-6 h-6 text-yellow-default";
 
     return (
-        <main className="landing-page container mx-auto">
+        <main className="landing-page">
             <div className="grid grid-cols-1 lg:grid-cols-4 lg:gap-6">
                 <div className="lg:col-span-3">
                     <Search

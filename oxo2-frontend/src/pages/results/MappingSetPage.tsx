@@ -13,7 +13,7 @@ function MappingSetPage() {
 
     if (!mappingSetId) {
         return (
-            <div className="container mx-auto px-4 py-8">
+            <div className="py-8">
                 <div className="alert-info">No mapping set id provided.</div>
             </div>
         );

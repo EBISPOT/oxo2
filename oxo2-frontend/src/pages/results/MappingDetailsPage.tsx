@@ -43,13 +43,13 @@ function MappingDetailsPage() {
             return <MappingDetails mapping={stateMapping} />;
         }
         return (
-            <div className="container mx-auto px-4 py-8">
+            <div className="py-8">
                 <div className="alert-error">Could not load mapping {id}.</div>
             </div>
         );
     }
     return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="py-8">
             <div className="alert-info">No mapping found with id {id}.</div>
         </div>
     );

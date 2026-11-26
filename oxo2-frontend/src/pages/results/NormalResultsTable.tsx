@@ -103,6 +103,35 @@ function withoutField(fields: Set<string>, field: string): Set<string> {
 // renders (useUrlSorting memoises against it).
 const DEFAULT_SORTING: MRT_SortingState = [];
 
+// Flatten the custom filter/sort wrappers and MRT's built-in actions into one row.
+// Reserve two text lines so every column's controls share the same row below its heading.
+const compactSearchHeaderStyles = {
+    '& .Mui-TableHeadCell-Content': {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'start',
+    },
+    '& .Mui-TableHeadCell-Content-Labels, & .Mui-TableHeadCell-Content-Wrapper, & .Mui-TableHeadCell-Content-Actions': {
+        display: 'contents',
+        whiteSpace: 'normal',
+    },
+    '& .Mui-TableHeadCell-Content-Wrapper > span:not(.cursor-help)': {display: 'contents'},
+    '& .Mui-TableHeadCell-Content .cursor-help': {
+        flexBasis: '100%',
+        minHeight: '3rem',
+        alignSelf: 'start',
+        minWidth: 0,
+    },
+    '& .Mui-TableHeadCell-Content .MuiIconButton-root': {
+        minWidth: 28,
+        width: 'auto',
+        height: 28,
+        p: 0,
+        m: 0,
+    },
+};
+
 // Same-SPO grouping helpers (ADR-0013). A grouped representative carries all its members (including
 // itself) in groupMembers; an ungrouped row falls back to the single mapping.
 function groupMembersOf(mapping: Mapping): Mapping[] {
@@ -256,7 +285,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 id: "subject_label",
                 accessorFn: (row) => row.subjectLabel,
                 header: "Subject",
-                size: 320,
+                size: isSetDetail ? 320 : 190,
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <ColumnHeaderLabel topic="subject_label" label="Subject" />
@@ -277,7 +306,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 id: "predicate_label",
                 accessorFn: (row) => row.predicateLabel,
                 header: "Predicate",
-                size: 240,
+                size: isSetDetail ? 240 : 145,
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <ColumnHeaderLabel topic="predicate_label" label="Predicate" />
@@ -298,7 +327,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 id: "object_label",
                 accessorFn: (row) => row.objectLabel,
                 header: "Object",
-                size: 320,
+                size: isSetDetail ? 320 : 190,
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <ColumnHeaderLabel topic="object_label" label="Object" />
@@ -320,7 +349,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 accessorFn: (row) => row.mappingJustification,
                 header: "Mapping justification",
                 enableSorting: false,
-                size: 200,
+                size: isSetDetail ? 200 : 135,
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <ColumnHeaderLabel topic="mapping_justification" label="Mapping justification" />
@@ -350,7 +379,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 accessorFn: (row) => row.confidence,
                 header: "Mapping confidence",
                 enableSorting: false,
-                size: isSetDetail ? 240 : 150,
+                size: isSetDetail ? 240 : 105,
                 Header: () => <ColumnHeaderLabel topic="confidence" label="Mapping confidence" />,
                 Cell: ({ row }) => {
                     const shared = sharedValue(row.original, (member) =>
@@ -392,7 +421,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 accessorFn: (row: Mapping) => row.distance,
                 header: "Distance",
                 enableSorting: false,
-                size: 110,
+                size: 100,
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <ColumnHeaderLabel topic="distance" label="Distance" />
@@ -422,7 +451,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 accessorFn: (row: Mapping) => row.inferenceType,
                 header: "Type",
                 enableSorting: false,
-                size: 130,
+                size: 110,
                 Header: () => (
                     <span className="flex items-center gap-1">
                         <ColumnHeaderLabel topic="inference_type" label="Type" />
@@ -476,7 +505,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                 accessorFn: (row: Mapping) => row.mappingSetTitle || row.mappingSetId,
                 header: "Mapping set",
                 enableSorting: false,
-                size: 220,
+                size: 150,
                 Header: () => <ColumnHeaderLabel topic="mapping_set" label="Mapping set" />,
                 Cell: ({ row }: { row: { original: Mapping } }) => {
                     // One row can span several sets; show "Multiple sets" rather than a misleading single set.
@@ -680,8 +709,12 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
             </Tooltip>
         ),
         displayColumnDefOptions: {
-            'mrt-row-actions': { header: '', size: 60 },
+            'mrt-row-expand': {size: isSetDetail ? 60 : 40},
+            'mrt-row-actions': {header: '', size: isSetDetail ? 60 : 40},
         },
+        // Fixed layout lets long labels wrap instead of widening the whole results table.
+        // Below laptop width, scroll within the table rather than squeezing away its controls.
+        muiTableProps: {sx: isSetDetail ? {} : {tableLayout: 'fixed', minWidth: 1205}},
         muiTablePaperProps: {
             sx: {
                 '& .MuiBox-root:has(.MuiTablePagination-root)': {
@@ -715,12 +748,14 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
         muiTableBodyCellProps: {
             sx: {
                 verticalAlign: 'top',
+                ...(!isSetDetail ? {px: 1, overflowWrap: 'anywhere'} : {}),
             },
         },
         muiTableHeadCellProps: {
             sx: {
                 fontWeight: 'bold',
                 fontSize: '16px',
+                ...(!isSetDetail ? {px: 1, ...compactSearchHeaderStyles} : {}),
             },
         },
         muiToolbarAlertBannerProps: isError

@@ -19,7 +19,7 @@ const openApiSpecUrl = resolveUrl("/v3/api-docs");
 
 export default function Documentation() {
     return (
-        <main className="container mx-auto">
+        <main>
             <div className="text-secondary">Ontology Tools DocBot</div>
             <div className="text-tertiary">
                 <p className="mb-4">
