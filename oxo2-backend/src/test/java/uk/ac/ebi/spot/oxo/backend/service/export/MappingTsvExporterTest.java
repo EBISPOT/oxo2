@@ -1,7 +1,7 @@
 package uk.ac.ebi.spot.oxo.backend.service.export;
 
 import org.junit.jupiter.api.Test;
-import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
+import org.apache.solr.common.SolrDocument;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -9,15 +9,14 @@ class MappingTsvExporterTest {
 
     @Test
     void formatRowEmitsSssomColumnsInOrder() {
-        Mapping mapping = Mapping.builder()
-                .mappingSetId("https://example.org/set")
-                .subjectId("DOID:9352")
-                .subjectLabel("diabetes")
-                .predicateId("skos:exactMatch")
-                .objectId("EFO:0000400")
-                .objectLabel("diabetes mellitus")
-                .mappingJustification("semapv:LexicalMatching")
-                .build();
+        SolrDocument mapping = new SolrDocument();
+        mapping.setField("mapping_set_id", "https://example.org/set");
+        mapping.setField("subject_id", "DOID:9352");
+        mapping.setField("subject_label", "diabetes");
+        mapping.setField("predicate_id", "SKOS:exactMatch");
+        mapping.setField("object_id", "EFO:0000400");
+        mapping.setField("object_label", "diabetes mellitus");
+        mapping.setField("mapping_justification", "SEMAPV:LexicalMatching");
 
         String row = MappingTsvExporter.formatRow(mapping, '\t');
 
@@ -31,6 +30,27 @@ class MappingTsvExporterTest {
     @Test
     void tsvEscapeStripsTabsAndNewlines() {
         assertThat(MappingTsvExporter.escape("a\tb\nc\rd", '\t')).isEqualTo("a b c d");
+    }
+
+    @Test
+    void literalSubjectsAndMissingFieldsKeepTheirColumnPositions() {
+        SolrDocument mapping = new SolrDocument();
+        mapping.setField("subject_label", "HP:123 is text\twith a tab");
+        mapping.setField("predicate_id", "SKOS:exactMatch");
+        mapping.setField("predicate_modifier", "Not");
+        mapping.setField("object_id", "https://example.org/entity");
+        String row = MappingTsvExporter.formatRow(mapping, '\t');
+        assertThat(row.split("\t", -1)).containsExactly("", "HP:123 is text with a tab", "SKOS:exactMatch",
+                "Not", "https://example.org/entity", "", "", "");
+    }
+
+    @Test
+    void streamedCsvRowsStillQuoteLabelsAndDefuseFormulaCells() {
+        SolrDocument mapping = new SolrDocument();
+        mapping.setField("subject_label", "=SUM(1,2)");
+        mapping.setField("object_label", "a\"b\nc");
+        assertThat(MappingTsvExporter.formatRow(mapping, ','))
+                .isEqualTo(",\"'=SUM(1,2)\",,,,\"a\"\"b\nc\",,");
     }
 
     @Test

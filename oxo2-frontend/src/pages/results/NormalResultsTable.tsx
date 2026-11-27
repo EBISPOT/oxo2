@@ -20,7 +20,8 @@ import {LabelMatchMode, DEFAULT_LABEL_MATCH} from "../../model/LabelMatchMode";
 import {CorpusMode, DEFAULT_CORPUS, corpusToRequest} from "../../model/MappingSetCategory";
 import {InferenceTypeBadge} from "../../components/mapping/InferenceTypeBadge";
 import {InferenceTypeFilterPopover} from "../../components/mapping/InferenceTypeFilterPopover";
-import {IconButton, Tooltip} from "@mui/material";
+import {Alert, IconButton, Tooltip} from "@mui/material";
+import {HttpError} from "../../app/api";
 import {EyeIcon, ArrowDownTrayIcon} from "@heroicons/react/24/solid";
 import {EntityRefCell, CopyButton} from "../../components/mapping/EntityRefCell";
 import {ColumnFilterPopover, type FilterFieldDef} from "../../components/mapping/ColumnFilterPopover";
@@ -182,6 +183,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
       variant?: "search" | "set-detail" }) {
     const isSetDetail = variant === "set-detail";
     const [isExporting, setIsExporting] = useState(false);
+    const [exportError, setExportError] = useState<string | null>(null);
     const [reportMappingId, setReportMappingId] = useState<string | null>(null);
 
     // View state (page, size, sort, inference-type filter, field filters) is held in the
@@ -268,11 +270,14 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
 
     // Cross-ontology export (ADR-0024): download the full result as SSSOM-compliant TSV.
     const handleExport = useCallback(() => {
+        setExportError(null);
         setIsExporting(true);
         exportMappings(queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
             subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates,
             includeObsolete)
-            .catch((error) => console.error("Export failed", error))
+            .catch((error: unknown) => setExportError(error instanceof HttpError
+                ? `Download failed (HTTP ${error.status}). Please try again. If the problem persists, try fewer mappings.`
+                : 'Download failed. Check your connection and try again. If the problem persists, try fewer mappings.'))
             .finally(() => setIsExporting(false));
     }, [queries, columnFiltersForBackend, mappingSetIds, inferenceTypes,
         subjectPrefixes, objectPrefixes, labelMatch, mappingSetCategory, weakPredicates, includeObsolete]);
@@ -783,7 +788,7 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
         enableHiding: true,
         enableTopToolbar: true,
         renderTopToolbarCustomActions: () => (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
                 {!isLoading && !isError && (
                     <span className="text-sm text-tertiary">
                         {/* totalElements is the collapsed spo_key group count when grouping is on
@@ -800,9 +805,12 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
                     to Strongest evidence. */}
                 <Tooltip title="Download all results as SSSOM-compliant TSV">
                     <span>
-                        <IconButton onClick={handleExport} disabled={isExporting} size="small">
-                            <ArrowDownTrayIcon className="w-5 h-5" />
-                        </IconButton>
+                        <button type="button" onClick={handleExport} disabled={isExporting}
+                                aria-busy={isExporting}
+                                className="button-secondary flex items-center gap-2 px-3 py-1 disabled:opacity-50">
+                            <ArrowDownTrayIcon className="w-5 h-5" aria-hidden="true" />
+                            {isExporting ? 'Preparing download…' : 'Download TSV'}
+                        </button>
                     </span>
                 </Tooltip>
             </div>
@@ -811,6 +819,11 @@ export function NormalResultsTable({ queries, mappingSetIds, subjectPrefixes = [
 
     return (
         <>
+            {exportError && (
+                <Alert severity="error" onClose={() => setExportError(null)} sx={{mb: 2}}>
+                    {exportError}
+                </Alert>
+            )}
             {isLoading && (
                 <div className="flex justify-center p-8">
                     <div className="spinner-default w-10 h-10 animate-spin" role="status">

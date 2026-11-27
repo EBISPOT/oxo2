@@ -196,7 +196,7 @@ back to the prefix. Submitted values remain exact prefixes. Options and counts c
 source is chosen, so targets show counts and zero-count targets grey out). They compose: source prefix
 + empty box → entire ontology; terms + target prefix → bounded batch lookup; terms only → today's
 search. A label input (not a CURIE/IRI) is treated as a **source-side** label, bounded by the target
-prefixes. Results reuse `NormalResultsTable` plus a summary header and an SSSOM-TSV "Export" button; the
+prefixes. Results reuse `NormalResultsTable` plus a summary header and a "Download TSV" button; the
 batch (pasted-list) variant also shows an unmapped-inputs panel and mirrors its input to
 `sessionStorage` so a refresh re-runs.
 
