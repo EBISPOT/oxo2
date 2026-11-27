@@ -14,3 +14,7 @@ already installed Chrome/Chromium instead of Playwright's downloaded browser.
 `docbot.test.mjs` stubs the external DocBot SDK and blocks DocBot service calls. It checks that
 route changes preserve the widget and that navigation and the standalone help link remain usable
 when the external assets fail. These checks do not require DocBot to allowlist localhost.
+
+`download.test.mjs` checks visible HTTP/network download errors, the disabled preparation state,
+and retrying the same search to save the returned TSV. Export responses are stubbed; these checks
+do not need Solr or the backend.

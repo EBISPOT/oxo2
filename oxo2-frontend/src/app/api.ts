@@ -76,15 +76,18 @@ export async function downloadPost<TReq>(path: string, body: TReq, filename: str
         headers: { "content-type": "application/json" },
     });
     if (!response.ok) {
-        throw new Error(`Export failed: ${response.status} (${response.statusText})`);
+        throw new HttpError(`Export failed: ${response.status} (${response.statusText})`, response.status);
     }
     const blob = await response.blob();
     const objectUrl = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
-    anchor.href = objectUrl;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(objectUrl);
+    try {
+        anchor.href = objectUrl;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+    } finally {
+        anchor.remove();
+        URL.revokeObjectURL(objectUrl);
+    }
 }

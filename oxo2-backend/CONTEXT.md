@@ -109,6 +109,16 @@ value can never yield zero rows and arrives with the count of mappings behind it
 `GET /api/v2/mappings`, and `batch-map` negotiates the representation: a non-`json` format streams the
 full result (paging ignored) via a Solr cursor — SSSOM-compliant TSV with a metadata header +
 `curie_map`. There is no standalone export endpoint, mirroring v1's `/api/search?format=`.
+The prefix header uses the **same query and filters** as the exported rows, including query-parser
+parameters. Subject/object prefixes and the prefixes actually used in predicates, justifications
+and mapping-set IDs are included; unused declarations are omitted. Canonical IRI overrides take
+precedence over the registry, and unregistered prefixes are resolved from contributing mapping sets.
+Missing or conflicting custom declarations fail the export rather than silently leaving unresolved
+CURIEs. This does not resolve all registry/source namespace differences described in issue 118.
+Rows are formatted directly from stored Solr fields in batches of 2,000, without constructing
+`Mapping` beans or populating the shared identifier caches. Partial Solr responses, missing cursors
+and disconnected servlet writers terminate the export. The browser still buffers the completed
+file before saving; background downloads remain a separate step.
 - **`GET /api/v2/mapping-sets`** — list all mapping sets (up to 10 000), returning `MappingSetSummary` (id, title, 
 description, creator labels, provider, `inference_type`, source-set union, plus `mapping_set_category` and — for
 ontology sets — the `prefix` / `ontology` promoted from the OLS `other` block,

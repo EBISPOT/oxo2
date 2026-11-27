@@ -4,19 +4,23 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.params.CursorMarkParams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.ac.ebi.spot.oxo.backend.service.OxOSolrClient;
 import uk.ac.ebi.spot.oxo.model.sssom.BioregistryPrefixMap;
-import uk.ac.ebi.spot.oxo.model.sssom.Mapping;
 import uk.ac.ebi.spot.oxo.model.sssom.MappingConstants;
-import uk.ac.ebi.spot.oxo.model.sssom.PredicateModifierEnum;
 import uk.ac.ebi.spot.oxo.model.sssom.PrefixMap;
-import uk.ac.ebi.spot.oxo.model.sssom.SSSOMDataType;
+import uk.ac.ebi.spot.oxo.model.sssom.PrefixIriOverrides;
+import uk.ac.ebi.spot.oxo.utils.StringUtils;
 
 import java.io.Writer;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.TreeMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,8 +37,6 @@ import java.util.TreeSet;
 @Service
 public class MappingTsvExporter {
 
-    private static final Logger logger = LoggerFactory.getLogger(MappingTsvExporter.class);
-
     private static final int CURSOR_BATCH_ROWS = 2000;
 
     /** SSSOM slot columns emitted, in order. The mandatory slots plus the common, safely-stringable ones. */
@@ -45,13 +47,12 @@ public class MappingTsvExporter {
             MappingConstants.MAPPING_JUSTIFICATION, MappingConstants.MAPPING_SET_ID
     };
 
-    /**
-     * Predicate / justification prefixes always added to the curie_map (uppercased to match the stored
-     * CURIEs, whose prefixes EntityReference upper-cases), so predicates like {@code SKOS:exactMatch}
-     * and justifications like {@code SEMAPV:LexicalMatching} expand.
-     */
-    private static final Set<String> COMMON_PREDICATE_PREFIXES =
-            Set.of("SKOS", "OWL", "RDFS", "RDF", "SEMAPV", "SSSOM", "OBO");
+    // Low-cardinality identifier fields supplement the indexed subject/object prefixes. Never
+    // facet subject_id/object_id: that would materialise every distinct exported entity in memory.
+    private static final String[] CURIE_FACET_FIELDS = {
+            MappingConstants.PREDICATE_ID, MappingConstants.MAPPING_JUSTIFICATION,
+            MappingConstants.MAPPING_SET_ID
+    };
 
     @Autowired
     private OxOSolrClient solrClient;
@@ -62,123 +63,165 @@ public class MappingTsvExporter {
         writer.write(String.join(String.valueOf(separator), SSSOM_COLUMNS));
         writer.write("\n");
 
-        baseQuery.setRows(CURSOR_BATCH_ROWS);
-        baseQuery.setFields(SSSOM_COLUMNS);
+        SolrQuery rowQuery = baseQuery.getCopy();
+        rowQuery.setStart(0);
+        rowQuery.setRows(CURSOR_BATCH_ROWS);
+        rowQuery.setFields(SSSOM_COLUMNS);
         String cursorMark = CursorMarkParams.CURSOR_MARK_START;
         while (true) {
-            baseQuery.set(CursorMarkParams.CURSOR_MARK_PARAM, cursorMark);
-            QueryResponse response = solrClient.queryMappings(baseQuery);
-            List<Mapping.Builder> beans = response.getBeans(Mapping.Builder.class);
-            for (Mapping.Builder builder : beans) {
-                writer.write(formatRow(builder.build(), separator));
+            rowQuery.set(CursorMarkParams.CURSOR_MARK_PARAM, cursorMark);
+            QueryResponse response = solrClient.queryMappings(rowQuery);
+            requireComplete(response);
+            String nextCursorMark = response.getNextCursorMark();
+            if (nextCursorMark == null) {
+                throw new IOException("Export response is missing its cursor");
+            }
+            // Stored values are already normalised. Building Mapping beans here populates the
+            // shared EntityReference/Uri caches with every identifier, defeating cursor batching.
+            for (SolrDocument document : response.getResults()) {
+                writer.write(formatRow(document, separator));
                 writer.write("\n");
             }
-            String nextCursorMark = response.getNextCursorMark();
-            if (nextCursorMark == null || nextCursorMark.equals(cursorMark)) {
+            flush(writer);
+            if (nextCursorMark.equals(cursorMark)) {
                 break;
             }
             cursorMark = nextCursorMark;
-            writer.flush();
         }
-        writer.flush();
     }
 
-    /**
-     * Write the SSSOM {@code curie_map} metadata block (comment lines) for the prefixes actually
-     * present in the export's filter domain, discovered with a single rows=0 facet pass so the header
-     * can be written before the rows are streamed.
-     */
-    private void writeCurieMap(SolrQuery baseQuery, Writer writer) throws Exception {
-        SolrQuery facetQuery = new SolrQuery("*:*");
-        facetQuery.setRows(0);
-        String[] filterQueries = baseQuery.getFilterQueries();
-        if (filterQueries != null) {
-            for (String filterQuery : filterQueries) {
-                facetQuery.addFilterQuery(filterQuery);
-            }
+    private static void requireComplete(QueryResponse response) throws IOException {
+        Object partial = response.getResponseHeader() == null ? null
+                : response.getResponseHeader().get("partialResults");
+        if (partial != null && !"false".equalsIgnoreCase(partial.toString())) {
+            throw new IOException("Solr returned partial export results");
         }
+    }
+
+    private static void flush(Writer writer) throws IOException {
+        writer.flush();
+        // HttpServletResponse.getWriter() is a PrintWriter, which swallows IOExceptions.
+        // Stop requesting further Solr batches when the client disconnects.
+        if (writer instanceof PrintWriter printWriter && printWriter.checkError()) {
+            throw new IOException("Download connection closed while exporting");
+        }
+    }
+
+    /** Discover prefixes over exactly the same query as the rows, before writing the header. */
+    private void writeCurieMap(SolrQuery baseQuery, Writer writer) throws Exception {
+        SolrQuery facetQuery = baseQuery.getCopy();
+        facetQuery.remove(CursorMarkParams.CURSOR_MARK_PARAM);
+        facetQuery.setStart(0);
+        facetQuery.setRows(0);
         facetQuery.setFacet(true);
         facetQuery.setFacetMinCount(1);
         facetQuery.setFacetLimit(-1);
         facetQuery.addFacetField(MappingConstants.SUBJECT_PREFIX, MappingConstants.OBJECT_PREFIX);
+        facetQuery.addFacetField(CURIE_FACET_FIELDS);
 
         QueryResponse response = solrClient.queryMappings(facetQuery);
-        TreeSet<String> prefixes = new TreeSet<>(COMMON_PREDICATE_PREFIXES);
-        addFacetPrefixes(response.getFacetField(MappingConstants.SUBJECT_PREFIX), prefixes);
-        addFacetPrefixes(response.getFacetField(MappingConstants.OBJECT_PREFIX), prefixes);
-
-        SortedMap<String, String> bioregistry = BioregistryPrefixMap.get();
-        Map<String, String> predefined = PrefixMap.getPrefixMap();
-        writer.write("# curie_map:\n");
-        for (String prefix : prefixes) {
-            String base = resolveBase(prefix, bioregistry, predefined);
-            if (base != null) {
-                writer.write("#   " + prefix + ": " + base + "\n");
+        requireComplete(response);
+        TreeSet<String> prefixes = new TreeSet<>();
+        prefixes.addAll(facetValues(response, MappingConstants.SUBJECT_PREFIX));
+        prefixes.addAll(facetValues(response, MappingConstants.OBJECT_PREFIX));
+        for (String field : CURIE_FACET_FIELDS) {
+            for (String value : facetValues(response, field)) {
+                // Full IRIs need no prefix declaration. Labels are never inspected for colons.
+                if (StringUtils.isCurie(value) && !value.regionMatches(true, 0, "urn:", 0, 4)) {
+                    prefixes.add(value.substring(0, value.indexOf(':')));
+                }
             }
+        }
+
+        SortedMap<String, String> namespaces = new TreeMap<>();
+        Set<String> missing = new TreeSet<>();
+        for (String prefix : prefixes) {
+            String base = resolveBase(prefix);
+            if (base == null) missing.add(prefix);
+            else namespaces.put(prefix, base);
+        }
+        if (!missing.isEmpty()) {
+            resolveSourcePrefixes(missing, facetValues(response, MappingConstants.MAPPING_SET_ID), namespaces);
+        }
+        if (!namespaces.keySet().containsAll(prefixes)) {
+            missing.removeAll(namespaces.keySet());
+            throw new IOException("Cannot resolve exported prefixes: " + String.join(", ", missing));
+        }
+        writer.write(namespaces.isEmpty() ? "# curie_map: {}\n" : "# curie_map:\n");
+        for (Map.Entry<String, String> entry : namespaces.entrySet()) {
+            writer.write("#   " + yamlString(entry.getKey()) + ": " + yamlString(entry.getValue()) + "\n");
         }
         writer.write("# mapping_set_id: https://www.ebi.ac.uk/oxo2/export\n");
     }
 
-    private static void addFacetPrefixes(FacetField facetField, Set<String> prefixes) {
-        if (facetField == null) {
-            return;
-        }
-        for (FacetField.Count value : facetField.getValues()) {
-            if (value.getName() != null && !value.getName().isBlank()) {
-                prefixes.add(value.getName());
+    private static List<String> facetValues(QueryResponse response, String field) {
+        FacetField facet = response.getFacetField(field);
+        if (facet == null || facet.getValues() == null) return List.of();
+        return facet.getValues().stream().filter(value -> value.getCount() > 0)
+                .map(FacetField.Count::getName).filter(value -> value != null && !value.isBlank()).toList();
+    }
+
+    private static String resolveBase(String prefix) {
+        String canonical = PrefixIriOverrides.canonicalStem(prefix);
+        if (canonical != null) return canonical;
+        String lower = prefix.toLowerCase(Locale.ROOT);
+        Map<String, String> predefined = PrefixMap.getPrefixMap();
+        if (predefined.containsKey(lower)) return predefined.get(lower);
+        if (predefined.containsKey(prefix)) return predefined.get(prefix);
+        SortedMap<String, String> bioregistry = BioregistryPrefixMap.get();
+        if (bioregistry.containsKey(prefix)) return bioregistry.get(prefix);
+        if (bioregistry.containsKey(lower)) return bioregistry.get(lower);
+        return bioregistry.get(prefix.toUpperCase(Locale.ROOT));
+    }
+
+    /** Custom prefixes need their source declaration. Read only contributing sets, in small batches.
+     *  Do not construct CurieMap: its constructor mutates the process-wide PrefixMap. */
+    private void resolveSourcePrefixes(Set<String> missing, List<String> setIds,
+                                       Map<String, String> namespaces) throws Exception {
+        for (int start = 0; start < setIds.size(); start += 50) {
+            List<String> batch = setIds.subList(start, Math.min(start + 50, setIds.size()));
+            List<String> clauses = new ArrayList<>();
+            for (String id : batch) clauses.add("mapping_set_id:" + ClientUtils.escapeQueryChars(id));
+            SolrQuery query = new SolrQuery(String.join(" OR ", clauses));
+            query.setRows(batch.size());
+            query.setFields("curie_map");
+            QueryResponse response = solrClient.queryMappingSets(query);
+            requireComplete(response);
+            for (SolrDocument document : response.getResults()) {
+                Object raw = document.getFieldValue("curie_map");
+                if (raw == null) continue;
+                // This is the stored CurieMap representation (prefix:IRI, prefix:IRI).
+                for (String pair : raw.toString().split(", ")) {
+                    int colon = pair.indexOf(':');
+                    if (colon < 1) continue;
+                    String declared = pair.substring(0, colon);
+                    String base = pair.substring(colon + 1);
+                    if (base.isBlank()) continue;
+                    for (String prefix : missing) {
+                        if (!declared.equalsIgnoreCase(prefix)) continue;
+                        String previous = namespaces.putIfAbsent(prefix, base);
+                        if (previous != null && !previous.equals(base)) {
+                            throw new IOException("Conflicting namespaces for exported prefix: " + prefix);
+                        }
+                    }
+                }
             }
         }
     }
 
-    /** Resolve a prefix to its namespace IRI, tolerant of the case mismatch between stored (upper) CURIEs and registry (lower) keys. */
-    private static String resolveBase(String prefix, SortedMap<String, String> bioregistry,
-                                      Map<String, String> predefined) {
-        String lower = prefix.toLowerCase();
-        if (predefined.containsKey(lower)) {
-            return predefined.get(lower);
-        }
-        if (bioregistry.containsKey(prefix)) {
-            return bioregistry.get(prefix);
-        }
-        if (bioregistry.containsKey(lower)) {
-            return bioregistry.get(lower);
-        }
-        String upper = prefix.toUpperCase();
-        return bioregistry.get(upper);
+    private static String yamlString(String value) {
+        return "'" + value.replace("'", "''").replace("\r", "").replace("\n", "") + "'";
     }
 
-    /** Format one mapping as a delimited row over {@link #SSSOM_COLUMNS}. Package-visible for unit tests. */
-    static String formatRow(Mapping mapping, char separator) {
-        String[] values = {
-                mapping.subjectId().map(MappingTsvExporter::repr).orElse(""),
-                mapping.subjectLabel().orElse(""),
-                mapping.predicateId().map(MappingTsvExporter::repr).orElse(""),
-                mapping.predicateModifier().map(PredicateModifierEnum::value).orElse(""),
-                mapping.objectId().map(MappingTsvExporter::repr).orElse(""),
-                mapping.objectLabel().orElse(""),
-                mapping.mappingJustification().map(MappingTsvExporter::repr).orElse(""),
-                mapping.mappingSetId() == null ? "" : repr(mapping.mappingSetId())
-        };
+    /** Values from Solr already have their normalised SSSOM representation. */
+    static String formatRow(SolrDocument document, char separator) {
         StringBuilder row = new StringBuilder();
-        for (int i = 0; i < values.length; i++) {
-            if (i > 0) {
-                row.append(separator);
-            }
-            row.append(escape(values[i], separator));
+        for (int index = 0; index < SSSOM_COLUMNS.length; index++) {
+            if (index > 0) row.append(separator);
+            Object value = document.getFieldValue(SSSOM_COLUMNS[index]);
+            row.append(escape(value == null ? "" : value.toString(), separator));
         }
         return row.toString();
-    }
-
-    /** Normalised string form of an SSSOM data value — the representation serialised to Solr (so CURIE prefixes match). */
-    private static String repr(SSSOMDataType<?> value) {
-        if (value == null) {
-            return "";
-        }
-        String represented = value.getDataRepresentation().map(Object::toString).orElse(null);
-        if (represented != null) {
-            return represented;
-        }
-        return value.getDataAsString() == null ? "" : value.getDataAsString();
     }
 
     /**
